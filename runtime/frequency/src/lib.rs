@@ -396,7 +396,7 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 	(
 		MigratePalletsCurrentStorage<Runtime>,
-		pallet_msa::migration::MigrateProviderToRegistryEntry<Runtime>,
+		pallet_msa::migration::MigrateProviderToRegistryEntryV2<Runtime>,
 	),
 >;
 

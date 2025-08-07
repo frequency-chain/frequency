@@ -215,7 +215,6 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
-	#[pallet::getter(fn provider_to_registry_entry)]
 	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,

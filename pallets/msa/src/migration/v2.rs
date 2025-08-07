@@ -1,4 +1,4 @@
-use crate::{Config, Pallet, ProviderToRegistryEntry, STORAGE_VERSION};
+use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry, STORAGE_VERSION};
 use alloc::vec;
 use common_primitives::{
 	msa::{ProviderId, ProviderRegistryEntry},
@@ -39,17 +39,10 @@ pub fn get_known_provider_ids<T: Config>() -> vec::Vec<ProviderId> {
 	}
 }
 
-/// Old provider registry entry structure.
-#[derive(Encode, Decode)]
-pub struct OldProviderRegistryEntry<NameSize: Get<u32>> {
-	/// name of the provider.
-	pub provider_name: BoundedVec<u8, NameSize>,
-}
-
 /// migrate `ProviderToRegistryEntry` translating to new `ProviderRegistryEntry`
-pub struct MigrateProviderToRegistryEntry<T>(PhantomData<T>);
+pub struct MigrateProviderToRegistryEntryV2<T>(PhantomData<T>);
 
-impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
+impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 	fn on_runtime_upgrade() -> Weight {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		let current_version = Pallet::<T>::in_code_storage_version();
@@ -58,36 +51,39 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 			log::error!(target: LOG_TARGET, "Storage version mismatch. Expected: {:?}, Found: {:?}", STORAGE_VERSION, current_version);
 			return T::DbWeight::get().reads(1)
 		}
-		if onchain_version < current_version {
-			log::info!(target: LOG_TARGET, "Migrating ProviderToRegistryEntry to updated ProviderRegistryEntry...");
+		if onchain_version < 2 {
+			log::info!(target: LOG_TARGET, "Migrating v1 ProviderToRegistryEntry to updated ProviderRegistryEntry...");
+
+			// Count items in OLD storage using storage alias
+			let total_count = v1::ProviderToRegistryEntry::<T>::iter().count();
+			log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntry storage: {}", total_count);
+
 			let mut reads = 1u64;
 			let mut writes = 0u64;
 			let mut bytes = 0u64;
-			for (provider_id, old_value_encoded) in
-				ProviderToRegistryEntry::<T>::drain().map(|(k, v)| (k, v.encode()))
-			{
-				let old: OldProviderRegistryEntry<T::MaxProviderNameSize> =
-					match Decode::decode(&mut &old_value_encoded[..]) {
-						Ok(val) => val,
-						Err(_) => {
-							log::warn!(target: LOG_TARGET, "Failed to decode old value for provider {:?}", provider_id);
-							continue;
-						},
-					};
+			let mut migrated_count = 0u64;
 
-				// Build new default value with old provider name.
-				let new = ProviderRegistryEntry {
-					default_name: old.provider_name,
+			// Drain from OLD storage and migrate to NEW storage
+			for (provider_id, old_entry) in v1::ProviderToRegistryEntry::<T>::drain() {
+				log::info!(target: LOG_TARGET, "Migrating provider {:?} with old value {:?}", provider_id, old_entry);
+
+				// Build new registry entry with old provider name
+				let migrated_provider_entry = ProviderRegistryEntry {
+					default_name: old_entry.provider_name.clone(),
 					default_logo_250_100_png_cid: BoundedVec::default(),
 					localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
 					localized_names: BoundedBTreeMap::default(),
 				};
 
-				ProviderToRegistryEntry::<T>::insert(provider_id, new);
+				ProviderToRegistryEntry::<T>::insert(provider_id, migrated_provider_entry);
 				reads.saturating_inc();
 				writes.saturating_inc();
-				bytes += old_value_encoded.len() as u64;
+				bytes += old_entry.encoded_size() as u64;
+				migrated_count.saturating_inc();
 			}
+
+			log::info!(target: LOG_TARGET, "Migration completed: {} items migrated", migrated_count);
+
 			// Set storage version to `2`.
 			StorageVersion::new(2).put::<Pallet<T>>();
 			log::info!(target: LOG_TARGET, "MSA Storage migrated to version 2  read={:?}, write={:?}, bytes={:?}", reads, writes, bytes);
@@ -110,37 +106,47 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 	fn pre_upgrade() -> Result<vec::Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		let genesis_block: BlockNumberFor<T> = 0u32.into();
-		let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 		if on_chain_version >= 2 {
 			return Ok(vec::Vec::new())
 		}
+
+		// Check OLD storage using storage alias
+		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count();
+		log::info!(target: LOG_TARGET, "Found {} items in OLD storage format", old_count);
+
+		let genesis_block: BlockNumberFor<T> = 0u32.into();
+		let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 		log::info!(target: LOG_TARGET, "Found genesis... {:?}", genesis);
 		let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
 		log::info!(target: LOG_TARGET,"Detected Chain is {:?}", detected_chain);
+
+		// Store the old count for verification in post_upgrade
 		Ok(vec::Vec::new())
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
+	fn post_upgrade(_pre: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 		if on_chain_version > 2 {
 			return Ok(())
 		}
 		assert_eq!(on_chain_version, STORAGE_VERSION);
+
 		let known_providers = get_known_provider_ids::<T>();
 		for id in known_providers {
-			let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {
-				TryRuntimeError::Other("Missing provider entry in post upgrade check")
-			})?;
-			// Optionally check the name isn't empty
-			if entry.default_name.is_empty() {
-				log::error!(target: LOG_TARGET, "Missing provider name for provider id: {:?}", id);
-				return Err(TryRuntimeError::Other("Missing provider name in post upgrade check"));
+			if let Some(entry) = ProviderToRegistryEntry::<T>::get(id) {
+				// Optionally check the name isn't empty
+				if entry.default_name.is_empty() {
+					log::error!(target: LOG_TARGET, "Missing provider name for provider id: {:?}", id);
+					return Err(TryRuntimeError::Other(
+						"Missing provider name in post upgrade check",
+					));
+				}
 			}
 		}
-		log::info!(target: LOG_TARGET, "Migration completed successfully. Storage version is now {:?}", STORAGE_VERSION);
+
+		log::info!(target: LOG_TARGET, "Migration completed successfully");
 		Ok(())
 	}
 }

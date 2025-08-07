@@ -1,3 +1,4 @@
+mod v1;
 /// Migration module for the MSA pallet.
-pub mod migrate_provider;
-pub use migrate_provider::MigrateProviderToRegistryEntry;
+pub mod v2;
+pub use v2::MigrateProviderToRegistryEntryV2;
