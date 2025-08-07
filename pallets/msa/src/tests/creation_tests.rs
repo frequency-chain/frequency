@@ -417,7 +417,7 @@ pub fn create_provider_fails_with_invalid_cid_localized() {
 }
 
 #[test]
-pub fn create_provider_fails_with_invalid_locale() {
+pub fn create_provider_fails_with_invalid_logo_locale() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (_, provider_key_pair) = create_account();
