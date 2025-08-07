@@ -143,6 +143,93 @@ start-frequency-instant)
     --tmp
   ;;
 
+start-frequency-instant-bridging)
+  printf "\nBuilding Frequency without relay and with Bridging. Running with instant sealing ...\n"
+  # Uncomment/swap below if you want to see debug logs in the Frequency node
+  # cargo build --features frequency-no-relay,frequency-bridging,force-debug
+  cargo build --features frequency-no-relay,frequency-bridging
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/debug/frequency \
+    --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
+    -lruntime=debug \
+    --sealing=instant \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --rpc-methods=Unsafe \
+    $offchain_params \
+    --tmp
+  ;;
+
+# TODO: This is a work in progress.
+start-bridging-westend-local)
+  printf "\nBuilding Frequency for westend-local with Bridging. Running with local relay ...\n"
+  cargo build --features frequency-local,frequency-bridging
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/debug/frequency \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
+    -lruntime=debug \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --rpc-methods=Unsafe \
+    $offchain_params \
+    --tmp
+  ;;
+
+# TODO: This needs correct launch parameters for Westend testnet
+start-bridging-westend)
+  printf "\nBuilding Frequency for westend-testnet with Bridging. Running with Westend Testnet Relay ...\n"
+  cargo build --release --features frequency-westend,frequency-bridging
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  # Placeholder - Needs correct arguments for testnet connection
+  echo "TODO: Add correct launch command for Westend testnet connection"
+  # Example structure (likely needs run_collator.sh):
+  # "${Frequency_BINARY_PATH:-./target/release/frequency}" \
+  #   --collator \
+  #   --chain="frequency-westend-testnet" \
+  #   --base-path=$parachain_dir/data \
+  #   --port $((30333)) \
+  #   --rpc-port $((9944)) \
+  #   -- \
+  #   --chain westend
+  ;;
+
 start-frequency-interval)
   defaultInterval=6
   interval=${3-$defaultInterval}

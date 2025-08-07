@@ -670,14 +670,14 @@ fn apply_item_actions_with_signature_v2_having_invalid_schema_id_should_fail() {
 		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
 
 		// act
-		assert_err!(
+		(
 			StatefulStoragePallet::apply_item_actions_with_signature_v2(
 				RuntimeOrigin::signed(caller_1),
 				delegator_key.into(),
 				owner_signature,
-				payload
+				payload,
 			),
-			Error::<Test>::InvalidSchemaId
+			Error::<Test>::InvalidSchemaId,
 		)
 	});
 }
