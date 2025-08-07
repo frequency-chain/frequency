@@ -6,6 +6,7 @@ use crate::parquet::{column_compression_codec::ColumnCompressionCodec, types::Pa
 
 /// Encapsulation for a single Parquet column
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ParquetColumn {
 	/// The label for what this column represents
 	name: String,
