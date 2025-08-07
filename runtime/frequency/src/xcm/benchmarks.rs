@@ -11,7 +11,8 @@ use frame_support::parameter_types;
 use polkadot_runtime_common::xcm_sender::ToParachainDeliveryHelper;
 use sp_runtime::traits::AccountIdConversion;
 pub use staging_xcm::latest::prelude::{
-	Asset, AssetId, Assets, Fungibility, Location, Parachain, Parent, ParentThen,
+	Asset, AssetId, Assets, Fungibility, InteriorLocation, Junction, Location, NetworkId,
+	Parachain, Parent, ParentThen, Response,
 };
 use staging_xcm_builder::MintLocation;
 
