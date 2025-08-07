@@ -134,12 +134,16 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		let old_count: u64 = Decode::decode(&mut &pre[..])
 			.map_err(|_| TryRuntimeError::Other("Failed to decode pre_upgrade data"))?;
 		let new_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
-		log::info!(target: LOG_TARGET, "Old count: {}, New count: {}", old_count, new_count);
+		log::info!(target: LOG_TARGET, "Old Provider count: {}, New Provider count: {}", old_count, new_count);
 		if old_count != new_count {
 			log::error!(target: LOG_TARGET, "Migration count mismatch: old={}, new={}", old_count, new_count);
 			return Err(TryRuntimeError::Other("Migration count mismatch"))
 		}
 		let known_providers = get_known_provider_ids::<T>();
+		if known_providers.is_empty() {
+			log::error!(target: LOG_TARGET, "No known providers found for post-upgrade check");
+			return Err(TryRuntimeError::Other("No known providers found in post-upgrade check"));
+		}
 		for id in known_providers {
 			let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {
 				log::error!(target: LOG_TARGET, "Missing provider entry for provider id: {:?}", id);
