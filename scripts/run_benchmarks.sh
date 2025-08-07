@@ -25,6 +25,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_utility \
   pallet_proxy \
   pallet_xcm_benchmarks::fungible \
+  pallet_xcm_benchmarks::generic \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \

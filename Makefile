@@ -201,6 +201,7 @@ benchmarks-pallet_utility \
 benchmarks-pallet_proxy \
 benchmarks-pallet_transaction_payment \
 benchmarks-pallet_xcm_benchmarks__fungible \
+benchmarks-pallet_xcm_benchmarks__generic \
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -231,6 +232,7 @@ benchmarks-pallet_utility-local \
 benchmarks-pallet_proxy-local \
 benchmarks-pallet_transaction_payment-local \
 benchmarks-pallet_xcm_benchmarks__fungible-local \
+benchmarks-pallet_xcm_benchmarks__generic-local \
 
 .PHONY: benchmarks
 benchmarks:

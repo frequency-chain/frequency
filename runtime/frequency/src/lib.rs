@@ -1728,6 +1728,7 @@ mod benches {
 		[pallet_passkey, Passkey]
 
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
+		[pallet_xcm_benchmarks::generic, XcmGeneric]
 	);
 }
 
@@ -2145,8 +2146,6 @@ sp_api::impl_runtime_apis! {
 				type RuntimeCall = RuntimeCall;
 				type TransactAsset = Balances;
 
-				// add a test for unsubscribe_version
-				// TODO: check this one
 				fn worst_case_response() -> (u64, xcm::benchmarks::Response) {
 					(0u64, xcm::benchmarks::Response::Version(Default::default()))
 				}
@@ -2156,49 +2155,52 @@ sp_api::impl_runtime_apis! {
 					Err(BenchmarkError::Skip)
 				}
 
-				// TODO: double check this one
+				// We do not support universal origin permissioning.
 				fn universal_alias() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Junction), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 
-				// We do not support transact
-				// TODO: check unsubscribe_version
+				// We do not support transact instructions on frequency
+				// But this helper also used to benchmark unsubscribe_version which we do support.
 				fn transact_origin_and_runtime_call() -> Result<(xcm::benchmarks::Location, RuntimeCall), BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					Ok((xcm::benchmarks::AssetHubParachainLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
 				}
 
 				// we curren not do subscriptions
 				fn subscribe_origin() -> Result<xcm::benchmarks::Location, BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
 				}
 
 				// add a test for claimable_asset
 				fn claimable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Assets), BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					let origin = xcm::benchmarks::AssetHubParachainLocation::get();
+					let assets = (xcm::benchmarks::RelayAsset::get()).into();
+					let ticket = xcm::benchmarks::HereLocation::get().into();
+					Ok((origin, ticket, assets))
 				}
 
-				// do this one
 				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
-					Err(BenchmarkError::Skip)
+					Ok(xcm::benchmarks::RelayAsset::get())
 				}
 
-				// we currently do not do locking
+				// We do not support locking and unlocking on Frequency
 				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 
-				// TODO: I do not think we need to suppor this one but double check
+				// We do not support export message on Frequency
 				fn export_message_origin_and_destination() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::NetworkId, xcm::benchmarks::InteriorLocation), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 				
-				// TODO: I do not think we need to do this one but double check check this one
+				// We do not support alias origin on Frequency
 				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}
 
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
