@@ -63,10 +63,9 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 			let mut bytes = 0u64;
 			let mut migrated_count = 0u64;
 
+			log::info!(target: LOG_TARGET, "Starting migration from v1 to v2...");
 			// Drain from OLD storage and migrate to NEW storage
 			for (provider_id, old_entry) in v1::ProviderToRegistryEntry::<T>::drain() {
-				log::info!(target: LOG_TARGET, "Migrating provider {:?} with old value {:?}", provider_id, old_entry);
-
 				// Build new registry entry with old provider name
 				let migrated_provider_entry = ProviderRegistryEntry {
 					default_name: old_entry.provider_name.clone(),
@@ -121,28 +120,35 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		log::info!(target: LOG_TARGET,"Detected Chain is {:?}", detected_chain);
 
 		// Store the old count for verification in post_upgrade
-		Ok(vec::Vec::new())
+		Ok((old_count as u64).encode())
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_pre: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
+	fn post_upgrade(pre: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 		if on_chain_version > 2 {
 			return Ok(())
 		}
 		assert_eq!(on_chain_version, STORAGE_VERSION);
-
+		let old_count: u64 = Decode::decode(&mut &pre[..])
+			.map_err(|_| TryRuntimeError::Other("Failed to decode pre_upgrade data"))?;
+		let new_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
+		log::info!(target: LOG_TARGET, "Old count: {}, New count: {}", old_count, new_count);
+		if old_count != new_count {
+			log::error!(target: LOG_TARGET, "Migration count mismatch: old={}, new={}", old_count, new_count);
+			return Err(TryRuntimeError::Other("Migration count mismatch"))
+		}
 		let known_providers = get_known_provider_ids::<T>();
 		for id in known_providers {
-			if let Some(entry) = ProviderToRegistryEntry::<T>::get(id) {
-				// Optionally check the name isn't empty
-				if entry.default_name.is_empty() {
-					log::error!(target: LOG_TARGET, "Missing provider name for provider id: {:?}", id);
-					return Err(TryRuntimeError::Other(
-						"Missing provider name in post upgrade check",
-					));
-				}
+			let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {
+				log::error!(target: LOG_TARGET, "Missing provider entry for provider id: {:?}", id);
+				TryRuntimeError::Other("Missing provider entry in post-upgrade check")
+			})?;
+
+			if entry.default_name.is_empty() {
+				log::error!(target: LOG_TARGET, "Missing provider name for provider id: {:?}", id);
+				return Err(TryRuntimeError::Other("Missing provider name in post-upgrade check"));
 			}
 		}
 
