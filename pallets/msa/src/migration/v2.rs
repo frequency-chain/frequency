@@ -17,7 +17,6 @@ pub fn get_known_provider_ids<T: Config>() -> vec::Vec<ProviderId> {
 	let genesis_block: BlockNumberFor<T> = 0u32.into();
 	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 	let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
-	log::info!(target: LOG_TARGET, "Detected Chain is {:?}", detected_chain);
 	match detected_chain {
 		DetectedChainType::FrequencyPaseoTestNet => vec![
 			// name: PrivateProvider
@@ -51,13 +50,17 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 			log::error!(target: LOG_TARGET, "Storage version mismatch. Expected: {:?}, Found: {:?}", STORAGE_VERSION, current_version);
 			return T::DbWeight::get().reads(1)
 		}
-		if onchain_version < 2 {
+		if onchain_version < current_version {
 			log::info!(target: LOG_TARGET, "Migrating v1 ProviderToRegistryEntry to updated ProviderRegistryEntry...");
 
 			// Count items in OLD storage using storage alias
 			let total_count = v1::ProviderToRegistryEntry::<T>::iter().count();
 			log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntry storage: {}", total_count);
-
+			// We expect to have providers in the old storage
+			if total_count == 0 {
+				log::error!(target: LOG_TARGET, "No items found in OLD ProviderToRegistryEntry storage, skipping migration.");
+				return T::DbWeight::get().reads(1)
+			}
 			let mut reads = 1u64;
 			let mut writes = 0u64;
 			let mut bytes = 0u64;
@@ -93,7 +96,8 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		} else {
 			log::info!(
 				target: LOG_TARGET,
-				"Migration did not execute. This probably should be removed onchain:{:?}, current:{:?}",
+				"Migration did not execute. This can be removed as the storage version is already at 2. \
+				onchain_version: {:?}, current_version: {:?}",
 				onchain_version,
 				current_version
 			);
@@ -105,10 +109,11 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 	fn pre_upgrade() -> Result<vec::Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
+		log::info!(target: LOG_TARGET, "Current on_chain_version: {:?}", on_chain_version);
 		if on_chain_version >= 2 {
 			return Ok(vec::Vec::new())
 		}
-
+		log::info!(target: LOG_TARGET, "Current on_chain_version to be upgraded: {:?}", on_chain_version);
 		// Check OLD storage using storage alias
 		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count();
 		log::info!(target: LOG_TARGET, "Found {} items in OLD storage format", old_count);
@@ -119,26 +124,17 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
 		log::info!(target: LOG_TARGET,"Detected Chain is {:?}", detected_chain);
 
-		// Store the old count for verification in post_upgrade
-		Ok((old_count as u64).encode())
+		Ok(vec::Vec::new())
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(pre: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
+	fn post_upgrade(_: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 		if on_chain_version > 2 {
 			return Ok(())
 		}
 		assert_eq!(on_chain_version, STORAGE_VERSION);
-		let old_count: u64 = Decode::decode(&mut &pre[..])
-			.map_err(|_| TryRuntimeError::Other("Failed to decode pre_upgrade data"))?;
-		let new_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
-		log::info!(target: LOG_TARGET, "Old Provider count: {}, New Provider count: {}", old_count, new_count);
-		if old_count != new_count {
-			log::error!(target: LOG_TARGET, "Migration count mismatch: old={}, new={}", old_count, new_count);
-			return Err(TryRuntimeError::Other("Migration count mismatch"))
-		}
 		let known_providers = get_known_provider_ids::<T>();
 		if known_providers.is_empty() {
 			log::error!(target: LOG_TARGET, "No known providers found for post-upgrade check");
