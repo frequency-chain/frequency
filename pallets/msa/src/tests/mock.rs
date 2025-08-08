@@ -440,14 +440,11 @@ pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
 		.as_bytes()
 		.to_vec();
-	let entry = ProviderRegistryEntry {
-		default_name: BoundedVec::try_from(name.as_bytes().to_vec())
-			.expect("Provider name should fit in bounds"),
-		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-			.expect("Logo CID should fit in bounds"),
-		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-	};
+	let mut entry = ProviderRegistryEntry::default();
+	entry.default_name =
+		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Provider name should fit in bounds");
+	entry.default_logo_250_100_png_cid =
+		BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
 	// Register provider
 	assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 	(provider_msa_id, provider_account)

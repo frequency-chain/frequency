@@ -42,14 +42,13 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
 			)
 			.expect("Map insertion should not exceed max size");
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names,
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: localized_logo_png,
-		};
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_name =
+			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
+		entry.localized_names = localized_names;
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
@@ -419,14 +418,13 @@ pub fn create_provider_fails_with_invalid_logo_locale() {
 				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
 			)
 			.expect("Map insertion should not exceed max size");
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names,
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: localized_logo_png,
-		};
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_name =
+			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
+		entry.localized_names = localized_names;
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
 		// Fail to register provider with invalid CID
 		assert_noop!(
 			Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry),
@@ -458,14 +456,13 @@ pub fn create_provider_fails_with_invalid_name_locale() {
 				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
 			)
 			.expect("Map insertion should not exceed max size");
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names,
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: localized_logo_png,
-		};
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_name =
+			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
+		entry.localized_names = localized_names;
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
 		// Fail to register provider with invalid CID
 		assert_noop!(
 			Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry),
