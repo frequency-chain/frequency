@@ -235,6 +235,33 @@ pub struct ProviderRegistryEntry<
 		BoundedBTreeMap<BoundedVec<u8, LangSize>, BoundedVec<u8, CidSize>, MaxLocaleCount>,
 }
 
+impl<NameSize, LangSize, CidSize, MaxLocaleCount> Default
+	for ProviderRegistryEntry<NameSize, LangSize, CidSize, MaxLocaleCount>
+where
+	NameSize: Get<u32> + Debug + PartialEq + Eq,
+	LangSize: Get<u32> + Debug + PartialEq + Eq,
+	CidSize: Get<u32> + Debug + PartialEq + Eq,
+	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
+{
+	fn default() -> Self {
+		let name_bytes = b"default";
+		let default_name = if (name_bytes.len() as u32) <= NameSize::get() {
+			// Safe because we just checked length
+			name_bytes.to_vec().try_into().expect("Length already checked")
+		} else {
+			// Fallback to empty if the bound is smaller than "default"
+			BoundedVec::default()
+		};
+
+		Self {
+			default_name,
+			localized_names: BoundedBTreeMap::default(),
+			default_logo_250_100_png_cid: BoundedVec::default(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
+		}
+	}
+}
+
 /// The pointer value for the Signature Registry
 #[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
 pub struct SignatureRegistryPointer<BlockNumber> {

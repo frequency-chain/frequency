@@ -87,17 +87,7 @@ pub fn add_provider_to_msa_is_success() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
 		let delegator_msa =
 			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
@@ -174,17 +164,7 @@ pub fn revoke_delegation_by_delegator_is_successful() {
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
@@ -229,17 +209,7 @@ pub fn revoke_provider_is_successful() {
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
@@ -309,17 +279,7 @@ fn revoke_delegation_by_delegator_throws_error_when_delegation_already_revoked()
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
@@ -360,17 +320,7 @@ pub fn revoke_provider_call_has_no_cost() {
 
 		assert_ok!(Msa::create(test_origin_signed(1)));
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(test_origin_signed(1), entry));
 
@@ -395,14 +345,11 @@ fn create_provider() {
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
 			.as_bytes()
 			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		entry.default_name =
+			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(key_pair.public().into()), entry));
 	})
 }
@@ -413,17 +360,7 @@ fn create_provider_duplicate() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (_new_msa_id, _) =
 			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		assert_ok!(Msa::create_provider(
 			RuntimeOrigin::signed(key_pair.public().into()),
 			entry.clone()
@@ -619,17 +556,7 @@ pub fn add_provider_expired() {
 
 		// 2. create provider MSA
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_key.into()))); // MSA = 1
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_key.into()), entry));
 
