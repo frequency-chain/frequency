@@ -20,7 +20,7 @@ parameter_types! {
 	pub Dollars: Balance = 1_000_000_000_000;
 	pub Cents: Balance = Dollars::get() / 100;
 	pub RelayAssetId: AssetId = AssetId(RelayLocation::get());
-	pub RelayAsset: Asset = (RelayAssetId::get(), Fungibility::Fungible((3 * Cents::get()) * 10 ^ 9)).into();
+	pub RelayAsset: Asset = (RelayAssetId::get(), Fungibility::Fungible((3 * Cents::get()) * (10 ^ 9))).into();
 	pub ExistentialDepositAsset: Option<Asset> = Some((
 		HereLocation::get(),
 		ExistentialDeposit::get()
