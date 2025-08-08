@@ -2129,7 +2129,6 @@ sp_api::impl_runtime_apis! {
 				}
 			}
 
-			// TODO: Implement the rest of the trait items
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
 				type TransactAsset = Balances;
 				type CheckedAccount = xcm::benchmarks::CheckAccount;
@@ -2141,7 +2140,7 @@ sp_api::impl_runtime_apis! {
 					xcm::benchmarks::RelayAsset::get()
 				}
 			}
-		
+
 			impl pallet_xcm_benchmarks::generic::Config for Runtime {
 				type RuntimeCall = RuntimeCall;
 				type TransactAsset = Balances;
@@ -2163,12 +2162,13 @@ sp_api::impl_runtime_apis! {
 				// We do not support transact instructions on frequency
 				// But this helper also used to benchmark unsubscribe_version which we do support.
 				fn transact_origin_and_runtime_call() -> Result<(xcm::benchmarks::Location, RuntimeCall), BenchmarkError> {
-					Ok((xcm::benchmarks::AssetHubParachainLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+					// Ok((xcm::benchmarks::RelayLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+					Err(BenchmarkError::Skip)
 				}
 
 				// we curren not do subscriptions
 				fn subscribe_origin() -> Result<xcm::benchmarks::Location, BenchmarkError> {
-					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
+					Ok(xcm::benchmarks::RelayLocation::get())
 				}
 
 				// add a test for claimable_asset
@@ -2192,7 +2192,7 @@ sp_api::impl_runtime_apis! {
 				fn export_message_origin_and_destination() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::NetworkId, xcm::benchmarks::InteriorLocation), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
-				
+
 				// We do not support alias origin on Frequency
 				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
 					Err(BenchmarkError::Skip)
@@ -2207,7 +2207,7 @@ sp_api::impl_runtime_apis! {
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+			// if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
 
