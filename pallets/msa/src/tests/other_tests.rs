@@ -609,17 +609,7 @@ pub fn ensure_all_schema_ids_are_valid_success() {
 pub fn is_registered_provider_is_true() {
 	new_test_ext().execute_with(|| {
 		let provider = ProviderId(1);
-		let provider_name = Vec::from("frequency".as_bytes()).try_into().unwrap();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let provider_meta = ProviderRegistryEntry {
-			default_name: provider_name,
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let provider_meta = ProviderRegistryEntry::default();
 		ProviderToRegistryEntry::<Test>::insert(provider, provider_meta);
 
 		assert!(Msa::is_registered_provider(provider.into()));

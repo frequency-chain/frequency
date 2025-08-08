@@ -13,7 +13,6 @@ use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	pallet_prelude::{InvalidTransaction, Pays, TransactionSource, TransactionValidityError},
 	traits::{Currency, OriginTrait},
-	BoundedBTreeMap, BoundedVec,
 };
 use frame_system::RawOrigin;
 use parity_scale_codec::Encode;
@@ -1095,17 +1094,7 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid.clone())
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 		let (delegator_signature, add_provider_payload) =
@@ -1152,17 +1141,7 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (_delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Foo".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid.clone())
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
 		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 		let (delegator_signature, add_provider_payload) =
