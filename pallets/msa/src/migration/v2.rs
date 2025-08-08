@@ -115,7 +115,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		}
 		log::info!(target: LOG_TARGET, "Current on_chain_version to be upgraded: {:?}", on_chain_version);
 		// Check OLD storage using storage alias
-		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count();
+		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count() as u64;
 		log::info!(target: LOG_TARGET, "Found {} items in OLD storage format", old_count);
 
 		let genesis_block: BlockNumberFor<T> = 0u32.into();
@@ -124,16 +124,16 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
 		log::info!(target: LOG_TARGET,"Detected Chain is {:?}", detected_chain);
 
-		Ok(vec::Vec::new())
+		Ok(old_count.encode().to_vec())
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
+	fn post_upgrade(encoded_numbers: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
+		use parity_scale_codec::Decode;
+		let expected: u64 =
+			u64::decode(&mut encoded_numbers.as_slice()).map_err(|_| "Cannot decode expected")?;
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		if on_chain_version > 2 {
-			return Ok(())
-		}
 		assert_eq!(on_chain_version, STORAGE_VERSION);
 		let known_providers = get_known_provider_ids::<T>();
 		if known_providers.is_empty() {
@@ -151,7 +151,8 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 				return Err(TryRuntimeError::Other("Missing provider name in post-upgrade check"));
 			}
 		}
-
+		let post_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
+		ensure!(post_count == expected, "Post-upgrade count mismatch: expected");
 		log::info!(target: LOG_TARGET, "Migration completed successfully");
 		Ok(())
 	}
