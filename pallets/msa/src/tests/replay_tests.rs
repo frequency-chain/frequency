@@ -1,7 +1,7 @@
 use crate::{tests::mock::*, AddKeyData, AddProvider, Error};
 
 use common_primitives::{msa::ProviderRegistryEntry, node::BlockNumber, utils::wrap_binary_data};
-use frame_support::{assert_err, assert_noop, assert_ok, BoundedBTreeMap, BoundedVec};
+use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
