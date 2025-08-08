@@ -120,6 +120,7 @@ cumulus-pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", tag =
 pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
 xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
 xcm-runtime-apis = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
 
 cumulus-primitives-utility = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
 
