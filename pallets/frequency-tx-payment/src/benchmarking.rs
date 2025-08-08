@@ -1,5 +1,5 @@
 use super::*;
-use common_primitives::msa::{MessageSourceId, MsaLookup};
+use common_primitives::msa::{MessageSourceId, MsaLookup, ProviderRegistryEntry};
 use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -16,9 +16,19 @@ pub fn register_provider<T: Config + pallet_msa::Config>(
 ) {
 	#[allow(clippy::useless_conversion)]
 	let name = Vec::from(name).try_into().expect("error");
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
+	let entry = ProviderRegistryEntry {
+		default_name: name,
+		localized_names: BoundedBTreeMap::new(),
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
+			.expect("Logo CID should fit in bounds"),
+		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+	};
 	assert_ok!(pallet_msa::Pallet::<T>::create_registered_provider(
 		common_primitives::msa::ProviderId(target_id),
-		name
+		entry
 	));
 }
 

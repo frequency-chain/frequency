@@ -394,7 +394,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		pallet_msa::migration::MigrateProviderToRegistryEntryV2<Runtime>,
+	),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -451,7 +454,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 173,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -465,7 +468,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 173,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -613,6 +616,14 @@ impl pallet_msa::Config for Runtime {
 	>;
 	// The Currency type for managing MSA token balances
 	type Currency = Balances;
+	// The maximum language code size (in bytes)
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	// The maximum logo CID size (in bytes)
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	// The maximum locale count
+	type MaxLocaleCount = MsaMaxLocaleCount;
+	// The maximum logo size (in bytes)
+	type MaxLogoSize = MsaMaxLogoSize;
 }
 
 parameter_types! {

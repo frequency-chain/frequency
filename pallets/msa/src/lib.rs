@@ -32,6 +32,8 @@
 )]
 
 extern crate alloc;
+use cid::Cid;
+use core::fmt::Debug;
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
@@ -40,7 +42,7 @@ use frame_support::{
 			fungible::{Inspect as InspectFungible, Mutate},
 			Fortitude, Preservation,
 		},
-		IsSubType,
+		Get, IsSubType,
 	},
 };
 use lazy_static::lazy_static;
@@ -61,10 +63,10 @@ use common_primitives::{
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use frame_system::pallet_prelude::*;
+pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_io::hashing::keccak_256;
-#[allow(deprecated)]
 #[allow(unused)]
 use sp_runtime::{
 	traits::{
@@ -73,8 +75,6 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
-
-pub use pallet::*;
 pub use types::{
 	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
 	RecoveryCommitmentPayload, EMPTY_FUNCTION,
@@ -83,7 +83,7 @@ pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
-use crate::types::{PayloadTypeDiscriminator, RecoveryHash};
+use crate::types::{LogoCid, PayloadTypeDiscriminator, RecoveryHash};
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -95,6 +95,9 @@ mod tests;
 pub mod types;
 
 pub mod weights;
+
+/// Migrations
+pub mod migration;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -123,7 +126,7 @@ pub mod pallet {
 
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
-		type MaxProviderNameSize: Get<u32>;
+		type MaxProviderNameSize: Get<u32> + Clone + Debug + PartialEq + Eq;
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
@@ -155,9 +158,26 @@ pub mod pallet {
 
 		/// Currency type for managing MSA account balances
 		type Currency: Mutate<Self::AccountId> + InspectFungible<Self::AccountId>;
+
+		/// Maximum language code size for a locale
+		#[pallet::constant]
+		type MaxLanguageCodeSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Maximum logo size for a locale
+		#[pallet::constant]
+		type MaxLogoSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Maximum cid size for a locale
+		#[pallet::constant]
+		type MaxLogoCidSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Total number of locales supported
+		#[pallet::constant]
+		type MaxLocaleCount: Get<u32> + Clone + Debug + PartialEq + Eq;
 	}
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	/// Storage version for the MSA pallet.
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -199,7 +219,12 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		ProviderId,
-		ProviderRegistryEntry<T::MaxProviderNameSize>,
+		ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 		OptionQuery,
 	>;
 
@@ -263,6 +288,14 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MsaIdToRecoveryCommitment<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, RecoveryCommitment, OptionQuery>;
+
+	/// Storage type for ApprovedLogos
+	/// - key: Logo Cid
+	/// - value: Logo bytes
+	#[pallet::storage]
+	#[pallet::getter(fn approved_logos)]
+	pub type ApprovedLogos<T: Config> =
+		StorageMap<_, Twox64Concat, LogoCid<T>, BoundedVec<u8, T::MaxLogoSize>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -417,9 +450,6 @@ pub mod pallet {
 		/// The MSA id submitted for provider creation has already been associated with a provider
 		DuplicateProviderRegistryEntry,
 
-		/// The maximum length for a provider name has been exceeded
-		ExceedsMaxProviderNameSize,
-
 		/// The maximum number of schema grants has been exceeded
 		ExceedsMaxSchemaGrantsPerDelegation,
 
@@ -464,6 +494,15 @@ pub mod pallet {
 
 		/// No recovery commitment exists for the given MSA
 		NoRecoveryCommitment,
+
+		/// Invalid cid provided for the provider
+		InvalidCid,
+
+		/// Unsupported CID version
+		UnsupportedCidVersion,
+
+		/// Invalid Language Code provided for the provider
+		InvalidBCP47LanguageCode,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -594,15 +633,23 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - origin does not have an MSA
-		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
-		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+		pub fn create_provider(
+			origin: OriginFor<T>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::ensure_correct_cids(&payload)?;
+			Self::create_provider_for(provider_msa_id, payload)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -910,18 +957,21 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::propose_to_be_provider())]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
-			provider_name: Vec<u8>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
 		) -> DispatchResult {
-			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
+			Self::ensure_correct_cids(&payload)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
 					provider_key: proposer.clone(),
-					provider_name: bounded_name.into(),
+					payload,
 				})
 				.into(),
 			);
@@ -937,18 +987,23 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - account does not have an MSA
-		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
 		#[pallet::weight(T::WeightInfo::create_provider_via_governance())]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
-			provider_name: Vec<u8>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
 		) -> DispatchResult {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::ensure_correct_cids(&payload)?;
+			Self::create_provider_for(provider_msa_id, payload)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1386,11 +1441,16 @@ impl<T: Config> Pallet<T> {
 	/// Create Register Provider
 	pub fn create_registered_provider(
 		provider_id: ProviderId,
-		name: BoundedVec<u8, T::MaxProviderNameSize>,
+		payload: ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 	) -> DispatchResult {
 		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
 			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
-			*maybe_metadata = Some(ProviderRegistryEntry { provider_name: name });
+			*maybe_metadata = Some(payload);
 			Ok(())
 		})
 	}
@@ -1628,16 +1688,18 @@ impl<T: Config> Pallet<T> {
 	/// only piece of metadata we are recording is provider name.
 	///
 	/// # Errors
-	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///
 	pub fn create_provider_for(
 		provider_msa_id: MessageSourceId,
-		provider_name: Vec<u8>,
+		payload: ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 	) -> DispatchResult {
-		let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-			provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
+		Self::update_logo_storage(&payload)?;
 		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
@@ -1645,7 +1707,7 @@ impl<T: Config> Pallet<T> {
 					maybe_metadata.take().is_none(),
 					Error::<T>::DuplicateProviderRegistryEntry
 				);
-				*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+				*maybe_metadata = Some(payload);
 				Ok(())
 			},
 		)?;
@@ -1992,6 +2054,115 @@ impl<T: Config> Pallet<T> {
 		let mortality_size = T::MortalityWindowSize::get();
 		current_block + BlockNumberFor::<T>::from(mortality_size)
 	}
+
+	/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)
+	///
+	/// # Errors
+	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+	/// * [`Error::InvalidCid`] - Unable to parse provided CID
+	///
+	fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
+		// Decode SCALE encoded CID into string slice
+		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
+		// starts_with handles Unicode multibyte characters safely
+		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);
+
+		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
+		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
+
+		Ok(cid_b)
+	}
+
+	/// Insert default logo and localized logos into storage `ApprovedLogos`
+	fn update_logo_storage(
+		payload: &ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		// store default logo CID if any
+		if !payload.default_logo_250_100_png_cid.is_empty() {
+			ApprovedLogos::<T>::insert(
+				payload.default_logo_250_100_png_cid.clone(),
+				BoundedVec::new(),
+			);
+		}
+
+		// store localized logos CIDs if any
+		for (_, localized_cid) in &payload.localized_logo_250_100_png_cids {
+			if !localized_cid.is_empty() {
+				ApprovedLogos::<T>::insert(localized_cid, BoundedVec::new());
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Checks if cid for logo and localized logos is valid
+	fn ensure_correct_cids(
+		payload: &ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		// Validate default logo CID only if non-empty
+		if !payload.default_logo_250_100_png_cid.is_empty() {
+			Self::validate_cid(&payload.default_logo_250_100_png_cid)?;
+		}
+
+		// Validate each localized logo CID only if non-empty
+		for (lang_code, localized_cid) in &payload.localized_logo_250_100_png_cids {
+			// First validate the language code
+			let code_str = core::str::from_utf8(lang_code)
+				.map_err(|_| Error::<T>::InvalidBCP47LanguageCode)?;
+
+			if !Self::is_valid_bcp47(code_str) {
+				return Err(Error::<T>::InvalidBCP47LanguageCode.into());
+			}
+
+			// Then validate the CID if it's not empty
+			if !localized_cid.is_empty() {
+				Self::validate_cid(localized_cid)?;
+			}
+		}
+
+		// Validate each localized name
+		for (lang_code, _) in &payload.localized_names {
+			// First validate the language code
+			let code_str = core::str::from_utf8(lang_code)
+				.map_err(|_| Error::<T>::InvalidBCP47LanguageCode)?;
+			if !Self::is_valid_bcp47(code_str) {
+				return Err(Error::<T>::InvalidBCP47LanguageCode.into());
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Checks if the provided BCP-47 language code is valid.
+	fn is_valid_bcp47(code: &str) -> bool {
+		// Must not be empty
+		if code.is_empty() {
+			return false;
+		}
+		// No leading, trailing, or consecutive dashes
+		if code.starts_with('-') || code.ends_with('-') || code.contains("--") {
+			return false;
+		}
+		for part in code.split('-') {
+			let len = part.len();
+			if len < 2 || !part.chars().all(|c| c.is_ascii_alphanumeric()) {
+				return false;
+			}
+		}
+		true
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -2018,7 +2189,13 @@ impl<T: Config> RegisterProviderBenchmarkHelper for Pallet<T> {
 	/// Create a registered provider for benchmarks
 	fn create(provider_id: MessageSourceId, name: Vec<u8>) -> DispatchResult {
 		let name = BoundedVec::<u8, T::MaxProviderNameSize>::try_from(name).expect("error");
-		Self::create_registered_provider(provider_id.into(), name)?;
+		let payload = ProviderRegistryEntry {
+			default_name: name,
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::new(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		Self::create_registered_provider(provider_id.into(), payload)?;
 
 		Ok(())
 	}
