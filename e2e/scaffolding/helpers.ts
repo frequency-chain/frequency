@@ -388,18 +388,8 @@ export async function createProviderKeysAndId(
   waitForInBlock = true
 ): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
-  const providerEntry = {
-    defaultName: 'PrivateProvider',
-    localizedNames: new Map([
-      ['en', 'PrivateProvider'],
-      ['es', 'ProveedorPrivado'],
-    ]),
-    defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
-    localizedLogo250100PngCids: new Map([
-      ['en', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-      ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-    ]),
-  };
+  const providerEntry = generateValidProviderPayloadWithName('PrivateProvider');
+
   const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(providerKeys, [
     ExtrinsicHelper.createMsa(providerKeys).extrinsic(),
     ExtrinsicHelper.createProvider(providerKeys, providerEntry).extrinsic(),
@@ -815,4 +805,20 @@ export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedu
     periodCount,
     perPeriod,
   };
+}
+
+export function generateValidProviderPayloadWithName(providerName: string) {
+  const providerEntry = {
+    defaultName: providerName,
+    localizedNames: new Map([
+      ['en-UK', providerName],
+      ['en-US', providerName],
+    ]),
+    defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
+    localizedLogo250100PngCids: new Map([
+      ['en-US', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+      ['en-UK', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+    ]),
+  };
+  return providerEntry;
 }

@@ -369,12 +369,7 @@ mod benchmarks {
 
 		let (provider_msa_id, _) =
 			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::truncate_from(Vec::from("Foo")),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::new(),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
+		let entry = ProviderRegistryEntry::default();
 
 		assert_ok!(Msa::<T>::create_provider(
 			RawOrigin::Signed(provider_caller.clone()).into(),

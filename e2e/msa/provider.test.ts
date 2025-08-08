@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, DOLLARS } from '../scaffolding/helpers';
+import { createAndFundKeypair, DOLLARS, generateValidProviderPayloadWithName } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
@@ -21,18 +21,7 @@ describe('Create Provider', function () {
     it('should successfully create a provider', async function () {
       const f = ExtrinsicHelper.createMsa(keys);
       await f.fundAndSend(fundingSource);
-      const providerEntry = {
-        defaultName: 'MyProvider',
-        localizedNames: new Map([
-          ['en', 'MyProvider'],
-          ['es', 'MiProveedor'],
-        ]),
-        defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
-        localizedLogo250100PngCids: new Map([
-          ['en', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-          ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-        ]),
-      };
+      const providerEntry = generateValidProviderPayloadWithName('MyProvider');
       const createProviderOp = ExtrinsicHelper.createProvider(keys, providerEntry);
       const { target: providerEvent } = await createProviderOp.signAndSend();
       assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
@@ -45,18 +34,8 @@ describe('Create Provider', function () {
       const longName = 'a'.repeat(257); // 256 characters long limit
       const f = ExtrinsicHelper.createMsa(failureKeys);
       await f.fundAndSend(fundingSource);
-      const providerEntry = {
-        defaultName: longName,
-        localizedNames: new Map([
-          ['en', 'PrivateProvider'],
-          ['es', 'ProveedorPrivado'],
-        ]),
-        defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
-        localizedLogo250100PngCids: new Map([
-          ['en', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-          ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-        ]),
-      };
+      const providerEntry = generateValidProviderPayloadWithName(longName);
+
       const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
       await assert.rejects(createProviderOp.signAndSend(), undefined);
     });
@@ -65,15 +44,7 @@ describe('Create Provider', function () {
   it('should fail with invalid logo CID', async function () {
     const providerEntry = {
       defaultName: 'InvalidLogoProvider',
-      localizedNames: new Map([
-        ['en', 'InvalidLogoProvider'],
-        ['es', 'ProveedorLogoInvalido'],
-      ]),
       defaultLogo250100PngCid: 'invalid-cid',
-      localizedLogo250100PngCids: new Map([
-        ['en', 'invalid-cid'],
-        ['es', 'invalid-cid'],
-      ]),
     };
     const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
     await assert.rejects(createProviderOp.signAndSend(), undefined);
@@ -85,11 +56,6 @@ describe('Create Provider', function () {
       localizedNames: new Map([
         ['-xx', 'InvalidLanguageProvider'], // Invalid language code
         ['es&', 'ProveedorIdiomaInvalido'],
-      ]),
-      defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
-      localizedLogo250100PngCids: new Map([
-        ['xx', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-        ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
       ]),
     };
     const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
