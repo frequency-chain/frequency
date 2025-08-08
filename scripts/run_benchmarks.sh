@@ -209,6 +209,10 @@ function run_benchmark() {
     TEMPLATE=${PROJECT}/.maintain/frame-system-extensions-weight-template.hbs
   fi
 
+  if [[ ${1} == "pallet_xcm_benchmarks::generic" ]] || [[ ${1} == "pallet_xcm_benchmarks::fungible" ]]; then
+    TEMPLATE=${PROJECT}/.maintain/xcm-bench-template.hbs
+  fi
+
   set -x
   set -e
   RUST_LOG=${RUST_LOG} ${BENCHMARK} pallet \
