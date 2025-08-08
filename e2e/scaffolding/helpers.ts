@@ -475,18 +475,7 @@ export async function createMsaAndProvider(
   waitForInBlock = true
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const providerEntry = {
-    defaultName: providerName,
-    localizedNames: new Map([
-      ['en', 'PrivateProvider'],
-      ['es', 'ProveedorPrivado'],
-    ]),
-    defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
-    localizedLogo250100PngCids: new Map([
-      ['en', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-      ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
-    ]),
-  };
+  const providerEntry = generateValidProviderPayloadWithName(providerName);
   const createProviderOp = ExtrinsicHelper.createProvider(keys, providerEntry);
   const minimumFund = (
     await Promise.all([getExistentialDeposit(), createMsaOp.getEstimatedTxFee(), createProviderOp.getEstimatedTxFee()])
