@@ -4,7 +4,7 @@ pub use crate::xcm::{
 };
 use crate::{
 	xcm::{queue::PriceForSiblingParachainDelivery, xcm_config::XcmConfig},
-	AccountId, Balance, ExistentialDeposit, ForeignAssets, ParachainSystem, Runtime, RuntimeOrigin,
+	AccountId, Balance, ExistentialDeposit, ForeignAssets, ParachainSystem, RuntimeOrigin,
 };
 use cumulus_primitives_core::ParaId;
 use frame_support::parameter_types;
@@ -20,7 +20,7 @@ parameter_types! {
 	pub Dollars: Balance = 1_000_000_000_000;
 	pub Cents: Balance = Dollars::get() / 100;
 	pub RelayAssetId: AssetId = AssetId(RelayLocation::get());
-	pub RelayAsset: Asset = (RelayAssetId::get(), Fungibility::Fungible(3 * Cents::get() * 10 ^ 9)).into();
+	pub RelayAsset: Asset = (RelayAssetId::get(), Fungibility::Fungible((3 * Cents::get()) * 10 ^ 9)).into();
 	pub ExistentialDepositAsset: Option<Asset> = Some((
 		HereLocation::get(),
 		ExistentialDeposit::get()
@@ -28,7 +28,7 @@ parameter_types! {
 
 	pub const AssetHubParaId: ParaId = ParaId::new(1000);
 
-	pub AssetHubSovereignAccount: AccountId = ParaId::from(AssetHubParaId::get()).into_account_truncating();
+	pub AssetHubSovereignAccount: AccountId = AssetHubParaId::get().into_account_truncating();
 	pub AssetHubParachainLocation: Location = ParentThen(Parachain(AssetHubParaId::get().into()).into()).into();
 
 	pub NativeAsset: Asset = (HereLocation::get(), Fungibility::Fungible(ExistentialDeposit::get())).into();
@@ -47,7 +47,7 @@ pub fn mint_dot_on_frequency() {
 		staging_xcm::latest::prelude::Parent.into(),
 		owner.clone().into(),
 		true,
-		1u128.into(),
+		1u128,
 	);
 
 	let amount = match RelayAsset::get().fun {

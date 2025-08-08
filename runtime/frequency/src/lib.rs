@@ -621,7 +621,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 173,
+	spec_version: 174,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -635,7 +635,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 173,
+	spec_version: 174,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -2122,7 +2122,7 @@ sp_api::impl_runtime_apis! {
 					log::info!("worst_case_holding: {}", depositable_count);
 
 					let mut assets = xcm::benchmarks::Assets::new();
-					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
 					// assets.push(xcm::benchmarks::RelayAsset::get());
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::RelayAssetId::get(), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX / 2) });
 					assets
@@ -2174,8 +2174,8 @@ sp_api::impl_runtime_apis! {
 				// add a test for claimable_asset
 				fn claimable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Assets), BenchmarkError> {
 					let origin = xcm::benchmarks::AssetHubParachainLocation::get();
-					let assets = (xcm::benchmarks::RelayAsset::get()).into();
-					let ticket = xcm::benchmarks::HereLocation::get().into();
+					let assets = xcm::benchmarks::RelayAsset::get().into();
+					let ticket = xcm::benchmarks::HereLocation::get();
 					Ok((origin, ticket, assets))
 				}
 
