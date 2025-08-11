@@ -26,7 +26,7 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		let provider_account = provider_key_pair.public();
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
@@ -124,7 +124,7 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// act
 		assert_noop!(
@@ -190,7 +190,7 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// act
 		assert_noop!(
@@ -327,7 +327,7 @@ pub fn create_provider_fails_with_invalid_cid_logo() {
 			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
 		// Fail to register provider with invalid CID
 		assert_noop!(
-			Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry),
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
 			Error::<Test>::InvalidCid
 		);
 	});
@@ -351,7 +351,7 @@ pub fn create_provider_fails_with_invalid_cid_localized_logo() {
 		entry.localized_logo_250_100_png_cids = localized_logo_png;
 		// Fail to register provider with invalid CID
 		assert_noop!(
-			Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry),
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
 			Error::<Test>::InvalidCid
 		);
 	});
@@ -389,7 +389,7 @@ pub fn create_provider_fails_with_invalid_logo_locale() {
 		entry.localized_logo_250_100_png_cids = localized_logo_png;
 		// Fail to register provider with invalid CID
 		assert_noop!(
-			Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry),
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
 			Error::<Test>::InvalidBCP47LanguageCode
 		);
 	});
@@ -412,7 +412,7 @@ pub fn create_provider_fails_with_invalid_name_locale() {
 		entry.localized_names = localized_names;
 		// Fail to register provider with invalid CID
 		assert_noop!(
-			Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry),
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
 			Error::<Test>::InvalidBCP47LanguageCode
 		);
 	});

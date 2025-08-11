@@ -236,7 +236,7 @@ mod benchmarks {
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
 
-		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(caller.clone()).into(), entry));
+		assert_ok!(Msa::<T>::create_provider_v2(RawOrigin::Signed(caller.clone()).into(), entry));
 
 		let schemas: Vec<SchemaId> = (0..s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
@@ -371,7 +371,7 @@ mod benchmarks {
 			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
 		let entry = ProviderRegistryEntry::default();
 
-		assert_ok!(Msa::<T>::create_provider(
+		assert_ok!(Msa::<T>::create_provider_v2(
 			RawOrigin::Signed(provider_caller.clone()).into(),
 			entry
 		));
@@ -426,7 +426,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_provider() -> Result<(), BenchmarkError> {
+	fn create_provider_v2() -> Result<(), BenchmarkError> {
 		let name_size = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
@@ -463,7 +463,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_provider_via_governance() -> Result<(), BenchmarkError> {
+	fn create_provider_via_governance_v2() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
@@ -501,7 +501,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_be_provider() -> Result<(), BenchmarkError> {
+	fn propose_to_be_provider_v2() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();

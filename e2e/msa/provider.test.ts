@@ -22,7 +22,7 @@ describe('Create Provider', function () {
       const f = ExtrinsicHelper.createMsa(keys);
       await f.fundAndSend(fundingSource);
       const providerEntry = generateValidProviderPayloadWithName('MyProvider');
-      const createProviderOp = ExtrinsicHelper.createProvider(keys, providerEntry);
+      const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
       const { target: providerEvent } = await createProviderOp.signAndSend();
       assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
       const providerId = providerEvent!.data.providerId;
@@ -36,7 +36,7 @@ describe('Create Provider', function () {
       await f.fundAndSend(fundingSource);
       const providerEntry = generateValidProviderPayloadWithName(longName);
 
-      const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
+      const createProviderOp = ExtrinsicHelper.createProviderV2(failureKeys, providerEntry);
       await assert.rejects(createProviderOp.signAndSend(), undefined);
     });
   });
@@ -46,7 +46,7 @@ describe('Create Provider', function () {
       defaultName: 'InvalidLogoProvider',
       defaultLogo250100PngCid: 'invalid-cid',
     };
-    const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
+    const createProviderOp = ExtrinsicHelper.createProviderV2(failureKeys, providerEntry);
     await assert.rejects(createProviderOp.signAndSend(), undefined);
   });
 
@@ -58,7 +58,7 @@ describe('Create Provider', function () {
         ['es&', 'ProveedorIdiomaInvalido'],
       ]),
     };
-    const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
+    const createProviderOp = ExtrinsicHelper.createProviderV2(failureKeys, providerEntry);
     await assert.rejects(createProviderOp.signAndSend(), undefined);
   });
 });

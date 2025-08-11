@@ -598,10 +598,10 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static createProvider(keys: KeyringPair, providerDetails: ProviderRegistryEntry) {
+  public static createProviderV2(keys: KeyringPair, providerDetails: ProviderRegistryEntry) {
     return new Extrinsic(
       () =>
-        ExtrinsicHelper.api.tx.msa.createProvider({
+        ExtrinsicHelper.api.tx.msa.createProviderV2({
           defaultName: providerDetails.defaultName,
           localizedNames: providerDetails.localizedNames,
           defaultLogo250100PngCid: providerDetails.defaultLogo250100PngCid,

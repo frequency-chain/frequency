@@ -135,6 +135,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 			u64::decode(&mut encoded_numbers.as_slice()).map_err(|_| "Cannot decode expected")?;
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 		assert_eq!(on_chain_version, STORAGE_VERSION);
+		panic!("Post-upgrade check failed");
 		let known_providers = get_known_provider_ids::<T>();
 		if known_providers.is_empty() {
 			log::error!(target: LOG_TARGET, "No known providers found for post-upgrade check");

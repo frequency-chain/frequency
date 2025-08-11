@@ -58,7 +58,7 @@ fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
 	// create MSA for provider and register them
 	assert_ok!(Msa::create(RuntimeOrigin::signed(provider_keypair.public().into())));
 	let entry = ProviderRegistryEntry::default();
-	assert_ok!(Msa::create_provider(
+	assert_ok!(Msa::create_provider_v2(
 		RuntimeOrigin::signed(provider_keypair.public().into()),
 		entry
 	));

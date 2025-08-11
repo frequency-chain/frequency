@@ -82,7 +82,7 @@ fn test_retire_msa_success() {
 		let provider_msa_id =
 			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
@@ -128,7 +128,7 @@ fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 		assert_ok!(Msa::add_key(2, &test_account, EMPTY_FUNCTION));
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(origin, entry));
+		assert_ok!(Msa::create_provider_v2(origin, entry));
 
 		// Retire MSA
 		assert_noop!(

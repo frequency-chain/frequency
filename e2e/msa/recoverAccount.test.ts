@@ -47,7 +47,7 @@ describe('Account Recovery Testing', function () {
     const providerEntry = generateValidProviderPayloadWithName('RecoveryProvider');
 
     // Register the MSA as a provider first (required before approval)
-    const createProviderOp = ExtrinsicHelper.createProvider(recoveryProviderKey, providerEntry);
+    const createProviderOp = ExtrinsicHelper.createProviderV2(recoveryProviderKey, providerEntry);
     const { eventMap: providerEventMap } = await createProviderOp.fundAndSend(fundingSource);
     assertEvent(providerEventMap, 'system.ExtrinsicSuccess');
     assertEvent(providerEventMap, 'msa.ProviderCreated');

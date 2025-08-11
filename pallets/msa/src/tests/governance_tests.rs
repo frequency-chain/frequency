@@ -16,7 +16,7 @@ fn create_provider_via_governance_happy_path() {
 		let (_new_msa_id, key_pair) = create_account();
 		let entry = ProviderRegistryEntry::default();
 		// Create the provider based on 1 yes vote by the council
-		assert_ok!(Msa::create_provider_via_governance(
+		assert_ok!(Msa::create_provider_via_governance_v2(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 			key_pair.public().into(),
 			entry
@@ -34,7 +34,7 @@ fn propose_to_be_provider_happy_path() {
 
 		let entry = ProviderRegistryEntry::default();
 		let (_new_msa_id, key_pair) = create_account();
-		_ = Msa::propose_to_be_provider(RuntimeOrigin::signed(key_pair.public().into()), entry);
+		_ = Msa::propose_to_be_provider_v2(RuntimeOrigin::signed(key_pair.public().into()), entry);
 
 		// Find the Proposed event and get it's hash and index so it can be voted on
 		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()

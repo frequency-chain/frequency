@@ -450,6 +450,9 @@ pub mod pallet {
 		/// The MSA id submitted for provider creation has already been associated with a provider
 		DuplicateProviderRegistryEntry,
 
+		/// The maximum length for a provider name has been exceeded
+		ExceedsMaxProviderNameSize,
+
 		/// The maximum number of schema grants has been exceeded
 		ExceedsMaxSchemaGrantsPerDelegation,
 
@@ -628,32 +631,19 @@ pub mod pallet {
 		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 		/// only piece of metadata we are recording is provider name.
 		///
-		/// # Events
-		/// * [`Event::ProviderCreated`]
-		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - origin does not have an MSA
+		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
-		///
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::create_provider())]
-		pub fn create_provider(
-			origin: OriginFor<T>,
-			payload: ProviderRegistryEntry<
-				T::MaxProviderNameSize,
-				T::MaxLanguageCodeSize,
-				T::MaxLogoCidSize,
-				T::MaxLocaleCount,
-			>,
-		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload)?;
-			Self::deposit_event(Event::ProviderCreated {
-				provider_id: ProviderId(provider_msa_id),
-			});
-			Ok(())
+		#[pallet::weight(T::WeightInfo::create_provider_v2())]
+		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			let mut entry = ProviderRegistryEntry::default();
+			entry.default_name = bounded_name;
+			Self::create_provider_v2(origin, entry)
 		}
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
@@ -953,31 +943,19 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// - [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::propose_to_be_provider())]
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider_v2())]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
-			payload: ProviderRegistryEntry<
-				T::MaxProviderNameSize,
-				T::MaxLanguageCodeSize,
-				T::MaxLogoCidSize,
-				T::MaxLocaleCount,
-			>,
+			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			let proposer = ensure_signed(origin)?;
-			Self::ensure_valid_msa_key(&proposer)?;
-			Self::ensure_correct_cids(&payload)?;
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let proposal: Box<T::Proposal> = Box::new(
-				(Call::<T>::create_provider_via_governance {
-					provider_key: proposer.clone(),
-					payload,
-				})
-				.into(),
-			);
-			let threshold = 1;
-			T::ProposalProvider::propose(proposer, threshold, proposal)?;
-			Ok(())
+			let mut entry = ProviderRegistryEntry::default();
+			entry.default_name = bounded_name;
+			Self::propose_to_be_provider_v2(origin, entry)
 		}
 
 		/// Create a provider by means of governance approval
@@ -987,27 +965,21 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::create_provider_via_governance())]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
-			payload: ProviderRegistryEntry<
-				T::MaxProviderNameSize,
-				T::MaxLanguageCodeSize,
-				T::MaxLogoCidSize,
-				T::MaxLocaleCount,
-			>,
+			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload)?;
-			Self::deposit_event(Event::ProviderCreated {
-				provider_id: ProviderId(provider_msa_id),
-			});
-			Ok(())
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			let mut entry = ProviderRegistryEntry::default();
+			entry.default_name = bounded_name;
+			Self::create_provider_via_governance_v2(origin, provider_key, entry)
 		}
 
 		/// A generic endpoint to replay any offchain related event to fix any potential issues
@@ -1281,6 +1253,97 @@ pub mod pallet {
 				recovery_commitment,
 			});
 
+			Ok(())
+		}
+
+		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
+		/// only piece of metadata we are recording is provider name.
+		///
+		/// # Events
+		/// * [`Event::ProviderCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - origin does not have an MSA
+		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+		#[pallet::call_index(19)]
+		#[pallet::weight(T::WeightInfo::create_provider_v2())]
+		pub fn create_provider_v2(
+			origin: OriginFor<T>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
+			Self::create_provider_for(provider_msa_id, payload)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
+		}
+
+		/// Propose to be a provider.  Creates a proposal for council approval to create a provider from a MSA
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		#[pallet::call_index(20)]
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider_v2())]
+		pub fn propose_to_be_provider_v2(
+			origin: OriginFor<T>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			Self::ensure_valid_msa_key(&proposer)?;
+			Self::ensure_correct_cids(&payload)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_provider_via_governance_v2 {
+					provider_key: proposer.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create a provider by means of governance approval
+		///
+		/// # Events
+		/// * [`Event::ProviderCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+		#[pallet::call_index(21)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
+		pub fn create_provider_via_governance_v2(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
+			Self::create_provider_for(provider_msa_id, payload)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
 			Ok(())
 		}
 	}

@@ -106,7 +106,7 @@ describe('Utility Batch Filtering', function () {
     // bad batch: with frequency related Pays::Yes call
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
     badBatch.push(
-      ExtrinsicHelper.api.tx.msa.createProvider({
+      ExtrinsicHelper.api.tx.msa.createProviderV2({
         defaultName: 'I am a ba(tch)d provider',
       })
     );
@@ -123,7 +123,7 @@ describe('Utility Batch Filtering', function () {
     // bad batch: with frequency related Pays::Yes call
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
     badBatch.push(
-      ExtrinsicHelper.api.tx.msa.createProvider({
+      ExtrinsicHelper.api.tx.msa.createProviderV2({
         defaultName: 'I am a ba(tch)d provider',
       })
     );

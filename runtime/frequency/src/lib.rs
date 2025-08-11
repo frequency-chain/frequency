@@ -209,7 +209,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
-				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
+				RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
@@ -238,8 +238,8 @@ impl BaseCallFilter {
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
-			// Block `create_provider` and `create_schema` calls from utility batch
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+			// Block `create_provider_v2` and `create_schema` calls from utility batch
+			RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
