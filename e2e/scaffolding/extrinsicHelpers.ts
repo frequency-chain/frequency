@@ -482,7 +482,7 @@ export class ExtrinsicHelper {
     modelType: 'AvroBinary' | 'Parquet',
     payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
     grant: ('AppendOnly' | 'SignatureRequired')[],
-    schemaNme: string | null
+    schemaName: string | null
   ) {
     return new Extrinsic(
       () =>
@@ -491,7 +491,7 @@ export class ExtrinsicHelper {
           modelType,
           payloadLocation,
           grant,
-          schemaNme
+          schemaName
         ),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
