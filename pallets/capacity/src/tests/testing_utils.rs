@@ -70,17 +70,7 @@ pub fn system_run_blocks(n: u32) {
 }
 
 pub fn register_provider(target_id: MessageSourceId, name: String) {
-	let name = Vec::from(name).try_into().expect("error");
-	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-		.as_bytes()
-		.to_vec();
-	let entry = ProviderRegistryEntry {
-		default_name: name,
-		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
-			.expect("Logo CID should fit in bounds"),
-		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-	};
+	let entry = ProviderRegistryEntry::default();
 	assert_ok!(Msa::create_registered_provider(target_id.into(), entry));
 }
 
