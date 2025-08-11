@@ -443,3 +443,22 @@ as follows:
         1. For each `SchemaDescriptor` '\<name>' at index `n` belonging to a '\<protocol_name>'
             * Create a new name mapping in the `NameRegistry` as `<protocol_name>.<name>_n` to `Intent(id)`
 3. Store the `messages` pallet cutover block number
+
+#### Additional notes
+
+While `stateful-storage` data will not require a migration, in order to support schema resolution going forward, some
+changes will be made to how pages are written and read. Currently, the data on a page of stateful storage contains, as
+its first 2 bytes, a `PageNonce`. With this design, new pages must additionally incorporate an additional `SchemaId` (
+`u16`). In order to determine how to read the page without requiring all existing pages to be migrated, we will take the
+following approach:
+
+* New/updated pages will be written with the first 2 bytes as a constant hex value (or alternately a known `u16` value),
+  designed such that overlap with a valid existing PageNonce is highly unlikely (we here rely on the fact that the
+  maximum existing page nonce on mainnet is likely to be a relatively low number, most likely not exceeding a `u8` in
+  value). (NOTE: we can write a script to query the chain & determine the actual highest existing page nonce;
+  alternately we could simply use `0xffffffff`)
+* Page nonce & schema ID will occupy the next 4 bytes
+* Page reads will decode the first 2 bytes and determine if the value matches the constant; if so, decode the remaining
+  data as a "new" page; if not, decode as an "old" page
+* If the page is an "old" page, populate the `schema_id` with the value of the current `intent_id` (because our
+  migrations will make sure that existing schemas are mapped to intents with the same ID value).
