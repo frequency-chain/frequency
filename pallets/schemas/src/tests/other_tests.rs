@@ -106,10 +106,11 @@ fn serialize_parquet_column() {
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
 			true,
+			false,
 		);
 		assert_eq!(
 			serde_json::to_string(&p).unwrap(),
-			r#"{"name":"Foo","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}"#
+			r#"{"name":"Foo","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true,"optional":null}"#
 		);
 	})
 }
@@ -145,10 +146,18 @@ fn serialize_parquet_model() {
 			ParquetType::default(),
 			ColumnCompressionCodec::default(),
 			true,
+			false,
+		),
+		ParquetColumn::new(
+			"Foo".to_string(),
+			ParquetType::default(),
+			ColumnCompressionCodec::default(),
+			false,
+			true,
 		)];
 		assert_eq!(
 			serde_json::to_string(&p).unwrap(),
-			r#"[{"name":"Baz","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true}]"#
+			r#"[{"name":"Baz","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":true,"optional":null},{"name":"Foo","column_type":"BOOLEAN","compression":"UNCOMPRESSED","bloom_filter":false,"optional":true}]"#
 		);
 	});
 }
@@ -166,10 +175,11 @@ fn serialize_parquet_model_integer() {
 			)),
 			ColumnCompressionCodec::default(),
 			true,
+			false,
 		)];
 		assert_eq!(
 			serde_json::to_string(&p).unwrap(),
-			r#"[{"name":"Baz","column_type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true}]"#
+			r#"[{"name":"Baz","column_type":{"INTEGER":{"bit_width":32,"sign":false}},"compression":"UNCOMPRESSED","bloom_filter":true,"optional":null}]"#
 		);
 	});
 }
