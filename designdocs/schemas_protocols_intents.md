@@ -193,18 +193,39 @@ same numeric ID, so that current Delegation storage would not require a migratio
 In the new model, a `Schema` represents a data format definition *only*. Any association with data _meaning_ or _storage
 location_ is promoted to the Schema's corresponging `Intent`. A Schema may be associated with one and only one Intent.
 Under this model, a Schema has some associated metadata, and a model containing the actual data format definition (ie,
-currently-supported Parquet or Avro schema). The associated data types would be as follows:
+currently-supported Parquet or Avro schema).
+
+### **Schema Versioning**<a id="schema_versioning"></a>
+
+Schemas may be loosely "versioned" in the sense that they may be marked as deprecated or unsupported. A status of
+`Deprecated` is merely advisory for a client application to be aware of, while a status of `Unsupported` prohibits
+write operations on-chain for that schema. Updates to a Schema's status will be implemented as separate governance-
+controlled operations.
+
+With the exception of the `status` field, Schemas are otherwise immutable once published.
+The associated data types would be as follows:
 
 ```rust
 pub type SchemaId = u16;
 
 pub type SchemaModel = BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>;
 
+pub enum SchemaStatus {
+    /// Schema is current and approved for writing
+    Active,
+    /// Schema is viable for writing, but is deprecated and may become unsupported soon
+    Deprecated,
+    /// Schema is unsupported; writing to this schema is prohibited
+    Unsupported,
+}
+
 pub struct SchemaInfo {
     /// The type of model (AvroBinary, Parquet, etc.)
     pub model_type: ModelType,
     /// The associated Intent
     pub intent_id: IntentId,
+    /// Status of the Schema
+    pub status: SchemaStatus,
 }
 ```
 
@@ -216,14 +237,15 @@ the evolution of a data format. An Intent may also be associated with no schemas
 delegatable permissions or entitlements on-chain that may be checked by on- or off-chain applications.
 
 Intents are mutable, but only in the sense that publication of new Schemas representing the same evolving data format
-may be appended to an Intent. All other attributes of an Intent are immutable.
+may be associated with the same Intent. Intents are immutable once published.
 
-When associated with one or more Schemas, Intents also represent a _storage location_ and other attributes. This
+When associated a `payload_location`, Intents also represent a _storage location_ and other attributes. This
 approach allows on-chain data to evolve over time. Since the storage location of an Intent remains constant, and data is
 written with an indication of the specific SchemaId used to encode it, publication of a new Schema does not require
 wholesale data migration. Instead, on-chain data may be migrated by Provider applications opportunistically over time.
 Off-chain data may persist in its existing form and can always be read/decoded using the original Schema definition
-used to write it.
+used to write it. Intents with a `payload_location` of `None` are considered "schemaless" Intents designated for off-chain
+interpretation.
 
 The structures and types for Intents are envisioned as follows:
 <a id="intent_struct"></a>
@@ -245,11 +267,9 @@ pub struct IntentSettings(pub BitFlags<IntentSetting>);
 
 pub struct IntentInfo {
     /// The payload location
-    pub payload_location: PayloadLocation,
+    pub payload_location: Option<PayloadLocation>,
     /// additional control settings for the schema
     pub settings: IntentSettings,
-    /// List of Schemas associated with this Intent
-    pub schema_ids: BoundedVec<SchemaId, ConstU32<MAX_NUMBER_OF_VERSIONS>>,
 }
 ```
 
@@ -359,6 +379,9 @@ The following new extrinsics are proposed:
 | create_delegation_group_via_governance                         | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`           | Create a DelegationGroup via Governance                          |
 | propose_to_update_delegation_group<br/>update_delegation_group | `group_id: DelegationGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                                                         | Propose to update a DelegationGroup<br/>Update a DelegationGroup |
 | update_delegation_group_via_governance                         | `creator_key: AccountId`<br/>`group_id: DelegationGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                            | Update a DelegationGroup via Governance                          |
+| propose_to_update_schema_status<br/>update_schema_status       | `schema_id: SchemaId`<br/>`status: SchemaStatus`                                                                                                                    | Propose to update a Schema's status<br/>Update a Schema's status   |
+| update_schema_status_via_governance                            | `schema_id: SchemaId`<br/>`status: SchemaStatus`                                                                                                                    | Update a Schema's status via Governance                          |
+
 
 ### 12. **Runtime Calls**<a id="runtime_calls"></a>
 
@@ -368,6 +391,7 @@ The following new Custom Runtime functions are proposed:
 |------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | resolve_intent_or_group_name | `protocol_name: ProtocolName`<br/>`descriptor_name: Option<DescriptorName>`                                                       | Resolve a name to a registered  ID or list of IDs                                                                                                                  |
 | check_delegation_group       | `group_id: DelegationGroupId`<br/>`msa_id: MessageSourceId`<br/>`provider_id: ProviderId`<br/>`block_number: Option<BlockNumber>` | Returns the Intents currently-defined DelegationGroup, mapped to a boolean indicating the current delegation status of that Intent for the given MSA and Provider. |
+| get_schemas_for_intent       | `intent_id: IntendId`                                                                                                             | Return the list of Schemas that implement the indicated Intent                                                                                                     |
 
 ### 13. **Storage**<a id="storage"></a>
 
@@ -377,7 +401,7 @@ The storage structures for Schemas will not fundamentally change, except for int
 structure that will require migration:
 
 * `payload_location`  & `settings` will migrate to `IntentInfo`
-* addition of `intent_id`
+* addition of `intent_id`, `status`
 
 #### Intents
 
