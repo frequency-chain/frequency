@@ -641,8 +641,8 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let mut entry = ProviderRegistryEntry::default();
-			entry.default_name = bounded_name;
+			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
+
 			Self::create_provider_v2(origin, entry)
 		}
 
@@ -953,8 +953,8 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let mut entry = ProviderRegistryEntry::default();
-			entry.default_name = bounded_name;
+			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
+
 			Self::propose_to_be_provider_v2(origin, entry)
 		}
 
@@ -977,8 +977,8 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let mut entry = ProviderRegistryEntry::default();
-			entry.default_name = bounded_name;
+			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
+
 			Self::create_provider_via_governance_v2(origin, provider_key, entry)
 		}
 
