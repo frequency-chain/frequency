@@ -35,7 +35,8 @@ mod imports {
 			frequency_runtime::{
 				self,
 				xcm::{
-					Barrier, CheckingAccount as FrequencyCheckingAccount, XcmConfig as FrequencyXcmConfig,
+					Barrier, CheckingAccount as FrequencyCheckingAccount,
+					XcmConfig as FrequencyXcmConfig,
 				},
 				ExistentialDeposit as FrequencyExistentialDeposit,
 			},
