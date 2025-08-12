@@ -1,16 +1,14 @@
-use crate::PolkadotXcm;
 use frame_support::traits::{ConstU32, Contains, Everything};
 
-use staging_xcm::latest::prelude::*;
+use staging_xcm::{latest::prelude::*};
 use staging_xcm_builder::{
 	AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry,
 	TakeWeightCredit, TrailingSetTopicAsId, WithComputedOrigin,
 };
 
+use crate::{xcm::parameters::UniversalLocation, PolkadotXcm};
 use parachains_common::xcm_config::ParentRelayOrSiblingParachains;
-
-use crate::xcm::parameters::UniversalLocation;
 
 pub struct ParentOrParentsExecutivePlurality;
 impl Contains<Location> for ParentOrParentsExecutivePlurality {

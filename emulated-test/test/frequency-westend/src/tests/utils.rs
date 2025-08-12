@@ -63,6 +63,7 @@ pub fn mint_dot_on_frequency(
 	});
 }
 
+#[allow(dead_code)]
 pub fn mint_dot_on_frequency_v2(
 	beneficiary: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
 	amount_to_mint: Balance,
