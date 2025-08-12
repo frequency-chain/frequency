@@ -22,10 +22,7 @@ use frame_support::{
 
 use pallet_capacity::CapacityLedger;
 
-pub use common_runtime::{
-	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
-	weights::rocksdb_weights::constants::RocksDbWeight,
-};
+pub use common_runtime::{constants::*, weights::rocksdb_weights::constants::RocksDbWeight};
 
 use frame_support::weights::Weight;
 
@@ -157,47 +154,6 @@ impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
 	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 	fn proposal_count() -> u32 {
 		1u32
-	}
-}
-
-/// The maximum size of a provider name (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxProviderNameSize;
-impl Get<u32> for MsaMaxProviderNameSize {
-	fn get() -> u32 {
-		256
-	}
-}
-/// The maximum size of a provider language code (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLanguageCodeSize;
-impl Get<u32> for MsaMaxLanguageCodeSize {
-	fn get() -> u32 {
-		8
-	}
-}
-/// The maximum size of a provider logo CID (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLogoCidSize;
-impl Get<u32> for MsaMaxLogoCidSize {
-	fn get() -> u32 {
-		64
-	}
-}
-/// The maximum size of a provider locale count
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLocaleCount;
-impl Get<u32> for MsaMaxLocaleCount {
-	fn get() -> u32 {
-		150
-	}
-}
-/// The maximum size of a provider logo (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLogoSize;
-impl Get<u32> for MsaMaxLogoSize {
-	fn get() -> u32 {
-		1024 * 128
 	}
 }
 

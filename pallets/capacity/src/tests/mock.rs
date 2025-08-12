@@ -8,7 +8,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::weights;
+use common_runtime::{constants::*, weights};
 use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -125,47 +125,6 @@ impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
 	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 	fn proposal_count() -> u32 {
 		1u32
-	}
-}
-
-/// The maximum size of a provider name (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxProviderNameSize;
-impl Get<u32> for MsaMaxProviderNameSize {
-	fn get() -> u32 {
-		256
-	}
-}
-/// The maximum size of a provider language code (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLanguageCodeSize;
-impl Get<u32> for MsaMaxLanguageCodeSize {
-	fn get() -> u32 {
-		8
-	}
-}
-/// The maximum size of a provider logo CID (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLogoCidSize;
-impl Get<u32> for MsaMaxLogoCidSize {
-	fn get() -> u32 {
-		64
-	}
-}
-/// The maximum size of a provider locale count
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLocaleCount;
-impl Get<u32> for MsaMaxLocaleCount {
-	fn get() -> u32 {
-		150
-	}
-}
-/// The maximum size of a provider logo (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLogoSize;
-impl Get<u32> for MsaMaxLogoSize {
-	fn get() -> u32 {
-		1024 * 128
 	}
 }
 
