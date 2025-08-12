@@ -21,8 +21,7 @@ describe('Create Provider', function () {
     it('should successfully create a provider', async function () {
       const f = ExtrinsicHelper.createMsa(keys);
       await f.fundAndSend(fundingSource);
-      const providerEntry = generateValidProviderPayloadWithName('MyProvider');
-      const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
+      const createProviderOp = ExtrinsicHelper.createProvider(keys, 'MyProvider');
       const { target: providerEvent } = await createProviderOp.signAndSend();
       assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
       const providerId = providerEvent!.data.providerId;
@@ -31,34 +30,13 @@ describe('Create Provider', function () {
     });
 
     it('should fail to create a provider for long name', async function () {
-      const longName = 'a'.repeat(257); // 256 characters long limit
       const f = ExtrinsicHelper.createMsa(failureKeys);
       await f.fundAndSend(fundingSource);
-      const providerEntry = generateValidProviderPayloadWithName(longName);
-
-      const createProviderOp = ExtrinsicHelper.createProviderV2(failureKeys, providerEntry);
-      await assert.rejects(createProviderOp.signAndSend(), undefined);
+      const longName = 'a'.repeat(257); // 256 characters long limit
+      const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, longName);
+      await assert.rejects(createProviderOp.signAndSend(), {
+        name: 'ExceedsMaxProviderNameSize',
+      });
     });
-  });
-
-  it('should fail with invalid logo CID', async function () {
-    const providerEntry = {
-      defaultName: 'InvalidLogoProvider',
-      defaultLogo250100PngCid: 'invalid-cid',
-    };
-    const createProviderOp = ExtrinsicHelper.createProviderV2(failureKeys, providerEntry);
-    await assert.rejects(createProviderOp.signAndSend(), undefined);
-  });
-
-  it('should failt to create provider with wrong language code', async function () {
-    const providerEntry = {
-      defaultName: 'InvalidLanguageProvider',
-      localizedNames: new Map([
-        ['-xx', 'InvalidLanguageProvider'], // Invalid language code
-        ['es&', 'ProveedorIdiomaInvalido'],
-      ]),
-    };
-    const createProviderOp = ExtrinsicHelper.createProviderV2(failureKeys, providerEntry);
-    await assert.rejects(createProviderOp.signAndSend(), undefined);
   });
 });
