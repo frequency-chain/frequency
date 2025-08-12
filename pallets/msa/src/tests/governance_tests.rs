@@ -1,4 +1,4 @@
-use common_primitives::msa::ProviderId;
+use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
 use frame_support::{assert_noop, assert_ok, traits::ChangeMembers};
 
 use pallet_collective::ProposalOf;
@@ -7,19 +7,19 @@ use sp_weights::Weight;
 use pretty_assertions::assert_eq;
 use sp_core::{Encode, Pair};
 
-use crate::{tests::mock::*, Error, Event};
+use crate::{tests::mock::*, Event};
 use sp_runtime::DispatchError::BadOrigin;
 
 #[test]
 fn create_provider_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (_new_msa_id, key_pair) = create_account();
-
+		let entry = ProviderRegistryEntry::default();
 		// Create the provider based on 1 yes vote by the council
-		assert_ok!(Msa::create_provider_via_governance(
+		assert_ok!(Msa::create_provider_via_governance_v2(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 			key_pair.public().into(),
-			Vec::from("ACME Widgets")
+			entry
 		));
 		// Confirm that the MSA is now a provider
 		assert!(Msa::is_registered_provider(_new_msa_id));
@@ -31,11 +31,10 @@ fn create_provider_via_governance_happy_path() {
 fn propose_to_be_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		// Create a new MSA account and request that it become a provider
+
+		let entry = ProviderRegistryEntry::default();
 		let (_new_msa_id, key_pair) = create_account();
-		_ = Msa::propose_to_be_provider(
-			RuntimeOrigin::signed(key_pair.public().into()),
-			Vec::from("ACME Widgets"),
-		);
+		_ = Msa::propose_to_be_provider_v2(RuntimeOrigin::signed(key_pair.public().into()), entry);
 
 		// Find the Proposed event and get it's hash and index so it can be voted on
 		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
@@ -123,25 +122,11 @@ fn propose_to_be_provider_happy_path() {
 }
 
 #[test]
-fn propose_to_be_provider_long_name_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create a new MSA account and request that it become a provider
-		let (_new_msa_id, key_pair) = create_account();
-		let proposal_res = Msa::propose_to_be_provider(
-			RuntimeOrigin::signed(key_pair.public().into()),
-			Vec::from("this_is_a_really_long_name_that_should_fail"),
-		);
-
-		assert_noop!(proposal_res, Error::<Test>::ExceedsMaxProviderNameSize);
-	})
-}
-
-#[test]
 fn approve_and_remove_recovery_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
-
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry));
 
 		// Approve recovery provider via governance
 		assert_ok!(Msa::approve_recovery_provider(
@@ -172,8 +157,8 @@ fn approve_and_remove_recovery_provider_happy_path() {
 fn approve_recovery_provider_already_approved_should_succeed() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
-
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry));
 
 		// No events are emitted from `create_provider_for`
 		assert!(System::events().is_empty());
@@ -228,8 +213,8 @@ fn approve_recovery_provider_unauthorized_should_fail() {
 fn remove_recovery_provider_unauthorized_should_fail() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
-
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry));
 
 		assert_ok!(Msa::approve_recovery_provider(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),

@@ -4,7 +4,7 @@ use crate::{
 	AuthorizedKeyData, CheckFreeExtrinsicUse, Config, ValidityError,
 };
 use common_primitives::{
-	msa::H160,
+	msa::{ProviderRegistryEntry, H160},
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
@@ -1094,11 +1094,9 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 		assert_ok!(Msa::grant_delegation(
@@ -1143,11 +1141,9 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (_delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 		assert_ok!(Msa::grant_delegation(

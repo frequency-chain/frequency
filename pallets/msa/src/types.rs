@@ -21,6 +21,9 @@ use sp_core::U256;
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
+/// LogoCID type
+pub type LogoCid<T> = BoundedVec<u8, <T as Config>::MaxLogoCidSize>;
+
 /// A type definition for the payload for the following operation:
 /// -  Adding an MSA key - `pallet_msa::add_public_key_to_msa`
 #[derive(

@@ -388,9 +388,11 @@ export async function createProviderKeysAndId(
   waitForInBlock = true
 ): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
+  const providerEntry = generateValidProviderPayloadWithName('PrivateProvider');
+
   const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(providerKeys, [
     ExtrinsicHelper.createMsa(providerKeys).extrinsic(),
-    ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider').extrinsic(),
+    ExtrinsicHelper.createProviderV2(providerKeys, providerEntry).extrinsic(),
   ]).fundAndSend(source, waitForInBlock);
   const providerCreatedEvent = eventMap['msa.ProviderCreated'];
   if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
@@ -473,7 +475,8 @@ export async function createMsaAndProvider(
   waitForInBlock = true
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
+  const providerEntry = generateValidProviderPayloadWithName(providerName);
+  const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
   const minimumFund = (
     await Promise.all([getExistentialDeposit(), createMsaOp.getEstimatedTxFee(), createProviderOp.getEstimatedTxFee()])
   ).reduce((i, j) => i + j, 100_000n);
@@ -791,4 +794,20 @@ export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedu
     periodCount,
     perPeriod,
   };
+}
+
+export function generateValidProviderPayloadWithName(providerName: string) {
+  const providerEntry = {
+    defaultName: providerName,
+    localizedNames: new Map([
+      ['en-UK', providerName],
+      ['en-US', providerName],
+    ]),
+    defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
+    localizedLogo250100PngCids: new Map([
+      ['en-US', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+      ['en-UK', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+    ]),
+  };
+  return providerEntry;
 }

@@ -17,7 +17,7 @@ use crate::tests::other_tests::{
 };
 use common_primitives::{
 	handles::ClaimHandlePayload,
-	msa::{DelegatorId, ProviderId},
+	msa::{DelegatorId, ProviderId, ProviderRegistryEntry},
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 	utils::wrap_binary_data,
 };
@@ -81,11 +81,8 @@ fn test_retire_msa_success() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		let provider_msa_id =
 			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
-
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
@@ -129,9 +126,9 @@ fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 
 		// Add an account to the MSA
 		assert_ok!(Msa::add_key(2, &test_account, EMPTY_FUNCTION));
-
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(origin, Vec::from("Foo")));
+		assert_ok!(Msa::create_provider_v2(origin, entry));
 
 		// Retire MSA
 		assert_noop!(
