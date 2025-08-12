@@ -222,7 +222,6 @@ impl<Call> XcmWeightInfo<Call> for FrequencyXcmWeight<Call> {
 		XcmGeneric::<Runtime>::subscribe_version()
 	}
 
-	// TODO: Implement FIX THIS
 	fn unsubscribe_version() -> Weight {
 		XcmGeneric::<Runtime>::unsubscribe_version()
 	}

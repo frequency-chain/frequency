@@ -39,7 +39,7 @@ parameter_types! {
 
 }
 
-pub fn mint_dot_on_frequency() {
+pub fn create_foreign_asset_DOT_on_frequency() {
 	let owner: AccountId = frame_benchmarking::whitelisted_caller();
 
 	let _ = ForeignAssets::force_create(

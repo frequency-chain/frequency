@@ -2113,17 +2113,13 @@ sp_api::impl_runtime_apis! {
 				type DeliveryHelper = xcm::benchmarks::ParachainDeliveryHelper;
 
 				fn valid_destination() -> Result<xcm::benchmarks::Location, BenchmarkError> {
-					// create_foreign_asset_DOT_on_frequency
-					xcm::benchmarks::mint_dot_on_frequency();
+					xcm::benchmarks::create_foreign_asset_DOT_on_frequency();
 					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
 				}
 
 				fn worst_case_holding(depositable_count: u32) -> xcm::benchmarks::Assets {
-					log::info!("worst_case_holding: {}", depositable_count);
-
 					let mut assets = xcm::benchmarks::Assets::new();
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
-					// assets.push(xcm::benchmarks::RelayAsset::get());
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::RelayAssetId::get(), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX / 2) });
 					assets
 				}
@@ -2137,7 +2133,7 @@ sp_api::impl_runtime_apis! {
 				type TrustedReserve = xcm::benchmarks::TrustedReserve;
 
 				fn get_asset() -> xcm::benchmarks::Asset {
-					xcm::benchmarks::mint_dot_on_frequency();
+					xcm::benchmarks::create_foreign_asset_DOT_on_frequency();
 					xcm::benchmarks::RelayAsset::get()
 				}
 			}
@@ -2171,7 +2167,6 @@ sp_api::impl_runtime_apis! {
 					Ok(xcm::benchmarks::RelayLocation::get())
 				}
 
-				// add a test for claimable_asset
 				fn claimable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Assets), BenchmarkError> {
 					let origin = xcm::benchmarks::AssetHubParachainLocation::get();
 					let assets = xcm::benchmarks::RelayAsset::get().into();
