@@ -18,6 +18,7 @@ env:
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
+  NODE_VERSION: 22.17
 
 jobs:
   changes:
@@ -444,7 +445,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install Latest Versions
@@ -501,7 +502,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install Latest Versions
@@ -539,7 +540,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install Latest Versions
@@ -577,7 +578,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install Latest Versions
@@ -900,7 +901,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built api-augment and ethereum-utils and recovery-sdk

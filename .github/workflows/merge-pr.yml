@@ -12,6 +12,9 @@ permissions:
   contents: read
   packages: read
 
+env:
+  NODE_VERSION: 22.17
+
 jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
@@ -26,7 +29,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
@@ -62,7 +65,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
@@ -98,7 +101,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
@@ -134,7 +137,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
