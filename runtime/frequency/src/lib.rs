@@ -641,7 +641,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 173,
+	spec_version: 175,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -655,7 +655,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 173,
+	spec_version: 175,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1750,6 +1750,9 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
+
+		[pallet_xcm_benchmarks::fungible, XcmBalances]
+		[pallet_xcm_benchmarks::generic, XcmGeneric]
 	);
 }
 
@@ -2097,6 +2100,12 @@ sp_api::impl_runtime_apis! {
 			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
+			// This is defined once again in dispatch_benchmark, because list_benchmarks!
+			// and add_benchmarks! are macros exported by define_benchmarks! macros and those types
+			// are referenced in that call.
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -2108,7 +2117,7 @@ sp_api::impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{BenchmarkBatch};
+			use frame_benchmarking::{BenchmarkBatch, BenchmarkError};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
@@ -2121,13 +2130,108 @@ sp_api::impl_runtime_apis! {
 			use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
+			#[cfg(feature = "frequency-bridging")]
+			impl pallet_xcm_benchmarks::Config for Runtime {
+				type XcmConfig = xcm::xcm_config::XcmConfig;
+				type AccountIdConverter = xcm::LocationToAccountId;
+				type DeliveryHelper = xcm::benchmarks::ParachainDeliveryHelper;
+
+				fn valid_destination() -> Result<xcm::benchmarks::Location, BenchmarkError> {
+					xcm::benchmarks::create_foreign_asset_dot_on_frequency();
+					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
+				}
+
+				fn worst_case_holding(_depositable_count: u32) -> xcm::benchmarks::Assets {
+					let mut assets = xcm::benchmarks::Assets::new();
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::RelayAssetId::get(), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX / 2) });
+					assets
+				}
+			}
+
+			#[cfg(feature = "frequency-bridging")]
+			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+				type TransactAsset = Balances;
+				type CheckedAccount = xcm::benchmarks::CheckAccount;
+				type TrustedTeleporter = xcm::benchmarks::TrustedTeleporter;
+				type TrustedReserve = xcm::benchmarks::TrustedReserve;
+
+				fn get_asset() -> xcm::benchmarks::Asset {
+					xcm::benchmarks::create_foreign_asset_dot_on_frequency();
+					xcm::benchmarks::RelayAsset::get()
+				}
+			}
+
+			#[cfg(feature = "frequency-bridging")]
+			impl pallet_xcm_benchmarks::generic::Config for Runtime {
+				type RuntimeCall = RuntimeCall;
+				type TransactAsset = Balances;
+
+				fn worst_case_response() -> (u64, xcm::benchmarks::Response) {
+					(0u64, xcm::benchmarks::Response::Version(Default::default()))
+				}
+
+				// We do not support asset exchange on frequency
+				fn worst_case_asset_exchange() -> Result<(xcm::benchmarks::Assets, xcm::benchmarks::Assets), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support universal origin permissioning.
+				fn universal_alias() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Junction), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support transact instructions on frequency
+				// But this helper also used to benchmark unsubscribe_version which we do support.
+				fn transact_origin_and_runtime_call() -> Result<(xcm::benchmarks::Location, RuntimeCall), BenchmarkError> {
+					Ok((xcm::benchmarks::RelayLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+				}
+
+				fn subscribe_origin() -> Result<xcm::benchmarks::Location, BenchmarkError> {
+					Ok(xcm::benchmarks::RelayLocation::get())
+				}
+
+				fn claimable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Assets), BenchmarkError> {
+					let origin = xcm::benchmarks::AssetHubParachainLocation::get();
+					let assets = xcm::benchmarks::RelayAsset::get().into();
+					let ticket = xcm::benchmarks::HereLocation::get();
+					Ok((origin, ticket, assets))
+				}
+
+				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
+					Ok(xcm::benchmarks::RelayAsset::get())
+				}
+
+				// We do not support locking and unlocking on Frequency
+				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support export message on Frequency
+				fn export_message_origin_and_destination() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::NetworkId, xcm::benchmarks::InteriorLocation), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support alias origin on Frequency
+				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+			}
+
+			#[cfg(feature = "frequency-bridging")]
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			#[cfg(feature = "frequency-bridging")]
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
+
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
+
+
 	}
 
 	#[cfg(feature = "frequency-bridging")]

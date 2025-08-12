@@ -1,11 +1,14 @@
+use crate::PolkadotXcm;
 use frame_support::traits::{ConstU32, Contains, Everything};
 
 use staging_xcm::latest::prelude::*;
 use staging_xcm_builder::{
-	AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom, DenyRecursively,
-	DenyReserveTransferToRelayChain, DenyThenTry, TakeWeightCredit, TrailingSetTopicAsId,
-	WithComputedOrigin,
+	AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry,
+	TakeWeightCredit, TrailingSetTopicAsId, WithComputedOrigin,
 };
+
+use parachains_common::xcm_config::ParentRelayOrSiblingParachains;
 
 use crate::xcm::parameters::UniversalLocation;
 
@@ -20,15 +23,19 @@ pub type Barrier = TrailingSetTopicAsId<
 	DenyThenTry<
 		DenyRecursively<DenyReserveTransferToRelayChain>,
 		(
+			// Allow local users to buy weight credit.
 			TakeWeightCredit,
+			// Expected responses are OK.
+			AllowKnownQueryResponses<PolkadotXcm>,
 			WithComputedOrigin<
 				(
-					// we constraint this one so that we limit who can execute instructions
+					// If the message is one that immediately attempts to pay for execution, then
+					// allow it.
 					AllowTopLevelPaidExecutionFrom<Everything>,
+					// Parent and its pluralities (i.e. governance bodies) get free execution.
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-					// ^^^ Parent and its exec plurality get free execution
 					// Subscriptions for version tracking are OK.
-					// AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
+					AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
 				),
 				UniversalLocation,
 				ConstU32<8>,
