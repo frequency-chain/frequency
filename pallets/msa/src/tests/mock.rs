@@ -9,7 +9,7 @@ use common_primitives::{
 	schema::SchemaId,
 	utils::wrap_binary_data,
 };
-use common_runtime::constants::DAYS;
+use common_runtime::constants::*;
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Get, OnFinalize, OnInitialize},
@@ -197,38 +197,6 @@ pub struct MsaMaxProviderNameSize;
 impl Get<u32> for MsaMaxProviderNameSize {
 	fn get() -> u32 {
 		16
-	}
-}
-/// The maximum size of a provider language code (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLanguageCodeSize;
-impl Get<u32> for MsaMaxLanguageCodeSize {
-	fn get() -> u32 {
-		8
-	}
-}
-/// The maximum size of a provider logo CID (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLogoCidSize;
-impl Get<u32> for MsaMaxLogoCidSize {
-	fn get() -> u32 {
-		64
-	}
-}
-/// The maximum size of a provider locale count
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLocaleCount;
-impl Get<u32> for MsaMaxLocaleCount {
-	fn get() -> u32 {
-		150
-	}
-}
-/// The maximum size of a provider logo (in bytes)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MsaMaxLogoSize;
-impl Get<u32> for MsaMaxLogoSize {
-	fn get() -> u32 {
-		1024 * 128
 	}
 }
 

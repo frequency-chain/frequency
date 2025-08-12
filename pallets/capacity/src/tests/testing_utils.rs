@@ -1,5 +1,5 @@
 use super::mock::*;
-use frame_support::{assert_ok, traits::Hooks, BoundedBTreeMap, BoundedVec};
+use frame_support::{assert_ok, traits::Hooks, BoundedVec};
 
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEraInfo, CurrentEraProviderBoostTotal, Event,
@@ -70,7 +70,9 @@ pub fn system_run_blocks(n: u32) {
 }
 
 pub fn register_provider(target_id: MessageSourceId, name: String) {
-	let entry = ProviderRegistryEntry::default();
+	let bounded_name =
+		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Name should fit in BoundedVec; qed");
+	let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
 	assert_ok!(Msa::create_registered_provider(target_id.into(), entry));
 }
 
