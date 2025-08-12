@@ -27,6 +27,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
+  NODE_VERSION: 22.17
 
 jobs:
   validate-release-version:
@@ -440,7 +441,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
@@ -488,7 +489,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
@@ -517,7 +518,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
@@ -546,7 +547,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
@@ -1236,7 +1237,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
@@ -1282,7 +1283,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
@@ -1328,7 +1329,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
@@ -1374,7 +1375,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
