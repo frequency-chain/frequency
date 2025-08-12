@@ -21,6 +21,7 @@ env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
   ETHEREUM_UTILS_FROM_UI: ${{github.event.inputs.ethereum-utils-version}}
   RECOVERY_SDK_FROM_UI: ${{github.event.inputs.recovery-sdk-version}}
+  NODE_VERSION: 22.17
 
 # Set default permissions as restrictive
 permissions:
@@ -61,7 +62,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built js packages
@@ -106,7 +107,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built js packages
