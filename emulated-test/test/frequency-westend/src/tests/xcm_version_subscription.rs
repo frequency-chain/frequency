@@ -1,6 +1,4 @@
 use emulated_integration_tests_common::SAFE_XCM_VERSION;
-// use westend_runtime::{xcm_config::AssetHub, RuntimeOrigin};
-// use westend_system_emulated_network::frequency_emulated_chain::frequency_runtime::weights::pallet_xcm;
 
 use crate::imports::*;
 
@@ -9,102 +7,70 @@ use crate::imports::*;
 // =========================================================================
 fn setup_assethub_test() -> DispatchResult {
 	// Set up the test environment for AssetHub to Frequency communication
-	
+
+	// XCM will not send xcm commands if it does not know what version of XCM the destination is running
+	// Here we force the xcm version for Frequency and AssetHub
 	FrequencyWestend::execute_with(|| {
 		type FrequencyRuntimeOrigin = <FrequencyWestend as Chain>::RuntimeOrigin;
-		let force_xcm_version_op = <FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_xcm_version(
-			FrequencyRuntimeOrigin::root(),
-			bx!(FrequencyWestend::sibling_location_of(AssetHubWestend::para_id())),
-			SAFE_XCM_VERSION,
-		);
-		assert_ok!(force_xcm_version_op);
+		let force_ah_xcm_version_op =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_xcm_version(
+				FrequencyRuntimeOrigin::root(),
+				bx!(FrequencyWestend::sibling_location_of(AssetHubWestend::para_id())),
+				SAFE_XCM_VERSION,
+			);
+		assert_ok!(force_ah_xcm_version_op);
+		println!("AssetHub XCM version set to {}", SAFE_XCM_VERSION);
 	});
+
 	AssetHubWestend::execute_with(|| {
 		type AssetHubRuntimeOrigin = <AssetHubWestend as Chain>::RuntimeOrigin;
 
 		let freq_location = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
 		println!("Setting XCM version on AssetHub for Frequency: {:?}", freq_location);
 
-		let asset_hub_xcm_version_op = <AssetHubWestend as AssetHubWestendPallet>::PolkadotXcm::force_xcm_version(
-			AssetHubRuntimeOrigin::root(),
-			bx!(freq_location),
-			SAFE_XCM_VERSION,
-		);
-		assert_ok!(asset_hub_xcm_version_op);
-		println!("AssetHub XCM version set to {}", SAFE_XCM_VERSION);
+		let force_freq_xcm_version_op =
+			<AssetHubWestend as AssetHubWestendPallet>::PolkadotXcm::force_xcm_version(
+				AssetHubRuntimeOrigin::root(),
+				bx!(AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())),
+				SAFE_XCM_VERSION,
+			);
+		assert_ok!(force_freq_xcm_version_op);
+		println!("Frequency XCM version set to {}", SAFE_XCM_VERSION);
 	});
 	Ok(())
-}	
+}
 
 fn frequency_to_asset_hub_subscribe_version(t: FrequencyToAssetHubTest) -> DispatchResult {
-	let query_id = 1234u64;
-	let amount = 1_000_000_000_000u128; // 1 WND for fees
-
-	type RuntimeCall = <FrequencyWestend as Chain>::RuntimeCall;
-
-	// Create an XCM message with BuyExecution + SubscribeVersion instruction
-	// let xcm = Xcm::<()>(vec![
-	// 	WithdrawAsset((Here, amount).into()),
-	// 	BuyExecution {
-	// 		fees: (Here, amount/2).into(),
-	// 		weight_limit: Unlimited, // Allow unlimited weight purchase for simplicity
-	// 	},
-	// 	SubscribeVersion {
-	// 		query_id,
-	// 		max_response_weight: Weight::from_all(0)
-	// 	},
-	// ]);
-
 	// Call the force_default_xcm_version function
-	// let set_default_xcm_op =
-	// 	<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_default_xcm_version(
-	// 		t.root_origin.clone(),
-	// 		Some(SAFE_XCM_VERSION),
-	// 	);
-
-	// assert_ok!(set_default_xcm_op);
-
-	// // Call the force_xcm_version function
-	// let set_xcm_op =
-	// 	<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_xcm_version(
-	// 		t.root_origin.clone(),
-	// 		bx!(Parent.into()),
-	// 		SAFE_XCM_VERSION,
-	// 	);
-	// assert_ok!(set_xcm_op);
+	let set_default_xcm_op =
+		<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_default_xcm_version(
+			t.root_origin.clone(),
+			Some(SAFE_XCM_VERSION),
+		);
+	assert_ok!(set_default_xcm_op);
 
 	let force_subscribe_version_op =
 		<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_subscribe_version_notify(
 			t.root_origin.clone(),
-			bx!(VersionedLocation::V5(FrequencyWestend::sibling_location_of(AssetHubWestend::para_id()))),
+			bx!(VersionedLocation::V5(FrequencyWestend::sibling_location_of(
+				AssetHubWestend::para_id()
+			))),
 		);
 	assert_ok!(force_subscribe_version_op);
-
-	// let inner_call: <FrequencyWestend as Chain>::RuntimeCall =
-	// 	RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {
-	// 		dest: bx!(VersionedLocation::V5(Parent.into())),
-	// 		message: bx!(VersionedXcm::V5(xcm)),
-	// 	});
-
-	// let _ = <FrequencyWestend as FrequencyWestendPallet>::Sudo::sudo(t.root_origin, bx!(inner_call));
 
 	Ok(())
 }
 
-fn assert_subscribe_version_sent(_t: FrequencyToRelayTest) {
+fn assert_subscribe_version_sent(_t: FrequencyToAssetHubTest) {
 	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
 
-	// Check that the SubscribeVersion message was sent
+	// Check that the SubscribeVersion notification request was emitted
 	assert_expected_events!(
 		FrequencyWestend,
 		vec![
-			RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent {
-				origin: _,
-				destination,
-				message: _,
-				message_id: _
-			}) => {
-				destination: *destination == Parent.into(),
+			RuntimeEvent::PolkadotXcm(pallet_xcm::Event::VersionNotifyRequested { destination, .. }) => {
+				// Expect destination to be the sibling (AssetHub) para location we requested, not Parent
+				destination: *destination == FrequencyWestend::sibling_location_of(AssetHubWestend::para_id()),
 			},
 		]
 	);
@@ -159,9 +125,8 @@ fn test_subscribe_version_instruction() {
 
 	let mut test = FrequencyToAssetHubTest::new(test_args);
 
-	// let mut ah_test = AssetHubToFrequencyTest::new(test_args);
-
-	// test.set_assertion::<FrequencyWestend>(assert_subscribe_version_sent);
+	// Re-enable assertion once pattern fixed
+	test.set_assertion::<FrequencyWestend>(assert_subscribe_version_sent);
 	test.set_assertion::<AssetHubWestend>(assert_subscribe_version_received_on_relay);
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_asset_hub_subscribe_version);
 	test.assert();
