@@ -2,7 +2,7 @@ import '@frequency-chain/api-augment';
 
 import assert from 'assert';
 
-import { AVRO_GRAPH_CHANGE } from './fixtures/avroGraphChangeSchemaType';
+import { AVRO_GRAPH_CHANGE, PARQUET_BROADCAST } from './fixtures';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import {
@@ -42,8 +42,22 @@ describe('#createSchema', function () {
     );
   });
 
-  it('should fail to create invalid schema v3', async function () {
+  it('should fail to create invalid Avro schema v3', async function () {
     const f = ExtrinsicHelper.createSchemaV3(keys, [1000, 3], 'AvroBinary', 'OnChain', [], 'unk.random_name');
+
+    await assert.rejects(f.fundAndSend(fundingSource), {
+      name: 'InvalidSchema',
+    });
+  });
+
+  it('should fail to create invalid Parquet schema v3', async function () {
+    const BAD_PARQUET_SCHEMA = PARQUET_BROADCAST.map((field) => {
+      return {
+        ...field,
+        unknown_field: true,
+      };
+    });
+    const f = ExtrinsicHelper.createSchemaV3(keys, BAD_PARQUET_SCHEMA, 'Parquet', 'IPFS', [], null);
 
     await assert.rejects(f.fundAndSend(fundingSource), {
       name: 'InvalidSchema',

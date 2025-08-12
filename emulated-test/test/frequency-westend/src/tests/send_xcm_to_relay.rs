@@ -113,10 +113,14 @@ fn send_xcm_to_relay() {
 	let receiver = WestendReceiver::get();
 	let amount_to_send: Balance = WESTEND_ED * 1000;
 
-	setup_parent_asset_on_frequency(sender.clone(), amount_to_send * 2);
+	// setup_parent_asset_on_frequency(sender.clone(), amount_to_send * 2);
 	fund_sov_frequency_on_westend(amount_to_send * 2);
 
+	// need to fund the sovereign account of Frequency on the relay chain.
+
+	// Parent asset == Westend DOT
 	let assets: Assets = (Parent, amount_to_send).into();
+	// Destination = Relay i.e. Westend, the parent of Frequency Westend
 	let destination = FrequencyWestend::parent_location();
 
 	let test_args = TestContext {
@@ -162,5 +166,5 @@ fn send_xcm_to_relay() {
 		dot_location.clone(),
 		&FrequencyTreasuryAccount::get()
 	);
-	assert!(treasury_account_balance == 0u128, "Treasury account should NOT have been credited");
+	assert_eq!(treasury_account_balance, 0u128, "Treasury account should NOT have been credited");
 }
