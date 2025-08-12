@@ -621,7 +621,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 174,
+	spec_version: 175,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -635,7 +635,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 174,
+	spec_version: 175,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -2113,11 +2113,11 @@ sp_api::impl_runtime_apis! {
 				type DeliveryHelper = xcm::benchmarks::ParachainDeliveryHelper;
 
 				fn valid_destination() -> Result<xcm::benchmarks::Location, BenchmarkError> {
-					xcm::benchmarks::create_foreign_asset_DOT_on_frequency();
+					xcm::benchmarks::create_foreign_asset_dot_on_frequency();
 					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
 				}
 
-				fn worst_case_holding(depositable_count: u32) -> xcm::benchmarks::Assets {
+				fn worst_case_holding(_depositable_count: u32) -> xcm::benchmarks::Assets {
 					let mut assets = xcm::benchmarks::Assets::new();
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::RelayAssetId::get(), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX / 2) });
@@ -2133,7 +2133,7 @@ sp_api::impl_runtime_apis! {
 				type TrustedReserve = xcm::benchmarks::TrustedReserve;
 
 				fn get_asset() -> xcm::benchmarks::Asset {
-					xcm::benchmarks::create_foreign_asset_DOT_on_frequency();
+					xcm::benchmarks::create_foreign_asset_dot_on_frequency();
 					xcm::benchmarks::RelayAsset::get()
 				}
 			}

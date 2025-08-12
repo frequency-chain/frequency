@@ -319,7 +319,8 @@ impl<Call> XcmWeightInfo<Call> for FrequencyXcmWeight<Call> {
 	}
 
 	fn execute_with_origin(_: &Option<InteriorLocation>, _: &Xcm<Call>) -> Weight {
-		XcmGeneric::<Runtime>::execute_with_origin()
+		// Frequency does not support execute_with_origin calls
+		Weight::MAX
 	}
 }
 

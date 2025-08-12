@@ -189,7 +189,8 @@ then
   OVERHEAD=overhead
 fi
 
-RUST_LOG="info,events,runtime::system=trace,xcm=trace"
+# RUST_LOG="info,events,runtime::system=trace,xcm=trace"
+RUST_LOG="info"
 RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
 
