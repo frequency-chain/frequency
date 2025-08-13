@@ -1,6 +1,6 @@
 use frame_support::traits::{ConstU32, Contains, Everything};
 
-use staging_xcm::{latest::prelude::*};
+use staging_xcm::latest::prelude::*;
 use staging_xcm_builder::{
 	AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry,

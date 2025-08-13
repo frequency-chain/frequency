@@ -1,5 +1,6 @@
 use crate::{
-	weights, AccountId, MessageQueue, ParachainSystem, PolkadotXcm, Runtime, RuntimeBlockWeights, RuntimeEvent, XcmpQueue
+	weights, AccountId, MessageQueue, ParachainSystem, PolkadotXcm, Runtime, RuntimeBlockWeights,
+	RuntimeEvent, XcmpQueue,
 };
 
 #[cfg(not(feature = "runtime-benchmarks"))]
