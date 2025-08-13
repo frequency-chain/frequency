@@ -1391,7 +1391,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(22)]
-		#[pallet::weight(Weight::from_parts(10_000, 0))]
+		#[pallet::weight(T::WeightInfo::propose_to_add_application())]
 		pub fn propose_to_add_application(
 			origin: OriginFor<T>,
 			payload: ApplicationContext<
@@ -1431,7 +1431,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(23)]
-		#[pallet::weight(Weight::from_parts(10_000, 0))]
+		#[pallet::weight(T::WeightInfo::create_application_via_governance())]
 		pub fn create_application_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
