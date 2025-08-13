@@ -1,4 +1,4 @@
-use crate::{foreign_balance_on, imports::*};
+use crate::{foreign_balance_on, imports::*, tests::utils::fr_setup_xcm_version_for_westend};
 
 fn frequency_to_relay_send_xcm(t: FrequencyToRelayTest) -> DispatchResult {
 	type RuntimeCall = <FrequencyWestend as Chain>::RuntimeCall;
@@ -60,7 +60,10 @@ fn send_xcm_to_relay_with_root() {
 	let sender = FrequencyWestendSender::get();
 	let receiver = WestendReceiver::get();
 	let amount_to_send: Balance = WESTEND_ED * 1000;
+	let starting_xcm_version = 5;
 
+	fr_setup_xcm_version_for_westend(starting_xcm_version)
+		.expect("Failed to set up XCM version for Westend");
 	fund_sov_frequency_on_westend(amount_to_send * 2);
 
 	let assets: Assets = (Parent, amount_to_send).into();

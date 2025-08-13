@@ -14,3 +14,4 @@ mod execute_transact_instruction_fails;
 mod send_xcm_to_relay_with_root;
 
 mod utils;
+mod xcm_version_subscription;

@@ -1,7 +1,12 @@
+use emulated_integration_tests_common::SAFE_XCM_VERSION;
+
 use crate::{
 	foreign_balance_on,
 	imports::*,
-	tests::utils::{ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency},
+	tests::utils::{
+		ensure_dot_asset_exists_on_frequency, fr_setup_xcm_version_for_westend,
+		mint_dot_on_frequency,
+	},
 };
 
 fn frequency_to_relay_reserve_transfer_assets(t: FrequencyToRelayTest) -> DispatchResult {
@@ -93,6 +98,9 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 
 	setup_parent_asset_on_frequency(sender.clone(), amount_to_send * 2);
 	fund_sov_frequency_on_westend(amount_to_send * 2);
+	// DestinationUnsupported {1, Here}, if not initialized
+	fr_setup_xcm_version_for_westend(SAFE_XCM_VERSION)
+		.expect("Failed to set up XCM version for Westend");
 
 	let assets: Assets = (Parent, amount_to_send).into();
 	let destination = FrequencyWestend::parent_location();

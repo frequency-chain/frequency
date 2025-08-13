@@ -1,7 +1,11 @@
+use emulated_integration_tests_common::SAFE_XCM_VERSION;
+
 use crate::{
 	foreign_balance_on,
 	imports::*,
-	tests::utils::{ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency},
+	tests::utils::{
+		ensure_dot_asset_exists_on_frequency, fr_setup_xcm_version_for_ah, mint_dot_on_frequency,
+	},
 };
 
 fn dispatch_reserve_transfer_dot(t: FrequencyToAssetHubTest) -> DispatchResult {
@@ -97,6 +101,8 @@ fn reserve_transfer_dot_to_assethub() {
 	ensure_dot_asset_exists_on_frequency();
 	mint_dot_on_frequency(sender.clone(), amount_dot_to_send * 2);
 	fund_sov_frequency_account_on_ah(amount_dot_to_send);
+	fr_setup_xcm_version_for_ah(SAFE_XCM_VERSION)
+		.expect("Failed to set up XCM version for AssetHub");
 
 	let receiver = AssetHubWestendReceiver::get();
 	let destination = FrequencyWestend::sibling_location_of(AssetHubWestend::para_id());

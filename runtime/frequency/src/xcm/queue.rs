@@ -1,6 +1,6 @@
 use crate::{
-	weights, AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent,
-	XcmpQueue,
+	weights, AccountId, MessageQueue, ParachainSystem, PolkadotXcm, Runtime, RuntimeBlockWeights,
+	RuntimeEvent, XcmpQueue,
 };
 
 #[cfg(not(feature = "runtime-benchmarks"))]
@@ -57,7 +57,7 @@ parameter_types! {
 /// queues.
 pub type XcmRouter = WithUniqueTopic<(
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, (), PriceForParentDelivery>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, PriceForParentDelivery>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 )>;
@@ -66,7 +66,7 @@ pub type XcmRouter = WithUniqueTopic<(
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = ();
+	type VersionWrapper = PolkadotXcm;
 	// Enqueue XCMP messages from siblings for later processing.
 	type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
 	type MaxInboundSuspended = sp_core::ConstU32<1_000>;

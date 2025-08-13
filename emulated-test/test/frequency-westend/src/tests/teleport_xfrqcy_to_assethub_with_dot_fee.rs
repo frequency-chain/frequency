@@ -1,8 +1,11 @@
+use westend_system_emulated_network::frequency_emulated_chain::frequency_runtime::xcm_version::SAFE_XCM_VERSION;
+
 use crate::{
 	foreign_balance_on,
 	imports::*,
 	tests::utils::{
-		create_frequency_asset_on_ah, ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency,
+		create_frequency_asset_on_ah, ensure_dot_asset_exists_on_frequency,
+		fr_setup_xcm_version_for_ah, mint_dot_on_frequency,
 	},
 };
 
@@ -178,6 +181,23 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	let dot_fee_amount: Balance = AssetHubExistentialDeposit::get() * 1000;
 	let xrqcy_transfer_amount = FrequencyExistentialDeposit::get() * 1000;
 	let sender = FrequencyWestendSender::get();
+	let starting_xcm_version = 5;
+
+	// Seeing v5tov4 PayFees DestinationUnsupported if not initialized
+	FrequencyWestend::execute_with(|| {
+		type FrequencyRuntimeOrigin = <FrequencyWestend as Chain>::RuntimeOrigin;
+
+		let set_default_xcm_op =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_default_xcm_version(
+				FrequencyRuntimeOrigin::root(),
+				Some(SAFE_XCM_VERSION),
+			);
+		assert_ok!(set_default_xcm_op);
+	});
+
+	// DestinationUnsupported if not intialized
+	fr_setup_xcm_version_for_ah(starting_xcm_version)
+		.expect("Failed to set Frequency xcm version for and AssetHub");
 
 	ensure_dot_asset_exists_on_frequency();
 	mint_dot_on_frequency(sender.clone(), dot_fee_amount * 2);
@@ -192,8 +212,8 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	// 1. delivery cost to AH
 	// 2. execution cost on AH
 	let assets: Assets = vec![
-		(Parent, fee_dot).into(),    // DOT - used as fee
-		(Here, native_token).into(), // XRQCY used as main transfer asset
+		(Parent, dot_fee_amount).into(),      // DOT - used as fee
+		(Here, xrqcy_transfer_amount).into(), // XRQCY used as main transfer asset
 	]
 	.into();
 	let fee_asset_index = get_asset_paying_fees(assets.clone(), AssetId(Parent.into()));
@@ -240,8 +260,8 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &receiver);
 
 	assert!(
-		sender_balance_of_dot_on_frequency_after
-			< sender_balance_of_dot_on_frequency_before + dot_fee_amount
+		sender_balance_of_dot_on_frequency_after <
+			sender_balance_of_dot_on_frequency_before + dot_fee_amount
 	);
 
 	assert_eq!(

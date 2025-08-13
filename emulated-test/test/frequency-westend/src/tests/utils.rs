@@ -1,4 +1,5 @@
 use crate::imports::*;
+use westend_system_emulated_network::WestendRelay;
 
 pub fn ensure_dot_asset_exists_on_frequency() {
 	FrequencyWestend::execute_with(|| {
@@ -63,6 +64,7 @@ pub fn mint_dot_on_frequency(
 	});
 }
 
+#[allow(dead_code)]
 pub fn mint_dot_on_frequency_v2(
 	beneficiary: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
 	amount_to_mint: Balance,
@@ -162,4 +164,97 @@ pub fn build_assethub_to_frequency_test(
 	};
 
 	AssetHubToFrequencyTest::new(test_args)
+}
+
+// XCM will not send xcm commands if it does not know what version of XCM the destination is running.
+// These functions force the xcm versions for the necessary locations.
+pub fn fr_setup_xcm_version_for_ah(xcm_version: u32) -> DispatchResult {
+	FrequencyWestend::execute_with(|| {
+		type FrequencyRuntimeOrigin = <FrequencyWestend as Chain>::RuntimeOrigin;
+		let force_ah_xcm_version_op =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_xcm_version(
+				FrequencyRuntimeOrigin::root(),
+				bx!(FrequencyWestend::sibling_location_of(AssetHubWestend::para_id())),
+				xcm_version,
+			);
+		assert_ok!(force_ah_xcm_version_op);
+		println!("AssetHub XCM version set to {}", xcm_version);
+	});
+	Ok(())
+}
+
+pub fn fr_setup_xcm_version_for_westend(xcm_version: u32) -> DispatchResult {
+	FrequencyWestend::execute_with(|| {
+		type FrequencyRuntimeOrigin = <FrequencyWestend as Chain>::RuntimeOrigin;
+
+		let westend_location = FrequencyWestend::parent_location();
+		let force_westend_xcm_version_op =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_xcm_version(
+				FrequencyRuntimeOrigin::root(),
+				bx!(westend_location),
+				xcm_version,
+			);
+		assert_ok!(force_westend_xcm_version_op);
+		println!("Westend XCM version set to {}", xcm_version);
+	});
+	Ok(())
+}
+
+#[allow(dead_code)]
+pub fn ah_setup_xcm_version_for_frequency(xcm_version: u32) -> DispatchResult {
+	AssetHubWestend::execute_with(|| {
+		type AssetHubRuntimeOrigin = <AssetHubWestend as Chain>::RuntimeOrigin;
+
+		let freq_location = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
+		println!("Setting XCM version on AssetHub for Frequency: {:?}", freq_location);
+
+		let force_freq_xcm_version_op =
+			<AssetHubWestend as AssetHubWestendPallet>::PolkadotXcm::force_xcm_version(
+				AssetHubRuntimeOrigin::root(),
+				bx!(AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())),
+				xcm_version,
+			);
+		assert_ok!(force_freq_xcm_version_op);
+		println!("Frequency XCM version set to {}", xcm_version);
+	});
+	Ok(())
+}
+
+#[allow(dead_code)]
+pub fn westend_setup_xcm_version_for_frequency(xcm_version: u32) -> DispatchResult {
+	WestendRelay::execute_with(|| {
+		type WestendRuntimeOrigin = <WestendRelay as Chain>::RuntimeOrigin;
+
+		let freq_location = WestendRelay::child_location_of(FrequencyWestend::para_id());
+		println!("Setting XCM version on Westend for Frequency: {:?}", freq_location);
+
+		let force_freq_xcm_version_op =
+			<WestendRelay as WestendPallet>::XcmPallet::force_xcm_version(
+				WestendRuntimeOrigin::root(),
+				bx!(WestendRelay::child_location_of(FrequencyWestend::para_id())),
+				xcm_version,
+			);
+		assert_ok!(force_freq_xcm_version_op);
+		println!("Frequency XCM version set to {}", xcm_version);
+	});
+	Ok(())
+}
+
+#[allow(dead_code)]
+pub fn westend_setup_xcm_version_for_assethub(xcm_version: u32) -> DispatchResult {
+	WestendRelay::execute_with(|| {
+		type WestendRuntimeOrigin = <WestendRelay as Chain>::RuntimeOrigin;
+
+		let assethub_location = WestendRelay::child_location_of(AssetHubWestend::para_id());
+		println!("Setting XCM version on Westend for AssetHub: {:?}", assethub_location);
+
+		let force_ah_xcm_version_op = <WestendRelay as WestendPallet>::XcmPallet::force_xcm_version(
+			WestendRuntimeOrigin::root(),
+			bx!(WestendRelay::child_location_of(AssetHubWestend::para_id())),
+			xcm_version,
+		);
+		assert_ok!(force_ah_xcm_version_op);
+		println!("AssetHub XCM version set to {}", xcm_version);
+	});
+	Ok(())
 }
