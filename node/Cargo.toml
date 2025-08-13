@@ -22,6 +22,7 @@ frequency-cli = { path = "cli" }
 
 [features]
 std = []
+frequency-bridging = []
 default = []
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-cli/frequency"]
@@ -33,6 +34,9 @@ frequency-local = [
 ]
 frequency-testnet = [
   "frequency-cli/frequency-testnet",
+]
+frequency-westend = [
+  "frequency-cli/frequency-westend",
 ]
 frequency-lint-check = [
   "frequency-cli/frequency-lint-check",

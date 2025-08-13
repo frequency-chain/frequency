@@ -9,10 +9,13 @@ PROFILE_DIR=${PROFILE}
 ALL_EXTERNAL_PALLETS=( \
   frame_system_extensions \
   cumulus_pallet_weight_reclaim \
+  cumulus_pallet_xcmp_queue \
+  pallet_assets \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
   pallet_democracy \
+  pallet_message_queue \
   pallet_multisig \
   pallet_preimage \
   pallet_scheduler \
@@ -21,6 +24,8 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
+  pallet_xcm_benchmarks::fungible \
+  pallet_xcm_benchmarks::generic \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \
@@ -184,6 +189,8 @@ then
   OVERHEAD=overhead
 fi
 
+# RUST_LOG="info,events,runtime::system=trace,xcm=trace"
+RUST_LOG="info"
 RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
 
@@ -203,9 +210,13 @@ function run_benchmark() {
     TEMPLATE=${PROJECT}/.maintain/frame-system-extensions-weight-template.hbs
   fi
 
+  if [[ ${1} == "pallet_xcm_benchmarks::generic" ]] || [[ ${1} == "pallet_xcm_benchmarks::fungible" ]]; then
+    TEMPLATE=${PROJECT}/.maintain/xcm-bench-template.hbs
+  fi
+
   set -x
   set -e
-  ${BENCHMARK} pallet \
+  RUST_LOG=${RUST_LOG} ${BENCHMARK} pallet \
   --pallet=${1} \
   --extrinsic "*" \
   --heap-pages=4096 \
@@ -224,7 +235,7 @@ function run_benchmark() {
 
 if [[ ${skip_build} == false ]]
 then
-  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace"
   echo ${CMD}
   ${CMD} || exit_err
 
@@ -265,7 +276,7 @@ fi
 if [[ ${skip_tests} == false ]]
 then
     echo "Running tests..."
-    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace"
     echo ${CMD}
     ${CMD} || exit_err
 fi
