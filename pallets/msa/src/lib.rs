@@ -76,8 +76,8 @@ use sp_runtime::{
 	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
 pub use types::{
-	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
-	RecoveryCommitmentPayload, EMPTY_FUNCTION,
+	AddKeyData, AddProvider, ApplicationIndex, AuthorizedKeyData, PermittedDelegationSchemas,
+	RecoveryCommitment, RecoveryCommitmentPayload, EMPTY_FUNCTION,
 };
 pub use weights::*;
 
@@ -297,6 +297,32 @@ pub mod pallet {
 	pub type ApprovedLogos<T: Config> =
 		StorageMap<_, Twox64Concat, LogoCid<T>, BoundedVec<u8, T::MaxLogoSize>, OptionQuery>;
 
+	/// Monotonically increasing index of applications for a given provider.
+	/// Starts at 0 when provider first gets an application approved.
+	#[pallet::storage]
+	#[pallet::getter(fn next_application_index)]
+	pub(super) type NextApplicationIndex<T: Config> =
+		StorageMap<_, Twox64Concat, ProviderId, ApplicationIndex, ValueQuery>;
+
+	/// Mapping of (ProviderId, ApplicationIndex) → Application details.
+	/// This is where the actual application data is stored.
+	#[pallet::storage]
+	#[pallet::getter(fn provider_applications)]
+	pub(super) type ProviderToApplicationRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		ProviderId,
+		Twox64Concat,
+		ApplicationIndex,
+		ApplicationContext<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+		OptionQuery,
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -391,6 +417,13 @@ pub mod pallet {
 			msa_id: MessageSourceId,
 			/// The Recovery Commitment that was invalidated
 			recovery_commitment: RecoveryCommitment,
+		},
+		/// Application for provider created
+		ApplicationCreated {
+			/// The MSA id associated with the provider
+			msa_id: ProviderId,
+			/// The application id for the created application
+			application_id: ApplicationIndex,
 		},
 	}
 
@@ -506,6 +539,9 @@ pub mod pallet {
 
 		/// Invalid Language Code provided for the provider
 		InvalidBCP47LanguageCode,
+
+		/// Duplicate application registry entry
+		DuplicateApplicationRegistryEntry,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -1346,6 +1382,73 @@ pub mod pallet {
 			});
 			Ok(())
 		}
+
+		/// Propose to add application enable provider to add multiple applications on frequency.
+		/// Provider initiates a governance proposal to add the application.
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(22)]
+		#[pallet::weight(Weight::from_parts(10_000, 0))]
+		pub fn propose_to_add_application(
+			origin: OriginFor<T>,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			Self::ensure_valid_msa_key(&proposer)?;
+			Self::ensure_correct_cids(&payload)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_application_via_governance {
+					provider_key: proposer.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create application via governance approval
+		///
+		/// # Events
+		/// * [`Event::ApplicationCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::DuplicateApplicationRegistryEntry`] - an ApplicationRegistryEntry associated with the given MSA id already exists.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(23)]
+		#[pallet::weight(Weight::from_parts(10_000, 0))]
+		pub fn create_application_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = ProviderId(Self::ensure_valid_msa_key(&provider_key)?);
+			Self::ensure_correct_cids(&payload)?;
+			let application_id = Self::create_application_for(provider_msa_id, payload)?;
+			Self::deposit_event(Event::ApplicationCreated {
+				msa_id: provider_msa_id,
+				application_id,
+			});
+			Ok(())
+		}
 	}
 }
 
@@ -1775,6 +1878,37 @@ impl<T: Config> Pallet<T> {
 			},
 		)?;
 		Ok(())
+	}
+
+	/// Adds an association between Provider MSA id and ProviderToApplicationRegistryEntry
+	///
+	/// # Errors
+	/// * [`Error::DuplicateApplicationRegistryEntry`] - a ProviderToApplicationRegistryEntry associated with the given Provider MSA id already exists.
+	pub fn create_application_for(
+		provider_msa_id: ProviderId,
+		payload: ApplicationContext<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> Result<ApplicationIndex, DispatchError> {
+		Self::update_logo_storage(&payload)?;
+		let next_application_index = NextApplicationIndex::<T>::get(provider_msa_id);
+		ensure!(
+			!ProviderToApplicationRegistry::<T>::contains_key(
+				provider_msa_id,
+				next_application_index
+			),
+			Error::<T>::DuplicateApplicationRegistryEntry
+		);
+		ProviderToApplicationRegistry::<T>::insert(
+			provider_msa_id,
+			next_application_index,
+			payload,
+		);
+		NextApplicationIndex::<T>::insert(provider_msa_id, next_application_index + 1);
+		Ok(next_application_index)
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.

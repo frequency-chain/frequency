@@ -13,6 +13,10 @@ use alloc::vec::Vec;
 
 pub use crate::schema::SchemaId;
 
+/// ApplicationContext is type of ProviderRegistryEntry
+pub type ApplicationContext<NameSize, LangSize, CidSize, MaxLocaleCount> =
+	ProviderRegistryEntry<NameSize, LangSize, CidSize, MaxLocaleCount>;
+
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
