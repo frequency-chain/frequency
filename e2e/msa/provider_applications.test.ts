@@ -10,6 +10,7 @@ let fundingSource: KeyringPair;
 
 describe('Create Provider Application', function () {
   let keys: KeyringPair;
+  let nonProviderKeys: KeyringPair;
   let providerId: bigint;
   let sudoKeys: KeyringPair;
 
@@ -17,8 +18,11 @@ describe('Create Provider Application', function () {
     sudoKeys = getSudo().keys;
     fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 5n * DOLLARS);
+    nonProviderKeys = await createAndFundKeypair(fundingSource, 5n * DOLLARS);
     const f = ExtrinsicHelper.createMsa(keys);
     await f.fundAndSend(fundingSource);
+    const f2 = ExtrinsicHelper.createMsa(nonProviderKeys);
+    await f2.fundAndSend(fundingSource);
     const providerEntry = generateValidProviderPayloadWithName('MyProvider');
     const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
     const { target: providerEvent } = await createProviderOp.signAndSend();
@@ -39,6 +43,19 @@ describe('Create Provider Application', function () {
       assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
       const applicationId = applicationEvent!.data.applicationId;
       assert.equal(applicationId.toBigInt(), 0n, 'applicationId should be 0');
+    });
+
+    it('should fail to create a provider application for non provider', async function () {
+      if (isTestnet()) this.skip();
+      const applicationEntry = generateValidProviderPayloadWithName('MyApp1');
+      const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(
+        sudoKeys,
+        nonProviderKeys,
+        applicationEntry
+      );
+      await assert.rejects(createProviderOp.signAndSend(), {
+        name: 'ProviderNotRegistered',
+      });
     });
 
     it('should fail to create a provider application for long name', async function () {
