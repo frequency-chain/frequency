@@ -1402,9 +1402,12 @@ pub mod pallet {
 			>,
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
-			Self::ensure_valid_msa_key(&proposer)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
 			Self::ensure_correct_cids(&payload)?;
-
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_application_via_governance {
 					provider_key: proposer.clone(),
@@ -1440,11 +1443,16 @@ pub mod pallet {
 			>,
 		) -> DispatchResult {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
-			let provider_msa_id = ProviderId(Self::ensure_valid_msa_key(&provider_key)?);
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
 			Self::ensure_correct_cids(&payload)?;
-			let application_id = Self::create_application_for(provider_msa_id, payload)?;
+			let application_id =
+				Self::create_application_for(ProviderId(provider_msa_id), payload)?;
 			Self::deposit_event(Event::ApplicationCreated {
-				msa_id: provider_msa_id,
+				msa_id: ProviderId(provider_msa_id),
 				application_id,
 			});
 			Ok(())
