@@ -875,7 +875,7 @@ mod benchmarks {
 		}
 
 		let provider_caller: T::AccountId = whitelisted_caller();
-		let (_, provider_public_key) =
+		let (provider_id, provider_public_key) =
 			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
 		let entry = ProviderRegistryEntry::default();
 
@@ -893,8 +893,8 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(RawOrigin::Root, provider_public_key, application_payload);
 
-		assert_eq!(NextApplicationIndex::<T>::get(provider_id), 1);
-		assert!(ProviderToApplicationRegistry::<T>::get(provider_id, 0).is_some());
+		assert_eq!(NextApplicationIndex::<T>::get(ProviderId(provider_id)), 1);
+		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
 		Ok(())
 	}
 
