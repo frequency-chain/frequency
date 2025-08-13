@@ -3,6 +3,7 @@ use crate::{
 	imports::*,
 	tests::utils::{
 		create_frequency_asset_on_ah, ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency,
+		setup_xcm_version_for_fr_ah,
 	},
 };
 
@@ -179,6 +180,8 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	let xrqcy_transfer_amount = FrequencyExistentialDeposit::get() * 1000;
 	let sender = FrequencyWestendSender::get();
 
+	setup_xcm_version_for_fr_ah().expect("Failed to set xcm version for Frequency and AssetHub");
+
 	ensure_dot_asset_exists_on_frequency();
 	mint_dot_on_frequency(sender.clone(), dot_fee_amount * 2);
 	fund_sov_frequency_on_assethub(dot_fee_amount * 2);
@@ -192,8 +195,8 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	// 1. delivery cost to AH
 	// 2. execution cost on AH
 	let assets: Assets = vec![
-		(Parent, fee_dot).into(),    // DOT - used as fee
-		(Here, native_token).into(), // XRQCY used as main transfer asset
+		(Parent, dot_fee_amount).into(),      // DOT - used as fee
+		(Here, xrqcy_transfer_amount).into(), // XRQCY used as main transfer asset
 	]
 	.into();
 	let fee_asset_index = get_asset_paying_fees(assets.clone(), AssetId(Parent.into()));
@@ -240,8 +243,8 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &receiver);
 
 	assert!(
-		sender_balance_of_dot_on_frequency_after
-			< sender_balance_of_dot_on_frequency_before + dot_fee_amount
+		sender_balance_of_dot_on_frequency_after <
+			sender_balance_of_dot_on_frequency_before + dot_fee_amount
 	);
 
 	assert_eq!(

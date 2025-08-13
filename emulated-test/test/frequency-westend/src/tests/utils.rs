@@ -1,4 +1,5 @@
 use crate::imports::*;
+use emulated_integration_tests_common::SAFE_XCM_VERSION;
 
 pub fn ensure_dot_asset_exists_on_frequency() {
 	FrequencyWestend::execute_with(|| {
@@ -163,4 +164,39 @@ pub fn build_assethub_to_frequency_test(
 	};
 
 	AssetHubToFrequencyTest::new(test_args)
+}
+
+pub fn setup_xcm_version_for_fr_ah() -> DispatchResult {
+	// Set up the test environment for AssetHub to Frequency communication
+
+	// XCM will not send xcm commands if it does not know what version of XCM the destination is running
+	// Here we force the xcm version for Frequency and AssetHub
+	FrequencyWestend::execute_with(|| {
+		type FrequencyRuntimeOrigin = <FrequencyWestend as Chain>::RuntimeOrigin;
+		let force_ah_xcm_version_op =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::force_xcm_version(
+				FrequencyRuntimeOrigin::root(),
+				bx!(FrequencyWestend::sibling_location_of(AssetHubWestend::para_id())),
+				SAFE_XCM_VERSION,
+			);
+		assert_ok!(force_ah_xcm_version_op);
+		println!("AssetHub XCM version set to {}", SAFE_XCM_VERSION);
+	});
+
+	AssetHubWestend::execute_with(|| {
+		type AssetHubRuntimeOrigin = <AssetHubWestend as Chain>::RuntimeOrigin;
+
+		let freq_location = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
+		println!("Setting XCM version on AssetHub for Frequency: {:?}", freq_location);
+
+		let force_freq_xcm_version_op =
+			<AssetHubWestend as AssetHubWestendPallet>::PolkadotXcm::force_xcm_version(
+				AssetHubRuntimeOrigin::root(),
+				bx!(AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())),
+				SAFE_XCM_VERSION,
+			);
+		assert_ok!(force_freq_xcm_version_op);
+		println!("Frequency XCM version set to {}", SAFE_XCM_VERSION);
+	});
+	Ok(())
 }

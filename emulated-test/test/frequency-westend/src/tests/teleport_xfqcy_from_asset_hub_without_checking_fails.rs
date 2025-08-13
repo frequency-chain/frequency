@@ -1,9 +1,9 @@
-use crate::tests::utils::{build_assethub_to_frequency_test, find_fee_asset_item};
 use crate::{
 	foreign_balance_on,
 	imports::*,
 	tests::utils::{
-		create_frequency_asset_on_ah, ensure_dot_asset_exists_on_frequency, mint_xrqcy_on_asset_hub,
+		build_assethub_to_frequency_test, create_frequency_asset_on_ah,
+		ensure_dot_asset_exists_on_frequency, find_fee_asset_item, mint_xrqcy_on_asset_hub,
 	},
 };
 use emulated_integration_tests_common::xcm_emulator::log;

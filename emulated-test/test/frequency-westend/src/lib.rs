@@ -34,10 +34,7 @@ mod imports {
 		frequency_emulated_chain::{
 			frequency_runtime::{
 				self,
-				xcm::{
-					Barrier, CheckingAccount as FrequencyCheckingAccount,
-					XcmConfig as FrequencyXcmConfig,
-				},
+				xcm::{Barrier, CheckingAccount as FrequencyCheckingAccount},
 				ExistentialDeposit as FrequencyExistentialDeposit,
 			},
 			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet,
