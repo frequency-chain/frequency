@@ -1,6 +1,7 @@
 use emulated_integration_tests_common::SAFE_XCM_VERSION;
 
-use crate::{imports::*, tests::utils::setup_xcm_version_for_fr_ah};
+use crate::{imports::*, tests::utils::fr_setup_xcm_version_for_ah};
+use staging_xcm::GetVersion;
 
 // =========================================================================
 // ================ XCM Version Subscription Tests ========================
@@ -63,6 +64,7 @@ fn test_subscribe_version() {
 	// let receiver = WestendReceiver::get();
 	let receiver = AssetHubWestendReceiver::get();
 	let amount = 1_000_000_000_000;
+	let starting_xcm_version = 4;
 
 	let destination = FrequencyWestend::sibling_location_of(AssetHubWestend::para_id());
 
@@ -70,7 +72,7 @@ fn test_subscribe_version() {
 	AssetHubWestend::fund_para_sovereign(FrequencyWestend::para_id(), amount * 2);
 
 	println!("Setting up AssetHub test environment...");
-	let _ = setup_xcm_version_for_fr_ah();
+	let _ = fr_setup_xcm_version_for_ah(starting_xcm_version);
 	println!("AssetHub test environment set up successfully.");
 
 	let test_args = TestContext {
@@ -85,27 +87,36 @@ fn test_subscribe_version() {
 			0,
 		),
 	};
-	
-	FrequencyWestend::execute_with(|| {
-		let result = <FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::get_version_for(&destination);
-		println!("before before");
-		println!("--------------result: {:?}", result);
-	});
 
 	let mut test = FrequencyToAssetHubTest::new(test_args);
 
-	// Re-enable assertion once pattern fixed
-	// test.set_assertion::<FrequencyWestend>(assert_subscribe_version_sent);
-	// test.set_assertion::<AssetHubWestend>(assert_subscribe_version_received_on_relay);
+	// Read the XCM version SupportedVersion for AssetHub from storage
+	FrequencyWestend::execute_with(|| {
+		let asset_hub_location = FrequencyWestend::sibling_location_of(AssetHubWestend::para_id());
+		let asset_hub_xcm_version =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::get_version_for(
+				&asset_hub_location,
+			);
+		assert_eq!(asset_hub_xcm_version, Some(starting_xcm_version));
+		println!(
+			"AssetHub XCM version before subscription: {}",
+			asset_hub_xcm_version.unwrap_or(0)
+		);
+	});
+
+	test.set_assertion::<FrequencyWestend>(assert_subscribe_version_sent);
+	test.set_assertion::<AssetHubWestend>(assert_subscribe_version_received_on_relay);
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_asset_hub_subscribe_version);
 	test.assert();
 
-	// let a = pallet_xcm::SupportedVersion::<<FrequencyWestend as Chain>::Runtime>>::get(SAFE_XCM_VERSION, pallet_xcm::LatestVersionedLocation(&destination.clone()));
-
-	// <FrequencyWestend as Chain>::Runtime::get_version_for(&destination);
+	// Read the XCM version SupportedVersion for AssetHub from storage
 	FrequencyWestend::execute_with(|| {
-		let result = <FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::get_version_for(&destination);
-		println!("taco taco");
-		println!("--------------result: {:?}", result);
+		let asset_hub_location = FrequencyWestend::sibling_location_of(AssetHubWestend::para_id());
+		let asset_hub_xcm_version =
+			<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::get_version_for(
+				&asset_hub_location,
+			);
+		assert_eq!(asset_hub_xcm_version, Some(SAFE_XCM_VERSION));
+		println!("AssetHub XCM version after subscription: {}", asset_hub_xcm_version.unwrap_or(0));
 	});
 }

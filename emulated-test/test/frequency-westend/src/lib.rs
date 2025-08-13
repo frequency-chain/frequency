@@ -13,7 +13,6 @@ mod imports {
 	pub use staging_xcm::{
 		latest::AssetTransferFilter,
 		prelude::{AccountId32 as AccountId32Junction, *},
-		GetVersion,
 	};
 
 	pub use emulated_integration_tests_common::{
