@@ -2,7 +2,7 @@ use common_primitives::msa::{ApplicationContext, ProviderId};
 use frame_support::{assert_noop, assert_ok, traits::ChangeMembers, BoundedBTreeMap, BoundedVec};
 
 use pallet_collective::ProposalOf;
-use sp_core::Encode;
+use sp_core::{Encode, Pair};
 use sp_weights::Weight;
 
 use pretty_assertions::assert_eq;
@@ -176,4 +176,38 @@ fn propose_to_add_application_happy_path() {
 		assert!(ProviderToApplicationRegistry::<Test>::get(ProviderId(new_msa_id), 0).is_some());
 		assert!(NextApplicationIndex::<Test>::get(ProviderId(new_msa_id)) > 0);
 	})
+}
+
+#[test]
+fn propose_to_add_application_requires_registered_provider() {
+	new_test_ext().execute_with(|| {
+		// Create a new provider account
+		let (_, key_pair) = create_account();
+		let provider_account = key_pair.public();
+
+		let entry = ApplicationContext::default();
+		assert_noop!(
+			Msa::propose_to_add_application(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::ProviderNotRegistered
+		);
+	});
+}
+
+#[test]
+fn create_application_via_governance_requires_registered_provider() {
+	new_test_ext().execute_with(|| {
+		// Create a new provider account
+		let (_, key_pair) = create_account();
+		let provider_account = key_pair.public();
+
+		let entry = ApplicationContext::default();
+		assert_noop!(
+			Msa::create_application_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::ProviderNotRegistered
+		);
+	});
 }
