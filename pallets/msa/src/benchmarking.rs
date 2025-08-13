@@ -803,6 +803,101 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn propose_to_add_application() -> Result<(), BenchmarkError> {
+		let s = T::MaxProviderNameSize::get();
+		let lang_size = T::MaxLanguageCodeSize::get();
+		let _cid_size = T::MaxLogoCidSize::get();
+		let max_locale_count = T::MaxLocaleCount::get();
+
+		let application_name = (1..s as u8).collect::<Vec<_>>();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+
+		let mut localized_names = BoundedBTreeMap::new();
+		let mut localized_cids = BoundedBTreeMap::new();
+
+		for i in 0..max_locale_count {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
+			localized_names.try_insert(lang.clone(), name).unwrap();
+			localized_cids.try_insert(lang, logo).unwrap();
+		}
+
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) =
+			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_v2(
+			RawOrigin::Signed(provider_caller.clone()).into(),
+			entry
+		));
+		let application_payload = ApplicationContext {
+			default_name: BoundedVec::try_from(application_name).unwrap_or_default(),
+			localized_names,
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids,
+		};
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(provider_public_key), application_payload);
+
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_application_via_governance() -> Result<(), BenchmarkError> {
+		let s = T::MaxProviderNameSize::get();
+		let lang_size = T::MaxLanguageCodeSize::get();
+		let _cid_size = T::MaxLogoCidSize::get();
+		let max_locale_count = T::MaxLocaleCount::get();
+
+		let application_name = (1..s as u8).collect::<Vec<_>>();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+
+		let mut localized_names = BoundedBTreeMap::new();
+		let mut localized_cids = BoundedBTreeMap::new();
+
+		for i in 0..max_locale_count {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
+			localized_names.try_insert(lang.clone(), name).unwrap();
+			localized_cids.try_insert(lang, logo).unwrap();
+		}
+
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) =
+			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_v2(
+			RawOrigin::Signed(provider_caller.clone()).into(),
+			entry
+		));
+		let application_payload = ApplicationContext {
+			default_name: BoundedVec::try_from(application_name).unwrap_or_default(),
+			localized_names,
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids,
+		};
+
+		#[extrinsic_call]
+		_(RawOrigin::Root, provider_public_key, application_payload);
+
+		assert_eq!(NextApplicationIndex::<T>::get(provider_id), 1);
+		assert!(ProviderToApplicationRegistry::<T>::get(provider_id, 0).is_some());
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(
 		Msa,
 		crate::tests::mock::new_test_ext_keystore(),
