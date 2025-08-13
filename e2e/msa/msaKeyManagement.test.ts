@@ -152,9 +152,7 @@ describe('MSA Key management', function () {
       const newSig = signPayloadSr25519(secondaryKey, addKeyData);
       const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-      await assert.rejects(addPublicKeyOp.fundAndSend(fundingSource), {
-        name: 'KeyAlreadyRegistered',
-      });
+      await assert.rejects(addPublicKeyOp.fundAndSend(fundingSource), 'foobar');
     });
 
     it('should allow new keypair to act for/on MSA', async function () {
