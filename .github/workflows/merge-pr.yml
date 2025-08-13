@@ -22,7 +22,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-local -- export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
@@ -59,7 +59,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -95,7 +95,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -131,7 +131,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -167,7 +167,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Generate and Upload Code Coverage
         id: codecov
         uses: ./.github/workflows/common/codecov
