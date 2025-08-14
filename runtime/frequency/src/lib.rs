@@ -265,7 +265,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
-				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
+				RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				#[cfg(feature = "frequency-bridging")]
 				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
@@ -310,8 +310,8 @@ impl BaseCallFilter {
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
-			// Block `create_provider` and `create_schema` calls from utility batch
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+			// Block `create_provider_v2` and `create_schema` calls from utility batch
+			RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
@@ -480,7 +480,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		pallet_msa::migration::MigrateProviderToRegistryEntryV2<Runtime>,
+	),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -641,7 +644,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -655,7 +658,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -820,12 +823,23 @@ impl pallet_msa::Config for Runtime {
 	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
 	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
+	#[cfg(not(feature = "frequency-no-relay"))]
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+	#[cfg(feature = "frequency-no-relay")]
+	type CreateProviderViaGovernanceOrigin = EnsureSigned<AccountId>;
 	// The Currency type for managing MSA token balances
 	type Currency = Balances;
+	// The maximum language code size (in bytes)
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	// The maximum logo CID size (in bytes)
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	// The maximum locale count
+	type MaxLocaleCount = MsaMaxLocaleCount;
+	// The maximum logo size (in bytes)
+	type MaxLogoSize = MsaMaxLogoSize;
 }
 
 parameter_types! {

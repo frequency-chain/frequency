@@ -7980,6 +7980,7 @@ dependencies = [
 name = "pallet-msa"
 version = "0.0.0"
 dependencies = [
+ "cid 0.11.1",
  "common-primitives",
  "common-runtime",
  "frame-benchmarking",
@@ -7988,6 +7989,7 @@ dependencies = [
  "hex",
  "lazy_static",
  "log",
+ "multibase",
  "pallet-balances",
  "pallet-collective",
  "pallet-handles",

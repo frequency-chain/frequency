@@ -107,6 +107,13 @@ export interface RecoveryCommitmentPayload {
   expiration?: any;
 }
 
+export interface ProviderRegistryEntry {
+  defaultName: string;
+  localizedNames?: Map<string, string>;
+  defaultLogo250100PngCid?: string;
+  localizedLogo250100PngCids?: Map<string, string>;
+}
+
 export function isRpcError<T = string>(e: any): e is RpcErrorInterface<T> {
   return e?.name === 'RpcError';
 }
@@ -591,11 +598,43 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static createProvider(keys: KeyringPair, providerName: string) {
+  public static createProvider(keys: KeyringPair, provider_name: string) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.createProvider(providerName),
+      () => ExtrinsicHelper.api.tx.msa.createProvider(provider_name),
       keys,
       ExtrinsicHelper.api.events.msa.ProviderCreated
+    );
+  }
+
+  public static createProviderV2(keys: KeyringPair, providerDetails: ProviderRegistryEntry) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.createProviderV2({
+          defaultName: providerDetails.defaultName,
+          localizedNames: providerDetails.localizedNames,
+          defaultLogo250100PngCid: providerDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: providerDetails.localizedLogo250100PngCids,
+        }),
+      keys,
+      ExtrinsicHelper.api.events.msa.ProviderCreated
+    );
+  }
+
+  public static createApplicationViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.createApplicationViaGovernance(getUnifiedPublicKey(providerKeys), {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationCreated
     );
   }
 

@@ -1,5 +1,6 @@
 pub mod mock;
 
+mod application_tests;
 mod creation_tests;
 mod delegation_tests;
 mod governance_tests;
