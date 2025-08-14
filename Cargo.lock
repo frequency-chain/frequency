@@ -1614,11 +1614,8 @@ name = "common-helpers"
 version = "0.0.0"
 dependencies = [
  "apache-avro",
- "cid 0.11.1",
  "jsonrpsee",
- "multihash 0.19.3",
  "sp-api",
- "sp-io",
  "thiserror 2.0.12",
 ]
 
@@ -1632,6 +1629,7 @@ checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
 name = "common-primitives"
 version = "0.0.0"
 dependencies = [
+ "cid 0.11.1",
  "enumflags2",
  "frame-support",
  "frame-system",
@@ -1639,6 +1637,7 @@ dependencies = [
  "lazy_static",
  "libsecp256k1",
  "log",
+ "multihash 0.19.3",
  "numtoa",
  "parity-scale-codec",
  "scale-info",

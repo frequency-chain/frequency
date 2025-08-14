@@ -54,9 +54,9 @@ use common_runtime::signature::check_signature;
 use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
 use alloc::{boxed::Box, vec, vec::Vec};
-use common_helpers::cid::compute_cid_v1;
 use common_primitives::{
 	capacity::TargetValidator,
+	cid::compute_cid_v1,
 	handles::HandleProvider,
 	msa::*,
 	node::{EIP712Encode, ProposalProvider},

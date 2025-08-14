@@ -44,3 +44,6 @@ pub mod benchmarks;
 
 /// Signature support for ethereum
 pub mod signatures;
+
+/// Cid related utilities
+pub mod cid;
