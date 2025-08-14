@@ -20,9 +20,48 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+#[cfg(feature = "frequency-bridging")]
+pub mod xcm;
+
+#[cfg(feature = "frequency-bridging")]
+use frame_support::traits::AsEnsureOriginWithArg;
+
+#[cfg(feature = "frequency-bridging")]
+use frame_system::EnsureNever;
+
+#[cfg(feature = "frequency-bridging")]
+use xcm::{
+	parameters::{
+		ForeignAssetsAssetId, NativeToken, RelayLocation, RelayOrigin, ReservedDmpWeight,
+		ReservedXcmpWeight,
+	},
+	queue::XcmRouter,
+	LocationToAccountId, XcmConfig,
+};
+
+#[cfg(test)]
+mod migration_tests;
+
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+
+#[cfg(feature = "frequency-bridging")]
+use staging_xcm::{
+	prelude::AssetId as AssetLocationId, Version as XcmVersion, VersionedAsset, VersionedAssetId,
+	VersionedAssets, VersionedLocation, VersionedXcm,
+};
+
+#[cfg(feature = "frequency-bridging")]
+use xcm_runtime_apis::{
+	dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
+	fees::Error as XcmPaymentApiError,
+};
+
+#[cfg(any(
+	not(feature = "frequency-no-relay"),
+	feature = "frequency-lint-check",
+	feature = "frequency-bridging"
+))]
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
@@ -47,6 +86,7 @@ use parity_scale_codec::Encode;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
 
@@ -92,7 +132,7 @@ use frame_support::{
 		EqualPrivilegeOnly, GetStorageVersion, InstanceFilter, LinearStoragePrice,
 		OnRuntimeUpgrade,
 	},
-	weights::{ConstantMultiplier, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight},
 	Twox128,
 };
 
@@ -104,7 +144,7 @@ use frame_system::{
 use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -132,6 +172,22 @@ use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 
 mod ethereum;
 mod genesis;
+
+pub mod polkadot_xcm_fee {
+	use crate::{Balance, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
+	pub const MICRO_DOT: Balance = 10_000;
+	pub const MILLI_DOT: Balance = 1_000 * MICRO_DOT;
+
+	pub fn default_fee_per_second() -> u128 {
+		let base_weight = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+		let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
+		base_tx_per_second * base_relay_tx_fee()
+	}
+
+	pub fn base_relay_tx_fee() -> Balance {
+		MILLI_DOT
+	}
+}
 
 pub struct SchedulerProvider;
 
@@ -190,7 +246,7 @@ impl UtilityProvider<RuntimeOrigin, RuntimeCall> for CapacityBatchProvider {
 	}
 }
 
-/// Basefilter to only allow calls to specified transactions to be executed
+/// Base filter to only allow calls to specified transactions to be executed
 pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
@@ -211,6 +267,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+				#[cfg(feature = "frequency-bridging")]
+				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -219,6 +277,20 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
+	#[cfg(all(feature = "frequency", feature = "frequency-bridging"))]
+	fn is_xcm_call_allowed(call: &pallet_xcm::Call<Runtime>) -> bool {
+		!matches!(
+			call,
+			pallet_xcm::Call::transfer_assets { .. } |
+				pallet_xcm::Call::teleport_assets { .. } |
+				pallet_xcm::Call::limited_teleport_assets { .. } |
+				pallet_xcm::Call::reserve_transfer_assets { .. } |
+				pallet_xcm::Call::add_authorized_alias { .. } |
+				pallet_xcm::Call::remove_authorized_alias { .. } |
+				pallet_xcm::Call::remove_all_authorized_aliases { .. }
+		)
+	}
+
 	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
 			pallet_utility::Call::batch { calls, .. } |
@@ -383,11 +455,25 @@ pub type BlockId = generic::BlockId<Block>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
+#[cfg(feature = "frequency-bridging")]
+pub type AssetBalance = Balance;
+
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
+#[cfg(feature = "frequency-bridging")]
+pub type Executive = frame_executive::Executive<
+	Runtime,
+	Block,
+	frame_system::ChainContext<Runtime>,
+	Runtime,
+	AllPalletsWithSystem,
+	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
+>;
+
+#[cfg(not(feature = "frequency-bridging"))]
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,
@@ -416,6 +502,110 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 		}
 
 		T::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+/// Migration to set the initial safe XCM version for the XCM pallet.
+pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
+
+#[cfg(feature = "frequency-bridging")]
+use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+
+#[cfg(feature = "frequency-bridging")]
+impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
+	fn on_runtime_upgrade() -> Weight {
+		use sp_core::Get;
+
+		// Access storage directly using storage key because `pallet_xcm` does not provide a direct API to get the safe XCM version.
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+		match current_version {
+			Some(version) if version == SAFE_XCM_VERSION => {
+				log::info!("SafeXcmVersion already set to {}, skipping migration.", version);
+				T::DbWeight::get().reads(1)
+			},
+			Some(version) => {
+				log::info!(
+					"SafeXcmVersion currently set to {}, updating to {}",
+					version,
+					SAFE_XCM_VERSION
+				);
+				// Set the safe XCM version directly in storage
+				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
+				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+			},
+			None => {
+				log::info!("SafeXcmVersion not set, setting to {}", SAFE_XCM_VERSION);
+				// Set the safe XCM version directly in storage
+				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
+				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+			},
+		}
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+		use parity_scale_codec::Encode;
+
+		// Check pallet state before migration
+		pallet_xcm::Pallet::<T>::do_try_state()?;
+		log::info!("pre_upgrade: PolkadotXcm pallet state is valid before migration");
+
+		// Read the actual current SafeXcmVersion from storage
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+
+		log::info!("pre_upgrade: Current SafeXcmVersion = {:?}", current_version);
+
+		// Return the actual current state encoded for post_upgrade verification
+		Ok(current_version.encode())
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+		use parity_scale_codec::Decode;
+
+		// Decode the pre-upgrade state
+		let pre_upgrade_version = Option::<u32>::decode(&mut &state[..])
+			.map_err(|_| "Failed to decode pre-upgrade state")?;
+
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+
+		log::info!(
+			"post_upgrade: Pre-upgrade version = {:?}, Current version = {:?}",
+			pre_upgrade_version,
+			current_version
+		);
+
+		// Verify the migration worked correctly
+		match current_version {
+			Some(version) if version == SAFE_XCM_VERSION => {
+				log::info!(
+					"post_upgrade: Migration successful - SafeXcmVersion correctly set to {}",
+					version
+				);
+			},
+			Some(version) => {
+				log::error!("post_upgrade: Migration failed - SafeXcmVersion was set to {}, but expected {}", version, SAFE_XCM_VERSION);
+				return Err(sp_runtime::TryRuntimeError::Other(
+					"SafeXcmVersion was set to incorrect version after migration",
+				));
+			},
+			None => {
+				return Err(sp_runtime::TryRuntimeError::Other(
+					"SafeXcmVersion should be set after migration but found None",
+				));
+			},
+		}
+
+		// Check pallet state after migration
+		pallet_xcm::Pallet::<T>::do_try_state()?;
+		log::info!("post_upgrade: PolkadotXcm pallet state is valid after migration");
+
+		Ok(())
 	}
 }
 
@@ -512,6 +702,25 @@ parameter_types! {
 		.build_or_panic();
 }
 
+// ---------- Foreign Assets pallet parameters ----------
+#[cfg(feature = "frequency-bridging")]
+parameter_types! {
+	pub const AssetDeposit: Balance = 0;
+	pub const AssetAccountDeposit: Balance = 0;
+	pub const MetadataDepositBase: Balance = 0;
+	pub const MetadataDepositPerByte: Balance = 0;
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+
+	// we just reuse the same deposits
+	pub const ForeignAssetsAssetDeposit: Balance = AssetDeposit::get();
+	pub const ForeignAssetsAssetAccountDeposit: Balance = AssetAccountDeposit::get();
+	pub const ForeignAssetsApprovalDeposit: Balance = ApprovalDeposit::get();
+	pub const ForeignAssetsAssetsStringLimit: u32 = AssetsStringLimit::get();
+	pub const ForeignAssetsMetadataDepositBase: Balance = MetadataDepositBase::get();
+	pub const ForeignAssetsMetadataDepositPerByte: Balance = MetadataDepositPerByte::get();
+}
+
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
@@ -560,7 +769,11 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+		feature = "frequency-bridging"
+	))]
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	#[cfg(feature = "frequency-no-relay")]
 	type OnSetCode = ();
@@ -591,7 +804,7 @@ impl pallet_msa::Config for Runtime {
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
 	type SchemaValidator = Schemas;
-	// The type that provides `Handle` related info for a given `MesssageSourceAccount`
+	// The type that provides `Handle` related info for a given `MessageSourceAccount`
 	type HandleProvider = Handles;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
@@ -667,7 +880,7 @@ impl pallet_capacity::Config for Runtime {
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-	// The mininum size (in bytes) for a schema model
+	// The minimum size (in bytes) for a schema model
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
 	// The maximum number of schemas that can be registered
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
@@ -772,6 +985,10 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
+parameter_types! {
+	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
+}
+
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = BalancesMaxLocks;
 	/// The type for recording an account's balance.
@@ -779,7 +996,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
@@ -1159,16 +1376,46 @@ const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6_000;
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(
+	not(feature = "frequency-no-relay"),
+	feature = "frequency-lint-check",
+	feature = "frequency-bridging"
+))]
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
+
+	#[cfg(feature = "frequency-bridging")]
+	type DmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type ReservedDmpWeight = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type ReservedDmpWeight = ReservedDmpWeight;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type OutboundXcmpMessageSource = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type OutboundXcmpMessageSource = XcmpQueue;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type XcmpMessageHandler = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type XcmpMessageHandler = XcmpQueue;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type ReservedXcmpWeight = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type ReservedXcmpWeight = ReservedXcmpWeight;
+
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
@@ -1353,6 +1600,36 @@ impl pallet_handles::Config for Runtime {
 	type MsaBenchmarkHelper = Msa;
 }
 
+// ---------- Foreign Assets pallet configuration ----------
+#[cfg(feature = "frequency-bridging")]
+impl pallet_assets::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = ForeignAssetsAssetId;
+	type AssetIdParameter = ForeignAssetsAssetId;
+	type Currency = Balances;
+
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
+	type ForceOrigin = EnsureRoot<AccountId>;
+
+	type AssetDeposit = ForeignAssetsAssetDeposit;
+	type MetadataDepositBase = ForeignAssetsMetadataDepositBase;
+	type MetadataDepositPerByte = ForeignAssetsMetadataDepositPerByte;
+	type ApprovalDeposit = ForeignAssetsApprovalDeposit;
+	type StringLimit = ForeignAssetsAssetsStringLimit;
+
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type CallbackHandle = ();
+	type AssetAccountDeposit = ForeignAssetsAssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = xcm::xcm_config::XcmBenchmarkHelper;
+	type Holder = ();
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 #[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
@@ -1377,9 +1654,12 @@ construct_runtime!(
 	pub enum Runtime {
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
-		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+			feature = "frequency-bridging"
+		))]
+		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
@@ -1413,7 +1693,7 @@ construct_runtime!(
 		// Signatures
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
 
-		// FRQC Update
+		// FRQCY Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, Origin<T>, FreezeReason, HoldReason} = 40,
 
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
@@ -1431,6 +1711,21 @@ construct_runtime!(
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
+
+		#[cfg(feature = "frequency-bridging")]
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
+
+		#[cfg(feature = "frequency-bridging")]
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
+
+		#[cfg(feature = "frequency-bridging")]
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,
+
+		#[cfg(feature = "frequency-bridging")]
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 74,
+
+		#[cfg(feature = "frequency-bridging")]
+		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 75,
 	}
 );
 
@@ -1441,6 +1736,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[frame_system_extensions, SystemExtensionsBench::<Runtime>]
 		[cumulus_pallet_weight_reclaim, WeightReclaim]
+		[pallet_assets, ForeignAssets]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
 		[pallet_collective, TechnicalCommittee]
@@ -1454,6 +1750,8 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_proxy, Proxy]
 		[pallet_transaction_payment, TransactionPayment]
+		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_message_queue, MessageQueue]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1466,10 +1764,17 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
+
+		[pallet_xcm_benchmarks::fungible, XcmBalances]
+		[pallet_xcm_benchmarks::generic, XcmGeneric]
 	);
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(
+	not(feature = "frequency-no-relay"),
+	feature = "frequency-lint-check",
+	feature = "frequency-bridging"
+))]
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
@@ -1597,11 +1902,15 @@ sp_api::impl_runtime_apis! {
 				sp_genesis_builder::PresetId::from("development"),
 				sp_genesis_builder::PresetId::from("frequency-local"),
 				sp_genesis_builder::PresetId::from("frequency"),
+				sp_genesis_builder::PresetId::from("frequency-westend-local"),
 			]);
 
 
 			#[cfg(feature = "frequency-testnet")]
 			presets.push(sp_genesis_builder::PresetId::from("frequency-testnet"));
+
+			#[cfg(feature = "frequency-westend")]
+			presets.push(sp_genesis_builder::PresetId::from("frequency-westend"));
 
 			#[cfg(feature = "frequency")]
 			presets.push(sp_genesis_builder::PresetId::from("frequency"));
@@ -1805,6 +2114,12 @@ sp_api::impl_runtime_apis! {
 			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
+			// This is defined once again in dispatch_benchmark, because list_benchmarks!
+			// and add_benchmarks! are macros exported by define_benchmarks! macros and those types
+			// are referenced in that call.
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -1816,7 +2131,7 @@ sp_api::impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{BenchmarkBatch};
+			use frame_benchmarking::{BenchmarkBatch, BenchmarkError};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
@@ -1829,54 +2144,201 @@ sp_api::impl_runtime_apis! {
 			use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
+			#[cfg(feature = "frequency-bridging")]
+			impl pallet_xcm_benchmarks::Config for Runtime {
+				type XcmConfig = xcm::xcm_config::XcmConfig;
+				type AccountIdConverter = xcm::LocationToAccountId;
+				type DeliveryHelper = xcm::benchmarks::ParachainDeliveryHelper;
+
+				fn valid_destination() -> Result<xcm::benchmarks::Location, BenchmarkError> {
+					xcm::benchmarks::create_foreign_asset_dot_on_frequency();
+					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
+				}
+
+				fn worst_case_holding(_depositable_count: u32) -> xcm::benchmarks::Assets {
+					let mut assets = xcm::benchmarks::Assets::new();
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::RelayAssetId::get(), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX / 2) });
+					assets
+				}
+			}
+
+			#[cfg(feature = "frequency-bridging")]
+			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+				type TransactAsset = Balances;
+				type CheckedAccount = xcm::benchmarks::CheckAccount;
+				type TrustedTeleporter = xcm::benchmarks::TrustedTeleporter;
+				type TrustedReserve = xcm::benchmarks::TrustedReserve;
+
+				fn get_asset() -> xcm::benchmarks::Asset {
+					xcm::benchmarks::create_foreign_asset_dot_on_frequency();
+					xcm::benchmarks::RelayAsset::get()
+				}
+			}
+
+			#[cfg(feature = "frequency-bridging")]
+			impl pallet_xcm_benchmarks::generic::Config for Runtime {
+				type RuntimeCall = RuntimeCall;
+				type TransactAsset = Balances;
+
+				fn worst_case_response() -> (u64, xcm::benchmarks::Response) {
+					(0u64, xcm::benchmarks::Response::Version(Default::default()))
+				}
+
+				// We do not support asset exchange on frequency
+				fn worst_case_asset_exchange() -> Result<(xcm::benchmarks::Assets, xcm::benchmarks::Assets), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support universal origin permissioning.
+				fn universal_alias() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Junction), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support transact instructions on frequency
+				// But this helper also used to benchmark unsubscribe_version which we do support.
+				fn transact_origin_and_runtime_call() -> Result<(xcm::benchmarks::Location, RuntimeCall), BenchmarkError> {
+					Ok((xcm::benchmarks::RelayLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+				}
+
+				fn subscribe_origin() -> Result<xcm::benchmarks::Location, BenchmarkError> {
+					Ok(xcm::benchmarks::RelayLocation::get())
+				}
+
+				fn claimable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Assets), BenchmarkError> {
+					let origin = xcm::benchmarks::AssetHubParachainLocation::get();
+					let assets = xcm::benchmarks::RelayAsset::get().into();
+					let ticket = xcm::benchmarks::HereLocation::get();
+					Ok((origin, ticket, assets))
+				}
+
+				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
+					Ok(xcm::benchmarks::RelayAsset::get())
+				}
+
+				// We do not support locking and unlocking on Frequency
+				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support export message on Frequency
+				fn export_message_origin_and_destination() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::NetworkId, xcm::benchmarks::InteriorLocation), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support alias origin on Frequency
+				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+			}
+
+			#[cfg(feature = "frequency-bridging")]
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			#[cfg(feature = "frequency-bridging")]
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
+
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 			add_benchmarks!(params, batches);
 
-			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
-	}
-}
 
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use frame_support::traits::WhitelistedStorageKeys;
-	use sp_core::hexdisplay::HexDisplay;
-	use std::collections::HashSet;
 
-	#[test]
-	fn check_whitelist() {
-		let whitelist: HashSet<String> = dbg!(AllPalletsWithSystem::whitelisted_storage_keys()
-			.iter()
-			.map(|e| HexDisplay::from(&e.key).to_string())
-			.collect());
-
-		// Block Number
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac")
-		);
-		// Total Issuance
-		assert!(
-			whitelist.contains("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80")
-		);
-		// Execution Phase
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a")
-		);
-		// Event Count
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850")
-		);
-		// System Events
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7")
-		);
 	}
 
-	#[test]
-	fn runtime_apis_are_populated() {
-		assert!(RUNTIME_API_VERSIONS.len() > 0);
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
+		fn query_acceptable_payment_assets(xcm_version: staging_xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+			let acceptable_assets = vec![AssetLocationId(RelayLocation::get())];
+			PolkadotXcm::query_acceptable_payment_assets(xcm_version, acceptable_assets)
+		}
+
+		// Frequency implementation of the query_weight_to_asset_fee function
+		fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+			use frame_support::weights::WeightToFee;
+
+			match asset.try_as::<AssetLocationId>() {
+				Ok(asset_id) if asset_id.0 == NativeToken::get().0 => {
+					// FRQCY/XRQCY, native token
+					Ok(common_runtime::fee::WeightToFee::weight_to_fee(&weight))
+				},
+				Ok(asset_id) if asset_id.0 == RelayLocation::get() => {
+					// DOT, WND, or KSM on the relay chain
+					// calculate fee in DOT using Polkadot relay fee schedule
+					let dot_fee = crate::polkadot_xcm_fee::default_fee_per_second()
+						.saturating_mul(weight.ref_time() as u128)
+						.saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128);
+					Ok(dot_fee)
+				},
+				Ok(asset_id) => {
+					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - unhandled asset_id: {asset_id:?}!");
+					Err(XcmPaymentApiError::AssetNotFound)
+				},
+				Err(_) => {
+					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - failed to convert asset: {asset:?}!");
+					Err(XcmPaymentApiError::VersionedConversionFailed)
+				}
+			}
+		}
+
+		fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+			PolkadotXcm::query_xcm_weight(message)
+		}
+
+		fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+			PolkadotXcm::query_delivery_fees(destination, message)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+		fn dry_run_call(origin: OriginCaller, call: RuntimeCall, result_xcms_version: XcmVersion) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+			PolkadotXcm::dry_run_call::<Runtime, XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
+		}
+
+		fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+			PolkadotXcm::dry_run_xcm::<Runtime, XcmRouter, RuntimeCall, XcmConfig>(origin_location, xcm)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::conversions::LocationToAccountApi<Block, AccountId> for Runtime {
+		fn convert_location(location: VersionedLocation) -> Result<
+			AccountId,
+			xcm_runtime_apis::conversions::Error
+		> {
+			xcm_runtime_apis::conversions::LocationToAccountHelper::<
+				AccountId,
+				LocationToAccountId,
+			>::convert_location(location)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::trusted_query::TrustedQueryApi<Block> for Runtime {
+		fn is_trusted_reserve(asset: VersionedAsset, location: VersionedLocation) -> xcm_runtime_apis::trusted_query::XcmTrustedQueryResult {
+			PolkadotXcm::is_trusted_reserve(asset, location)
+		}
+		fn is_trusted_teleporter(asset: VersionedAsset, location: VersionedLocation) -> xcm_runtime_apis::trusted_query::XcmTrustedQueryResult {
+			PolkadotXcm::is_trusted_teleporter(asset, location)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::authorized_aliases::AuthorizedAliasersApi<Block> for Runtime {
+		fn authorized_aliasers(target: VersionedLocation) -> Result<
+			Vec<xcm_runtime_apis::authorized_aliases::OriginAliaser>,
+			xcm_runtime_apis::authorized_aliases::Error
+		> {
+			PolkadotXcm::authorized_aliasers(target)
+		}
+		fn is_authorized_alias(origin: VersionedLocation, target: VersionedLocation) -> Result<
+			bool,
+			xcm_runtime_apis::authorized_aliases::Error
+		> {
+			PolkadotXcm::is_authorized_alias(origin, target)
+		}
 	}
 }
