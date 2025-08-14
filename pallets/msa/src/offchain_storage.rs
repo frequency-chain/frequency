@@ -556,13 +556,14 @@ fn get_finalized_block_number<T: Config>(
 }
 
 /// converts an event to a number between [1, `MAX_FORK_AWARE_BUCKET`]
+#[allow(clippy::precedence)]
 pub fn get_bucket_number<T: Config>(event: &IndexedEvent<T>) -> u16 {
 	let hashed = Twox128::hash(&event.encode());
 	// Directly combine the first 4 bytes into a u32 using shifts and bitwise OR
-	let num = ((hashed[0] as u32) << 24 |
+	let num = (hashed[0] as u32) << 24 |
 		(hashed[1] as u32) << 16 |
 		(hashed[2] as u32) << 8 |
-		(hashed[3] as u32));
+		(hashed[3] as u32);
 
 	((num % MAX_FORK_AWARE_BUCKET) + 1u32) as u16
 }
