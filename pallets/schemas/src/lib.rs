@@ -29,8 +29,8 @@ use common_primitives::{
 	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting,
-		SchemaSettings, SchemaValidator,
+		IntentGroupId, IntentId, ModelType, PayloadLocation, SchemaId, SchemaProvider,
+		SchemaResponse, SchemaSetting, SchemaSettings, SchemaValidator,
 	},
 };
 use frame_support::{
@@ -85,6 +85,14 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
 
+		/// Maximum number of Intents that can be registered
+		#[pallet::constant]
+		type MaxIntentRegistrations: Get<IntentId>;
+
+		/// Maximum number of Intents that can belong to an IntentGroup
+		#[pallet::constant]
+		type MaxIntentsPerIntentGroup: Get<u32>;
+
 		/// The origin that is allowed to create providers via governance
 		type CreateSchemaViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
@@ -125,6 +133,33 @@ pub mod pallet {
 			schema_id: SchemaId,
 			/// ASCII string in bytes of the assigned name
 			name: Vec<u8>,
+		},
+
+		/// Emitted when an Intent is registered
+		IntentCreated {
+			/// Account ID
+			key: T::AccountId,
+
+			/// IntentId of newly created Intent
+			intent_id: IntentId,
+		},
+
+		/// Emitted when an IntentGroup is registered
+		IntentGroupCreated {
+			/// Account ID of creator
+			key: T::AccountId,
+
+			/// IntentGroupId of newly created IntentGroup
+			delegation_group_id: IntentGroupId,
+		},
+
+		/// Emitted when an IntentGroup is updated
+		IntentGroupUpdated {
+			/// Account ID that did the update
+			key: T::AccountId,
+
+			/// IntentGroupId of the IntentGroup that was updated
+			intent_group_id: IntentGroupId,
 		},
 	}
 
@@ -220,12 +255,22 @@ pub mod pallet {
 	pub(super) type SchemaNameToIds<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		SchemaNamespace,
+		SchemaProtocolName,
 		Blake2_128Concat,
 		SchemaDescriptor,
 		SchemaVersionId,
 		ValueQuery,
 	>;
+
+	/// Storage for Intents
+	#[pallet::storage]
+	pub(super) type IntentInfos<T: Config> =
+		StorageMap<_, Twox64Concat, IntentId, IntentInfo, OptionQuery>;
+
+	/// Storage for IntentGroups
+	#[pallet::storage]
+	pub(super) type IntentGroups<T: Config> =
+		StorageMap<_, Twox64Concat, IntentGroupId, IntentGroup<T>, OptionQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -273,9 +318,9 @@ pub mod pallet {
 					None
 				};
 				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
-					BoundedVec::try_from(schema.settings.clone()).expect(
-						"Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
-					);
+                    BoundedVec::try_from(schema.settings.clone()).expect(
+                        "Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
+                    );
 
 				let _ = Pallet::<T>::add_schema(
 					model,
@@ -336,7 +381,7 @@ pub mod pallet {
 				Some(_) => T::WeightInfo::propose_to_create_schema_v2_with_name(model.len() as u32),
 				None => T::WeightInfo::propose_to_create_schema_v2_without_name(model.len() as u32)
 			}
-		)]
+        )]
 		pub fn propose_to_create_schema_v2(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -387,7 +432,7 @@ pub mod pallet {
 				Some(_) => T::WeightInfo::create_schema_via_governance_v2_with_name(model.len() as u32+ settings.len() as u32),
 				None => T::WeightInfo::create_schema_via_governance_v2_without_name(model.len() as u32+ settings.len() as u32)
 			}
-		)]
+        )]
 		pub fn create_schema_via_governance_v2(
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,
@@ -446,7 +491,7 @@ pub mod pallet {
 				Some(_) => T::WeightInfo::create_schema_v3_with_name(model.len() as u32 + settings.len() as u32),
 				None => T::WeightInfo::create_schema_v3_without_name(model.len() as u32 + settings.len() as u32)
 			}
-		)]
+        )]
 		pub fn create_schema_v3(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
