@@ -191,7 +191,7 @@ same numeric ID, so that current Delegation storage would not require a migratio
 ## 6. **Schemas**<a id="schemas"></a>
 
 In the new model, a `Schema` represents a data format definition *only*. Any association with data _meaning_ or _storage
-location_ is promoted to the Schema's corresponging `Intent`. A Schema may be associated with one and only one Intent.
+location_ is promoted to the Schema's corresponding `Intent`. A Schema may be associated with one and only one Intent.
 Under this model, a Schema has some associated metadata, and a model containing the actual data format definition (ie,
 currently-supported Parquet or Avro schema).
 
