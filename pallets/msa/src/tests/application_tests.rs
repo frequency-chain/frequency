@@ -211,3 +211,22 @@ fn create_application_via_governance_requires_registered_provider() {
 		);
 	});
 }
+
+#[test]
+fn create_application_via_governance_fails_for_duplicate_application() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_provider_with_name("AppProvider");
+		let entry = ApplicationContext::default();
+		// Add the entry directly to `ProviderToApplicationRegistry`
+		ProviderToApplicationRegistry::<Test>::insert(ProviderId(new_msa_id), 0, entry.clone());
+		// Create the application based on 1 yes vote by the council
+		assert_noop!(
+			Msa::create_application_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+				key_pair.into(),
+				entry
+			),
+			Error::<Test>::DuplicateApplicationRegistryEntry
+		);
+	})
+}
