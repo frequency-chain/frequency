@@ -17,6 +17,9 @@ apache-avro = { workspace = true, features = ["snappy"] }
 thiserror = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
 sp-api = { workspace = true }
+sp-io = { workspace = true }
+cid = { workspace = true }
+multihash = { workspace = true }
 
 [features]
 default = ['std']
