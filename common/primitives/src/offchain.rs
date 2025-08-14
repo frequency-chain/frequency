@@ -4,11 +4,10 @@ use parity_scale_codec::Decode;
 #[cfg(feature = "std")]
 use sp_externalities::ExternalitiesExt;
 use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
-use sp_runtime_interface::runtime_interface;
 extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use sp_runtime::pass_by::AllocateAndReturnByCodec;
+use sp_runtime_interface::{pass_by::AllocateAndReturnByCodec, runtime_interface};
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
