@@ -55,6 +55,7 @@ cumulus-pallet-weight-reclaim = { workspace = true }
 substrate-build-script-utils = { workspace = true }
 
 [features]
+frequency-bridging = []
 std = ["sp-api/std", "frame-support/std", "sp-runtime/std", "sp-core/std"]
 cli = [
   "frequency-service",
@@ -80,11 +81,13 @@ frequency = ["frequency-service/frequency"]
 frequency-no-relay = ["frequency-service/frequency-no-relay"]
 frequency-local = ["frequency-service/frequency-local"]
 frequency-testnet = ["frequency-service/frequency-testnet"]
+frequency-westend = ["frequency-service/frequency-westend"]
 frequency-lint-check = [
   "frequency",
   "frequency-no-relay",
   "frequency-local",
   "frequency-testnet",
+  "frequency-westend",
   "frequency-service/frequency-lint-check",
 ]
 

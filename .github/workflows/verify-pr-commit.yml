@@ -300,7 +300,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Check
-        run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
+        run: SKIP_WASM_BUILD=1 cargo check --features runtime-benchmarks,frequency-lint-check
 
   run-rust-tests:
     needs: changes
