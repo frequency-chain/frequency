@@ -2199,10 +2199,6 @@ sp_api::impl_runtime_apis! {
 					Ok((origin, ticket, assets))
 				}
 
-				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
-					Ok(xcm::benchmarks::RelayAsset::get())
-				}
-
 				// We do not support locking and unlocking on Frequency
 				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
 					Err(BenchmarkError::Skip)
@@ -2215,6 +2211,11 @@ sp_api::impl_runtime_apis! {
 
 				// We do not support alias origin on Frequency
 				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support worst case for trader on Frequency
+				fn worst_case_for_trader() -> Result<(xcm::benchmarks::Asset, cumulus_primitives_core::WeightLimit), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}
