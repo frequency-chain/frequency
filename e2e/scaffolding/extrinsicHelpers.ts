@@ -620,6 +620,24 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static createApplicationViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.createApplicationViaGovernance(getUnifiedPublicKey(providerKeys), {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationCreated
+    );
+  }
+
   public static createSponsoredAccountWithDelegation(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,

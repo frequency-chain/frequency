@@ -18,6 +18,9 @@ use common_primitives::{
 use scale_info::TypeInfo;
 use sp_core::U256;
 
+/// ApplicationIndex type
+pub type ApplicationIndex = u16;
+
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
