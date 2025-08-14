@@ -1,7 +1,9 @@
 [workspace]
 members = [
   "chains/frequency-westend",
+  "chains/relay/paseo",
   "networks/westend",
+  # "networks/paseo",
   "test/frequency-westend"
 ]
 resolver = "2"
@@ -67,4 +69,20 @@ pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", tag = "pol
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
 staging-xcm-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
+
+
+authority-discovery-primitives = { version = "36.0.0", default-features = false, package = "sp-authority-discovery" }
+babe-primitives = { version = "0.42.1", default-features = false, package = "sp-consensus-babe" }
+beefy-primitives = { version = "24.1.0", default-features = false, package = "sp-consensus-beefy" }
+grandpa = { version = "0.34.0", package = "sc-consensus-grandpa" }
+pallet-staking = { version = "40.1.1", default-features = false }
+
+paseo-runtime-common = { version = "19.1.0", default-features = false }
+paseo-runtime = { git = "https://github.com/paseo-network/runtimes", package = "paseo-runtime", tag = "1.5.1-relay" }
+paseo-runtime-constants = { git = "https://github.com/paseo-network/runtimes", tag = "1.5.1-relay", package = "paseo-runtime-constants", default-features = false }
+
+
+
+
+
 
