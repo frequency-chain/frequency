@@ -823,12 +823,12 @@ impl pallet_msa::Config for Runtime {
 	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
 	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
-	#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
+	#[cfg(not(feature = "frequency-no-relay"))]
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
-	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
+	#[cfg(feature = "frequency-no-relay")]
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<AccountId>;
 	// The Currency type for managing MSA token balances
 	type Currency = Balances;
