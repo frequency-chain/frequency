@@ -47,32 +47,32 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_710_000 picoseconds.
-		Weight::from_parts(4_055_000, 0)
+		// Minimum execution time: 3_911_000 picoseconds.
+		Weight::from_parts(4_468_000, 0)
 	}
 	/// The range of component `n` is `[0, 10]`.
 	fn pay_with_capacity_batch_all(n: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_413_000 picoseconds.
-		Weight::from_parts(7_631_509, 0)
-			// Standard Error: 13_387
-			.saturating_add(Weight::from_parts(3_290_082, 0).saturating_mul(n.into()))
+		// Minimum execution time: 6_948_000 picoseconds.
+		Weight::from_parts(8_254_732, 0)
+			// Standard Error: 20_207
+			.saturating_add(Weight::from_parts(3_581_308, 0).saturating_mul(n.into()))
 	}
 	fn charge_tx_payment_free() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 947_000 picoseconds.
-		Weight::from_parts(1_023_000, 0)
+		// Minimum execution time: 970_000 picoseconds.
+		Weight::from_parts(1_063_000, 0)
 	}
 	fn charge_tx_payment_token_based() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 28_600_000 picoseconds.
-		Weight::from_parts(29_415_000, 0)
+		// Minimum execution time: 30_352_000 picoseconds.
+		Weight::from_parts(30_989_000, 0)
 	}
 	/// Storage: `System::Account` (r:1 w:0)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -84,8 +84,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `299`
 		//  Estimated: `4088`
-		// Minimum execution time: 29_300_000 picoseconds.
-		Weight::from_parts(30_372_000, 4088)
+		// Minimum execution time: 30_220_000 picoseconds.
+		Weight::from_parts(31_019_000, 4088)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -97,32 +97,32 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_710_000 picoseconds.
-		Weight::from_parts(4_055_000, 0)
+		// Minimum execution time: 3_911_000 picoseconds.
+		Weight::from_parts(4_468_000, 0)
 	}
 	/// The range of component `n` is `[0, 10]`.
 	fn pay_with_capacity_batch_all(n: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 6_413_000 picoseconds.
-		Weight::from_parts(7_631_509, 0)
-			// Standard Error: 13_387
-			.saturating_add(Weight::from_parts(3_290_082, 0).saturating_mul(n.into()))
+		// Minimum execution time: 6_948_000 picoseconds.
+		Weight::from_parts(8_254_732, 0)
+			// Standard Error: 20_207
+			.saturating_add(Weight::from_parts(3_581_308, 0).saturating_mul(n.into()))
 	}
 	fn charge_tx_payment_free() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 947_000 picoseconds.
-		Weight::from_parts(1_023_000, 0)
+		// Minimum execution time: 970_000 picoseconds.
+		Weight::from_parts(1_063_000, 0)
 	}
 	fn charge_tx_payment_token_based() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 28_600_000 picoseconds.
-		Weight::from_parts(29_415_000, 0)
+		// Minimum execution time: 30_352_000 picoseconds.
+		Weight::from_parts(30_989_000, 0)
 	}
 	/// Storage: `System::Account` (r:1 w:0)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
@@ -134,8 +134,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `299`
 		//  Estimated: `4088`
-		// Minimum execution time: 29_300_000 picoseconds.
-		Weight::from_parts(30_372_000, 4088)
+		// Minimum execution time: 30_220_000 picoseconds.
+		Weight::from_parts(31_019_000, 4088)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
