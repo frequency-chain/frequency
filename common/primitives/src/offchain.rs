@@ -8,6 +8,7 @@ use sp_runtime_interface::runtime_interface;
 extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
+use sp_runtime::pass_by::AllocateAndReturnByCodec;
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
@@ -22,7 +23,7 @@ sp_externalities::decl_extension! {
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
 	/// another function
-	fn get_val(&mut self) -> Option<Vec<u8>> {
+	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
 		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
 	}
 }
