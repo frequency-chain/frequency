@@ -1406,6 +1406,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
 	type SelectCore = DefaultCoreSelector<Runtime>;
+	type RelayParentOffset = ConstU32<0>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
