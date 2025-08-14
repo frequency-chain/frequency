@@ -86,6 +86,7 @@ pub mod module {
 		frame_system::Config + pallet_transaction_payment::Config + Send + Sync
 	{
 		/// The overarching event type.
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The overarching call type.

@@ -184,6 +184,7 @@ sp-debug-derive = { git = "https://github.com/paritytech/polkadot-sdk", tag = "p
 # Clippy Lints: https://rust-lang.github.io/rust-clippy/master/index.html
 [workspace.lints.rust]
 nonstandard-style = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(substrate_runtime)'] }
 
 [workspace.lints.clippy]
 # We just deny everything so that we can then build up from there
