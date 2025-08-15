@@ -263,6 +263,16 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// Storage for Intents
+	#[pallet::storage]
+	pub(super) type IntentInfos<T: Config> =
+		StorageMap<_, Twox64Concat, IntentId, IntentInfo, OptionQuery>;
+
+	/// Storage for IntentGroups
+	#[pallet::storage]
+	pub(super) type IntentGroups<T: Config> =
+		StorageMap<_, Twox64Concat, IntentGroupId, IntentGroup<T>, OptionQuery>;
+
 	/// Storage for mapping names to IDs
 	/// - Key: Protocol Name
 	/// - Key: Descriptor
