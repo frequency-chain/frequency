@@ -41,7 +41,6 @@ pub fn genesis() -> sp_core::storage::Storage {
 		system: paseo_runtime::SystemConfig::default(),
 		balances: paseo_runtime::BalancesConfig {
 			balances: accounts::init_balances().iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
-			dev_accounts: None,
 		},
 		session: paseo_runtime::SessionConfig {
 			keys: validators::initial_authorities()

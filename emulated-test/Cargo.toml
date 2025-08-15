@@ -3,7 +3,7 @@ members = [
   "chains/frequency-westend",
   "chains/relay/paseo",
   "networks/westend",
-  # "networks/paseo",
+  "networks/paseo",
   "test/frequency-westend"
 ]
 resolver = "2"

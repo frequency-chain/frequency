@@ -10,7 +10,7 @@ use emulated_integration_tests_common::{
 
 // Paseo declaration
 decl_test_relay_chains! {
-	#[api_version(13)]
+	#[api_version(12)]
 	pub struct Paseo {
 		genesis = genesis::genesis(),
 		on_init = (),
@@ -21,6 +21,7 @@ decl_test_relay_chains! {
 		pallets = {
 			XcmPallet: paseo_runtime::XcmPallet,
 			Balances: paseo_runtime::Balances,
+			Treasury: paseo_runtime::Treasury,
 			AssetRate: paseo_runtime::AssetRate,
 			Hrmp: paseo_runtime::Hrmp,
 		}
