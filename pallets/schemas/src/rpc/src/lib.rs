@@ -92,7 +92,7 @@ where
 			Err(e) => Err(ErrorObject::owned(
 				SchemaRpcError::SchemaValidationError.into(),
 				"Unable to validate schema",
-				Some(format!("{:?}", e)),
+				Some(format!("{e:?}")),
 			)),
 		}
 	}
