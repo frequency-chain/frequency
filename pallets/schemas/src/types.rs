@@ -1,8 +1,8 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
 use common_primitives::schema::{
-	ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion,
-	SchemaVersionResponse,
+	IntentId, IntentSetting, IntentSettings, ModelType, PayloadLocation, SchemaId, SchemaSetting,
+	SchemaSettings, SchemaVersion, SchemaVersionResponse,
 };
 use core::fmt::Debug;
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
@@ -14,24 +14,26 @@ use alloc::{string::String, vec, vec::Vec};
 use frame_support::traits::Len;
 
 /// Current storage version of the schemas pallet.
-pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
+pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
 
-/// The maximum size of schema name including all parts
+/// The maximum size of a fully qualified name, including all parts
 pub const SCHEMA_NAME_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
-/// A schema name following following structure NAMESPACE.DESCRIPTOR
+/// A fully qualified name has the following structure PROTOCOL.DESCRIPTOR
 pub type SchemaNamePayload = BoundedVec<u8, ConstU32<SCHEMA_NAME_BYTES_MAX>>;
 /// schema namespace type
-pub type SchemaNamespace = BoundedVec<u8, ConstU32<NAMESPACE_MAX>>;
+pub type SchemaProtocolName = BoundedVec<u8, ConstU32<PROTOCOL_NAME_MAX>>;
 /// schema descriptor type
 pub type SchemaDescriptor = BoundedVec<u8, ConstU32<DESCRIPTOR_MAX>>;
 /// The minimum size of a namespace in schema
-pub const NAMESPACE_MIN: u32 = 3;
+pub const PROTOCOL_NAME_MIN: u32 = 3;
 /// The maximum size of a namespace in schema
-pub const NAMESPACE_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (DESCRIPTOR_MIN + 1);
+pub const PROTOCOL_NAME_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (DESCRIPTOR_MIN + 1);
 /// The minimum size of a schema descriptor
 pub const DESCRIPTOR_MIN: u32 = 1;
 /// The maximum size of a schema descriptor
-pub const DESCRIPTOR_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (NAMESPACE_MIN + 1);
+pub const DESCRIPTOR_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (PROTOCOL_NAME_MIN + 1);
+/// Maximum number of intents allowed per delegation group
+pub const MAX_INTENTS_PER_DELEGATION_GROUP: u32 = 10;
 /// separator character
 pub const SEPARATOR_CHAR: char = '.';
 /// maximum number of versions for a certain schema name
@@ -53,6 +55,34 @@ pub struct GenesisSchema {
 	pub settings: Vec<SchemaSetting>,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Genesis Intents need a way to load up and this is it!
+pub struct GenesisIntent {
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// Schema Full Name: {Namespace}.{Descriptor}
+	pub name: String,
+	/// Settings
+	pub settings: Vec<IntentSetting>,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+/// A structure defining an IntentGroup
+pub struct IntentGroup<T: Config> {
+	/// The list of Intents in the DelegationGroup
+	pub intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+/// A structure defining Intent information
+pub struct IntentInfo {
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// additional control settings for the schema
+	pub settings: IntentSettings,
+}
+
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining a Schema information (excluding the payload)
 pub struct SchemaInfo {
@@ -70,7 +100,7 @@ pub struct SchemaInfo {
 /// A structure defining name of a schema
 pub struct SchemaName {
 	/// namespace or domain of the schema
-	pub namespace: SchemaNamespace,
+	pub namespace: SchemaProtocolName,
 	/// name or descriptor of this schema
 	pub descriptor: SchemaDescriptor,
 }
@@ -113,7 +143,10 @@ impl SchemaName {
 		// check namespace
 		let namespace = BoundedVec::try_from(chunks[0].as_bytes().to_vec())
 			.map_err(|_| Error::<T>::InvalidSchemaNamespaceLength)?;
-		ensure!(NAMESPACE_MIN <= namespace.len() as u32, Error::<T>::InvalidSchemaNamespaceLength);
+		ensure!(
+			PROTOCOL_NAME_MIN <= namespace.len() as u32,
+			Error::<T>::InvalidSchemaNamespaceLength
+		);
 		// should not start or end with -
 		ensure!(
 			!(namespace.starts_with(b"-") || namespace.ends_with(b"-")),

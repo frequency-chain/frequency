@@ -68,6 +68,8 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 }
 
 pub type MaxSchemaRegistrations = ConstU16<64_000>;
+pub type MaxIntentRegistrations = ConstU16<64_000>;
+pub type MaxIntentsPerIntentGroup = ConstU32<10>;
 
 pub struct WeightToFee;
 
@@ -122,6 +124,8 @@ impl pallet_schemas::Config for Test {
 	// is actually allowed.
 	type SchemaModelMaxBytesBoundedVecLimit = SchemaModelMaxBytesBoundedVecLimit;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
+	type MaxIntentRegistrations = MaxIntentRegistrations;
+	type MaxIntentsPerIntentGroup = MaxIntentsPerIntentGroup;
 	type MaxSchemaSettingsPerSchema = ConstU32<2>;
 	// The proposal type
 	type Proposal = RuntimeCall;

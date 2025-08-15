@@ -99,6 +99,10 @@ parameter_types! {
 	/// The maximum length of a schema model (in bytes)
 	pub const SchemasMaxBytesBoundedVecLimit :u32 = 65_500;
 }
+/// The maximum number of Intent registrations
+pub type IntentsMaxRegistrations = ConstU16<65_000>;
+/// The maximum number of Intents that can belong to a single IntentGroup
+pub type IntentGroupMaxIntents = ConstU32<10>;
 /// The maximum number of schema registrations
 pub type SchemasMaxRegistrations = ConstU16<65_000>;
 /// The minimum schema model size (in bytes)

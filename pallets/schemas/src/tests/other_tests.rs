@@ -22,7 +22,7 @@ use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
 use crate::{
 	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
 	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
-	SchemaNamespace, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
+	SchemaProtocolName, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
 };
 
 use super::mock::*;
@@ -366,15 +366,15 @@ fn schema_name_try_parse_with_strict_valid_names_should_succeed() {
 		let valid_names = ["Abc.a", "a-v.D-D", "aZxcvBnmkjhgfds.asdfghKkloiuyTre"];
 		let parsed_names = vec![
 			SchemaName {
-				namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("abc".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::try_from("a".to_string().into_bytes()).unwrap(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("a-v".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("a-v".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::try_from("d-d".to_string().into_bytes()).unwrap(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
+				namespace: SchemaProtocolName::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
 					.unwrap(),
 				descriptor: SchemaDescriptor::try_from("asdfghkkloiuytre".to_string().into_bytes())
 					.unwrap(),
@@ -394,15 +394,15 @@ fn schema_name_try_parse_with_non_strict_valid_names_should_succeed() {
 		let valid_names = ["Abc", "a-v", "aZxcvBnmkjhgfds"];
 		let parsed_names = vec![
 			SchemaName {
-				namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("abc".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::default(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("a-v".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("a-v".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::default(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
+				namespace: SchemaProtocolName::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
 					.unwrap(),
 				descriptor: SchemaDescriptor::default(),
 			},
@@ -436,7 +436,7 @@ fn schema_version_id_add_should_work() {
 		let schema_id_1: SchemaId = 55;
 		let schema_id_2: SchemaId = 200;
 		let schema_name = SchemaName {
-			namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
+			namespace: SchemaProtocolName::try_from("abc".to_string().into_bytes()).unwrap(),
 			descriptor: SchemaDescriptor::try_from("d-d".to_string().into_bytes()).unwrap(),
 		};
 		assert_ok!(val.add::<Test>(schema_id_1));
