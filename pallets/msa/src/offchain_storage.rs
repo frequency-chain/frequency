@@ -104,7 +104,7 @@ pub fn do_offchain_worker<T: Config>(block_number: BlockNumberFor<T>) {
 	if let Some(finalized_block_number) = get_finalized_block_number::<T>(block_number) {
 		match offchain_index_initial_state::<T>(finalized_block_number) {
 			LockStatus::Locked => {
-				log::info!("initiating-index is still locked in {:?}", block_number);
+				log::info!("initiating-index is still locked in {block_number:?}");
 			},
 			LockStatus::Released => {
 				apply_offchain_events::<T>(finalized_block_number);
@@ -144,7 +144,7 @@ fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> L
 		let is_initial_indexed = processed_storage.get::<bool>().unwrap_or(None);
 
 		if !is_initial_indexed.unwrap_or_default() {
-			log::info!("Msa::ofw::initial-indexed is {:?}", is_initial_indexed);
+			log::info!("Msa::ofw::initial-indexed is {is_initial_indexed:?}");
 
 			// setting last processed block so we can start indexing from that block after
 			// initial index is done
@@ -160,16 +160,16 @@ fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> L
 				// extend the initial index lock
 				counter += 1;
 				if counter % 1000 == 0 {
-					log::info!("Added {} more keys!", counter);
+					log::info!("Added {counter} more keys!");
 					if guard.extend_lock().is_err() {
-						log::warn!("lock is expired in block {:?}", block_number);
+						log::warn!("lock is expired in block {block_number:?}");
 						return LockStatus::Released;
 					}
 				}
 			}
 
 			processed_storage.set(&true);
-			log::info!("Finished adding {} keys!", counter);
+			log::info!("Finished adding {counter} keys!");
 		}
 	} else {
 		return LockStatus::Locked;
@@ -186,7 +186,7 @@ fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 	);
 
 	if let Ok(mut guard) = lock.try_lock() {
-		log::info!("processing events in {:?}", block_number);
+		log::info!("processing events in {block_number:?}");
 
 		let last_processed_block_storage =
 			StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
@@ -201,14 +201,14 @@ fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 		start_block_number += BlockNumberFor::<T>::one();
 		while start_block_number <= block_number {
 			if reverse_map_msa_keys::<T>(start_block_number) && guard.extend_lock().is_err() {
-				log::warn!("last processed block lock is expired in block {:?}", block_number);
+				log::warn!("last processed block lock is expired in block {block_number:?}");
 				break;
 			}
 			last_processed_block_storage.set(&start_block_number);
 			start_block_number += BlockNumberFor::<T>::one();
 		}
 	} else {
-		log::info!("skip processing events on {:?} due to existing lock!", block_number);
+		log::info!("skip processing events on {block_number:?} due to existing lock!");
 	};
 }
 
@@ -227,7 +227,7 @@ where
 {
 	let value = offchain_common::get_index_value::<V>(key);
 	value.unwrap_or_else(|e| {
-		log::error!("Error getting offchain index value: {:?}", e);
+		log::error!("Error getting offchain index value: {e:?}");
 		None
 	})
 }
@@ -400,10 +400,7 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 				if let Some(on_chain_msa_id) = PublicKeyToMsaId::<T>::get(key) {
 					if on_chain_msa_id != msa_id {
 						log::warn!(
-							"{:?} forked onchain-MsaId={:?}, forked-MsaId=={:?}",
-							key,
-							on_chain_msa_id,
-							msa_id
+							"{key:?} forked onchain-MsaId={on_chain_msa_id:?}, forked-MsaId=={msa_id:?}",
 						);
 					} else if !msa_keys.contains(key) {
 						msa_keys.push(key.clone());
@@ -498,7 +495,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 		sp_runtime::offchain::http::Error::Unknown
 	})?;
 
-	log::debug!("{}", body_str);
+	log::debug!("{body_str}");
 	let finalized_block_response: FinalizedBlockResponse =
 		serde_json::from_str(body_str).map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 
@@ -519,7 +516,7 @@ fn get_finalized_block_number<T: Config>(
 	let last_finalized_hash = match fetch_finalized_block_hash::<T>() {
 		Ok(hash) => hash,
 		Err(e) => {
-			log::error!("failure to get the finalized hash {:?}", e);
+			log::error!("failure to get the finalized hash {e:?}");
 			return finalized_block_number;
 		},
 	};
@@ -539,17 +536,11 @@ fn get_finalized_block_number<T: Config>(
 	match finalized_block_number {
 		None => {
 			log::error!(
-				"Not able to find any imported block with {:?} hash and {:?} block",
-				last_finalized_hash,
-				current_block
+				"Not able to find any imported block with {last_finalized_hash:?} hash and {current_block:?} block",
 			);
 		},
 		Some(inner) => {
-			log::info!(
-				"last finalized block number {:?} and hash {:?}",
-				inner,
-				last_finalized_hash
-			);
+			log::info!("last finalized block number {inner:?} and hash {last_finalized_hash:?}",);
 		},
 	}
 	finalized_block_number

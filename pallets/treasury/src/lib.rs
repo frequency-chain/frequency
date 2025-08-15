@@ -858,6 +858,7 @@ pub mod pallet {
 		/// Emits [`Event::SpendProcessed`] if the spend payout has succeed.
 		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::check_status())]
+		#[allow(clippy::useless_conversion)]
 		pub fn check_status(origin: OriginFor<T>, index: SpendIndex) -> DispatchResultWithPostInfo {
 			use PaymentState as State;
 			use PaymentStatus as Status;

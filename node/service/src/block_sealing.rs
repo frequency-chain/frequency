@@ -34,11 +34,11 @@ pub fn start_frequency_dev_sealing_node(
 	override_pool_config: Option<TransactionPoolOptions>,
 ) -> Result<TaskManager, sc_service::error::Error> {
 	let extra: String = if sealing_mode == SealingMode::Interval {
-		format!(" ({}s interval)", sealing_interval)
+		format!(" ({sealing_interval}s interval)")
 	} else {
 		String::from("")
 	};
-	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
+	log::info!("📎 Development mode (no relay chain) with {sealing_mode} sealing{extra}");
 
 	let net_config = sc_network::config::FullNetworkConfiguration::<
 		_,

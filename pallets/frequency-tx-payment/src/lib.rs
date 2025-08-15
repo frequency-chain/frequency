@@ -197,6 +197,7 @@ pub mod pallet {
 		let dispatch_info = call.get_dispatch_info();
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.call_weight), dispatch_info.class)
 		})]
+		#[allow(clippy::useless_conversion)]
 		pub fn pay_with_capacity(
 			origin: OriginFor<T>,
 			call: Box<<T as Config>::RuntimeCall>,
@@ -216,6 +217,7 @@ pub mod pallet {
 				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
 		(< T as Config >::WeightInfo::pay_with_capacity_batch_all(calls.len() as u32).saturating_add(dispatch_weight), DispatchClass::Normal)
 		})]
+		#[allow(clippy::useless_conversion)]
 		pub fn pay_with_capacity_batch_all(
 			origin: OriginFor<T>,
 			calls: Vec<<T as Config>::RuntimeCall>,

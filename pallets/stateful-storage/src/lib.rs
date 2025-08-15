@@ -701,10 +701,7 @@ impl<T: Config> Pallet<T> {
 				|e| match e {
 					PageError::ErrorParsing(err) => {
 						log::warn!(
-							"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
-							state_owner_msa_id,
-							schema_id,
-							err
+							"failed parsing Itemized msa={state_owner_msa_id:?} schema_id={schema_id:?} {err:?}",
 						);
 						Error::<T>::CorruptedState
 					},

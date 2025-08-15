@@ -98,12 +98,12 @@ fn map_result<T>(api_result: Result<Result<T, DispatchError>, ApiError>) -> RpcR
 		Ok(Err(e)) => Err(ErrorObject::owned(
 			ErrorCode::ServerError(300).code(), // No real reason for this value
 			"Runtime Error",
-			Some(format!("{:?}", e)),
+			Some(format!("{e:?}")),
 		)),
 		Err(e) => Err(ErrorObject::owned(
 			ErrorCode::ServerError(301).code(), // No real reason for this value
 			"Api Error",
-			Some(format!("{:?}", e)),
+			Some(format!("{e:?}")),
 		)),
 	}
 }

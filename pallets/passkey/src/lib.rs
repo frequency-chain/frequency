@@ -144,7 +144,7 @@ pub mod module {
 			let total = overhead.saturating_add(dispatch_info.call_weight);
 			(total, dispatch_info.class)
 		})]
-		#[allow(deprecated)]
+		#[allow(clippy::useless_conversion)]
 		pub fn proxy(
 			origin: OriginFor<T>,
 			payload: PasskeyPayload<T>,
@@ -162,6 +162,7 @@ pub mod module {
 			let total = overhead.saturating_add(dispatch_info.call_weight);
 			(total, dispatch_info.class)
 		})]
+		#[allow(clippy::useless_conversion)]
 		pub fn proxy_v2(
 			origin: OriginFor<T>,
 			payload: PasskeyPayloadV2<T>,

@@ -615,7 +615,7 @@ pub mod pallet {
 					Some(response)
 				},
 				(None, Some(_)) | (Some(_), None) => {
-					log::error!("Corrupted state for schema {:?}, Should never happen!", schema_id);
+					log::error!("Corrupted state for schema {schema_id:?}, Should never happen!");
 					None
 				},
 				(None, None) => None,
