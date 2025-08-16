@@ -1,13 +1,13 @@
 use crate::msa::MessageSourceId;
 use numtoa::NumToA;
-use parity_scale_codec::Decode;
+use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use sp_externalities::ExternalitiesExt;
 use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use sp_runtime_interface::{pass_by::AllocateAndReturnByCodec, runtime_interface};
+use sp_runtime_interface::{pass_by::PassPointerAndWrite, runtime_interface};
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
@@ -18,14 +18,62 @@ sp_externalities::decl_extension! {
 	);
 }
 
+/// A simple buffer that works with PassPointerAndWrite
+pub struct Buffer([u8; 1024]);
+
+impl Buffer {
+	/// return underlying buffer as slice
+	pub fn as_slice(&self, len: usize) -> &[u8] {
+		&self.0[..len]
+	}
+}
+
+impl Default for Buffer {
+	fn default() -> Self {
+		Buffer([0u8; 1024])
+	}
+}
+
+impl AsRef<[u8]> for Buffer {
+	fn as_ref(&self) -> &[u8] {
+		&self.0
+	}
+}
+
+impl AsMut<[u8]> for Buffer {
+	fn as_mut(&mut self) -> &mut [u8] {
+		&mut self.0
+	}
+}
+
 /// runtime new customized
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
-	/// another function
-	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
-		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
+	/// Get extension value by writing to output buffer
+	/// Returns the length of data written, 0 if no extension found
+	fn get_val(&mut self, output: PassPointerAndWrite<&mut Buffer, 1024>) -> u32 {
+		match self.extension::<OcwCustomExt>() {
+			Some(ext) => {
+				let encoded = Some(ext.0.clone()).encode();
+				let len = encoded.len().min(1024);
+
+				// Copy data to the fixed-size buffer
+				output.0[..len].copy_from_slice(&encoded[..len]);
+
+				len as u32
+			},
+			None => {
+				let encoded = Option::<Vec<u8>>::None.encode();
+				let len = encoded.len().min(1024);
+
+				output.0[..len].copy_from_slice(&encoded[..len]);
+
+				len as u32
+			},
+		}
 	}
 }
+
 /// Lock expiration timeout in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account

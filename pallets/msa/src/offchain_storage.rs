@@ -452,14 +452,26 @@ pub struct FinalizedBlockResponse {
 /// fetches finalized block hash from rpc
 fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
 	// we are not able to use the custom extension in benchmarks due to feature conflict
-	let rpc_address = if cfg!(feature = "runtime-benchmarks") {
+	// Build rpc_address bytes (Vec<u8>) either from benchmarks constant or via custom extension
+	let rpc_address_bytes: Vec<u8> = if cfg!(feature = "runtime-benchmarks") {
 		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 	} else {
-		// rpc address provided to offchain worker via custom extension
-		common_primitives::offchain::custom::get_val()
-			.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into())
+		// call the runtime-interface function that fills our fixed buffer
+		let mut buffer = common_primitives::offchain::Buffer::default();
+		let len = common_primitives::offchain::custom::get_val(&mut buffer);
+
+		let data = buffer.as_slice(len as usize);
+
+		if len == 0 || data.is_empty() || data[0] == 0 {
+			RPC_FINALIZED_BLOCK_REQUEST_URL.into()
+		} else {
+			match Option::<Vec<u8>>::decode(&mut &data[..]).ok().flatten() {
+				Some(v) if !v.is_empty() => v,
+				_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
+			}
+		}
 	};
-	let url = core::str::from_utf8(&rpc_address)
+	let url = core::str::from_utf8(&rpc_address_bytes)
 		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
 	// deadline to 2s to complete the external call.
