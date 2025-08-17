@@ -28,12 +28,12 @@ const RAW: u64 = 0x55;
 /// let cid_bytes = compute_cid_v1(data);
 /// println!("CIDv1 bytes: {:?}", cid_bytes);
 /// ```
-pub fn compute_cid_v1(bytes: &[u8]) -> core::result::Result<Vec<u8>, Error> {
+pub fn compute_cid_v1(bytes: &[u8]) -> Result<Vec<u8>, Error> {
 	// Compute the SHA2-256 digest using Substrate's no_std hash
 	let digest = sha2_256(bytes);
 
 	// Wrap the digest in a multihash (code + length + digest)
-	let mh = Multihash::<64>::wrap(SHA2_256, &digest)?;
+	let mh = Multihash::<64>::wrap(SHA2_256, &digest).unwrap_or_else(|_| Multihash::default());
 
 	// Construct CIDv1 with RAW codec
 	let cid = Cid::new_v1(RAW, mh);
