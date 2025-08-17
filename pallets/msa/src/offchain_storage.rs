@@ -463,7 +463,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 			RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 		} else {
 			let data = buffer.as_slice();
-			match Option::<Vec<u8>>::decode(&mut &data[..]).ok().flatten() {
+			match Vec::<u8>::decode(&mut &data[..]).ok() {
 				Some(v) if !v.is_empty() => v,
 				_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
 			}

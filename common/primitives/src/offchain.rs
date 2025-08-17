@@ -29,7 +29,7 @@ pub trait Custom: ExternalitiesExt {
 	fn get_val(&mut self, output: PassPointerAndWrite<&mut Buffer256, 256>) -> u32 {
 		match self.extension::<OcwCustomExt>() {
 			Some(ext) => {
-				let encoded = Some(ext.0.clone()).encode();
+				let encoded = ext.0.clone().encode();
 				let len = encoded.len().min(256);
 				output.clear();
 				match output.try_extend_from_slice(&encoded[..len]) {
