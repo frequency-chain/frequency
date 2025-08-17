@@ -19,57 +19,25 @@ sp_externalities::decl_extension! {
 }
 
 /// A simple buffer that works with PassPointerAndWrite
-pub struct Buffer([u8; 256]);
-
-impl Buffer {
-	/// return underlying buffer as slice
-	pub fn as_slice(&self, len: usize) -> &[u8] {
-		&self.0[..len]
-	}
-}
-
-impl Default for Buffer {
-	fn default() -> Self {
-		Buffer([0u8; 256])
-	}
-}
-
-impl AsRef<[u8]> for Buffer {
-	fn as_ref(&self) -> &[u8] {
-		&self.0
-	}
-}
-
-impl AsMut<[u8]> for Buffer {
-	fn as_mut(&mut self) -> &mut [u8] {
-		&mut self.0
-	}
-}
+pub type Buffer256 = arrayvec::ArrayVec<u8, 256>;
 
 /// runtime new customized
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
 	/// Get extension value by writing to output buffer
 	/// Returns the length of data written, 0 if no extension found
-	fn get_val(&mut self, output: PassPointerAndWrite<&mut Buffer, 256>) -> u32 {
+	fn get_val(&mut self, output: PassPointerAndWrite<&mut Buffer256, 256>) -> u32 {
 		match self.extension::<OcwCustomExt>() {
 			Some(ext) => {
 				let encoded = Some(ext.0.clone()).encode();
 				let len = encoded.len().min(256);
-
-				// Copy data to the fixed-size buffer
-				output.0[..len].copy_from_slice(&encoded[..len]);
-
-				len as u32
+				output.clear();
+				match output.try_extend_from_slice(&encoded[..len]) {
+					Ok(()) => len as u32,
+					Err(_) => 0,
+				}
 			},
-			None => {
-				let encoded = Option::<Vec<u8>>::None.encode();
-				let len = encoded.len().min(1024);
-
-				output.0[..len].copy_from_slice(&encoded[..len]);
-
-				len as u32
-			},
+			None => 0,
 		}
 	}
 }

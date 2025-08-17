@@ -457,14 +457,12 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 	} else {
 		// call the runtime-interface function that fills our fixed buffer
-		let mut buffer = common_primitives::offchain::Buffer::default();
+		let mut buffer = common_primitives::offchain::Buffer256::default();
 		let len = common_primitives::offchain::custom::get_val(&mut buffer);
-
-		let data = buffer.as_slice(len as usize);
-
-		if len == 0 || data.is_empty() || data[0] == 0 {
+		if len == 0 {
 			RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 		} else {
+			let data = buffer.as_slice();
 			match Option::<Vec<u8>>::decode(&mut &data[..]).ok().flatten() {
 				Some(v) if !v.is_empty() => v,
 				_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
