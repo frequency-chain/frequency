@@ -58,6 +58,8 @@ serial_test = { version = "3.2.0", default-features = false }
 base64-url = { version =  "3.0.0", default-features = false }
 p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 libsecp256k1 = { version = "0.7", default-features = false }
+cid = { version = "0.11", default-features = false, features = ["alloc"] }
+multibase = { version = "0.9", default-features = false }
 
 # substrate pallets
 pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-7", default-features = false }
