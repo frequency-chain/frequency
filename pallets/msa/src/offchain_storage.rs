@@ -457,7 +457,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 	} else {
 		// call the runtime-interface function that fills our fixed buffer
-		let mut buffer = common_primitives::offchain::Buffer256::default();
+		let mut buffer = Vec::new();
 		let len = common_primitives::offchain::custom::get_val(&mut buffer);
 		if len == 0 {
 			RPC_FINALIZED_BLOCK_REQUEST_URL.into()

@@ -7,7 +7,7 @@ use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use sp_runtime_interface::{pass_by::PassPointerAndWrite, runtime_interface};
+use sp_runtime_interface::{pass_by::PassFatPointerAndReadWrite, runtime_interface};
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
@@ -18,30 +18,24 @@ sp_externalities::decl_extension! {
 	);
 }
 
-/// A simple buffer that works with PassPointerAndWrite
-pub type Buffer256 = arrayvec::ArrayVec<u8, 256>;
-
 /// runtime new customized
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
 	/// Get extension value by writing to output buffer
-	/// Returns the length of data written, 0 if no extension found
-	fn get_val(&mut self, output: PassPointerAndWrite<&mut Buffer256, 256>) -> u32 {
+	/// Returns the total length of encoded data,
+	/// or 0 if no extension found.
+	fn get_val(&mut self, output: PassFatPointerAndReadWrite<&mut [u8]>) -> u32 {
 		match self.extension::<OcwCustomExt>() {
 			Some(ext) => {
 				let encoded = ext.0.clone().encode();
-				let len = encoded.len().min(256);
-				output.clear();
-				match output.try_extend_from_slice(&encoded[..len]) {
-					Ok(()) => len as u32,
-					Err(_) => 0,
-				}
+				let written = core::cmp::min(encoded.len(), output.len());
+				output[..written].copy_from_slice(&encoded[..written]);
+				encoded.len() as u32
 			},
 			None => 0,
 		}
 	}
 }
-
 /// Lock expiration timeout in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account
