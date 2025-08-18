@@ -1486,7 +1486,7 @@ pub mod pallet {
 
 			let input_cid_binary = Self::validate_cid(&logo_cid)?;
 			let computed_cid_binary =
-				compute_cid_v1(&logo_bytes.as_slice()).ok_or(Error::<T>::InvalidCid)?;
+				compute_cid_v1(logo_bytes.as_slice()).ok_or(Error::<T>::InvalidCid)?;
 			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidCid);
 			ApprovedLogos::<T>::insert(&logo_cid, logo_bytes);
 			Ok(())
