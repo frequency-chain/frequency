@@ -20,6 +20,7 @@ import {
   createKeys,
   getEthereumKeyPairFromUnifiedAddress,
   generateAddKeyPayload,
+  generateValidProviderPayloadWithName,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
@@ -43,9 +44,10 @@ describe('Account Recovery Testing', function () {
     const { target: providerMsaTarget } = await ExtrinsicHelper.createMsa(recoveryProviderKey).signAndSend();
     assert.notEqual(providerMsaTarget?.data.msaId, undefined, 'Provider MSA Id not in expected event');
     recoveryProviderMsaId = providerMsaTarget!.data.msaId;
+    const providerEntry = generateValidProviderPayloadWithName('RecoveryProvider');
 
     // Register the MSA as a provider first (required before approval)
-    const createProviderOp = ExtrinsicHelper.createProvider(recoveryProviderKey, 'RecoveryProvider');
+    const createProviderOp = ExtrinsicHelper.createProviderV2(recoveryProviderKey, providerEntry);
     const { eventMap: providerEventMap } = await createProviderOp.fundAndSend(fundingSource);
     assertEvent(providerEventMap, 'system.ExtrinsicSuccess');
     assertEvent(providerEventMap, 'msa.ProviderCreated');

@@ -8,6 +8,7 @@ import {
   createAndFundKeypair,
   createAndFundKeypairs,
   generateDelegationPayload,
+  generateValidProviderPayloadWithName,
   signPayload,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
@@ -51,14 +52,16 @@ describe('Delegation Scenario Tests Ethereum', function () {
 
     let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
     await createProviderMsaOp.signAndSend();
-    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'MyPoster');
+    const providerEntry = generateValidProviderPayloadWithName('MyProvider');
+
+    let createProviderOp = ExtrinsicHelper.createProviderV2(providerKeys, providerEntry);
     let { target: providerEvent } = await createProviderOp.signAndSend();
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     providerId = providerEvent!.data.providerId;
 
     createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
     await createProviderMsaOp.signAndSend();
-    createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, 'MyPoster');
+    createProviderOp = ExtrinsicHelper.createProviderV2(otherProviderKeys, providerEntry);
     ({ target: providerEvent } = await createProviderOp.signAndSend());
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;
