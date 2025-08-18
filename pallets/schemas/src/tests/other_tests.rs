@@ -25,12 +25,6 @@ use parity_scale_codec::Encode;
 use serial_test::serial;
 use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
 
-use crate::{
-	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
-	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
-	SchemaProtocolName, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
-};
-
 use super::mock::*;
 
 #[test]
