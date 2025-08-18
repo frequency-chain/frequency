@@ -56,6 +56,7 @@ use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmar
 use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	capacity::TargetValidator,
+	cid::compute_cid_v1,
 	handles::HandleProvider,
 	msa::*,
 	node::{EIP712Encode, ProposalProvider},
@@ -542,6 +543,9 @@ pub mod pallet {
 
 		/// Duplicate application registry entry
 		DuplicateApplicationRegistryEntry,
+
+		/// Logo cid not approved
+		LogoCidNotApproved,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -1455,6 +1459,36 @@ pub mod pallet {
 				msa_id: ProviderId(provider_msa_id),
 				application_id,
 			});
+			Ok(())
+		}
+
+		/// Upload logo bytes for a approved image in `ApprovedLogos`
+		///
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ProviderNotRegistered`] - If the provider is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid and not in approved logos.
+		/// * [`Error::LogoCidNotApproved`] - If the logo CID is not in the approved logos list.
+		///
+		#[pallet::call_index(24)]
+		#[pallet::weight(Weight::from_parts(0, 0))]
+		pub fn upload_logo(
+			origin: OriginFor<T>,
+			logo_cid: BoundedVec<u8, T::MaxLogoCidSize>,
+			logo_bytes: BoundedVec<u8, T::MaxLogoSize>,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			ensure!(ApprovedLogos::<T>::contains_key(&logo_cid), Error::<T>::LogoCidNotApproved);
+
+			let input_cid_binary = Self::validate_cid(&logo_cid)?;
+			let computed_cid_binary =
+				compute_cid_v1(&logo_bytes.as_slice()).ok_or(Error::<T>::InvalidCid)?;
+			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidCid);
+			ApprovedLogos::<T>::insert(&logo_cid, logo_bytes);
 			Ok(())
 		}
 	}
