@@ -546,6 +546,9 @@ pub mod pallet {
 
 		/// Logo cid not approved
 		LogoCidNotApproved,
+
+		/// Invalid logo bytes that do not match the approved logo
+		InvalidLogoBytes,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -1486,7 +1489,7 @@ pub mod pallet {
 
 			let input_cid_binary = Self::validate_cid(&logo_cid)?;
 			let computed_cid_binary =
-				compute_cid_v1(logo_bytes.as_slice()).ok_or(Error::<T>::InvalidCid)?;
+				compute_cid_v1(logo_bytes.as_slice()).ok_or(Error::<T>::InvalidLogoBytes)?;
 			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidCid);
 			ApprovedLogos::<T>::insert(&logo_cid, logo_bytes);
 			Ok(())
