@@ -29,8 +29,9 @@ use common_primitives::{
 	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
-		IntentGroupId, IntentId, ModelType, PayloadLocation, SchemaId, SchemaProvider,
-		SchemaResponse, SchemaSetting, SchemaSettings, SchemaValidator,
+		IntentGroupId, IntentId, MappedEntityIdentifier, ModelType, NameLookupResponse,
+		PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting, SchemaSettings,
+		SchemaValidator,
 	},
 };
 use frame_support::{
@@ -259,6 +260,21 @@ pub mod pallet {
 		Blake2_128Concat,
 		SchemaDescriptor,
 		SchemaVersionId,
+		ValueQuery,
+	>;
+
+	/// Storage for mapping names to IDs
+	/// - Key: Protocol Name
+	/// - Key: Descriptor
+	/// - Value: MappedEntityIdentifier
+	#[pallet::storage]
+	pub(super) type NameToMappedEntityIds<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		SchemaProtocolName,
+		Blake2_128Concat,
+		SchemaDescriptor,
+		MappedEntityIdentifier,
 		ValueQuery,
 	>;
 
@@ -789,6 +805,32 @@ pub mod pallet {
 					.collect(),
 			};
 			Some(versions)
+		}
+
+		/// method to return the entity ID (Intent or IntentGroup) associated with a name
+		pub fn get_intent_or_group_ids_by_name(
+			entity_name: Vec<u8>,
+		) -> Option<Vec<NameLookupResponse>> {
+			let bounded_name = BoundedVec::try_from(entity_name).ok()?;
+			let parsed_name = FullyQualifiedName::try_parse::<T>(bounded_name, false).ok()?;
+			let responses: Vec<_> = match parsed_name.descriptor_exists() {
+				true => {
+					let mut val = Vec::<NameLookupResponse>::new();
+					if let Ok(id) = NameToMappedEntityIds::<T>::try_get(
+						&parsed_name.namespace,
+						&parsed_name.descriptor,
+					) {
+						val.push(id.convert_to_response(&parsed_name));
+					}
+					val
+				},
+				false => NameToMappedEntityIds::<T>::iter_prefix(&parsed_name.namespace)
+					.map(|(descriptor, val)| {
+						val.convert_to_response(&parsed_name.new_with_descriptor(descriptor))
+					})
+					.collect(),
+			};
+			Some(responses)
 		}
 
 		/// Parses the schema name and makes sure the schema does not have a name

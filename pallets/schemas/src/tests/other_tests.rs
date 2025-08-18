@@ -1,3 +1,8 @@
+use crate::{
+	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
+	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
+	SchemaProtocolName, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
+};
 use common_primitives::{
 	node::AccountId,
 	parquet::{
@@ -8,7 +13,8 @@ use common_primitives::{
 		ParquetModel,
 	},
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaVersion, SchemaVersionResponse,
+		MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId,
+		SchemaSetting, SchemaVersion, SchemaVersionResponse,
 	},
 };
 use frame_support::{
@@ -18,12 +24,6 @@ use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 use serial_test::serial;
 use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
-
-use crate::{
-	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
-	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
-	SchemaProtocolName, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
-};
 
 use super::mock::*;
 
@@ -679,6 +679,83 @@ fn get_schema_versions_for_namespace_should_return_all_descriptors() {
 }
 
 #[test]
+fn get_intent_or_group_ids_for_namespace_should_return_all_descriptors() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		let namespace = "namespace";
+		let name_1 = format!("{}.alice", namespace);
+		let name_payload_1: SchemaNamePayload =
+			BoundedVec::try_from(name_1.to_string().into_bytes()).expect("should convert");
+		let name_2 = format!("{}.bob", namespace);
+		let name_payload_2: SchemaNamePayload =
+			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
+
+		// TODO: Create intent & intent group (upcoming PR will add support for this)
+		// act
+		let entity_ids =
+			SchemasPallet::get_intent_or_group_ids_by_name(String::from(namespace).into_bytes());
+
+		// TODO: enable test in future PR
+		// assert
+		// assert!(entity_ids.is_some());
+
+		let mut inner = entity_ids.clone().unwrap();
+		inner.sort_by(|a, b| a.name.cmp(&b.name));
+		// assert_eq!(
+		// 	entity_ids,
+		// 	Some(vec![
+		// 		NameLookupResponse {
+		// 			entity_id: MappedEntityIdentifier::Intent(1),
+		// 			name: name_payload_1.into_inner(),
+		// 		},
+		// 		NameLookupResponse {
+		// 			entity_id: MappedEntityIdentifier::IntentGroup(1),
+		// 			name: name_payload_2.into_inner(),
+		// 		},
+		// 	])
+		// );
+	})
+}
+
+#[test]
+fn get_intent_or_group_ids_for_fully_qualified_name_should_return_single_descriptor() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		let namespace = "namespace";
+		let name_1 = format!("{}.alice", namespace);
+		let name_payload_1: SchemaNamePayload =
+			BoundedVec::try_from(name_1.to_string().into_bytes()).expect("should convert");
+		let name_2 = format!("{}.bob", namespace);
+		let name_payload_2: SchemaNamePayload =
+			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
+
+		// TODO: Create intent & intent group (upcoming PR will add support for this)
+		// act
+		let entity_ids =
+			SchemasPallet::get_intent_or_group_ids_by_name(String::from(name_1).into_bytes());
+
+		// TODO: enable test in future PR
+		// assert
+		// assert!(entity_ids.is_some());
+
+		let mut inner = entity_ids.clone().unwrap();
+		// assert_eq!(
+		// 	entity_ids,
+		// 	Some(vec![
+		// 		NameLookupResponse {
+		// 			entity_id: MappedEntityIdentifier::Intent(1),
+		// 			name: name_payload_1.into_inner(),
+		// 		},
+		// 	])
+		// );
+	})
+}
+
+#[test]
 fn create_schema_via_governance_v2_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -1109,7 +1186,7 @@ fn genesis_config_build_genesis_schemas() {
 		let res = CurrentSchemaIdentifierMaximum::<Test>::get();
 
 		// Should be set to 16_000
-		assert!(res == 16_000);
+		assert_eq!(res, 16_000);
 
 		// Check that the first schema exists
 		let res = SchemasPallet::get_schema_by_id(1);

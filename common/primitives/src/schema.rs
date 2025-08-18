@@ -162,6 +162,44 @@ pub struct SchemaInfoResponse {
 	pub settings: Vec<SchemaSetting>,
 }
 
+#[derive(
+	Copy,
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	PartialEq,
+	Debug,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
+/// Enum type for the different types of entities that a FullyQualifiedName can represent
+pub enum MappedEntityIdentifier {
+	/// An Intent
+	Intent(IntentId),
+	/// An IntentGroup
+	IntentGroup(IntentGroupId),
+}
+
+impl Default for MappedEntityIdentifier {
+	fn default() -> Self {
+		Self::Intent(Default::default())
+	}
+}
+
+/// RPC response form for a name resolution lookup
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct NameLookupResponse {
+	/// The name for this entity
+	pub name: Vec<u8>,
+	/// The resolved entity
+	pub entity_id: MappedEntityIdentifier,
+}
+
 /// This allows other pallets to resolve Schema information. With generic SchemaId
 pub trait SchemaProvider<SchemaId> {
 	/// Gets the Schema details associated with this `SchemaId` if any
