@@ -463,13 +463,12 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 			legacy_val.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into())
 		} else {
 			// call the runtime-interface function that fills our fixed buffer
-			let mut buffer = Vec::with_capacity(256);
+			let mut buffer = vec![0u8; 256];
 			let len = common_primitives::offchain::custom::get_val_buffered(&mut buffer);
 			if len == 0 {
 				RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 			} else {
-				let data = buffer.as_slice();
-				match Vec::<u8>::decode(&mut &data[..]).ok() {
+				match Vec::<u8>::decode(&mut &buffer[..len as usize]) {
 					Some(v) if !v.is_empty() => v,
 					_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
 				}
