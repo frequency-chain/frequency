@@ -7,10 +7,7 @@ use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use sp_runtime_interface::{
-	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndReadWrite},
-	runtime_interface,
-};
+use sp_runtime_interface::{pass_by::PassFatPointerAndReadWrite, runtime_interface};
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
@@ -24,16 +21,10 @@ sp_externalities::decl_extension! {
 /// runtime new customized
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
-	/// another function
-	/// TODO: Remove this legacy method once all collators are upgraded
-	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
-		None
-	}
-
 	/// Get extension value by writing to output buffer
 	/// Returns the total length of encoded data,
 	/// or 0 if no extension found.
-	fn get_val_buffered(&mut self, output: PassFatPointerAndReadWrite<&mut [u8]>) -> u32 {
+	fn get_val(&mut self, output: PassFatPointerAndReadWrite<&mut [u8]>) -> u32 {
 		match self.extension::<OcwCustomExt>() {
 			Some(ext) => {
 				let encoded = ext.0.clone().encode();
