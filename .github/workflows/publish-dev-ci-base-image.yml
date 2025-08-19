@@ -18,8 +18,8 @@ on:
       - "README.md"
       - "LICENSE"
 env:
-  RUST_VERSION: 1.84.1
-  IMAGE_VERSION: 1.5.7
+  RUST_VERSION: 1.88
+  IMAGE_VERSION: 1.5.8
   # 1.86.0
   NIGHTLY_VERSION: nightly-2025-04-03
 
