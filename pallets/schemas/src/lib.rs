@@ -41,7 +41,7 @@ use frame_support::{
 };
 use sp_runtime::{traits::Dispatchable, BoundedVec, DispatchError};
 extern crate alloc;
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 
 #[cfg(test)]
 mod tests;
@@ -808,29 +808,32 @@ pub mod pallet {
 		}
 
 		/// method to return the entity ID (Intent or IntentGroup) associated with a name
+		/// Warning: Must only get called from RPC, since the number of DB accesses is not deterministic
 		pub fn get_intent_or_group_ids_by_name(
 			entity_name: Vec<u8>,
 		) -> Option<Vec<NameLookupResponse>> {
-			let bounded_name = BoundedVec::try_from(entity_name).ok()?;
-			let parsed_name = FullyQualifiedName::try_parse::<T>(bounded_name, false).ok()?;
-			let responses: Vec<_> = match parsed_name.descriptor_exists() {
-				true => {
-					let mut val = Vec::<NameLookupResponse>::new();
-					if let Ok(id) = NameToMappedEntityIds::<T>::try_get(
-						&parsed_name.namespace,
-						&parsed_name.descriptor,
-					) {
-						val.push(id.convert_to_response(&parsed_name));
-					}
-					val
-				},
-				false => NameToMappedEntityIds::<T>::iter_prefix(&parsed_name.namespace)
+			let parsed_name =
+				FullyQualifiedName::try_parse::<T>(BoundedVec::try_from(entity_name).ok()?, false)
+					.ok()?;
+
+			if parsed_name.descriptor_exists() {
+				if let Ok(id) = NameToMappedEntityIds::<T>::try_get(
+					&parsed_name.namespace,
+					&parsed_name.descriptor,
+				) {
+					return Some(vec![id.convert_to_response(&parsed_name)]);
+				}
+				return None
+			}
+
+			let responses: Vec<NameLookupResponse> =
+				NameToMappedEntityIds::<T>::iter_prefix(&parsed_name.namespace)
 					.map(|(descriptor, val)| {
 						val.convert_to_response(&parsed_name.new_with_descriptor(descriptor))
 					})
-					.collect(),
-			};
-			Some(responses)
+					.collect();
+
+			(!responses.is_empty()).then_some(responses)
 		}
 
 		/// Parses the schema name and makes sure the schema does not have a name
