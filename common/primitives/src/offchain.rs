@@ -39,7 +39,7 @@ pub trait Custom: ExternalitiesExt {
 				let encoded = ext.0.clone().encode();
 				let written = core::cmp::min(encoded.len(), output.len());
 				output[..written].copy_from_slice(&encoded[..written]);
-				encoded.len() as u32
+				written.len() as u32
 			},
 			None => 0,
 		}
