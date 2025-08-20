@@ -21,10 +21,15 @@ sp_externalities::decl_extension! {
 /// runtime new customized
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
+	/// legacy function do not use
+	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
+		None
+	}
+
 	/// Get extension value by writing to output buffer
 	/// Returns the total length of encoded data,
 	/// or 0 if no extension found.
-	fn get_val(&mut self, output: PassFatPointerAndReadWrite<&mut [u8]>) -> u32 {
+	fn get_val_buffered(&mut self, output: PassFatPointerAndReadWrite<&mut [u8]>) -> u32 {
 		match self.extension::<OcwCustomExt>() {
 			Some(ext) => {
 				let encoded = ext.0.clone().encode();
