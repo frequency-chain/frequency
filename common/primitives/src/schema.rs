@@ -11,6 +11,12 @@ use sp_runtime::RuntimeDebug;
 #[cfg(feature = "std")]
 use utils::*;
 
+/// DelegationGrpup Id is the unique identifier for a DelegationGroup
+pub type IntentGroupId = u16;
+
+/// Intent Id is the unique identifier for an Intent
+pub type IntentId = u16;
+
 /// Schema Id is the unique identifier for a Schema
 pub type SchemaId = u16;
 
@@ -95,6 +101,36 @@ pub enum SchemaSetting {
 #[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct SchemaSettings(pub BitFlags<SchemaSetting>);
 
+/// TODO: temporary alias until Schemas are updated in an upcoming PR
+pub type IntentSetting = SchemaSetting;
+
+/// TODO: temporary alias until Schemas are updated in an upcoming PR
+pub type IntentSettings = SchemaSettings;
+
+/// RPC response structure for an IntentGroup
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct IntentGroupResponse {
+	/// The unique identifier for this IntentGroup
+	pub intent_group_id: u16,
+	/// The list of currently supported IntentIds for this IntentGroup
+	pub intent_ids: Option<Vec<IntentId>>,
+}
+
+/// RPC response structure for an Intent
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct IntentResponse {
+	/// The unique identifier for this Intent
+	pub intent_id: IntentId,
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// settings for the Intent
+	pub settings: Vec<IntentSetting>,
+	/// The list of currently-supported SchemaIds for this Intent
+	pub schema_ids: Option<Vec<SchemaId>>,
+}
+
 /// RPC Response form for a Schema
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -126,6 +162,44 @@ pub struct SchemaInfoResponse {
 	pub settings: Vec<SchemaSetting>,
 }
 
+#[derive(
+	Copy,
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	PartialEq,
+	Debug,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
+/// Enum type for the different types of entities that a FullyQualifiedName can represent
+pub enum MappedEntityIdentifier {
+	/// An Intent
+	Intent(IntentId),
+	/// An IntentGroup
+	IntentGroup(IntentGroupId),
+}
+
+impl Default for MappedEntityIdentifier {
+	fn default() -> Self {
+		Self::Intent(Default::default())
+	}
+}
+
+/// RPC response form for a name resolution lookup
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct NameLookupResponse {
+	/// The name for this entity
+	pub name: Vec<u8>,
+	/// The resolved entity
+	pub entity_id: MappedEntityIdentifier,
+}
+
 /// This allows other pallets to resolve Schema information. With generic SchemaId
 pub trait SchemaProvider<SchemaId> {
 	/// Gets the Schema details associated with this `SchemaId` if any
@@ -135,9 +209,9 @@ pub trait SchemaProvider<SchemaId> {
 	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse>;
 }
 
-/// This allows other Pallets to check validity of schema ids.
+/// This allows other Pallets to check the validity of schema ids.
 pub trait SchemaValidator<SchemaId> {
-	/// Checks that a collection of SchemaIds are all valid
+	/// Checks that a collection of SchemaIds is all valid
 	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool;
 
 	/// Set the schema counter for testing purposes.

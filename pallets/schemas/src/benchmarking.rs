@@ -24,7 +24,7 @@ fn generate_schema<T: Config>(
 		if item.len() + json.len() < size {
 			json.extend(item);
 		} else {
-			break
+			break;
 		}
 	}
 	json.pop(); // removing last ,
@@ -44,7 +44,7 @@ mod benchmarks {
 		>,
 	) -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
-		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
 			.into_iter()
@@ -136,7 +136,7 @@ mod benchmarks {
 		>,
 	) -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
-		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
 			.into_iter()
@@ -216,7 +216,7 @@ mod benchmarks {
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::AvroBinary;
 		let payload_location = PayloadLocation::OnChain;
-		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
 			.into_iter()
@@ -278,7 +278,7 @@ mod benchmarks {
 	fn propose_to_create_schema_name() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
 		let model = generate_schema::<T>(100_usize);
-		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
 			.into_iter()
@@ -309,7 +309,7 @@ mod benchmarks {
 	#[benchmark]
 	fn create_schema_name_via_governance() -> Result<(), BenchmarkError> {
 		let model = generate_schema::<T>(100_usize);
-		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
 			.into_iter()
