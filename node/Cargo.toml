@@ -22,7 +22,6 @@ frequency-cli = { path = "cli" }
 
 [features]
 std = []
-frequency-bridging = []
 default = []
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-cli/frequency"]

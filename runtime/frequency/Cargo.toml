@@ -279,7 +279,6 @@ frequency-testnet = ["common-runtime/frequency-testnet", "pallet-msa/frequency-t
 frequency-westend = ["common-runtime/frequency-westend"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
-frequency-bridging = ["common-runtime/frequency-bridging"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
@@ -292,7 +291,7 @@ on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
 # `RUNTIME_METADATA_HASH` environment variable set for the `CheckMetadataHash`
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
-frequency-lint-check = ["frequency-bridging"]
+frequency-lint-check = []
 test = []
 parameterized-consensus-hook = []
 force-debug=[

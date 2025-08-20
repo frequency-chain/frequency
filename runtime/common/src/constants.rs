@@ -405,7 +405,6 @@ pub type CapacityRewardEraLength =
 // -end- Capacity Pallet ---
 
 // --- XCM Version ---
-#[cfg(feature = "frequency-bridging")]
 pub mod xcm_version {
 	/// The default XCM version considered safe for the network.
 	/// This is not the latest version, but the one that is considered stable and safe to use.
