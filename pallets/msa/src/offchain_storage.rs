@@ -456,15 +456,22 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 	let rpc_address_bytes: Vec<u8> = if cfg!(feature = "runtime-benchmarks") {
 		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 	} else {
-		// call the runtime-interface function that fills our fixed buffer
-		let mut buffer = vec![0u8; 256];
-		let len = common_primitives::offchain::custom::get_val(&mut buffer);
-		if len == 0 {
-			RPC_FINALIZED_BLOCK_REQUEST_URL.into()
+		// To prevent breaking change we call legacy function
+		// TODO remove this logic once all collators are upgraded
+		let legacy_val = common_primitives::offchain::custom::get_val();
+		if legacy_val.is_some() {
+			legacy_val.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into())
 		} else {
-			match Vec::<u8>::decode(&mut &buffer[..len as usize]) {
-				Ok(v) if !v.is_empty() => v,
-				_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
+			// call the runtime-interface function that fills our fixed buffer
+			let mut buffer = vec![0u8; 256];
+			let len = common_primitives::offchain::custom::get_val_buffered(&mut buffer);
+			if len == 0 {
+				RPC_FINALIZED_BLOCK_REQUEST_URL.into()
+			} else {
+				match Vec::<u8>::decode(&mut &buffer[..len as usize]) {
+					Ok(v) if !v.is_empty() => v,
+					_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
+				}
 			}
 		}
 	};
