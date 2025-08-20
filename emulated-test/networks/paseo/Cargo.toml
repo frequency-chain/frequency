@@ -8,7 +8,12 @@ publish = false
 version = "0.0.0"
 
 [dependencies]
-asset-hub-westend-emulated-chain = { workspace = true }
+# asset-hub-westend-emulated-chain = { workspace = true }
+# emulated-integration-tests-common = { workspace = true }
+# westend-emulated-chain = { workspace = true }
+# frequency-emulated-chain = { path = "../../chains/frequency-westend" }
+
+# emulated-integration-tests-common = { version = "19.0.2" }
 emulated-integration-tests-common = { workspace = true }
-westend-emulated-chain = { workspace = true }
-frequency-emulated-chain = { path = "../../chains/frequency-westend" }
+paseo-emulated-chain = { path = "../../chains/relay/paseo" }
+frequency-emulated-chain-paseo = { path = "../../chains/frequency-paseo" }
