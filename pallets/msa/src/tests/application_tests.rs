@@ -8,7 +8,8 @@ use sp_weights::Weight;
 use pretty_assertions::assert_eq;
 
 use crate::{
-	tests::mock::*, ApprovedLogos, Error, NextApplicationIndex, ProviderToApplicationRegistry,
+	tests::mock::*, types::compute_cid, ApprovedLogos, Error, NextApplicationIndex,
+	ProviderToApplicationRegistry,
 };
 
 #[test]

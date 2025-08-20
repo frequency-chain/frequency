@@ -4,8 +4,7 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Msa;
 use crate::{
-	tests::mock::compute_cid,
-	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
+	types::{compute_cid, RecoveryCommitmentPayload, EMPTY_FUNCTION},
 	MsaIdToRecoveryCommitment,
 };
 use common_primitives::{msa::ProviderRegistryEntry, utils::wrap_binary_data};
