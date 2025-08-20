@@ -4,10 +4,11 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Msa;
 use crate::{
+	tests::mock::compute_cid,
 	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
 	MsaIdToRecoveryCommitment,
 };
-use common_primitives::{cid::compute_cid_v1, msa::ProviderRegistryEntry, utils::wrap_binary_data};
+use common_primitives::{msa::ProviderRegistryEntry, utils::wrap_binary_data};
 use frame_benchmarking::{account, v2::*};
 use frame_support::{
 	assert_ok,
@@ -201,14 +202,6 @@ fn make_lang_code(mut i: usize, len: usize) -> Vec<u8> {
 		i /= 26;
 	}
 	code
-}
-
-// Helper function to compute CID of given bytes and return Vec<u8>
-fn compute_cid(bytes: &[u8]) -> Vec<u8> {
-	let cid = compute_cid_v1(bytes).expect("Failed to compute CID");
-	// Encode CID into multibase Base58btc string, then return as Vec<u8>
-	let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
-	encoded.into_bytes()
 }
 
 #[benchmarks(where

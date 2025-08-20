@@ -1473,7 +1473,7 @@ pub mod pallet {
 		/// * [`Error::LogoCidNotApproved`] - If the logo CID is not in the approved logos list.
 		///
 		#[pallet::call_index(24)]
-		#[pallet::weight(Weight::from_parts(0, 0))]
+		#[pallet::weight(T::WeightInfo::upload_logo())]
 		pub fn upload_logo(
 			origin: OriginFor<T>,
 			logo_cid: BoundedVec<u8, T::MaxLogoCidSize>,
@@ -1490,7 +1490,7 @@ pub mod pallet {
 			let input_cid_binary = Self::validate_cid(&logo_cid)?;
 			let computed_cid_binary =
 				compute_cid_v1(logo_bytes.as_slice()).ok_or(Error::<T>::InvalidLogoBytes)?;
-			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidCid);
+			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidLogoBytes);
 			ApprovedLogos::<T>::insert(&logo_cid, logo_bytes);
 			Ok(())
 		}

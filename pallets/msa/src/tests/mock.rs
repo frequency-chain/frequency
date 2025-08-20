@@ -4,6 +4,7 @@ use crate::{
 	AddKeyData, AddProvider, AuthorizedKeyData, RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
+	cid::compute_cid_v1,
 	msa::{MessageSourceId, ProviderRegistryEntry},
 	node::BlockNumber,
 	schema::SchemaId,
@@ -593,4 +594,12 @@ pub fn setup_recovery_with_commitment(
 	));
 
 	(msa_id, msa_owner_key_pair, recovery_commitment)
+}
+
+// Helper function to compute CID of given bytes and return Vec<u8>
+pub fn compute_cid(bytes: &[u8]) -> Vec<u8> {
+	let cid = compute_cid_v1(bytes).expect("Failed to compute CID");
+	// Encode CID into multibase Base58btc string, then return as Vec<u8>
+	let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
+	encoded.into_bytes()
 }

@@ -7,7 +7,9 @@ use sp_weights::Weight;
 
 use pretty_assertions::assert_eq;
 
-use crate::{tests::mock::*, Error, NextApplicationIndex, ProviderToApplicationRegistry};
+use crate::{
+	tests::mock::*, ApprovedLogos, Error, NextApplicationIndex, ProviderToApplicationRegistry,
+};
 
 #[test]
 fn create_application_via_governance_happy_path() {
@@ -229,4 +231,108 @@ fn create_application_via_governance_fails_for_duplicate_application() {
 			Error::<Test>::DuplicateApplicationRegistryEntry
 		);
 	})
+}
+
+#[test]
+fn upload_logo_happy_path() {
+	new_test_ext().execute_with(|| {
+		let (_, key_pair) = create_provider_with_name("LogoProvider");
+		let logo_cid = compute_cid(b"test_logo_data");
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+
+		// assuming logo was approved via governance
+		ApprovedLogos::<Test>::insert(&input_bounded_cid, BoundedVec::new());
+
+		assert_ok!(Msa::upload_logo(
+			RuntimeOrigin::signed(key_pair.into()),
+			BoundedVec::try_from(input_bounded_cid.clone()).expect("Logo CID should fit in bounds"),
+			BoundedVec::try_from(b"test_logo_data".to_vec())
+				.expect("Logo data should fit in bounds")
+		));
+
+		let stored_logo_bytes = ApprovedLogos::<Test>::get(&input_bounded_cid);
+		let expect_logo_bytes = BoundedVec::try_from(b"test_logo_data".to_vec())
+			.expect("Logo data should fit in bounds");
+		assert_eq!(stored_logo_bytes, Some(expect_logo_bytes));
+	});
+}
+
+#[test]
+fn upload_logo_fails_for_unapproved_logo() {
+	new_test_ext().execute_with(|| {
+		let (_, key_pair) = create_provider_with_name("LogoProvider");
+		let logo_cid = compute_cid(b"test_logo_data");
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+		assert_noop!(
+			Msa::upload_logo(
+				RuntimeOrigin::signed(key_pair.into()),
+				BoundedVec::try_from(input_bounded_cid.clone())
+					.expect("Logo CID should fit in bounds"),
+				BoundedVec::try_from(b"test_logo_data".to_vec())
+					.expect("Logo data should fit in bounds")
+			),
+			Error::<Test>::LogoCidNotApproved
+		);
+	});
+}
+
+#[test]
+fn upload_logo_fails_for_non_provider() {
+	new_test_ext().execute_with(|| {
+		let (_, key_pair) = create_account();
+		let logo_cid = compute_cid(b"test_logo_data");
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+		assert_noop!(
+			Msa::upload_logo(
+				RuntimeOrigin::signed(key_pair.public().into()),
+				BoundedVec::try_from(input_bounded_cid.clone())
+					.expect("Logo CID should fit in bounds"),
+				BoundedVec::try_from(b"test_logo_data".to_vec())
+					.expect("Logo data should fit in bounds")
+			),
+			Error::<Test>::ProviderNotRegistered
+		);
+	});
+}
+
+#[test]
+fn upload_logo_fails_non_msa() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sp_core::sr25519::Pair::generate();
+		let logo_cid = compute_cid(b"test_logo_data");
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+		assert_noop!(
+			Msa::upload_logo(
+				RuntimeOrigin::signed(key_pair.public().into()),
+				BoundedVec::try_from(input_bounded_cid.clone())
+					.expect("Logo CID should fit in bounds"),
+				BoundedVec::try_from(b"test_logo_data".to_vec())
+					.expect("Logo data should fit in bounds")
+			),
+			Error::<Test>::NoKeyExists
+		);
+	});
+}
+
+#[test]
+fn upload_logo_fails_mismatch_logo_data() {
+	new_test_ext().execute_with(|| {
+		let (_, key_pair) = create_provider_with_name("LogoProvider");
+		let logo_cid = compute_cid(b"test_logo_data");
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+
+		// assuming logo was approved via governance
+		ApprovedLogos::<Test>::insert(&input_bounded_cid, BoundedVec::new());
+
+		assert_noop!(
+			Msa::upload_logo(
+				RuntimeOrigin::signed(key_pair.into()),
+				BoundedVec::try_from(input_bounded_cid.clone())
+					.expect("Logo CID should fit in bounds"),
+				BoundedVec::try_from(b"wrong_logo_data".to_vec())
+					.expect("Logo data should fit in bounds")
+			),
+			Error::<Test>::InvalidLogoBytes
+		);
+	});
 }
