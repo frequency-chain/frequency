@@ -7,13 +7,14 @@ use crate::{
 	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
 	MsaIdToRecoveryCommitment,
 };
-use common_primitives::{msa::ProviderRegistryEntry, utils::wrap_binary_data};
+use common_primitives::{cid::compute_cid_v1, msa::ProviderRegistryEntry, utils::wrap_binary_data};
 use frame_benchmarking::{account, v2::*};
 use frame_support::{
 	assert_ok,
 	traits::{fungible::Inspect, Get},
 };
 use frame_system::RawOrigin;
+use multibase;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::RuntimeAppPublic;
 
@@ -201,6 +202,12 @@ fn make_lang_code(mut i: usize, len: usize) -> Vec<u8> {
 		i /= 26;
 	}
 	code
+}
+
+// Helper function to compute cid of given bytes and return multibase encoded string
+fn compute_cid(bytes: &[u8]) -> String {
+	let cid = compute_cid_v1(bytes);
+	multibase::encode(multibase::Base::Base58Btc, cid.unwrap())
 }
 
 #[benchmarks(where
@@ -895,6 +902,38 @@ mod benchmarks {
 
 		assert_eq!(NextApplicationIndex::<T>::get(ProviderId(provider_id)), 1);
 		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn upload_logo() -> Result<(), BenchmarkError> {
+		let max_logo_size = T::MaxLogoSize::get();
+		let max_logo_bytes = vec![0u8; max_logo_size as usize];
+		let logo_cid = compute_cid(&max_logo_bytes).as_bytes().to_vec();
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) =
+			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_v2(
+			RawOrigin::Signed(provider_caller.clone()).into(),
+			entry
+		));
+
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+		let input_bounded_logo = BoundedVec::try_from(max_logo_bytes).unwrap();
+		ApprovedLogos::<T>::insert(&input_bounded_cid, BoundedVec::new());
+
+		#[extrinsic_call]
+		_(
+			RawOrigin::Signed(provider_public_key),
+			input_bounded_cid.clone(),
+			input_bounded_logo.clone(),
+		);
+
+		assert!(ApprovedLogos::<T>::get(input_bounded_cid.clone()).is_some());
+		let stored_logo_bytes = ApprovedLogos::<T>::get(&input_bounded_cid).unwrap();
+		assert_eq!(stored_logo_bytes, input_bounded_logo);
 		Ok(())
 	}
 
