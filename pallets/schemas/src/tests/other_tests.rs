@@ -701,8 +701,8 @@ fn get_intent_or_group_ids_for_namespace_should_return_all_descriptors() {
 		// assert
 		// assert!(entity_ids.is_some());
 
-		let mut inner = entity_ids.clone().unwrap();
-		inner.sort_by(|a, b| a.name.cmp(&b.name));
+		// let mut inner = entity_ids.clone().unwrap();
+		// inner.sort_by(|a, b| a.name.cmp(&b.name));
 		// assert_eq!(
 		// 	entity_ids,
 		// 	Some(vec![
@@ -742,7 +742,7 @@ fn get_intent_or_group_ids_for_fully_qualified_name_should_return_single_descrip
 		// assert
 		// assert!(entity_ids.is_some());
 
-		let mut inner = entity_ids.clone().unwrap();
+		// let mut inner = entity_ids.clone().unwrap();
 		// assert_eq!(
 		// 	entity_ids,
 		// 	Some(vec![
