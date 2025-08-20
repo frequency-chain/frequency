@@ -29,8 +29,9 @@ use common_primitives::{
 	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
-		IntentGroupId, IntentId, ModelType, PayloadLocation, SchemaId, SchemaProvider,
-		SchemaResponse, SchemaSetting, SchemaSettings, SchemaValidator,
+		IntentGroupId, IntentId, MappedEntityIdentifier, ModelType, NameLookupResponse,
+		PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting, SchemaSettings,
+		SchemaValidator,
 	},
 };
 use frame_support::{
@@ -40,7 +41,7 @@ use frame_support::{
 };
 use sp_runtime::{traits::Dispatchable, BoundedVec, DispatchError};
 extern crate alloc;
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 
 #[cfg(test)]
 mod tests;
@@ -259,6 +260,21 @@ pub mod pallet {
 		Blake2_128Concat,
 		SchemaDescriptor,
 		SchemaVersionId,
+		ValueQuery,
+	>;
+
+	/// Storage for mapping names to IDs
+	/// - Key: Protocol Name
+	/// - Key: Descriptor
+	/// - Value: MappedEntityIdentifier
+	#[pallet::storage]
+	pub(super) type NameToMappedEntityIds<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		SchemaProtocolName,
+		Blake2_128Concat,
+		SchemaDescriptor,
+		MappedEntityIdentifier,
 		ValueQuery,
 	>;
 
@@ -789,6 +805,35 @@ pub mod pallet {
 					.collect(),
 			};
 			Some(versions)
+		}
+
+		/// method to return the entity ID (Intent or IntentGroup) associated with a name
+		/// Warning: Must only get called from RPC, since the number of DB accesses is not deterministic
+		pub fn get_intent_or_group_ids_by_name(
+			entity_name: Vec<u8>,
+		) -> Option<Vec<NameLookupResponse>> {
+			let parsed_name =
+				FullyQualifiedName::try_parse::<T>(BoundedVec::try_from(entity_name).ok()?, false)
+					.ok()?;
+
+			if parsed_name.descriptor_exists() {
+				if let Ok(id) = NameToMappedEntityIds::<T>::try_get(
+					&parsed_name.namespace,
+					&parsed_name.descriptor,
+				) {
+					return Some(vec![id.convert_to_response(&parsed_name)]);
+				}
+				return None
+			}
+
+			let responses: Vec<NameLookupResponse> =
+				NameToMappedEntityIds::<T>::iter_prefix(&parsed_name.namespace)
+					.map(|(descriptor, val)| {
+						val.convert_to_response(&parsed_name.new_with_descriptor(descriptor))
+					})
+					.collect();
+
+			(!responses.is_empty()).then_some(responses)
 		}
 
 		/// Parses the schema name and makes sure the schema does not have a name

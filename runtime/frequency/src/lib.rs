@@ -159,7 +159,7 @@ pub use pallet_time_release::types::{ScheduleName, SchedulerProviderTrait};
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use common_primitives::capacity::UnclaimedRewardInfo;
+use common_primitives::{capacity::UnclaimedRewardInfo, schema::NameLookupResponse};
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
@@ -1979,6 +1979,7 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(3)]
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Schemas::get_schema_by_id(schema_id)
@@ -1986,6 +1987,10 @@ sp_api::impl_runtime_apis! {
 
 		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
 			Schemas::get_schema_versions(schema_name)
+		}
+
+		fn get_registered_entities_by_name(name: Vec<u8>) -> Option<Vec<NameLookupResponse>> {
+			Schemas::get_intent_or_group_ids_by_name(name)
 		}
 	}
 

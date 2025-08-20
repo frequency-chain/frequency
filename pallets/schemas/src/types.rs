@@ -1,8 +1,8 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
 use common_primitives::schema::{
-	IntentId, IntentSetting, IntentSettings, ModelType, PayloadLocation, SchemaId, SchemaSetting,
-	SchemaSettings, SchemaVersion, SchemaVersionResponse,
+	IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType, NameLookupResponse,
+	PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion, SchemaVersionResponse,
 };
 use core::fmt::Debug;
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
@@ -104,6 +104,10 @@ pub struct SchemaName {
 	/// name or descriptor of this schema
 	pub descriptor: SchemaDescriptor,
 }
+
+/// A structure defining a fully qualified name of an entity
+// TODO: type alias for now, until we finish converting the Schemas and deprecate the old methods
+pub type FullyQualifiedName = SchemaName;
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Default)]
 /// A structure defining name of a schema
@@ -219,5 +223,17 @@ impl SchemaVersionId {
 				schema_version: (index + 1) as SchemaVersion,
 			})
 			.collect()
+	}
+}
+
+/// trait to create a response from a name and entity identifier
+pub trait ConvertToResponse<I, R> {
+	/// method to convert to response
+	fn convert_to_response(&self, name: &I) -> R;
+}
+
+impl ConvertToResponse<SchemaName, NameLookupResponse> for MappedEntityIdentifier {
+	fn convert_to_response(&self, name: &SchemaName) -> NameLookupResponse {
+		NameLookupResponse { name: name.get_combined_name(), entity_id: *self }
 	}
 }
