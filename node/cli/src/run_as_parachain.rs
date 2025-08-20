@@ -3,8 +3,7 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use frequency_service::chain_spec;
 use log::info;
-use polkadot_service::TransactionPoolOptions;
-use sc_cli::{SubstrateCli, TransactionPoolType};
+use sc_cli::SubstrateCli;
 
 pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
