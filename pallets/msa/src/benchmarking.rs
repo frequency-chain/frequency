@@ -14,7 +14,6 @@ use frame_support::{
 	traits::{fungible::Inspect, Get},
 };
 use frame_system::RawOrigin;
-use multibase;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::RuntimeAppPublic;
 
@@ -204,10 +203,12 @@ fn make_lang_code(mut i: usize, len: usize) -> Vec<u8> {
 	code
 }
 
-// Helper function to compute cid of given bytes and return multibase encoded string
-fn compute_cid(bytes: &[u8]) -> String {
-	let cid = compute_cid_v1(bytes);
-	multibase::encode(multibase::Base::Base58Btc, cid.unwrap())
+// Helper function to compute CID of given bytes and return Vec<u8>
+fn compute_cid(bytes: &[u8]) -> Vec<u8> {
+	let cid = compute_cid_v1(bytes).expect("Failed to compute CID");
+	// Encode CID into multibase Base58btc string, then return as Vec<u8>
+	let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
+	encoded.into_bytes()
 }
 
 #[benchmarks(where
@@ -909,7 +910,7 @@ mod benchmarks {
 	fn upload_logo() -> Result<(), BenchmarkError> {
 		let max_logo_size = T::MaxLogoSize::get();
 		let max_logo_bytes = vec![0u8; max_logo_size as usize];
-		let logo_cid = compute_cid(&max_logo_bytes).as_bytes().to_vec();
+		let logo_cid = compute_cid(&max_logo_bytes);
 		let provider_caller: T::AccountId = whitelisted_caller();
 		let (_, provider_public_key) =
 			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
