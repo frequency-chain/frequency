@@ -35,7 +35,7 @@ sp_api::decl_runtime_apis! {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 		/// Fetch the schema versions by name
 		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>>;
-		
+
 		#[api_version(3)]
 		/// Fetch registered entity identifiers by name
 		fn get_registered_entities_by_name(name: Vec<u8>) -> Option<Vec<NameLookupResponse>>;
