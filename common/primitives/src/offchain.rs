@@ -7,7 +7,10 @@ use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use sp_runtime_interface::{pass_by::PassFatPointerAndReadWrite, runtime_interface};
+use sp_runtime_interface::{
+	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndReadWrite},
+	runtime_interface,
+};
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
