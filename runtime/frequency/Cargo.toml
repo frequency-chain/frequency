@@ -16,6 +16,7 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
+hex = { workspace = true, default-features = false }
 log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true, features = ["alloc"] }
@@ -45,11 +46,15 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
 
+# Bridging
+pallet-assets = { workspace = true, optional = true }
+
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
+sp-io = { workspace = true }
 sp-genesis-builder = { workspace = true }
 static_assertions = { workspace = true }
 
@@ -80,6 +85,8 @@ pallet-handles = { path = "../../pallets/handles", default-features = false }
 pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api", default-features = false }
 pallet-passkey = { path = "../../pallets/passkey", default-features = false }
 system-runtime-api = { path = '../system-runtime-api', default-features = false }
+# Polkadot
+polkadot-parachain-primitives = { workspace = true }
 polkadot-runtime-common = { workspace = true }
 # Cumulus
 cumulus-pallet-aura-ext = { workspace = true }
@@ -91,6 +98,19 @@ cumulus-primitives-aura = { workspace = true }
 pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
 sp-debug-derive = { workspace = true, optional = true }
+
+# xcm
+cumulus-pallet-xcmp-queue = {  workspace = true }
+pallet-message-queue = { workspace = true }
+parachains-common = { workspace = true }
+staging-xcm-builder = { workspace = true }
+staging-xcm = { workspace = true }
+cumulus-pallet-xcm = { workspace = true }
+pallet-xcm = { workspace = true }
+xcm-executor = { workspace = true }
+cumulus-primitives-utility = { workspace = true }
+xcm-runtime-apis = { workspace = true }
+pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -106,6 +126,7 @@ std = [
   "frame-system-rpc-runtime-api/std",
   "frame-system/std",
   "log/std",
+  "pallet-assets/std",
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-balances/std",
@@ -141,6 +162,7 @@ std = [
   "pallet-utility/std",
   "parachain-info/std",
   "parity-scale-codec/std",
+  "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
   "scale-info/std",
   "serde_json/std",
@@ -149,6 +171,7 @@ std = [
   "sp-consensus-aura/std",
   "sp-core/std",
   "sp-inherents/std",
+  "sp-io/std",
   "sp-offchain/std",
   "sp-runtime/std",
   "sp-session/std",
@@ -160,6 +183,15 @@ std = [
   "system-runtime-api/std",
   "substrate-wasm-builder",
   "frame-metadata-hash-extension/std",
+  "cumulus-pallet-xcmp-queue/std",
+  "pallet-message-queue/std",
+  "parachains-common/std",
+  "staging-xcm-builder/std",
+  "cumulus-pallet-xcm/std",
+  "pallet-xcm/std",
+  "xcm-executor/std",
+  "xcm-runtime-apis/std",
+  "pallet-xcm-benchmarks?/std"
 ]
 runtime-benchmarks = [
   "cumulus-pallet-parachain-system/runtime-benchmarks",
@@ -170,6 +202,7 @@ runtime-benchmarks = [
   "frame-system-benchmarking",
   "frame-system-benchmarking/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
   "pallet-balances/runtime-benchmarks",
   "pallet-capacity/runtime-benchmarks",
   "pallet-collator-selection/runtime-benchmarks",
@@ -192,7 +225,15 @@ runtime-benchmarks = [
   "pallet-utility/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
+  "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
+  "pallet-message-queue/runtime-benchmarks",
+  "parachains-common/runtime-benchmarks",
+  "staging-xcm-builder/runtime-benchmarks",
+  "pallet-xcm/runtime-benchmarks",
+  "cumulus-pallet-xcmp-queue/runtime-benchmarks",
+  "xcm-executor/runtime-benchmarks",
+  "pallet-xcm-benchmarks/runtime-benchmarks"
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
@@ -201,6 +242,7 @@ try-runtime = [
   "frame-executive/try-runtime",
   "frame-system/try-runtime",
   "frame-try-runtime",
+  "pallet-assets/try-runtime",
   "pallet-aura/try-runtime",
   "pallet-authorship/try-runtime",
   "pallet-balances/try-runtime",
@@ -229,11 +271,15 @@ try-runtime = [
   "parachain-info/try-runtime",
   "common-runtime/try-runtime",
   "sp-runtime/try-runtime",
+  "pallet-xcm/try-runtime",
+  "cumulus-pallet-xcmp-queue/try-runtime"
 ]
 frequency = ["common-runtime/frequency", "pallet-msa/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet", "pallet-msa/frequency-testnet"]
+frequency-westend = ["common-runtime/frequency-westend"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
+frequency-bridging = ["common-runtime/frequency-bridging"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
@@ -246,7 +292,7 @@ on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
 # `RUNTIME_METADATA_HASH` environment variable set for the `CheckMetadataHash`
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
-frequency-lint-check = []
+frequency-lint-check = ["frequency-bridging"]
 test = []
 parameterized-consensus-hook = []
 force-debug=[

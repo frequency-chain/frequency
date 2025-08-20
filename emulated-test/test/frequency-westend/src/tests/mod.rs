@@ -1,0 +1,17 @@
+mod barrier_tests;
+mod reserve_transfer_dot_from_asset_hub;
+mod reserve_transfer_dot_from_relay;
+mod reserve_transfer_dot_to_assethub;
+mod reserve_transfer_dot_to_relay;
+
+mod reserve_transfer_xfrqcy_with_dot_fee_from_assethub_fails;
+mod teleport_xfrqcy_to_assethub_with_dot_fee;
+
+mod teleport_xfqcy_from_asset_hub_without_checking_fails;
+mod teleport_xfrqcy_with_dot_fee_from_assethub;
+
+mod execute_transact_instruction_fails;
+mod send_xcm_to_relay_with_root;
+
+mod utils;
+mod xcm_version_subscription;

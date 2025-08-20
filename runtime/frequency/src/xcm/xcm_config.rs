@@ -1,0 +1,121 @@
+use crate::{
+	AccountId, AllPalletsWithSystem, Balances, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin,
+};
+
+use staging_xcm_builder::{EnsureXcmOrigin, FrameTransactionalProcessor};
+
+use crate::xcm::{
+	AssetTransactors, Barrier, FeeManager, LocalOriginToLocation, MaxAssetsIntoHolding, Trader,
+	TrustedReserves, TrustedTeleporters, UniversalLocation, Weigher,
+	XcmOriginToTransactDispatchOrigin, XcmRouter,
+};
+
+#[cfg(feature = "runtime-benchmarks")]
+use staging_xcm::latest::prelude::{Location, Parachain};
+
+#[cfg(feature = "runtime-benchmarks")]
+use crate::xcm::ForeignAssetsAssetId;
+
+use common_runtime::weights;
+
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, Disabled, Everything, Nothing},
+};
+
+pub use common_runtime::fee::WeightToFee;
+
+use frame_system::EnsureRoot;
+
+use xcm_executor::XcmExecutor;
+
+parameter_types! {
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+}
+
+pub struct XcmConfig;
+impl xcm_executor::Config for XcmConfig {
+	type RuntimeCall = RuntimeCall;
+	type XcmSender = XcmRouter;
+	type XcmEventEmitter = PolkadotXcm;
+	// How to withdraw and deposit an asset.
+	type AssetTransactor = AssetTransactors;
+	type OriginConverter = XcmOriginToTransactDispatchOrigin;
+	type IsReserve = TrustedReserves;
+	type IsTeleporter = TrustedTeleporters;
+	type UniversalLocation = UniversalLocation;
+	type Barrier = Barrier;
+	type Weigher = Weigher;
+	type Trader = Trader;
+	type ResponseHandler = PolkadotXcm;
+	type AssetTrap = PolkadotXcm;
+	type AssetClaims = PolkadotXcm;
+	type SubscriptionService = PolkadotXcm;
+	type PalletInstancesInfo = AllPalletsWithSystem;
+	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+	type AssetLocker = ();
+	type AssetExchanger = ();
+	type FeeManager = FeeManager;
+	type MessageExporter = ();
+	type UniversalAliases = Nothing;
+	type CallDispatcher = RuntimeCall;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type SafeCallFilter = Nothing;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SafeCallFilter = Everything;
+	type Aliasers = Nothing;
+	type TransactionalProcessor = FrameTransactionalProcessor;
+	type HrmpNewChannelOpenRequestHandler = ();
+	type HrmpChannelAcceptedHandler = ();
+	type HrmpChannelClosingHandler = ();
+	type XcmRecorder = PolkadotXcm;
+}
+
+impl pallet_xcm::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
+	type WeightInfo = weights::pallet_xcm::WeightInfo<Runtime>;
+
+	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type XcmRouter = XcmRouter;
+
+	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type XcmExecuteFilter = Everything;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmTeleportFilter = Everything;
+	type XcmReserveTransferFilter = Everything;
+	type Weigher = Weigher;
+	type UniversalLocation = UniversalLocation;
+
+	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
+	// ^ Override for AdvertisedXcmVersion default
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+
+	type AdminOrigin = EnsureRoot<AccountId>;
+
+	type Currency = Balances;
+	type CurrencyMatcher = ();
+	type TrustedLockers = ();
+	type MaxLockers = ConstU32<0>;
+	type MaxRemoteLockConsumers = ConstU32<0>;
+	type RemoteLockConsumerIdentifier = ();
+	type SovereignAccountOf = ();
+	type AuthorizedAliasConsideration = Disabled;
+}
+
+impl cumulus_pallet_xcm::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+/// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
+#[cfg(feature = "runtime-benchmarks")]
+pub struct XcmBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_assets::BenchmarkHelper<ForeignAssetsAssetId> for XcmBenchmarkHelper {
+	fn create_asset_id_parameter(id: u32) -> ForeignAssetsAssetId {
+		Location::new(1, [Parachain(id)])
+	}
+}
