@@ -42,6 +42,9 @@ pub trait WeightInfo {
 	fn propose_to_create_schema_v2_without_name(m: u32, ) -> Weight;
 	fn propose_to_create_schema_name() -> Weight;
 	fn create_schema_name_via_governance() -> Weight;
+	fn create_intent(m: u32) -> Weight;
+	fn create_intent_via_governance(m: u32) -> Weight;
+	fn propose_to_create_intent(m: u32) -> Weight;
 }
 
 /// Weights for `pallet_schemas` using the Substrate node and recommended hardware.
@@ -69,6 +72,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+
 	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
 	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
@@ -218,6 +222,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(22_217_000, 4562)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	fn create_intent(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn create_intent_via_governance(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn propose_to_create_intent(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
 	}
 }
 
@@ -394,6 +409,18 @@ impl WeightInfo for () {
 		Weight::from_parts(22_217_000, 4562)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	fn create_intent(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn create_intent_via_governance(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn propose_to_create_intent(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
 	}
 }
 

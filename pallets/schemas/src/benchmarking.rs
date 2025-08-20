@@ -1,12 +1,12 @@
 #![allow(clippy::unwrap_used)]
+extern crate alloc;
+use crate::Pallet as SchemasPallet;
+use alloc::vec;
+use common_primitives::schema::IntentSetting;
 use frame_benchmarking::{v2::*, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
 use numtoa::NumToA;
-extern crate alloc;
-use alloc::vec;
-
-use crate::Pallet as SchemasPallet;
 
 use super::*;
 
@@ -30,6 +30,16 @@ fn generate_schema<T: Config>(
 	json.pop(); // removing last ,
 	json.extend(b"}");
 	json.try_into().unwrap()
+}
+
+fn generate_settings<T: Config>(
+	size: usize,
+) -> BoundedVec<IntentSetting, T::MaxSchemaSettingsPerSchema> {
+	let mut settings: Vec<IntentSetting> = vec![];
+	for _ in 0..size {
+		settings.push(IntentSetting::SignatureRequired)
+	}
+	settings.try_into().unwrap()
 }
 
 #[benchmarks]
@@ -336,6 +346,94 @@ mod benchmarks {
 		let versions = SchemasPallet::<T>::get_schema_versions(schema_name.into_inner());
 		ensure!(versions.is_some(), "Created schema name should exist");
 		ensure!(versions.unwrap().len() == 1, "Version should be added!");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_intent(
+		m: Linear<0, { T::MaxSchemaSettingsPerSchema::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let payload_location = PayloadLocation::Itemized;
+		let settings = generate_settings::<T>(m as usize);
+
+		#[extrinsic_call]
+		create_intent(RawOrigin::Signed(sender), bounded_name, payload_location, settings);
+
+		ensure!(
+			CurrentIntentIdentifierMaximum::<T>::get() > 0,
+			"Created intent count should be > 0"
+		);
+		ensure!(IntentInfos::<T>::get(1).is_some(), "Created intent should exist");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_intent_via_governance(
+		m: Linear<0, { T::MaxSchemaSettingsPerSchema::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let payload_location = PayloadLocation::Itemized;
+		let settings = generate_settings::<T>(m as usize);
+
+		#[extrinsic_call]
+		create_intent_via_governance(
+			RawOrigin::Root,
+			sender.clone(),
+			payload_location,
+			settings,
+			bounded_name,
+		);
+
+		ensure!(
+			CurrentIntentIdentifierMaximum::<T>::get() > 0,
+			"Created intent count should be > 0"
+		);
+		ensure!(IntentInfos::<T>::get(1).is_some(), "Created intent should exist");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_create_intent(
+		m: Linear<0, { T::MaxSchemaSettingsPerSchema::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let payload_location = PayloadLocation::OnChain;
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let settings = generate_settings::<T>(m as usize);
+
+		#[extrinsic_call]
+		propose_to_create_intent(
+			RawOrigin::Signed(sender),
+			payload_location,
+			settings,
+			bounded_name,
+		);
+
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
 		Ok(())
 	}
 
