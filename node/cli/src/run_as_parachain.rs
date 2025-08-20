@@ -9,14 +9,6 @@ use sc_cli::{SubstrateCli, TransactionPoolType};
 pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	let collator_options = cli.run.collator_options();
-	let override_pool_config = TransactionPoolOptions::new_with_params(
-		cli.run.base.pool_config.pool_limit,
-		cli.run.base.pool_config.pool_kbytes * 1024,
-		cli.run.base.pool_config.tx_ban_seconds,
-		TransactionPoolType::ForkAware.into(),
-		false,
-	);
-
 	runner.run_node_until_exit(|config| async move {
 		let hwbench = (!cli.no_hardware_benchmarks)
 			.then_some(config.database.path().map(|database_path| {
@@ -51,7 +43,7 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 			collator_options,
 			id,
 			hwbench,
-			Some(override_pool_config),
+			None,
 		)
 		.await
 		.map(|r| r.0)
