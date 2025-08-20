@@ -5,7 +5,7 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = 'frequency-emulated-chain'
 publish = false
-version = "0.0.0"
+version = "1.17.4-rc8+polkadotstable2506-1"
 
 [dependencies]
 xcm-emulator = { workspace = true }
