@@ -235,7 +235,7 @@ function run_benchmark() {
 
 if [[ ${skip_build} == false ]]
 then
-  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace"
+  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
   echo ${CMD}
   ${CMD} || exit_err
 
@@ -276,7 +276,7 @@ fi
 if [[ ${skip_tests} == false ]]
 then
     echo "Running tests..."
-    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace"
+    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
     echo ${CMD}
     ${CMD} || exit_err
 fi
