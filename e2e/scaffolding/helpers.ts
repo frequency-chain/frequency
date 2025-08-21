@@ -43,6 +43,9 @@ import { BigInt } from '@polkadot/x-bigint';
 import { ethers, keccak256 } from 'ethers';
 import { secp256k1PairFromSeed } from '@polkadot/util-crypto/secp256k1/pair/fromSeed';
 import { Keypair } from '@polkadot/util-crypto/types';
+import { CID } from 'multiformats/cid';
+import { sha256 } from 'multiformats/hashes/sha2';
+import { base58btc } from 'multiformats/bases/base58';
 
 export interface Account {
   uri: string;
@@ -810,4 +813,16 @@ export function generateValidProviderPayloadWithName(providerName: string) {
     ]),
   };
   return providerEntry;
+}
+
+// Helper: compute multibase Base58btc CIDv1 for raw bytes
+export async function computeCid(bytes: Uint8Array): Promise<string> {
+  // Hash the content
+  const hash = await sha256.digest(bytes);
+
+  // Create a CIDv1 with sha256 codec, 0x55 for ipfs
+  const cid = CID.create(1, 0x55, hash);
+
+  // Return base58btc-encoded string
+  return cid.toString(base58btc);
 }
