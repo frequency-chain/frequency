@@ -26,7 +26,7 @@ sp_externalities::decl_extension! {
 pub trait Custom: ExternalitiesExt {
 	/// legacy function do not use
 	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
-		None
+		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
 	}
 
 	/// Get extension value by writing to output buffer
