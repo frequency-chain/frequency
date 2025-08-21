@@ -119,4 +119,37 @@ describe('Create Provider Application', function () {
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
     await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
   });
+
+  it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const logoBytes = new Uint8Array(11);
+    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
+    const buf = Array.from(logoBytes);
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'LogoCidNotApproved' });
+  });
+
+  it('should fail with InvalidLogoBytes error when uploading logo as Uint8Array', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const logoBytes = new Uint8Array(11);
+    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, logoBytes); // this should fail because logoBytes is not a valid input
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'InvalidLogoBytes' });
+  });
 });
