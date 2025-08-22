@@ -692,30 +692,42 @@ fn get_intent_or_group_ids_for_namespace_should_return_all_descriptors() {
 		let name_payload_2: SchemaNamePayload =
 			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
 
-		// TODO: Create intent & intent group (upcoming PR will add support for this)
+		// Create multiple entities in protocol namespace
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_1.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_2.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+
 		// act
 		let entity_ids =
 			SchemasPallet::get_intent_or_group_ids_by_name(String::from(namespace).into_bytes());
 
-		// TODO: enable test in future PR
 		// assert
-		// assert!(entity_ids.is_some());
+		assert!(entity_ids.is_some());
 
-		// let mut inner = entity_ids.clone().unwrap();
-		// inner.sort_by(|a, b| a.name.cmp(&b.name));
-		// assert_eq!(
-		// 	entity_ids,
-		// 	Some(vec![
-		// 		NameLookupResponse {
-		// 			entity_id: MappedEntityIdentifier::Intent(1),
-		// 			name: name_payload_1.into_inner(),
-		// 		},
-		// 		NameLookupResponse {
-		// 			entity_id: MappedEntityIdentifier::IntentGroup(1),
-		// 			name: name_payload_2.into_inner(),
-		// 		},
-		// 	])
-		// );
+		let mut inner = entity_ids.clone().unwrap();
+		inner.sort_by(|a, b| a.name.cmp(&b.name));
+		assert_eq!(
+			entity_ids,
+			Some(vec![
+				NameLookupResponse {
+					entity_id: MappedEntityIdentifier::Intent(1),
+					name: name_payload_1.into_inner(),
+				},
+				NameLookupResponse {
+					entity_id: MappedEntityIdentifier::Intent(2),
+					name: name_payload_2.into_inner(),
+				},
+			])
+		);
 	})
 }
 
@@ -733,25 +745,35 @@ fn get_intent_or_group_ids_for_fully_qualified_name_should_return_single_descrip
 		let name_payload_2: SchemaNamePayload =
 			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
 
-		// TODO: Create intent & intent group (upcoming PR will add support for this)
+		// Create multiple entities in protocol namespace
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_1.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_2.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+
 		// act
 		let entity_ids =
 			SchemasPallet::get_intent_or_group_ids_by_name(String::from(name_1).into_bytes());
 
-		// TODO: enable test in future PR
 		// assert
-		// assert!(entity_ids.is_some());
+		assert!(entity_ids.is_some());
 
-		// let mut inner = entity_ids.clone().unwrap();
-		// assert_eq!(
-		// 	entity_ids,
-		// 	Some(vec![
-		// 		NameLookupResponse {
-		// 			entity_id: MappedEntityIdentifier::Intent(1),
-		// 			name: name_payload_1.into_inner(),
-		// 		},
-		// 	])
-		// );
+		let mut inner = entity_ids.clone().unwrap();
+		assert_eq!(
+			entity_ids,
+			Some(vec![NameLookupResponse {
+				entity_id: MappedEntityIdentifier::Intent(1),
+				name: name_payload_1.into_inner(),
+			},])
+		);
 	})
 }
 

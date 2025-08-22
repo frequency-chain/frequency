@@ -29,9 +29,9 @@ use common_primitives::{
 	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
-		IntentGroupId, IntentId, MappedEntityIdentifier, ModelType, NameLookupResponse,
-		PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting, SchemaSettings,
-		SchemaValidator,
+		IntentGroupId, IntentId, IntentResponse, MappedEntityIdentifier, ModelType,
+		NameLookupResponse, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+		SchemaSetting, SchemaSettings, SchemaValidator,
 	},
 };
 use frame_support::{
@@ -848,6 +848,33 @@ pub mod pallet {
 					settings,
 				};
 				return Some(response);
+			}
+			None
+		}
+
+		/// Retrieve an Intent by its ID
+		pub fn get_intent_by_id(
+			intent_id: IntentId,
+			include_schemas: bool,
+		) -> Option<IntentResponse> {
+			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
+				let saved_settings = intent_info.settings;
+				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
+				let mut schema_ids: Option<Vec<SchemaId>> = None;
+				// TODO: uncomment when Schemas have been updated to include intent_id in an upcoming PR
+				// if include_schemas {
+				// 	schemas = Some(Vec<SchemaId>::new());
+				// 	SchemaInfos::<T>::iter().filter(|(schema_id, schema_info)| {
+				// 		schema_info.payload_location as u16 == intent_id
+				// 	}).for_each(|(schema_id, _)| { schemas.as_mut().unwrap().push(*schema_id); });
+				// }
+
+				return Some(IntentResponse {
+					intent_id,
+					payload_location: intent_info.payload_location,
+					settings,
+					schema_ids,
+				});
 			}
 			None
 		}
