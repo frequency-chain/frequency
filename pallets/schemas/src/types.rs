@@ -119,6 +119,13 @@ pub struct SchemaVersionId {
 
 impl SchemaName {
 	/// parses and verifies the request and returns the SchemaName type if successful
+	/// # Errors
+	/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
+	/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
+	/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
+	/// * [`Error::InvalidSchemaNameLength`] - The name exceed the allowed overall name length
+	/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
+	/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
 	pub fn try_parse<T: Config>(
 		payload: SchemaNamePayload,
 		is_strict: bool,
