@@ -11,6 +11,8 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
 import { Bytes } from '@polkadot/types';
+import fs from 'fs';
+import path from 'path';
 
 let fundingSource: KeyringPair;
 
@@ -108,6 +110,23 @@ describe('Create Provider Application', function () {
     // Create fake logo bytes, 130 bytes long
     const logoBytes = new Uint8Array(10);
     for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
+    const buf = Array.from(logoBytes);
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
+  });
+
+  it('should successfully upload logo and compute same CIDv1', async function () {
+    if (isTestnet()) this.skip();
+    // read frequency.png into logoBytes
+    const logoPath = path.join(__dirname, 'frequency.png'); // adjust path if needed
+    const logoBytes = new Uint8Array(fs.readFileSync(logoPath));
     const buf = Array.from(logoBytes);
     const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
     const logoCidStr = await computeCid(logoBytes);
