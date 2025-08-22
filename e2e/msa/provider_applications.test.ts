@@ -125,8 +125,7 @@ describe('Create Provider Application', function () {
   it('should successfully upload logo and compute same CIDv1', async function () {
     if (isTestnet()) this.skip();
     // read frequency.png into logoBytes
-    const logoPath = path.join(__dirname, 'frequency.png'); // adjust path if needed
-    const logoBytes = new Uint8Array(fs.readFileSync(logoPath));
+    const logoBytes = new Uint8Array(fs.readFileSync('frequency.png'));
     const buf = Array.from(logoBytes);
     const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
     const logoCidStr = await computeCid(logoBytes);
