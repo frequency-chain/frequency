@@ -4,7 +4,7 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Msa;
 use crate::{
-	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
+	types::{compute_cid, RecoveryCommitmentPayload, EMPTY_FUNCTION},
 	MsaIdToRecoveryCommitment,
 };
 use common_primitives::{msa::ProviderRegistryEntry, utils::wrap_binary_data};
@@ -895,6 +895,38 @@ mod benchmarks {
 
 		assert_eq!(NextApplicationIndex::<T>::get(ProviderId(provider_id)), 1);
 		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn upload_logo() -> Result<(), BenchmarkError> {
+		let max_logo_size = T::MaxLogoSize::get();
+		let max_logo_bytes = vec![0u8; max_logo_size as usize];
+		let logo_cid = compute_cid(&max_logo_bytes);
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) =
+			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_v2(
+			RawOrigin::Signed(provider_caller.clone()).into(),
+			entry
+		));
+
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+		let input_bounded_logo = BoundedVec::try_from(max_logo_bytes).unwrap();
+		ApprovedLogos::<T>::insert(&input_bounded_cid, BoundedVec::new());
+
+		#[extrinsic_call]
+		_(
+			RawOrigin::Signed(provider_public_key),
+			input_bounded_cid.clone(),
+			input_bounded_logo.clone(),
+		);
+
+		assert!(ApprovedLogos::<T>::get(input_bounded_cid.clone()).is_some());
+		let stored_logo_bytes = ApprovedLogos::<T>::get(&input_bounded_cid).unwrap();
+		assert_eq!(stored_logo_bytes, input_bounded_logo);
 		Ok(())
 	}
 

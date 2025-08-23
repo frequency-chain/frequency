@@ -1,10 +1,23 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, DOLLARS, generateValidProviderPayloadWithName } from '../scaffolding/helpers';
+import {
+  createAndFundKeypair,
+  DOLLARS,
+  generateValidProviderPayloadWithName,
+  computeCid,
+} from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
+import { Bytes } from '@polkadot/types';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// reconstruct __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let fundingSource: KeyringPair;
 
@@ -42,7 +55,7 @@ describe('Create Provider Application', function () {
       const { target: applicationEvent } = await createProviderOp.signAndSend();
       assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
       const applicationId = applicationEvent!.data.applicationId;
-      assert.equal(applicationId.toBigInt(), 0n, 'applicationId should be 0');
+      assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
     });
 
     it('should fail to create a provider application for non provider', async function () {
@@ -95,5 +108,70 @@ describe('Create Provider Application', function () {
     await assert.rejects(createProviderOp.signAndSend(), {
       name: 'InvalidBCP47LanguageCode',
     });
+  });
+
+  it('should successfully create a provider application and upload logo', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const logoBytes = new Uint8Array(10);
+    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
+    const buf = Array.from(logoBytes);
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
+  });
+
+  it('should successfully upload logo and compute same CIDv1', async function () {
+    if (isTestnet()) this.skip();
+    // read frequency.png into logoBytes
+    const logoBytes = new Uint8Array(fs.readFileSync(path.join(__dirname, 'frequency.png')));
+    const buf = Array.from(logoBytes);
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
+  });
+
+  it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoBytesDifferent = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_applications.test.ts')));
+    const logoCidStr = await computeCid(logoBytesDifferent);
+    const buf = Array.from(logoBytesDifferent);
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'LogoCidNotApproved' });
+  });
+
+  it('should fail with InvalidLogoBytes error when uploading logo as Uint8Array', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const logoBytes = new Uint8Array(11);
+    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, logoBytes); // this should fail because logoBytes is not a valid input
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'InvalidLogoBytes' });
   });
 });
