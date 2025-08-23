@@ -639,7 +639,11 @@ export class ExtrinsicHelper {
   }
 
   public static uploadLogo(providerKeys: KeyringPair, logoCid: any, logoBytes: any) {
-    return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.uploadLogo(logoCid, logoBytes), providerKeys);
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.uploadLogo(logoCid, logoBytes),
+      providerKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationContextUpdated
+    );
   }
 
   public static createSponsoredAccountWithDelegation(

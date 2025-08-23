@@ -13,6 +13,11 @@ import { isTestnet } from '../scaffolding/env';
 import { Bytes } from '@polkadot/types';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// reconstruct __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let fundingSource: KeyringPair;
 
@@ -125,7 +130,7 @@ describe('Create Provider Application', function () {
   it('should successfully upload logo and compute same CIDv1', async function () {
     if (isTestnet()) this.skip();
     // read frequency.png into logoBytes
-    const logoBytes = new Uint8Array(fs.readFileSync('frequency.png'));
+    const logoBytes = new Uint8Array(fs.readFileSync(path.join(__dirname, 'frequency.png')));
     const buf = Array.from(logoBytes);
     const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
     const logoCidStr = await computeCid(logoBytes);
@@ -141,11 +146,10 @@ describe('Create Provider Application', function () {
   it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {
     if (isTestnet()) this.skip();
     // Create fake logo bytes, 130 bytes long
-    const logoBytes = new Uint8Array(11);
-    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
-    const buf = Array.from(logoBytes);
     const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
-    const logoCidStr = await computeCid(logoBytes);
+    const logoBytesDifferent = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_applications.test.ts')));
+    const logoCidStr = await computeCid(logoBytesDifferent);
+    const buf = Array.from(logoBytesDifferent);
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
     const { target: applicationEvent } = await createProviderOp.signAndSend();
     assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');

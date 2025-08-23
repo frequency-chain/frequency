@@ -426,6 +426,13 @@ pub mod pallet {
 			/// The application id for the created application
 			application_id: ApplicationIndex,
 		},
+		/// Application updated for provider
+		ApplicationContextUpdated {
+			/// The MSA id associated with the provider
+			msa_id: ProviderId,
+			/// The application id for the updated application
+			application_id: ApplicationIndex,
+		}
 	}
 
 	#[pallet::error]
@@ -1492,6 +1499,11 @@ pub mod pallet {
 				compute_cid_v1(logo_bytes.as_slice()).ok_or(Error::<T>::InvalidLogoBytes)?;
 			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidLogoBytes);
 			ApprovedLogos::<T>::insert(&logo_cid, logo_bytes);
+
+			Self::deposit_event(Event::ApplicationContextUpdated {
+				provider_id: ProviderId(provider_msa_id),
+				logo_cid,
+			});
 			Ok(())
 		}
 	}
