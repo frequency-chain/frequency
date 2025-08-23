@@ -429,9 +429,7 @@ pub mod pallet {
 		/// Application updated for provider
 		ApplicationContextUpdated {
 			/// The MSA id associated with the provider
-			msa_id: ProviderId,
-			/// The application id for the updated application
-			application_id: ApplicationIndex,
+			provider_id: ProviderId,
 		},
 	}
 
@@ -1502,7 +1500,6 @@ pub mod pallet {
 
 			Self::deposit_event(Event::ApplicationContextUpdated {
 				provider_id: ProviderId(provider_msa_id),
-				logo_cid,
 			});
 			Ok(())
 		}
