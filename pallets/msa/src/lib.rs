@@ -432,7 +432,7 @@ pub mod pallet {
 			msa_id: ProviderId,
 			/// The application id for the updated application
 			application_id: ApplicationIndex,
-		}
+		},
 	}
 
 	#[pallet::error]
