@@ -42,6 +42,23 @@ fn generate_settings<T: Config>(
 	settings.try_into().unwrap()
 }
 
+fn generate_intents<T: Config>() -> BoundedVec<IntentId, T::MaxIntentsPerIntentGroup> {
+	let mut intents: Vec<IntentId> = vec![];
+	for id in 0..T::MaxIntentsPerIntentGroup::get() {
+		let name = format!("namespace.intent_descriptor_{}", id);
+		let bounded_name: SchemaNamePayload =
+			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+		assert_ok!(SchemasPallet::<T>::create_intent(
+			RawOrigin::Root.into(),
+			bounded_name,
+			PayloadLocation::Paginated,
+			BoundedVec::default()
+		));
+		intents.push(id.try_into().expect("should convert"));
+	}
+	intents.try_into().unwrap()
+}
+
 #[benchmarks]
 mod benchmarks {
 	use super::*;
@@ -429,6 +446,88 @@ mod benchmarks {
 			BoundedVec::default(),
 			bounded_name,
 		);
+
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_intent_group(
+		m: Linear<0, { T::MaxIntentsPerIntentGroup::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let intent_ids = generate_intents::<T>();
+
+		#[extrinsic_call]
+		create_intent_group(
+			RawOrigin::Signed(sender),
+			bounded_name,
+			intent_ids.slice(..m as usize),
+		);
+
+		ensure!(
+			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
+			"Created intent group count should be > 0"
+		);
+		ensure!(IntentGroups::<T>::get(1).is_some(), "Created intent group should exist");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_intent_group_via_governance(
+		m: Linear<0, { T::MaxSchemaSettingsPerSchema::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let intent_ids = generate_intents::<T>();
+
+		#[extrinsic_call]
+		create_intent_group_via_governance(
+			RawOrigin::Root,
+			sender.clone(),
+			bounded_name,
+			intent_ids.slice(..m as usize),
+		);
+
+		ensure!(
+			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
+			"Created intent group count should be > 0"
+		);
+		ensure!(IntentGroups::<T>::get(1).is_some(), "Created intent group should exist");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_create_intent_group() -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let payload_location = PayloadLocation::OnChain;
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let intent_ids = generate_intents::<T>();
+
+		#[extrinsic_call]
+		propose_to_create_intent_group(RawOrigin::Signed(sender), bounded_name, intent_ids);
 
 		assert_eq!(T::ProposalProvider::proposal_count(), 1);
 		Ok(())
