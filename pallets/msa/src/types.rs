@@ -293,3 +293,11 @@ impl<T: Config> PermittedDelegationSchemas<T>
 		Ok(())
 	}
 }
+
+/// Helper function to compute CID of given bytes and return Vec<u8>
+pub fn compute_cid(bytes: &[u8]) -> Vec<u8> {
+	let cid = compute_cid_v1(bytes).expect("Failed to compute CID");
+	// Encode CID into multibase Base58btc string, then return as Vec<u8>
+	let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
+	encoded.into_bytes()
+}
