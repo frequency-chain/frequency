@@ -13,6 +13,9 @@ use alloc::vec::Vec;
 
 pub use crate::schema::SchemaId;
 
+/// ApplicationIndex type
+pub type ApplicationIndex = u16;
+
 /// ApplicationContext is type of ProviderRegistryEntry
 pub type ApplicationContext<NameSize, LangSize, CidSize, MaxLocaleCount> =
 	ProviderRegistryEntry<NameSize, LangSize, CidSize, MaxLocaleCount>;
@@ -264,6 +267,22 @@ where
 			localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
 		}
 	}
+}
+
+/// RPC Response for getting ProviderApplicationContext
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default)]
+pub struct ProviderApplicationContext {
+	/// The provider associated with the `key`
+	pub provider_id: ProviderId,
+	/// The default Application/Provider logo
+	pub default_logo_250_100_png_bytes: Vec<u8>,
+	/// The optional application id
+	pub application_id: Option<ApplicationIndex>,
+	/// The optional localized name
+	pub localized_name: Option<Vec<u8>>,
+	/// The optional localized logo bytes
+	pub localized_logo_250_100_png_bytes: Option<Vec<u8>>,
 }
 
 /// The pointer value for the Signature Registry
