@@ -1,4 +1,4 @@
-use crate::{Error, Event as AnnouncementEvent, SchemaNamePayload};
+use crate::{Error, Event as AnnouncementEvent, SchemaName, SchemaNamePayload};
 use common_primitives::{
 	node::AccountId,
 	schema::{IntentId, MappedEntityIdentifier, PayloadLocation, SchemaSetting},
@@ -21,142 +21,133 @@ fn get_non_existing_intent_by_id_should_return_none() {
 }
 
 #[test]
-fn create_intent_happy_path() {
+fn create_intent_group_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let sender: AccountId = test_public(1);
 		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
+		let intent_group_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-
-		// act
 		assert_ok!(SchemasPallet::create_intent(
 			RuntimeOrigin::signed(sender.clone()),
-			intent_name.clone(),
-			PayloadLocation::OnChain,
+			BoundedVec::try_from("namespace.schema".to_string().into_bytes())
+				.expect("should convert"),
+			PayloadLocation::Paginated,
 			BoundedVec::default(),
 		));
-		let res = SchemasPallet::get_intent_by_id(1, false);
-		let parsed_name = intent_name.into_inner();
+
+		// act
+		assert_ok!(SchemasPallet::create_intent_group(
+			RuntimeOrigin::signed(sender.clone()),
+			intent_group_name.clone(),
+			BoundedVec::try_from(vec![1]).unwrap(),
+		));
+		let res = SchemasPallet::get_intent_group_by_id(1);
+		let parsed_name = intent_group_name.into_inner();
+		let resolved_id = SchemasPallet::get_intent_or_group_ids_by_name(parsed_name.clone());
 
 		// assert
 		System::assert_last_event(
-			AnnouncementEvent::IntentCreated {
+			AnnouncementEvent::IntentGroupCreated {
 				key: sender,
-				intent_id: 1,
-				intent_name: parsed_name,
+				intent_group_id: 1,
+				intent_group_name: parsed_name,
 			}
 			.into(),
 		);
 		assert!(res.as_ref().is_some());
+		assert!(resolved_id.is_some());
+		assert_eq!(resolved_id.unwrap()[0].entity_id, MappedEntityIdentifier::IntentGroup(1));
 	})
 }
 
 #[test]
-fn create_intent_via_governance_happy_path() {
+fn create_intent_group_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let settings = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = test_public(5);
 		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
+		let intent_group_name: SchemaNamePayload =
+			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			BoundedVec::try_from("namespace.schema".to_string().into_bytes())
+				.expect("should convert"),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+
+		// act
+		assert_ok!(SchemasPallet::create_intent_group_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+			sender.clone(),
+			intent_group_name.clone(),
+			BoundedVec::try_from(vec![1]).unwrap(),
+		));
+		let res = SchemasPallet::get_intent_group_by_id(1);
+		let parsed_name = intent_group_name.into_inner();
+		let resolved_id = SchemasPallet::get_intent_or_group_ids_by_name(parsed_name.clone());
+
+		// assert
+		System::assert_last_event(
+			AnnouncementEvent::IntentGroupCreated {
+				key: sender,
+				intent_group_id: 1,
+				intent_group_name: parsed_name,
+			}
+			.into(),
+		);
+		assert!(res.as_ref().is_some());
+		assert!(resolved_id.is_some());
+		assert_eq!(resolved_id.unwrap()[0].entity_id, MappedEntityIdentifier::IntentGroup(1));
+	})
+}
+
+#[test]
+fn create_intent_group_via_governance_with_non_existent_intent_should_fail() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
+		// arrange
+		let sender: AccountId = test_public(1);
+		let name = "namespace.descriptor";
+		let intent_group_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
 
 		// act
-		assert_ok!(SchemasPallet::create_intent_via_governance(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-			sender.clone(),
-			PayloadLocation::Itemized,
-			BoundedVec::try_from(settings.clone()).unwrap(),
-			intent_name.clone(),
-		));
-
-		// assert
-		let res = SchemasPallet::get_intent_by_id(1, false);
-		let parsed_name = intent_name.into_inner();
-
-		// assert
-		System::assert_last_event(
-			AnnouncementEvent::IntentCreated {
-				key: sender,
-				intent_id: 1,
-				intent_name: parsed_name,
-			}
-			.into(),
+		assert_noop!(
+			SchemasPallet::create_intent_group_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+				sender.clone(),
+				intent_group_name.clone(),
+				BoundedVec::try_from(vec![1]).unwrap(),
+			),
+			Error::<Test>::InvalidIntentId
 		);
-		assert!(res.as_ref().is_some());
 	})
 }
 
 #[test]
-fn create_intent_via_governance_with_append_only_setting_and_non_itemized_should_fail() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let settings = vec![SchemaSetting::AppendOnly];
-		let sender: AccountId = test_public(1);
-		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
-			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-
-		for location in
-			[PayloadLocation::OnChain, PayloadLocation::IPFS, PayloadLocation::Paginated]
-		{
-			// act and assert
-			assert_noop!(
-				SchemasPallet::create_intent_via_governance(
-					RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-					sender.clone(),
-					location,
-					BoundedVec::try_from(settings.clone()).unwrap(),
-					intent_name.clone(),
-				),
-				Error::<Test>::InvalidSetting
-			);
-		}
-	})
-}
-#[test]
-fn create_intent_via_governance_with_signature_required_setting_and_wrong_location_should_fail() {
+fn propose_to_create_intent_group_happy_path() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 
-		// arrange
-		let settings = vec![SchemaSetting::SignatureRequired];
-		let sender: AccountId = test_public(1);
-		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
-			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-
-		for location in [PayloadLocation::OnChain, PayloadLocation::IPFS] {
-			// act and assert
-			assert_noop!(
-				SchemasPallet::create_intent_via_governance(
-					RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-					sender.clone(),
-					location,
-					BoundedVec::try_from(settings.clone()).unwrap(),
-					intent_name.clone(),
-				),
-				Error::<Test>::InvalidSetting
-			);
-		}
-	})
-}
-
-#[test]
-fn propose_to_create_intent_happy_path() {
-	new_test_ext().execute_with(|| {
-		sudo_set_max_schema_size();
-
-		let intent_name =
+		let intent_group_name =
 			SchemaNamePayload::try_from("namespace.descriptor".to_string().into_bytes())
 				.expect("should work");
-		// Propose a new schema
-		_ = SchemasPallet::propose_to_create_intent(
-			test_origin_signed(5),
-			PayloadLocation::OnChain,
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(test_public(5)),
+			BoundedVec::try_from("namespace.schema".to_string().into_bytes())
+				.expect("should convert"),
+			PayloadLocation::Paginated,
 			BoundedVec::default(),
-			intent_name.clone(),
+		));
+
+		// Propose a new schema
+		_ = SchemasPallet::propose_to_create_intent_group(
+			test_origin_signed(5),
+			intent_group_name.clone(),
+			BoundedVec::try_from(vec![1]).unwrap(),
 		);
 
 		// Find the Proposed event and get its hash and index so it can be voted on
@@ -262,11 +253,11 @@ fn propose_to_create_intent_happy_path() {
 		let intent_events: Vec<IntentId> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {
-				RuntimeEvent::SchemasPallet(AnnouncementEvent::IntentCreated {
+				RuntimeEvent::SchemasPallet(AnnouncementEvent::IntentGroupCreated {
 					key: _,
-					intent_id,
-					intent_name: _,
-				}) => Some(intent_id),
+					intent_group_id,
+					intent_group_name: _,
+				}) => Some(intent_group_id),
 				_ => None,
 			})
 			.collect();
@@ -274,29 +265,16 @@ fn propose_to_create_intent_happy_path() {
 		// Confirm that the schema was created
 		assert_eq!(intent_events.len(), 1);
 
-		let last_intent_id = intent_events[0];
-		let created_intent = SchemasPallet::get_intent_by_id(last_intent_id, false);
-		assert!(created_intent.as_ref().is_some());
+		let last_intent_group_id = intent_events[0];
+		let created_intent_group = SchemasPallet::get_intent_by_id(last_intent_group_id, false);
+		assert!(created_intent_group.as_ref().is_some());
 
-		let resolved_intent_id =
-			SchemasPallet::get_intent_or_group_ids_by_name(intent_name.clone().into_inner());
-		assert!(resolved_intent_id.is_some());
+		let resolved_intent_group_id =
+			SchemasPallet::get_intent_or_group_ids_by_name(intent_group_name.clone().into_inner());
+		assert!(resolved_intent_group_id.is_some());
 		assert_eq!(
-			resolved_intent_id.unwrap()[0].entity_id,
-			MappedEntityIdentifier::Intent(last_intent_id)
+			resolved_intent_group_id.unwrap()[0].entity_id,
+			MappedEntityIdentifier::IntentGroup(last_intent_group_id)
 		);
-	})
-}
-
-#[test]
-fn get_intent_or_group_ids_by_name_should_return_none_for_non_existing_name() {
-	new_test_ext().execute_with(|| {
-		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
-			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-		let parsed_name = intent_name.into_inner();
-
-		let res = SchemasPallet::get_intent_or_group_ids_by_name(parsed_name);
-		assert!(res.is_none());
 	})
 }

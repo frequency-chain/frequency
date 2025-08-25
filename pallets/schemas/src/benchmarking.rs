@@ -410,9 +410,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_create_intent(
-		m: Linear<0, { T::MaxSchemaSettingsPerSchema::get() }>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_create_intent() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
 		let payload_location = PayloadLocation::OnChain;
 		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
@@ -423,13 +421,12 @@ mod benchmarks {
 			.chain(descriptor.into_iter())
 			.collect();
 		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
-		let settings = generate_settings::<T>(m as usize);
 
 		#[extrinsic_call]
 		propose_to_create_intent(
 			RawOrigin::Signed(sender),
 			payload_location,
-			settings,
+			BoundedVec::default(),
 			bounded_name,
 		);
 

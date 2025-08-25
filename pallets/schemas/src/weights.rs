@@ -44,7 +44,10 @@ pub trait WeightInfo {
 	fn create_schema_name_via_governance() -> Weight;
 	fn create_intent(m: u32) -> Weight;
 	fn create_intent_via_governance(m: u32) -> Weight;
-	fn propose_to_create_intent(m: u32) -> Weight;
+	fn propose_to_create_intent() -> Weight;
+	fn create_intent_group(m: u32) -> Weight;
+	fn create_intent_group_via_governance(m: u32) -> Weight;
+	fn propose_to_create_intent_group() -> Weight;
 }
 
 /// Weights for `pallet_schemas` using the Substrate node and recommended hardware.
@@ -231,7 +234,19 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(0, 0)
 	}
 
-	fn propose_to_create_intent(m: u32) -> Weight {
+	fn propose_to_create_intent() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn create_intent_group(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn create_intent_group_via_governance(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn propose_to_create_intent_group() -> Weight {
 		Weight::from_parts(0, 0)
 	}
 }
@@ -419,7 +434,19 @@ impl WeightInfo for () {
 		Weight::from_parts(0, 0)
 	}
 
-	fn propose_to_create_intent(m: u32) -> Weight {
+	fn propose_to_create_intent() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn create_intent_group(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn create_intent_group_via_governance(m: u32) -> Weight {
+		Weight::from_parts(0, 0)
+	}
+
+	fn propose_to_create_intent_group() -> Weight {
 		Weight::from_parts(0, 0)
 	}
 }
