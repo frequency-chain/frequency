@@ -337,3 +337,14 @@ fn upload_logo_fails_mismatch_logo_data() {
 		);
 	});
 }
+
+#[test]
+fn compute_cid_v1_test() {
+	new_test_ext().execute_with(|| {
+		// read frequency.png from assets
+		let logo_data = include_bytes!("../../../../e2e/msa/frequency.png");
+		let cid = common_primitives::cid::compute_cid_v1(logo_data).expect("Failed to compute CID");
+		let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
+		assert_eq!(encoded, "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF");
+	});
+}
