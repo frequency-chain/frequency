@@ -3,7 +3,7 @@ import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
+import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkadot/types';
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
@@ -635,6 +635,14 @@ export class ExtrinsicHelper {
         }),
       sudoKeys,
       ExtrinsicHelper.api.events.msa.ApplicationCreated
+    );
+  }
+
+  public static uploadLogo(providerKeys: KeyringPair, logoCid: any, logoBytes: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.uploadLogo(logoCid, logoBytes),
+      providerKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationContextUpdated
     );
   }
 

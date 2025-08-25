@@ -24,7 +24,7 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-cid =  { workspace = true }
+cid = { workspace = true }
 multibase = { workspace = true }
 
 [dev-dependencies]
