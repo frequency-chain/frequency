@@ -141,6 +141,23 @@ describe('Create Provider Application', function () {
     const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
     await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
+    const applicationId = applicationEvent!.data.applicationId;
+    assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
+    const providerContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
+      providerId,
+      applicationId,
+      null
+    );
+    assert.notEqual(providerContextDefault, undefined, 'should return a valid provider application context');
+    assert.equal(providerContextDefault.isSome, true, 'provider context should be some');
+    const resultingApplicationContext = providerContextDefault.unwrap();
+    assert.equal(resultingApplicationContext.provider_id.toBigInt(), providerId, 'providerId should match');
+    assert.equal(resultingApplicationContext.application_id, applicationId.toBigInt(), 'applicationId should match');
+    assert.equal(
+      resultingApplicationContext.default_logo_250_100_png_bytes.length,
+      encodedBytes.length,
+      'logo byte length should match'
+    );
   });
 
   it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {

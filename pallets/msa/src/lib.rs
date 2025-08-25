@@ -2425,7 +2425,6 @@ impl<T: Config> Pallet<T> {
 		locale: Option<Vec<u8>>,
 	) -> Option<ProviderApplicationContext> {
 		let bounded_locale = locale.and_then(|loc| BoundedVec::try_from(loc).ok());
-		let bounded_locale = bounded_locale?;
 		let provider_or_application_registry = match application_id {
 			Some(app_id) => ProviderToApplicationRegistry::<T>::get(provider_id, app_id)?,
 			None => ProviderToRegistryEntry::<T>::get(provider_id)?,
@@ -2434,21 +2433,25 @@ impl<T: Config> Pallet<T> {
 		// Default logo bytes
 		let default_logo_250_100_png_bytes: Option<Vec<u8>> =
 			ApprovedLogos::<T>::get(default_logo_cid).map(|bv| bv.to_vec());
-
-		let localized_logo_cid = provider_or_application_registry
-			.localized_logo_250_100_png_cids
-			.get(&bounded_locale);
+		let mut localized_name: Option<Vec<u8>> = None;
 		// Localized logo bytes if any
-		let localized_logo_250_100_png_bytes: Option<Vec<u8>> = match localized_logo_cid {
-			Some(cid) => ApprovedLogos::<T>::get(cid).map(|bv| bv.to_vec()),
-			None => None,
+		let localized_logo_250_100_png_bytes: Option<Vec<u8>> = if let Some(locale) = bounded_locale
+		{
+			let localized_logo_cid =
+				provider_or_application_registry.localized_logo_250_100_png_cids.get(&locale);
+			match localized_logo_cid {
+				Some(cid) => {
+					localized_name = provider_or_application_registry
+						.localized_names
+						.get(&locale)
+						.map(|bv| bv.to_vec());
+					ApprovedLogos::<T>::get(cid).map(|bv| bv.to_vec())
+				},
+				None => None,
+			}
+		} else {
+			None
 		};
-
-		// Localized name if any
-		let localized_name: Option<Vec<u8>> = provider_or_application_registry
-			.localized_names
-			.get(&bounded_locale)
-			.map(|bv| bv.to_vec());
 
 		Some(ProviderApplicationContext {
 			provider_id,
