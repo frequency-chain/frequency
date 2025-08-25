@@ -143,14 +143,14 @@ describe('Create Provider Application', function () {
     await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
     const applicationId = applicationEvent!.data.applicationId;
     assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
-    const providerContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
+    const applicationContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
       providerId,
       applicationId,
       null
     );
-    assert.notEqual(providerContextDefault, undefined, 'should return a valid provider application context');
-    assert.equal(providerContextDefault.isSome, true, 'provider context should be some');
-    const resultingApplicationContext = providerContextDefault.unwrap();
+    assert.notEqual(applicationContextDefault, undefined, 'should return a valid provider application context');
+    assert.equal(applicationContextDefault.isSome, true, 'provider context should be some');
+    const resultingApplicationContext = applicationContextDefault.unwrap();
     assert.equal(resultingApplicationContext.provider_id.toBigInt(), providerId, 'providerId should match');
     assert.equal(resultingApplicationContext.application_id, applicationId.toBigInt(), 'applicationId should match');
     assert.equal(
