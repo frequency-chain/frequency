@@ -96,8 +96,9 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
-		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
+		AccountId20Response, ApplicationIndex, DelegationResponse, DelegationValidator,
+		DelegatorId, MessageSourceId, ProviderApplicationContext, ProviderId, SchemaGrant,
+		SchemaGrantValidator, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -2035,6 +2036,10 @@ sp_api::impl_runtime_apis! {
 
 		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
 			Msa::validate_eth_address_for_msa(address, msa_id)
+		}
+
+		fn get_provider_application_context(provider_id: ProviderId, application_id: Option<ApplicationIndex>, locale: Option<Vec<u8>>) -> Option<ProviderApplicationContext> {
+			Msa::get_provider_application_context(provider_id, application_id, locale)
 		}
 	}
 

@@ -7,7 +7,7 @@ use parity_scale_codec::{Decode, Encode};
 use core::fmt::Debug;
 
 pub use common_primitives::msa::{
-	Delegation, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId,
+	ApplicationIndex, Delegation, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId,
 };
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
@@ -17,9 +17,6 @@ use common_primitives::{
 };
 use scale_info::TypeInfo;
 use sp_core::U256;
-
-/// ApplicationIndex type
-pub type ApplicationIndex = u16;
 
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
