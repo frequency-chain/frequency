@@ -295,6 +295,7 @@ impl<T: Config> PermittedDelegationSchemas<T>
 }
 
 /// Helper function to compute CID of given bytes and return Vec<u8>
+#[cfg(any(test, feature = "runtime-benchmarks"))]
 pub fn compute_cid(bytes: &[u8]) -> Vec<u8> {
 	let cid = compute_cid_v1(bytes).expect("Failed to compute CID");
 	// Encode CID into multibase Base58btc string, then return as Vec<u8>
