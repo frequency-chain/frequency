@@ -276,7 +276,7 @@ pub struct ProviderApplicationContext {
 	/// The provider associated with the `key`
 	pub provider_id: ProviderId,
 	/// The default Application/Provider logo
-	pub default_logo_250_100_png_bytes: Vec<u8>,
+	pub default_logo_250_100_png_bytes: Option<Vec<u8>>,
 	/// The optional application id
 	pub application_id: Option<ApplicationIndex>,
 	/// The optional localized name
