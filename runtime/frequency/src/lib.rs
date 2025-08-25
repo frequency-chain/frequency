@@ -264,9 +264,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
-				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
+				// Create provider and create schema/intent/intent group are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) => false,
 				#[cfg(feature = "frequency-bridging")]
 				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
 				// Everything else is allowed on Mainnet
