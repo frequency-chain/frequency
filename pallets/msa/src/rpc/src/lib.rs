@@ -222,10 +222,7 @@ where
 	) -> RpcResult<Option<ProviderApplicationContext>> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
-		let locale_bytes: Option<Vec<u8>> = match locale {
-			Some(l) => Some(l.into_bytes()),
-			None => None,
-		};
+		let locale_bytes: Option<Vec<u8>> = locale.map(|l| l.into_bytes());
 		let runtime_api_result =
 			api.get_provider_application_context(at, provider_id, application_id, locale_bytes);
 		map_rpc_result(runtime_api_result)
