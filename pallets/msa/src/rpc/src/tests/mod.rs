@@ -59,22 +59,17 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		/// Get provider application context
-		fn get_provider_application_context(
-			&self,
-			provider_id: ProviderId,
-			application_id: Option<ApplicationIndex>,
-			locale: Option<String>,
-		) -> RpcResult<Option<ProviderApplicationContext>> {
+		fn get_provider_application_context(provider_id: ProviderId, application_id: Option<ApplicationIndex>, locale: Option<Vec<u8>>) -> Option<ProviderApplicationContext> {
 		#[allow(clippy::match_like_matches_macro)]
 			match provider_id {
-				PROVIDER_WITH_DELEGATE_A => Ok(Some(ProviderApplicationContext {
+				PROVIDER_WITH_DELEGATE_A => Some(ProviderApplicationContext {
 					provider_id,
 					application_id,
-					default_logo_250_100_png_bytes: Vec::new(),
-					localized_name: Some(locale.unwrap_or("Provider A".to_string()).into_bytes()),
+					default_logo_250_100_png_bytes: Some(Vec::new()),
+					localized_name:  Some(locale.unwrap_or_default()),
 					localized_logo_250_100_png_bytes: Some(Vec::new()),
-				})),
-				_ => Ok(None),
+				}),
+				_ => None,
 			}
 		}
 	}
@@ -311,10 +306,10 @@ async fn get_provider_application_context_with_success() {
 		ProviderApplicationContext {
 			provider_id: ProviderId(1),
 			application_id: Some(0u16),
-			default_logo_250_100_png_bytes: Vec::new(),
-			localized_name: Some(b"Provider A".to_vec()),
+			default_logo_250_100_png_bytes: Some(Vec::new()),
+			localized_name: Some(b"en-US".to_vec()),
 			localized_logo_250_100_png_bytes: Some(Vec::new()),
 		},
-		response
+		response.expect("Failed to get provider application context")
 	);
 }
