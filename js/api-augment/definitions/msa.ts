@@ -61,7 +61,6 @@ export default {
     MessageSourceId: 'u64',
     DelegatorId: 'MessageSourceId',
     ProviderId: 'MessageSourceId',
-    ApplicationIndex: 'u16',
     KeyInfoResponse: {
       msa_keys: 'Vec<AccountId>',
       msa_id: 'MessageSourceId',
