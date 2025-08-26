@@ -2435,21 +2435,19 @@ impl<T: Config> Pallet<T> {
 			ApprovedLogos::<T>::get(default_logo_cid).map(|bv| bv.to_vec());
 		let mut localized_name: Option<Vec<u8>> = None;
 		// Localized logo bytes if any
-		let localized_logo_250_100_png_bytes: Option<Vec<u8>> = if let Some(locale) = bounded_locale
-		{
+		let localized_logo_250_100_png_bytes: Option<Vec<u8>> = bounded_locale.and_then(|locale| {
+			// Localized name if any
 			localized_name = provider_or_application_registry
 				.localized_names
 				.get(&locale)
 				.map(|bv| bv.to_vec());
-			let localized_logo_cid =
-				provider_or_application_registry.localized_logo_250_100_png_cids.get(&locale);
-			match localized_logo_cid {
-				Some(cid) => ApprovedLogos::<T>::get(cid).map(|bv| bv.to_vec()),
-				None => None,
-			}
-		} else {
-			None
-		};
+
+			provider_or_application_registry
+				.localized_logo_250_100_png_cids
+				.get(&locale)
+				.and_then(|cid| ApprovedLogos::<T>::get(cid).map(|bv| bv.to_vec()))
+		});
+
 		Some(ProviderApplicationContext {
 			provider_id,
 			application_id,
