@@ -57,6 +57,26 @@ sp_api::mock_impl_runtime_apis! {
 				_ => vec![],
 			}
 		}
+
+		/// Get provider application context
+		fn get_provider_application_context(
+			&self,
+			provider_id: ProviderId,
+			application_id: Option<ApplicationIndex>,
+			locale: Option<String>,
+		) -> RpcResult<Option<ProviderApplicationContext>> {
+		#[allow(clippy::match_like_matches_macro)]
+			match provider_id {
+				PROVIDER_WITH_DELEGATE_A => Ok(Some(ProviderApplicationContext {
+					provider_id,
+					application_id,
+					default_logo_250_100_png_bytes: Vec::new(),
+					localized_name: Some(locale.unwrap_or("Provider A".to_string()).into_bytes()),
+					localized_logo_250_100_png_bytes: Some(Vec::new()),
+				})),
+				_ => Ok(None),
+			}
+		}
 	}
 }
 
@@ -272,4 +292,29 @@ async fn get_keys_by_msa_id_with_value_should_work() {
 	let response = result.unwrap();
 	assert!(response.is_some());
 	assert_eq!(KeyInfoResponse { msa_id, msa_keys: accounts }, response.unwrap());
+}
+
+#[tokio::test]
+async fn get_provider_application_context_with_success() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
+
+	let result = api.get_provider_application_context(
+		PROVIDER_WITH_DELEGATE_A,
+		Some(0u16),
+		Some("en-US".to_string()),
+	);
+
+	assert!(result.is_ok());
+	let response = result.unwrap();
+	assert_eq!(
+		ProviderApplicationContext {
+			provider_id: ProviderId(1),
+			application_id: Some(0u16),
+			default_logo_250_100_png_bytes: Vec::new(),
+			localized_name: Some(b"Provider A".to_vec()),
+			localized_logo_250_100_png_bytes: Some(Vec::new()),
+		},
+		response
+	);
 }
