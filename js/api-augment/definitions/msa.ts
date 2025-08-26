@@ -69,7 +69,7 @@ export default {
         },
         {
           name: 'locale',
-          type: 'Option<Vec<u8>>',
+          type: 'Option<String>',
         },
       ],
       type: 'Option<ProviderApplicationContext>',

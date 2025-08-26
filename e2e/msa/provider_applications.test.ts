@@ -191,4 +191,55 @@ describe('Create Provider Application', function () {
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
     await assert.rejects(uploadLogoOp.signAndSend(), { name: 'InvalidLogoBytes' });
   });
+
+  it('should successfully create application with locale and retrieve', async function () {
+    if (isTestnet()) this.skip();
+    // read frequency.png into logoBytes
+    const logoBytes = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_v2.test.ts')));
+    const buf = Array.from(logoBytes);
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const localizedNames = new Map([
+      ['en', 'Logo Provider'],
+      ['es', 'Proveedor de Logo'],
+    ]);
+    const localizedLogo = new Map([
+      ['en', logoCidStr],
+      ['es', logoCidStr],
+    ]);
+    applicationEntry.localizedNames = localizedNames;
+    applicationEntry.localizedLogo250100PngCids = localizedLogo;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
+    const applicationId = applicationEvent!.data.applicationId;
+    assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
+    const applicationContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
+      providerId,
+      applicationId,
+      'en'
+    );
+    assert.notEqual(applicationContextDefault, undefined, 'should return a valid provider application context');
+    assert.equal(applicationContextDefault.isSome, true, 'provider context should be some');
+    const resultingApplicationContext = applicationContextDefault.unwrap();
+    assert.equal(resultingApplicationContext.provider_id.toBigInt(), providerId, 'providerId should match');
+    assert.equal(resultingApplicationContext.application_id, applicationId.toBigInt(), 'applicationId should match');
+    assert.equal(
+      resultingApplicationContext.default_logo_250_100_png_bytes.length,
+      encodedBytes.length,
+      'default logo byte length should match'
+    );
+    const localized_name_vec_u8 = resultingApplicationContext.localized_name;
+    const localized_name_string = new TextDecoder().decode(localized_name_vec_u8.unwrap().toU8a(true));
+    assert.equal(localized_name_string, 'Logo Provider', 'localized name (en) should match');
+    assert.equal(
+      resultingApplicationContext.localized_logo_250_100_png_bytes.unwrap().length,
+      encodedBytes.length,
+      'locale logo byte length should match'
+    );
+  });
 });
