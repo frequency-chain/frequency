@@ -178,6 +178,14 @@ fn propose_to_add_application_happy_path() {
 		assert!(Msa::is_registered_provider(new_msa_id));
 		assert!(ProviderToApplicationRegistry::<Test>::get(ProviderId(new_msa_id), 0).is_some());
 		assert!(NextApplicationIndex::<Test>::get(ProviderId(new_msa_id)) > 0);
+		let old_app_id = NextApplicationIndex::<Test>::get(ProviderId(new_msa_id)) - 1;
+		let application_context =
+			Msa::get_provider_application_context(ProviderId(new_msa_id), Some(old_app_id), None);
+		assert!(application_context.is_some());
+		let app_context = application_context.unwrap();
+		assert_eq!(app_context.application_id, Some(old_app_id));
+		assert_eq!(app_context.provider_id, ProviderId(new_msa_id));
+		assert_eq!(app_context.localized_name, None);
 	})
 }
 
