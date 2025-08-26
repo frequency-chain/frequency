@@ -11,8 +11,7 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{
-		ApplicationIndex, DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId,
-		ProviderApplicationContext, ProviderId, SchemaGrant,
+		DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId, SchemaGrant,
 	},
 	node::BlockNumber,
 	offchain::get_msa_account_storage_key_name,
@@ -73,17 +72,6 @@ pub trait MsaApi<BlockHash, AccountId> {
 		&self,
 		msa_id: MessageSourceId,
 	) -> RpcResult<Option<KeyInfoResponse<AccountId>>>;
-
-	/// Retrieve a provider's application context or default provider context
-	/// If application id is not specified, rpc will return the default provider context
-	/// The default provider context is registered at time of provider registration.
-	#[method(name = "msa_getProviderApplicationContext")]
-	fn get_provider_application_context(
-		&self,
-		provider_id: ProviderId,
-		application_id: Option<ApplicationIndex>,
-		locale: Option<String>,
-	) -> RpcResult<Option<ProviderApplicationContext>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -212,19 +200,5 @@ where
 			return Ok(Some(KeyInfoResponse { msa_id, msa_keys: keys }))
 		}
 		Ok(None)
-	}
-
-	fn get_provider_application_context(
-		&self,
-		provider_id: ProviderId,
-		application_id: Option<ApplicationIndex>,
-		locale: Option<String>,
-	) -> RpcResult<Option<ProviderApplicationContext>> {
-		let api = self.client.runtime_api();
-		let at = self.client.info().best_hash;
-		let locale_bytes: Option<Vec<u8>> = locale.map(|l| l.into_bytes());
-		let runtime_api_result =
-			api.get_provider_application_context(at, provider_id, application_id, locale_bytes);
-		map_rpc_result(runtime_api_result)
 	}
 }

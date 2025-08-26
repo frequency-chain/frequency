@@ -143,7 +143,7 @@ describe('Create Provider Application', function () {
     await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
     const applicationId = applicationEvent!.data.applicationId;
     assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
-    const applicationContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
+    const applicationContextDefault = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getProviderApplicationContext(
       providerId,
       applicationId,
       null
@@ -151,10 +151,10 @@ describe('Create Provider Application', function () {
     assert.notEqual(applicationContextDefault, undefined, 'should return a valid provider application context');
     assert.equal(applicationContextDefault.isSome, true, 'provider context should be some');
     const resultingApplicationContext = applicationContextDefault.unwrap();
-    assert.equal(resultingApplicationContext.provider_id.toBigInt(), providerId, 'providerId should match');
-    assert.equal(resultingApplicationContext.application_id, applicationId.toBigInt(), 'applicationId should match');
+    assert.equal(resultingApplicationContext.providerId.toBigInt(), providerId, 'providerId should match');
+    assert.equal(resultingApplicationContext.applicationId, applicationId.toBigInt(), 'applicationId should match');
     assert.equal(
-      resultingApplicationContext.default_logo_250_100_png_bytes.length,
+      resultingApplicationContext.defaultLogo250100PngBytes.unwrap().length,
       encodedBytes.length,
       'logo byte length should match'
     );
@@ -218,7 +218,7 @@ describe('Create Provider Application', function () {
     await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
     const applicationId = applicationEvent!.data.applicationId;
     assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
-    const applicationContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
+    const applicationContextDefault = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getProviderApplicationContext(
       providerId,
       applicationId,
       'en'
@@ -226,18 +226,18 @@ describe('Create Provider Application', function () {
     assert.notEqual(applicationContextDefault, undefined, 'should return a valid provider application context');
     assert.equal(applicationContextDefault.isSome, true, 'provider context should be some');
     const resultingApplicationContext = applicationContextDefault.unwrap();
-    assert.equal(resultingApplicationContext.provider_id.toBigInt(), providerId, 'providerId should match');
-    assert.equal(resultingApplicationContext.application_id, applicationId.toBigInt(), 'applicationId should match');
+    assert.equal(resultingApplicationContext.providerId.toBigInt(), providerId, 'providerId should match');
+    assert.equal(resultingApplicationContext.applicationId, applicationId.toBigInt(), 'applicationId should match');
     assert.equal(
-      resultingApplicationContext.default_logo_250_100_png_bytes.length,
+      resultingApplicationContext.defaultLogo250100PngBytes.unwrap().length,
       encodedBytes.length,
       'default logo byte length should match'
     );
-    const localized_name_vec_u8 = resultingApplicationContext.localized_name;
+    const localized_name_vec_u8 = resultingApplicationContext.localizedName;
     const localized_name_string = new TextDecoder().decode(localized_name_vec_u8.unwrap().toU8a(true));
     assert.equal(localized_name_string, 'Logo Provider', 'localized name (en) should match');
     assert.equal(
-      resultingApplicationContext.localized_logo_250_100_png_bytes.unwrap().length,
+      resultingApplicationContext.localizedLogo250100PngBytes.unwrap().length,
       encodedBytes.length,
       'locale logo byte length should match'
     );

@@ -56,24 +56,6 @@ export default {
       ],
       type: 'Vec<DelegationResponse>',
     },
-    getProviderApplicationContext: {
-      description: 'Fetch the provider application context',
-      params: [
-        {
-          name: 'provider_id',
-          type: 'ProviderId',
-        },
-        {
-          name: 'application_id',
-          type: 'Option<ApplicationIndex>',
-        },
-        {
-          name: 'locale',
-          type: 'Option<String>',
-        },
-      ],
-      type: 'Option<ProviderApplicationContext>',
-    },
   },
   types: {
     MessageSourceId: 'u64',
@@ -96,12 +78,5 @@ export default {
     // Not sure why these have to be noted here, but they do
     CommonPrimitivesMsaDelegatorId: 'u64',
     CommonPrimitivesMsaProviderId: 'u64',
-    ProviderApplicationContext: {
-      provider_id: 'ProviderId',
-      default_logo_250_100_png_bytes: 'Vec<u8>',
-      application_id: 'Option<ApplicationIndex>',
-      localized_name: 'Option<Vec<u8>>',
-      localized_logo_250_100_png_bytes: 'Option<Vec<u8>>',
-    },
   },
 };

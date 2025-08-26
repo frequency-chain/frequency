@@ -64,7 +64,7 @@ describe('Create Provider', function () {
       const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
       const uploadLogoOp = ExtrinsicHelper.uploadLogo(logoKeys, logoCidStr, encodedBytes);
       await assert.doesNotReject(uploadLogoOp.signAndSend(), undefined);
-      const providerContextDefault = await ExtrinsicHelper.apiPromise.rpc.msa.getProviderApplicationContext(
+      const providerContextDefault = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getProviderApplicationContext(
         providerId,
         null,
         null
@@ -72,9 +72,9 @@ describe('Create Provider', function () {
       assert.notEqual(providerContextDefault, undefined, 'should return a valid provider application context');
       assert.equal(providerContextDefault.isSome, true, 'provider context should be some');
       const resultingApplicationContext = providerContextDefault.unwrap();
-      assert.equal(resultingApplicationContext.provider_id.toBigInt(), providerId, 'providerId should match');
+      assert.equal(resultingApplicationContext.providerId.toBigInt(), providerId, 'providerId should match');
       assert.equal(
-        resultingApplicationContext.default_logo_250_100_png_bytes.length,
+        resultingApplicationContext.defaultLogo250100PngBytes.unwrap().length,
         encodedBytes.length,
         'logo byte length should match'
       );
