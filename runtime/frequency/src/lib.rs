@@ -486,6 +486,32 @@ type OnTimestampSetHook = Aura;
 #[cfg(feature = "frequency-no-relay")]
 type OnTimestampSetHook = ();
 
+// Parachain System associated type aliases (centralized cfg handling)
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+type ParachainDmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+#[cfg(feature = "frequency-no-relay")]
+type ParachainDmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
+
+#[cfg(feature = "frequency-no-relay")]
+type ParachainReservedDmpWeight = ();
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+type ParachainReservedDmpWeight = ReservedDmpWeight;
+
+#[cfg(feature = "frequency-no-relay")]
+type ParachainOutboundXcmpMessageSource = ();
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+type ParachainOutboundXcmpMessageSource = XcmpQueue;
+
+#[cfg(feature = "frequency-no-relay")]
+type ParachainXcmpMessageHandler = ();
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+type ParachainXcmpMessageHandler = XcmpQueue;
+
+#[cfg(feature = "frequency-no-relay")]
+type ParachainReservedXcmpWeight = ();
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+type ParachainReservedXcmpWeight = ReservedXcmpWeight;
+
 /// Executive: handles dispatch to the various modules (single definition using alias tuple).
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -1367,37 +1393,11 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
-
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-	type DmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-
-	#[cfg(feature = "frequency-no-relay")]
-	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
-
-	#[cfg(feature = "frequency-no-relay")]
-	type ReservedDmpWeight = ();
-
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-	type ReservedDmpWeight = ReservedDmpWeight;
-
-	#[cfg(feature = "frequency-no-relay")]
-	type OutboundXcmpMessageSource = ();
-
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-	type OutboundXcmpMessageSource = XcmpQueue;
-
-	#[cfg(feature = "frequency-no-relay")]
-	type XcmpMessageHandler = ();
-
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-	type XcmpMessageHandler = XcmpQueue;
-
-	#[cfg(feature = "frequency-no-relay")]
-	type ReservedXcmpWeight = ();
-
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-	type ReservedXcmpWeight = ReservedXcmpWeight;
-
+	type DmpQueue = ParachainDmpQueue;
+	type ReservedDmpWeight = ParachainReservedDmpWeight;
+	type OutboundXcmpMessageSource = ParachainOutboundXcmpMessageSource;
+	type XcmpMessageHandler = ParachainXcmpMessageHandler;
+	type ReservedXcmpWeight = ParachainReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
