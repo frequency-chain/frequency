@@ -57,8 +57,9 @@ fn generate_intents<T: Config>(size: usize) -> BoundedVec<IntentId, T::MaxIntent
 		let (intent_id, _) = SchemasPallet::<T>::create_intent_for(
 			name_payload,
 			PayloadLocation::Paginated,
-			BoundedVec::default()
-		).expect("should create intent");
+			BoundedVec::default(),
+		)
+		.expect("should create intent");
 		intents.push(intent_id.try_into().expect("should convert"));
 	}
 	intents.try_into().unwrap()
