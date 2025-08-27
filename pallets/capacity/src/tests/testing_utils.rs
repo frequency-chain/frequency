@@ -1,11 +1,11 @@
 use super::mock::*;
-use frame_support::{assert_ok, traits::Hooks};
+use frame_support::{assert_ok, traits::Hooks, BoundedVec};
 
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEraInfo, CurrentEraProviderBoostTotal, Event,
 	RewardEraInfo, StakingAccountLedger, StakingTargetLedger, StakingType,
 };
-use common_primitives::msa::MessageSourceId;
+use common_primitives::msa::{MessageSourceId, ProviderRegistryEntry};
 
 pub fn capacity_events() -> Vec<Event<Test>> {
 	let result = System::events()
@@ -70,8 +70,10 @@ pub fn system_run_blocks(n: u32) {
 }
 
 pub fn register_provider(target_id: MessageSourceId, name: String) {
-	let name = Vec::from(name).try_into().expect("error");
-	assert_ok!(Msa::create_registered_provider(target_id.into(), name));
+	let bounded_name =
+		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Name should fit in BoundedVec; qed");
+	let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
+	assert_ok!(Msa::create_registered_provider(target_id.into(), entry));
 }
 
 /// Create Capacity account and set remaining and available amounts.

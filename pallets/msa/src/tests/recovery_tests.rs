@@ -1,8 +1,8 @@
 use common_primitives::{
-	msa::{MsaLookup, ProviderId},
+	msa::{MsaLookup, ProviderId, ProviderRegistryEntry},
 	utils::wrap_binary_data,
 };
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, BoundedVec};
 use parity_scale_codec::Encode;
 use sp_core::{sr25519, Pair};
 use sp_runtime::MultiSignature;
@@ -354,7 +354,8 @@ fn recover_account_with_non_approved_provider_should_fail() {
 
 		// Create a provider but don't approve it for recovery
 		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("NotApproved")));
+		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), entry));
 
 		// Generate a new control key for recovery
 		let (new_control_key_pair, _) = sr25519::Pair::generate();
@@ -746,7 +747,10 @@ fn ensure_approved_recovery_provider_with_regular_msa_should_fail() {
 fn ensure_approved_recovery_provider_with_non_approved_provider_should_fail() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("NotApproved")));
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_name = BoundedVec::try_from(b"NotApproved".to_vec())
+			.expect("Provider name should fit in bounds");
+		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), entry));
 
 		let result = Msa::ensure_approved_recovery_provider(&provider_key_pair.public().into());
 		assert_noop!(result, Error::<Test>::NotAuthorizedRecoveryProvider);
