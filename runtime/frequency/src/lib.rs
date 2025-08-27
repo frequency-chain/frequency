@@ -255,6 +255,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
+				// PolkadotXcm is not available for no-relay because it relies on some cumulus features
+				#[cfg(not(feature = "frequency-no-relay"))]
+				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
 				_ => true,
 			}
 		}
@@ -266,8 +269,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
-				#[cfg(not(feature = "frequency-no-relay"))]
-				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
+				// REMOVE: When Bridging is deployed on Mainnet, re-enable `is_xcm_call_allowed`
+				RuntimeCall::PolkadotXcm(pallet_xcm_call) =>
+					Self::is_xcm_call_allowed(pallet_xcm_call),
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -276,6 +280,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
+	// XCM is not available for no-relay because it relies on some cumulus features
 	#[cfg(not(feature = "frequency-no-relay"))]
 	fn is_xcm_call_allowed(call: &pallet_xcm::Call<Runtime>) -> bool {
 		!matches!(
@@ -461,25 +466,37 @@ pub type AssetBalance = Balance;
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
-/// Executive: handles dispatch to the various modules.
+// -----------------------------------------------------------------------------
+// Centralized conditional aliases to reduce scattered #[cfg] noise.
+// -----------------------------------------------------------------------------
 #[cfg(not(feature = "frequency-no-relay"))]
-pub type Executive = frame_executive::Executive<
-	Runtime,
-	Block,
-	frame_system::ChainContext<Runtime>,
-	Runtime,
-	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
->;
-
+type RuntimeMigrations = (MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>);
 #[cfg(feature = "frequency-no-relay")]
+type RuntimeMigrations = (MigratePalletsCurrentStorage<Runtime>,);
+
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+type OnSetCodeHook = cumulus_pallet_parachain_system::ParachainSetCode<Runtime>;
+#[cfg(feature = "frequency-no-relay")]
+type OnSetCodeHook = ();
+
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+type TimeReleaseBlockNumberProvider = RelaychainDataProvider<Runtime>;
+#[cfg(feature = "frequency-no-relay")]
+type TimeReleaseBlockNumberProvider = System;
+
+#[cfg(not(feature = "frequency-no-relay"))]
+type OnTimestampSetHook = Aura;
+#[cfg(feature = "frequency-no-relay")]
+type OnTimestampSetHook = ();
+
+/// Executive: handles dispatch to the various modules (single definition using alias tuple).
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	RuntimeMigrations,
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -764,14 +781,8 @@ impl frame_system::Config for Runtime {
 	type BlockLength = RuntimeBlockLength;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
-	/// The action to take on a Runtime Upgrade
-	#[cfg(any(
-		not(feature = "frequency-no-relay"),
-		feature = "frequency-lint-check",
-	))]
-	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
-	#[cfg(feature = "frequency-no-relay")]
-	type OnSetCode = ();
+	/// The action to take on a Runtime Upgrade (unified via alias)
+	type OnSetCode = OnSetCodeHook;
 	type MaxConsumers = FrameSystemMaxConsumers;
 	///  A new way of configuring migrations that run in a single block.
 	type SingleBlockMigrations = ();
@@ -939,10 +950,7 @@ impl pallet_time_release::Config for Runtime {
 	type TransferOrigin = EnsureSigned<AccountId>;
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
-	#[cfg(feature = "frequency-no-relay")]
-	type BlockNumberProvider = System;
+	type BlockNumberProvider = TimeReleaseBlockNumberProvider;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type SchedulerProvider = SchedulerProvider;
 	type RuntimeCall = RuntimeCall;
@@ -954,10 +962,7 @@ impl pallet_time_release::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	#[cfg(not(feature = "frequency-no-relay"))]
-	type OnTimestampSet = Aura;
-	#[cfg(feature = "frequency-no-relay")]
-	type OnTimestampSet = ();
+	type OnTimestampSet = OnTimestampSetHook;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
