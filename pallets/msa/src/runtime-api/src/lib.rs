@@ -54,6 +54,7 @@ sp_api::decl_runtime_apis! {
 		fn validate_eth_address_for_msa(eth_address: &H160, msa_id: MessageSourceId) -> bool;
 
 		/// Get the provider application context for a given provider and application
+		#[api_version(4)]
 		fn get_provider_application_context(provider_id: ProviderId, application_id: Option<ApplicationIndex>, locale: Option<Vec<u8>>) -> Option<ProviderApplicationContext>;
 	}
 }
