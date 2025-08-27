@@ -356,3 +356,45 @@ fn compute_cid_v1_test() {
 		assert_eq!(encoded, "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF");
 	});
 }
+
+#[test]
+fn create_application_via_governance_with_no_logos_and_no_localized_names() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_provider_with_name("BareProvider");
+
+		// ApplicationContext::default() has no logos and no localized names
+		let entry = ApplicationContext::default();
+
+		// Approve application via council governance
+		assert_ok!(Msa::create_application_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			key_pair.into(),
+			entry.clone(),
+		));
+
+		// Ensure provider is registered
+		assert!(Msa::is_registered_provider(new_msa_id));
+
+		// Application index should increment
+		assert_eq!(NextApplicationIndex::<Test>::get(ProviderId(new_msa_id)), 1);
+
+		// Application entry should be stored
+		let stored_entry = ProviderToApplicationRegistry::<Test>::get(ProviderId(new_msa_id), 0)
+			.expect("Application should be stored");
+
+		// The stored entry should match our default (no logos, no localized names)
+		assert_eq!(stored_entry.default_logo_250_100_png_cid.len(), 0);
+		assert!(stored_entry.localized_names.is_empty());
+		assert!(stored_entry.localized_logo_250_100_png_cids.is_empty());
+
+		// The public-facing application context should also reflect empties
+		let app_context =
+			Msa::get_provider_application_context(ProviderId(new_msa_id), Some(0), None)
+				.expect("App context should exist");
+
+		assert_eq!(app_context.application_id, Some(0));
+		assert_eq!(app_context.provider_id, ProviderId(new_msa_id));
+		assert_eq!(app_context.localized_name, None);
+		assert_eq!(app_context.localized_logo_250_100_png_bytes, None);
+	});
+}
