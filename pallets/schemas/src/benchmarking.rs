@@ -51,7 +51,7 @@ fn generate_intents<T: Config>(size: usize) -> BoundedVec<IntentId, T::MaxIntent
 			.into_iter()
 			.chain(vec![b'.'; 1])
 			.chain(descriptor.into_iter())
-			.chain(id.numtoa(10, &mut buff).to_vec().into_iter())
+			.chain(id.numtoa(10, &mut buff).iter().copied())
 			.collect();
 		let name_payload = BoundedVec::try_from(name).expect("should convert");
 		let (intent_id, _) = SchemasPallet::<T>::create_intent_for(
@@ -60,7 +60,7 @@ fn generate_intents<T: Config>(size: usize) -> BoundedVec<IntentId, T::MaxIntent
 			BoundedVec::default(),
 		)
 		.expect("should create intent");
-		intents.push(intent_id.try_into().expect("should convert"));
+		intents.push(intent_id);
 	}
 	intents.try_into().unwrap()
 }

@@ -764,7 +764,7 @@ pub mod pallet {
 		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
 		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
 		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
-		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`s] does not exist
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist
 		///
 		#[pallet::call_index(13)]
 		#[pallet::weight(T::WeightInfo::create_intent_group(intent_ids.len() as u32))]
@@ -800,7 +800,7 @@ pub mod pallet {
 		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
 		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
 		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
-		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`s] does not exist
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist
 		///
 		#[pallet::call_index(14)]
 		#[pallet::weight(
@@ -926,7 +926,7 @@ pub mod pallet {
 			Ok(intent_id)
 		}
 
-		/// Inserts a list of [`IntentId`s] with a new [`IntentGroupId`] in storage, and adds
+		/// Inserts a list of [`IntentId`]s with a new [`IntentGroupId`] in storage, and adds
 		/// a new name mapping to the [`IntentGroupId`]
 		/// Updates the `CurrentIntentGroupIdentifierMaximum` storage
 		/// Does little validation, as this is an internal method intended to be called by
@@ -950,7 +950,7 @@ pub mod pallet {
 			Ok(intent_group_id)
 		}
 
-		/// Updates the list of [`IntentId`s] associated with a given [`IntentGroupId`]
+		/// Updates the list of [`IntentId`]s associated with a given [`IntentGroupId`]
 		/// Does little validation, as this is an internal method intended to be called by
 		/// higher-level extrinsics that perform the validations.
 		///
@@ -1213,7 +1213,7 @@ pub mod pallet {
 		/// * [`Error::InvalidSchemaNameLength`] - The name exceed the allowed overall name length
 		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
 		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
-		/// * [`Error::InvalidIntentId`] - One of the [`IntentId`s] specified does not exist
+		/// * [`Error::InvalidIntentId`] - One of the [`IntentId`]s specified does not exist
 		pub fn create_intent_group_for(
 			intent_group_name: SchemaNamePayload,
 			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
@@ -1224,11 +1224,11 @@ pub mod pallet {
 			Ok((intent_id, intent_group_name))
 		}
 
-		/// Update the list of [`IntentId`s] associated with a given [`IntentGroupId`]
+		/// Update the list of [`IntentId`]s associated with a given [`IntentGroupId`]
 		///
 		/// # Errors
 		/// * [`Error::InvalidIntentGroupId`] - The specified [`IntentGroupId`] doesn't exist
-		/// * [`Error::InvalidIntentId`] - One of the [`IntentId`s] specified doesn't exist
+		/// * [`Error::InvalidIntentId`] - One of the [`IntentId`]s specified doesn't exist
 		pub fn update_intent_group_for(
 			intent_group_id: IntentGroupId,
 			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
@@ -1237,10 +1237,10 @@ pub mod pallet {
 			Self::update_intent_group(intent_group_id, intent_ids)
 		}
 
-		/// Validate that a list of [`IntentId`s] all exist
+		/// Validate that a list of [`IntentId`]s all exist
 		///
 		/// # Errors
-		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`s] does not exist
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist
 		///
 		pub fn validate_intent_ids(
 			intent_ids: &BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
