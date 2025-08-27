@@ -2006,6 +2006,7 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(4)]
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
 		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
 			match schema_id {
