@@ -158,6 +158,8 @@ describe('Create Provider Application', function () {
       encodedBytes.length,
       'logo byte length should match'
     );
+    const defaultName = new TextDecoder().decode(resultingApplicationContext.defaultName.toU8a(true));
+    assert.equal(defaultName, 'lOgoProvider', 'default name should match');
   });
 
   it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {
@@ -241,5 +243,7 @@ describe('Create Provider Application', function () {
       encodedBytes.length,
       'locale logo byte length should match'
     );
+    const defaultName = new TextDecoder().decode(resultingApplicationContext.defaultName.toU8a(true));
+    assert.equal(defaultName, 'lOgoProvider', 'default name should match');
   });
 });

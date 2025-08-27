@@ -273,6 +273,8 @@ where
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default)]
 pub struct ProviderApplicationContext {
+	/// The default name associated with this entry
+	pub default_name: Vec<u8>,
 	/// The provider associated with the `key`
 	pub provider_id: ProviderId,
 	/// The default Application/Provider logo

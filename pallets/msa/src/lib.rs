@@ -2429,6 +2429,7 @@ impl<T: Config> Pallet<T> {
 			Some(app_id) => ProviderToApplicationRegistry::<T>::get(provider_id, app_id)?,
 			None => ProviderToRegistryEntry::<T>::get(provider_id)?,
 		};
+		let default_name = provider_or_application_registry.default_name.to_vec();
 		let default_logo_cid = provider_or_application_registry.default_logo_250_100_png_cid;
 		// Default logo bytes
 		let default_logo_250_100_png_bytes: Option<Vec<u8>> =
@@ -2449,6 +2450,7 @@ impl<T: Config> Pallet<T> {
 		});
 
 		Some(ProviderApplicationContext {
+			default_name,
 			provider_id,
 			application_id,
 			default_logo_250_100_png_bytes,

@@ -391,7 +391,7 @@ fn create_application_via_governance_with_no_logos_and_no_localized_names() {
 		let app_context =
 			Msa::get_provider_application_context(ProviderId(new_msa_id), Some(0), None)
 				.expect("App context should exist");
-
+		assert_eq!(app_context.default_name, b"default".to_vec());
 		assert_eq!(app_context.application_id, Some(0));
 		assert_eq!(app_context.provider_id, ProviderId(new_msa_id));
 		assert_eq!(app_context.localized_name, None);
