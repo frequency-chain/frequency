@@ -2417,6 +2417,47 @@ impl<T: Config> Pallet<T> {
 		}
 		true
 	}
+
+	/// Retrieves the provider or application context including logos and localized name if any
+	pub fn get_provider_application_context(
+		provider_id: ProviderId,
+		application_id: Option<ApplicationIndex>,
+		locale: Option<Vec<u8>>,
+	) -> Option<ProviderApplicationContext> {
+		let bounded_locale = locale.and_then(|loc| BoundedVec::try_from(loc).ok());
+		let provider_or_application_registry = match application_id {
+			Some(app_id) => ProviderToApplicationRegistry::<T>::get(provider_id, app_id)?,
+			None => ProviderToRegistryEntry::<T>::get(provider_id)?,
+		};
+		let default_name = provider_or_application_registry.default_name.to_vec();
+		let default_logo_cid = provider_or_application_registry.default_logo_250_100_png_cid;
+		// Default logo bytes
+		let default_logo_250_100_png_bytes: Option<Vec<u8>> =
+			ApprovedLogos::<T>::get(default_logo_cid).map(|bv| bv.to_vec());
+		let mut localized_name: Option<Vec<u8>> = None;
+		// Localized logo bytes if any
+		let localized_logo_250_100_png_bytes: Option<Vec<u8>> = bounded_locale.and_then(|locale| {
+			// Localized name if any
+			localized_name = provider_or_application_registry
+				.localized_names
+				.get(&locale)
+				.map(|bv| bv.to_vec());
+
+			provider_or_application_registry
+				.localized_logo_250_100_png_cids
+				.get(&locale)
+				.and_then(|cid| ApprovedLogos::<T>::get(cid).map(|bv| bv.to_vec()))
+		});
+
+		Some(ProviderApplicationContext {
+			default_name,
+			provider_id,
+			application_id,
+			default_logo_250_100_png_bytes,
+			localized_logo_250_100_png_bytes,
+			localized_name,
+		})
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]
