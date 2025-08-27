@@ -244,52 +244,81 @@ fn dsnp_broadcast() {
 fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_cases = [
+			// non-ASCII characters
 			TestCase {
 				input: r#"¥¤¤.©©©"#, expected: Error::<Test>::InvalidSchemaNameEncoding
 			},
+			// protocol starts with a decimal digit
 			TestCase {
 				input: r#"1asbd.hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
+			// descriptor starts with a decimal digit
 			TestCase {
-				input: r#"asbd.hg1d"#,
+				input: r#"asbd.1hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
+			// protocol contains a non-alphanumeric character
+			TestCase {
+				input: r#"asb@d.hgd"#,
+				expected: Error::<Test>::InvalidSchemaNameCharacters,
+			},
+			// descriptor contains a non-alphanumeric character
 			TestCase {
 				input: r#"asbd.hg@d"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
+			// descriptor missing
 			TestCase { input: r#"asbd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
+			// extra "." delimiter
 			TestCase {
 				input: r#"asbd.sdhks.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// protocol starts with a "-"
 			TestCase {
 				input: r#"-asbdsdhks.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// protocol ends with a "-"
 			TestCase {
 				input: r#"asbdsdhks-.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// protocol starts with a decimal digit
+			TestCase {
+				input: r#"1asbd.hgd"#,
+				expected: Error::<Test>::InvalidSchemaNameCharacters,
+			},
+			// descriptor starts with a "-"
 			TestCase {
 				input: r#"asbdsdhks.-shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// descriptor ends with a "-"
 			TestCase {
 				input: r#"asbdsdhks.shd-"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// descriptor starts with a decimal digit
+			TestCase {
+				input: r#"asbd.1hgd"#,
+				expected: Error::<Test>::InvalidSchemaNameCharacters,
+			},
+			// protocol too long
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa."#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
+			// protocol too short
 			TestCase { input: r#"a.sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// protocol too short
 			TestCase {
 				input: r#"aa.sdhks"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
 			TestCase { input: r#".sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// descriptor too short
 			TestCase { input: r#"hjs."#, expected: Error::<Test>::InvalidSchemaDescriptorLength },
 		];
 		for tc in test_cases {
@@ -304,53 +333,40 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_cases = [
-			TestCase {
-				input: r#"¥¤¤.©©©"#, expected: Error::<Test>::InvalidSchemaNameEncoding
-			},
+			// non-ASCII characters
 			TestCase { input: r#"¥¤¤"#, expected: Error::<Test>::InvalidSchemaNameEncoding },
+			// protocol starts with a decimal digit
+			TestCase { input: r#"1asbd"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
+			// protocol contains a non-alphanumeric character
+			TestCase { input: r#"asb@d"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
+			// protocol starts with a "-"
+			TestCase {
+				input: r#"-asbdsdhks"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			// protocol ends with a "-"
+			TestCase {
+				input: r#"asbdsdhks-"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			// protocol starts with a decimal digit
 			TestCase {
 				input: r#"1asbd.hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
-			TestCase { input: r#"1asbd"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
-			TestCase {
-				input: r#"asbd.hg1d"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
-			TestCase {
-				input: r#"asbd.hg@d"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
-			TestCase { input: r#"hg@d"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
-			TestCase {
-				input: r#"asbd.sdhks.shd"#,
-				expected: Error::<Test>::InvalidSchemaNameStructure,
-			},
-			TestCase {
-				input: r#"-asbdsdhks.shd"#,
-				expected: Error::<Test>::InvalidSchemaNameStructure,
-			},
-			TestCase {
-				input: r#"asbdsdhks-.shd"#,
-				expected: Error::<Test>::InvalidSchemaNameStructure,
-			},
-			TestCase {
-				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa."#,
-				expected: Error::<Test>::InvalidSchemaNamespaceLength,
-			},
+			// protocol too long
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
-			TestCase { input: r#"a.sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
-			TestCase { input: r#"a"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 			TestCase {
-				input: r#"aa.sdhks"#,
+				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaaa"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
-			TestCase { input: r#".sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// protocol too short
+			TestCase { input: r#"a"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 			TestCase { input: r#"aa"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
-			TestCase { input: r#"hjs."#, expected: Error::<Test>::InvalidSchemaDescriptorLength },
+			TestCase { input: r#""#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 		];
 		for tc in test_cases {
 			let payload: SchemaNamePayload =
@@ -766,7 +782,6 @@ fn get_intent_or_group_ids_for_fully_qualified_name_should_return_single_descrip
 		// assert
 		assert!(entity_ids.is_some());
 
-		let mut inner = entity_ids.clone().unwrap();
 		assert_eq!(
 			entity_ids,
 			Some(vec![NameLookupResponse {
@@ -913,7 +928,7 @@ fn propose_to_create_schema_v2_happy_path() {
 			Some(schema_name.clone()),
 		);
 
-		// Find the Proposed event and get it's hash and index so it can be voted on
+		// Find the Proposed event and get its hash and index so it can be voted on
 		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {
@@ -1062,7 +1077,7 @@ fn propose_to_create_schema_name_happy_path() {
 			schema_name.clone(),
 		);
 
-		// Find the Proposed event and get it's hash and index so it can be voted on
+		// Find the Proposed event and get its hash and index so it can be voted on
 		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {

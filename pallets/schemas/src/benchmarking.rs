@@ -1,5 +1,6 @@
 #![allow(clippy::unwrap_used)]
 extern crate alloc;
+use super::*;
 use crate::Pallet as SchemasPallet;
 use alloc::vec;
 use common_primitives::schema::IntentSetting;
@@ -7,8 +8,6 @@ use frame_benchmarking::{v2::*, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
 use numtoa::NumToA;
-
-use super::*;
 
 fn generate_schema<T: Config>(
 	size: usize,
@@ -42,19 +41,25 @@ fn generate_settings<T: Config>(
 	settings.try_into().unwrap()
 }
 
-fn generate_intents<T: Config>() -> BoundedVec<IntentId, T::MaxIntentsPerIntentGroup> {
+fn generate_intents<T: Config>(size: usize) -> BoundedVec<IntentId, T::MaxIntentsPerIntentGroup> {
 	let mut intents: Vec<IntentId> = vec![];
-	for id in 0..T::MaxIntentsPerIntentGroup::get() {
-		let name = format!("namespace.intent_descriptor_{}", id);
-		let bounded_name: SchemaNamePayload =
-			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-		assert_ok!(SchemasPallet::<T>::create_intent(
-			RawOrigin::Root.into(),
-			bounded_name,
+	for id in 0..size {
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MIN as usize];
+		let mut buff = [0u8; 30];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'; 1])
+			.chain(descriptor.into_iter())
+			.chain(id.numtoa(10, &mut buff).to_vec().into_iter())
+			.collect();
+		let name_payload = BoundedVec::try_from(name).expect("should convert");
+		let (intent_id, _) = SchemasPallet::<T>::create_intent_for(
+			name_payload,
 			PayloadLocation::Paginated,
 			BoundedVec::default()
-		));
-		intents.push(id.try_into().expect("should convert"));
+		).expect("should create intent");
+		intents.push(intent_id.try_into().expect("should convert"));
 	}
 	intents.try_into().unwrap()
 }
@@ -464,14 +469,10 @@ mod benchmarks {
 			.chain(descriptor.into_iter())
 			.collect();
 		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
-		let intent_ids = generate_intents::<T>();
+		let intent_ids = generate_intents::<T>(m.try_into().expect("should convert"));
 
 		#[extrinsic_call]
-		create_intent_group(
-			RawOrigin::Signed(sender),
-			bounded_name,
-			intent_ids.slice(..m as usize),
-		);
+		create_intent_group(RawOrigin::Signed(sender), bounded_name, intent_ids);
 
 		ensure!(
 			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
@@ -494,14 +495,14 @@ mod benchmarks {
 			.chain(descriptor.into_iter())
 			.collect();
 		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
-		let intent_ids = generate_intents::<T>();
+		let intent_ids = generate_intents::<T>(m.try_into().expect("should convert"));
 
 		#[extrinsic_call]
 		create_intent_group_via_governance(
 			RawOrigin::Root,
 			sender.clone(),
 			bounded_name,
-			intent_ids.slice(..m as usize),
+			intent_ids,
 		);
 
 		ensure!(
@@ -515,7 +516,6 @@ mod benchmarks {
 	#[benchmark]
 	fn propose_to_create_intent_group() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
-		let payload_location = PayloadLocation::OnChain;
 		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
@@ -523,8 +523,8 @@ mod benchmarks {
 			.chain(vec![b'.'].into_iter())
 			.chain(descriptor.into_iter())
 			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
-		let intent_ids = generate_intents::<T>();
+		let bounded_name = BoundedVec::try_from(name).expect("should convert");
+		let intent_ids = generate_intents::<T>(0);
 
 		#[extrinsic_call]
 		propose_to_create_intent_group(RawOrigin::Signed(sender), bounded_name, intent_ids);

@@ -119,16 +119,21 @@ pub struct SchemaVersionId {
 
 impl SchemaName {
 	/// parses and verifies the request and returns the SchemaName type if successful
+	///
+	/// Note: passing `require_descriptor: false` is intended for RPC methods that search the
+	/// name registry by protocol. Operations that validate name creation should always pass
+	/// `require_descriptor: true`.
+	///
 	/// # Errors
-	/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
-	/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
-	/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
-	/// * [`Error::InvalidSchemaNameLength`] - The name exceed the allowed overall name length
-	/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
-	/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
+	/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding.
+	/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters.
+	/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`).
+	/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length.
+	/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length.
+	/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length.
 	pub fn try_parse<T: Config>(
 		payload: SchemaNamePayload,
-		is_strict: bool,
+		require_descriptor: bool,
 	) -> Result<SchemaName, DispatchError> {
 		// check if all ascii
 		let mut str = String::from_utf8(payload.into_inner())
@@ -140,14 +145,15 @@ impl SchemaName {
 
 		// check if alphabetic or - or separator character
 		ensure!(
-			str.chars().all(|c| c.is_ascii_alphabetic() || c == '-' || c == SEPARATOR_CHAR),
+			str.chars()
+				.all(|c| c.is_ascii_alphanumeric() || c == '-' || c == SEPARATOR_CHAR),
 			Error::<T>::InvalidSchemaNameCharacters
 		);
 
 		// split to namespace and descriptor
 		let chunks: Vec<_> = str.split(SEPARATOR_CHAR).collect();
 		ensure!(
-			chunks.len() == 2 || (chunks.len() == 1 && !is_strict),
+			chunks.len() == 2 || (chunks.len() == 1 && !require_descriptor),
 			Error::<T>::InvalidSchemaNameStructure
 		);
 
@@ -163,6 +169,10 @@ impl SchemaName {
 			!(namespace.starts_with(b"-") || namespace.ends_with(b"-")),
 			Error::<T>::InvalidSchemaNameStructure
 		);
+		// check that doesn't start with a decimal digit.
+		// (This also handles the case where the value is all numeric, because it would also
+		// start with a decimal digit.)
+		ensure!(namespace[0].is_ascii_alphabetic(), Error::<T>::InvalidSchemaNameCharacters);
 
 		// check descriptor
 		let descriptor = match chunks.len() == 2 {
@@ -177,6 +187,13 @@ impl SchemaName {
 				ensure!(
 					!(descriptor.starts_with(b"-") || descriptor.ends_with(b"-")),
 					Error::<T>::InvalidSchemaNameStructure
+				);
+				// check that doesn't start with a decimal digit.
+				// (This also handles the case where the value is all numeric, because it would also
+				// start with a decimal digit.)
+				ensure!(
+					descriptor[0].is_ascii_alphabetic(),
+					Error::<T>::InvalidSchemaNameCharacters
 				);
 				descriptor
 			},

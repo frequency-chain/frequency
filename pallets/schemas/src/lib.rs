@@ -945,6 +945,7 @@ pub mod pallet {
 				&intent_group_name.descriptor,
 				MappedEntityIdentifier::IntentGroup(intent_group_id),
 			);
+			<CurrentIntentGroupIdentifierMaximum<T>>::set(intent_group_id);
 			<IntentGroups<T>>::insert(intent_group_id, IntentGroup { intent_ids });
 			Ok(intent_group_id)
 		}
@@ -1008,12 +1009,12 @@ pub mod pallet {
 		/// Retrieve an Intent by its ID
 		pub fn get_intent_by_id(
 			intent_id: IntentId,
-			include_schemas: bool,
+			_include_schemas: bool,
 		) -> Option<IntentResponse> {
 			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
 				let saved_settings = intent_info.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
-				let mut schema_ids: Option<Vec<SchemaId>> = None;
+				let schema_ids: Option<Vec<SchemaId>> = None;
 				// TODO: uncomment when Schemas have been updated to include intent_id in an upcoming PR
 				// if include_schemas {
 				// 	schemas = Some(Vec<SchemaId>::new());
