@@ -48,6 +48,9 @@ pub trait WeightInfo {
 	fn create_intent_group(m: u32) -> Weight;
 	fn create_intent_group_via_governance(m: u32) -> Weight;
 	fn propose_to_create_intent_group() -> Weight;
+	fn update_intent_group(m: u32) -> Weight;
+	fn update_intent_group_via_governance(m: u32) -> Weight;
+	fn propose_to_update_intent_group() -> Weight;
 }
 
 /// Weights for `pallet_schemas` using the Substrate node and recommended hardware.
@@ -342,6 +345,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+
+	fn update_intent_group(m: u32) -> Weight {
+		todo!()
+	}
+
+	fn update_intent_group_via_governance(m: u32) -> Weight {
+		todo!()
+	}
+
+	fn propose_to_update_intent_group() -> Weight {
+		todo!()
+	}
 }
 
 // For backwards compatibility and tests.
@@ -634,6 +649,18 @@ impl WeightInfo for () {
 		Weight::from_parts(18_000_000, 4126)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+
+	fn update_intent_group(m: u32) -> Weight {
+		todo!()
+	}
+
+	fn update_intent_group_via_governance(m: u32) -> Weight {
+		todo!()
+	}
+
+	fn propose_to_update_intent_group() -> Weight {
+		todo!()
 	}
 }
 

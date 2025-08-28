@@ -11,7 +11,7 @@ use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 extern crate alloc;
 use alloc::{string::String, vec, vec::Vec};
-use frame_support::traits::Len;
+use frame_support::{pallet_prelude::DecodeWithMemTracking, traits::Len};
 
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
@@ -84,7 +84,7 @@ pub struct IntentInfo {
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-/// A structure defining a Schema information (excluding the payload)
+/// A structure defining Schema information (excluding the payload)
 pub struct SchemaInfo {
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
@@ -260,4 +260,24 @@ impl ConvertToResponse<SchemaName, NameLookupResponse> for MappedEntityIdentifie
 	fn convert_to_response(&self, name: &SchemaName) -> NameLookupResponse {
 		NameLookupResponse { name: name.get_combined_name(), entity_id: *self }
 	}
+}
+
+/// Defines the actions that can be applied to an Intent Group
+#[derive(
+	Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq,
+)]
+#[scale_info(skip_type_params(T))]
+pub enum IntentGroupAction<T: Config> {
+	/// Overwrite the entire list of Intents with the supplied list
+	Overwrite {
+		/// The new set of Intents
+		intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+	},
+	/// Update the group with the indicated added and removed Intents
+	AddRemove {
+		/// Intents to add
+		intent_ids_to_add: Option<BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>>,
+		/// Intents to remove
+		intent_ids_to_remove: Option<BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>>,
+	},
 }
