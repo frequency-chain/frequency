@@ -452,21 +452,13 @@ pub struct FinalizedBlockResponse {
 /// fetches finalized block hash from rpc
 fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
 	// we are not able to use the custom extension in benchmarks due to feature conflict
-	// Build rpc_address bytes (Vec<u8>) either from benchmarks constant or via custom extension
-	let rpc_address_bytes: Vec<u8> = if cfg!(feature = "runtime-benchmarks") {
+	let rpc_address: Vec<u8> = if cfg!(feature = "runtime-benchmarks") {
 		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
 	} else {
-		// call the runtime-interface function that fills our fixed buffer
-		let mut buffer = vec![0u8; 256];
-		let len = common_primitives::offchain::custom::get_val_buffered(&mut buffer);
-		if len == 0 {
-			RPC_FINALIZED_BLOCK_REQUEST_URL.into()
-		} else {
-			match Vec::<u8>::decode(&mut &buffer[..len as usize]) {
-				Ok(v) if !v.is_empty() => v,
-				_ => RPC_FINALIZED_BLOCK_REQUEST_URL.into(),
-			}
-		}
+		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
+		// rpc address provided to offchain worker via custom extension
+		// common_primitives::offchain::custom::get_val()
+		// 	.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into())
 	};
 	let url = core::str::from_utf8(&rpc_address_bytes)
 		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;

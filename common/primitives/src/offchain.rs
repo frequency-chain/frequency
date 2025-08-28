@@ -12,38 +12,24 @@ use sp_runtime_interface::{
 	runtime_interface,
 };
 
-#[cfg(feature = "std")]
-sp_externalities::decl_extension! {
-	/// Offchain worker custom extension
-	pub struct OcwCustomExt (
-		// rpc address provided to offchain worker
-		Vec<u8>
-	);
-}
+// #[cfg(feature = "std")]
+// sp_externalities::decl_extension! {
+// 	/// Offchain worker custom extension
+// 	pub struct OcwCustomExt (
+// 		// rpc address provided to offchain worker
+// 		Vec<u8>
+// 	);
+// }
 
 /// runtime new customized
-#[runtime_interface]
-pub trait Custom: ExternalitiesExt {
-	/// legacy function do not use
-	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
-		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
-	}
+// #[runtime_interface]
+// pub trait Custom: ExternalitiesExt {
+// 	/// another function
+// 	fn get_val(&mut self) -> Option<Vec<u8>> {
+// 		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
+// 	}
+// }
 
-	/// Get extension value by writing to output buffer
-	/// Returns the total length of encoded data,
-	/// or 0 if no extension found.
-	fn get_val_buffered(&mut self, output: PassFatPointerAndReadWrite<&mut [u8]>) -> u32 {
-		match self.extension::<OcwCustomExt>() {
-			Some(ext) => {
-				let encoded = ext.0.clone().encode();
-				let written = core::cmp::min(encoded.len(), output.len());
-				output[..written].copy_from_slice(&encoded[..written]);
-				written as u32
-			},
-			None => 0,
-		}
-	}
-}
 /// Lock expiration timeout in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account
