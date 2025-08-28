@@ -1,11 +1,11 @@
 use super::mock::*;
-use crate::{pallet::IntentGroups, Config, Error, Event as AnnouncementEvent, SchemaNamePayload};
+use crate::{pallet::IntentGroups, Error, Event as AnnouncementEvent, SchemaNamePayload};
 use common_primitives::{
 	node::AccountId,
 	schema::{IntentId, MappedEntityIdentifier, PayloadLocation},
 };
 use frame_support::{
-	assert_noop, assert_ok, pallet_prelude::TypedGet, traits::ChangeMembers, weights::Weight,
+	assert_noop, assert_ok, traits::ChangeMembers, weights::Weight,
 	BoundedVec,
 };
 use pallet_collective::ProposalOf;

@@ -9,6 +9,10 @@ use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
 use numtoa::NumToA;
 
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
 fn generate_schema<T: Config>(
 	size: usize,
 ) -> BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> {
@@ -51,7 +55,7 @@ fn generate_intents<T: Config>(size: usize) -> BoundedVec<IntentId, T::MaxIntent
 			.into_iter()
 			.chain(vec![b'.'; 1])
 			.chain(descriptor.into_iter())
-			.chain(id.numtoa(10, &mut buff).iter().copied())
+			.chain(id.numtoa(10, &mut buff).to_vec().into_iter())
 			.collect();
 		let name_payload = BoundedVec::try_from(name).expect("should convert");
 		let (intent_id, _) = SchemasPallet::<T>::create_intent_for(
@@ -60,7 +64,7 @@ fn generate_intents<T: Config>(size: usize) -> BoundedVec<IntentId, T::MaxIntent
 			BoundedVec::default(),
 		)
 		.expect("should create intent");
-		intents.push(intent_id);
+		intents.push(intent_id.try_into().expect("should convert"));
 	}
 	intents.try_into().unwrap()
 }
@@ -516,6 +520,84 @@ mod benchmarks {
 
 	#[benchmark]
 	fn propose_to_create_intent_group() -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should convert");
+		let intent_ids = generate_intents::<T>(0);
+
+		#[extrinsic_call]
+		propose_to_create_intent_group(RawOrigin::Signed(sender), bounded_name, intent_ids);
+
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn update_intent_group(
+		m: Linear<0, { T::MaxIntentsPerIntentGroup::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let intent_ids = generate_intents::<T>(T::MaxIntentsPerIntentGroup::get() as usize);
+		let mut initial_intent_ids = intent_ids.clone();
+		initial_intent_ids.truncate(1);
+
+		let (intent_group_id, _) = SchemasPallet::<T>::create_intent_group_for(
+			bounded_name,
+			initial_intent_ids,
+		).expect("should create intent group");
+
+		#[extrinsic_call]
+		update_intent_group(RawOrigin::Signed(sender.clone()), intent_group_id, BoundedVec::try_from(intent_ids.as_slice()[0..m as usize].to_vec()).unwrap());
+
+		assert_last_event::<T>(Event::<T>::IntentGroupUpdated { key: sender, intent_group_id }.into());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn update_intent_group_via_governance(
+		m: Linear<0, { T::MaxSchemaSettingsPerSchema::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
+		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name: Vec<u8> = namespace
+			.into_iter()
+			.chain(vec![b'.'].into_iter())
+			.chain(descriptor.into_iter())
+			.collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let intent_ids = generate_intents::<T>(T::MaxIntentsPerIntentGroup::get() as usize);
+		let mut initial_intent_ids = intent_ids.clone();
+		initial_intent_ids.truncate(1);
+
+		let (intent_group_id, _) = SchemasPallet::<T>::create_intent_group_for(
+			bounded_name,
+			initial_intent_ids,
+		).expect("should create intent group");
+
+		#[extrinsic_call]
+		update_intent_group(RawOrigin::Signed(sender.clone()), intent_group_id, BoundedVec::try_from(intent_ids.as_slice()[0..m as usize].to_vec()).unwrap());
+
+		assert_last_event::<T>(Event::<T>::IntentGroupUpdated { key: sender, intent_group_id }.into());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_update_intent_group() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
 		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
