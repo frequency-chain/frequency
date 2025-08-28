@@ -20,13 +20,16 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm;
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-use frame_support::traits::AsEnsureOriginWithArg;
+// Consolidated runtime mode modules to encapsulate cfg-specific aliases & impls
+mod no_relay;
+mod relay;
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use frame_support::traits::AsEnsureOriginWithArg;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use frame_system::EnsureNever;
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
@@ -456,61 +459,25 @@ pub type BlockId = generic::BlockId<Block>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-pub type AssetBalance = Balance;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+pub type AssetBalance = Balance; // kept for backwards compatibility; now centralized in relay::prelude
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
-// -----------------------------------------------------------------------------
-// Centralized conditional aliases to reduce scattered #[cfg] noise.
-// -----------------------------------------------------------------------------
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type RuntimeMigrations = (MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>);
 #[cfg(feature = "frequency-no-relay")]
-type RuntimeMigrations = (MigratePalletsCurrentStorage<Runtime>,);
-
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type OnSetCodeHook = cumulus_pallet_parachain_system::ParachainSetCode<Runtime>;
-#[cfg(feature = "frequency-no-relay")]
-type OnSetCodeHook = ();
-
+use crate::no_relay::prelude as runtime_mode;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-type TimeReleaseBlockNumberProvider = RelaychainDataProvider<Runtime>;
-#[cfg(feature = "frequency-no-relay")]
-type TimeReleaseBlockNumberProvider = System;
+use crate::relay::prelude as runtime_mode;
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type OnTimestampSetHook = Aura;
-#[cfg(feature = "frequency-no-relay")]
-type OnTimestampSetHook = ();
+use runtime_mode::{
+	OnSetCodeHook, OnTimestampSetHook, RuntimeMigrations, TimeReleaseBlockNumberProvider,
+};
 
-// Parachain System associated type aliases (centralized cfg handling)
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type ParachainDmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-#[cfg(feature = "frequency-no-relay")]
-type ParachainDmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
-
-#[cfg(feature = "frequency-no-relay")]
-type ParachainReservedDmpWeight = ();
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type ParachainReservedDmpWeight = ReservedDmpWeight;
-
-#[cfg(feature = "frequency-no-relay")]
-type ParachainOutboundXcmpMessageSource = ();
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type ParachainOutboundXcmpMessageSource = XcmpQueue;
-
-#[cfg(feature = "frequency-no-relay")]
-type ParachainXcmpMessageHandler = ();
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type ParachainXcmpMessageHandler = XcmpQueue;
-
-#[cfg(feature = "frequency-no-relay")]
-type ParachainReservedXcmpWeight = ();
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-type ParachainReservedXcmpWeight = ReservedXcmpWeight;
+// Needed for AuraUnincludedSegmentApi implementation when relay is enabled
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use crate::relay::ConsensusHook;
 
 /// Executive: handles dispatch to the various modules (single definition using alias tuple).
 pub type Executive = frame_executive::Executive<
@@ -544,7 +511,7 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 /// Migration to set the initial safe XCM version for the XCM pallet.
 pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
@@ -1373,44 +1340,7 @@ impl pallet_passkey::Config for Runtime {
 	type Currency = Balances;
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-/// Maximum number of blocks simultaneously accepted by the Runtime, not yet included
-/// into the relay chain.
-const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
-
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-/// How many parachain blocks are processed by the relay chain per parent. Limits the
-/// number of blocks authored per slot.
-const BLOCK_PROCESSING_VELOCITY: u32 = 1;
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-/// Relay chain slot duration, in milliseconds.
-const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6_000;
-
-// See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
-// the descriptions of these configs.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-impl cumulus_pallet_parachain_system::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type OnSystemEvent = ();
-	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type DmpQueue = ParachainDmpQueue;
-	type ReservedDmpWeight = ParachainReservedDmpWeight;
-	type OutboundXcmpMessageSource = ParachainOutboundXcmpMessageSource;
-	type XcmpMessageHandler = ParachainXcmpMessageHandler;
-	type ReservedXcmpWeight = ParachainReservedXcmpWeight;
-	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
-	type WeightInfo = ();
-	type ConsensusHook = ConsensusHook;
-	type SelectCore = DefaultCoreSelector<Runtime>;
-}
-
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-pub type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
-	Runtime,
-	RELAY_CHAIN_SLOT_DURATION_MILLIS,
-	BLOCK_PROCESSING_VELOCITY,
-	UNINCLUDED_SEGMENT_CAPACITY,
->;
+// ConsensusHook now provided inside relay::prelude when relay enabled
 
 impl parachain_info::Config for Runtime {}
 
@@ -1766,11 +1696,7 @@ mod benches {
 	);
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
-cumulus_pallet_parachain_system::register_validate_block! {
-	Runtime = Runtime,
-	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-}
+// validate_block macro relocated into relay.rs for relay-enabled builds
 
 // The implementation has to be here due to the linking in the macro.
 // It CANNOT be extracted into a separate file
