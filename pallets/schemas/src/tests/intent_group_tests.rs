@@ -4,10 +4,7 @@ use common_primitives::{
 	node::AccountId,
 	schema::{IntentId, MappedEntityIdentifier, PayloadLocation},
 };
-use frame_support::{
-	assert_noop, assert_ok, traits::ChangeMembers, weights::Weight,
-	BoundedVec,
-};
+use frame_support::{assert_noop, assert_ok, traits::ChangeMembers, weights::Weight, BoundedVec};
 use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 

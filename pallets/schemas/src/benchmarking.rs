@@ -555,15 +555,20 @@ mod benchmarks {
 		let mut initial_intent_ids = intent_ids.clone();
 		initial_intent_ids.truncate(1);
 
-		let (intent_group_id, _) = SchemasPallet::<T>::create_intent_group_for(
-			bounded_name,
-			initial_intent_ids,
-		).expect("should create intent group");
+		let (intent_group_id, _) =
+			SchemasPallet::<T>::create_intent_group_for(bounded_name, initial_intent_ids)
+				.expect("should create intent group");
 
 		#[extrinsic_call]
-		update_intent_group(RawOrigin::Signed(sender.clone()), intent_group_id, BoundedVec::try_from(intent_ids.as_slice()[0..m as usize].to_vec()).unwrap());
+		update_intent_group(
+			RawOrigin::Signed(sender.clone()),
+			intent_group_id,
+			BoundedVec::try_from(intent_ids.as_slice()[0..m as usize].to_vec()).unwrap(),
+		);
 
-		assert_last_event::<T>(Event::<T>::IntentGroupUpdated { key: sender, intent_group_id }.into());
+		assert_last_event::<T>(
+			Event::<T>::IntentGroupUpdated { key: sender, intent_group_id }.into(),
+		);
 		Ok(())
 	}
 
@@ -584,15 +589,20 @@ mod benchmarks {
 		let mut initial_intent_ids = intent_ids.clone();
 		initial_intent_ids.truncate(1);
 
-		let (intent_group_id, _) = SchemasPallet::<T>::create_intent_group_for(
-			bounded_name,
-			initial_intent_ids,
-		).expect("should create intent group");
+		let (intent_group_id, _) =
+			SchemasPallet::<T>::create_intent_group_for(bounded_name, initial_intent_ids)
+				.expect("should create intent group");
 
 		#[extrinsic_call]
-		update_intent_group(RawOrigin::Signed(sender.clone()), intent_group_id, BoundedVec::try_from(intent_ids.as_slice()[0..m as usize].to_vec()).unwrap());
+		update_intent_group(
+			RawOrigin::Signed(sender.clone()),
+			intent_group_id,
+			BoundedVec::try_from(intent_ids.as_slice()[0..m as usize].to_vec()).unwrap(),
+		);
 
-		assert_last_event::<T>(Event::<T>::IntentGroupUpdated { key: sender, intent_group_id }.into());
+		assert_last_event::<T>(
+			Event::<T>::IntentGroupUpdated { key: sender, intent_group_id }.into(),
+		);
 		Ok(())
 	}
 

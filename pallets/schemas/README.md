@@ -98,28 +98,40 @@ The Schemas pallet provides for:
 
 ### Extrinsics
 
-| Name/Description                                                                                      | Caller                                          | Payment | Key Events                                                                                                                               | Runtime Added |
-|-------------------------------------------------------------------------------------------------------|-------------------------------------------------|---------|------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `set_max_schema_model_bytes`<br />Governance action to alter the maximum byte length of Schema models | Governance                                      | Tokens  | [`SchemaMaxSizeChanged`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaMaxSizeChanged) | 1             |
-| `propose_to_create_schema_v2`<br />Creates a proposal to the Frequency Council for a new schema       | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 66            |
-| `create_schema_via_governance_v2`<br />Governance action version of `create_schema_v3`                | Frequency Council                               | Tokens  | [`SchemaCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaCreated)               | 66            |
-| `create_schema_v3`<br />Creates a new Schema.                                                         | Mainnet: Governance<br />Testnet: Token Account | Tokens  | [`SchemaCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaCreated)               | 1             |
-| `propose_to_create_schema_name`<br />Creates a Council proposal to set the name of a Schema           | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 1             |
-| `create_schema_name_via_governance`<br />Governance action to set the name of a Schema                | Frequency Council                               | Tokens  | [`SchemaNameCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaNameCreated)       | 66            |
+| Name/Description                                                                                                    | Caller                                          | Payment | Key Events                                                                                                                               | Runtime Added |
+|---------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|---------|------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| `set_max_schema_model_bytes`<br />Governance action to alter the maximum byte length of Schema models               | Governance                                      | Tokens  | [`SchemaMaxSizeChanged`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaMaxSizeChanged) | 1             |
+| `propose_to_create_schema_v2`<br />Creates a proposal to the Frequency Council for a new schema                     | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 66            |
+| `create_schema_via_governance_v2`<br />Governance action version of `create_schema_v3`                              | Frequency Council                               | Tokens  | [`SchemaCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaCreated)               | 66            |
+| `create_schema_v3`<br />Creates a new Schema.                                                                       | Mainnet: Governance<br />Testnet: Token Account | Tokens  | [`SchemaCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaCreated)               | 1             |
+| `propose_to_create_schema_name`<br />Creates a Council proposal to set the name of a Schema                         | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 1             |
+| `create_schema_name_via_governance`<br />Governance action to set the name of a Schema    <br/>                     | Frequency Council                               | Tokens  | [`SchemaNameCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaNameCreated)       | 66            |
+| `create_intent`<br />Creates a new Intent (local/testnet only)                                                      | Mainnet: filtered<br/>Testnet: Token Account    | Tokens  | `IntentCreated`                                                                                                                          | ?             |
+| `create_intent_via_governance`<br/>Governance  action version of `create_intent`                                    | Frequency Council                               | Tokens  | `IntentCreated`                                                                                                                          | ?             |
+| `propose_to_create_intent`<br/>Creates a proposal to the Frequency Council for a new Intent                         | Token Account                                   | Tokens  | `Proposed`                                                                                                                               | ?             |
+| `create_intent_group`<br/>Creates an Intent Group                                                                   | Mainnet: prohibited<br/>Testnet: Token Account  | Tokens  | `IntentGroupCreated`                                                                                                                     | ?             |
+| `create_intent_group_via_governance`<br/>Governance action version of `create_intent_group`                         | Frequency Council                               | Tokens  | `IntentGroupCreated`                                                                                                                     | ?             |
+| `propose_to_create_intent_group`<br/>Creates a proposal to the Frequency Council for a new Intent Group             | Token Account                                   | Tokens  | `Proposed`                                                                                                                               | ?             |
+| `update_intent_group`<br/>Updates an existing IntentGroup with a new list of Intents                                | Mainnet: prohibited<br/>Testnet: Token Account  | Tokens  | `IntentGroupUpdated`                                                                                                                     | ?             |
+| `update_intent_group_via_governance`<br/>Governance action verison of `update_intent_group`                         | Frequency Council                               | Tokens  | `IntentGroupUpdated`                                                                                                                     | ?             |
+| `propose_to_update_intent_group`<br/>Creates a proposal to the Frequency Council to update an existing Intent Group | Token Account                                   | Tokens  | `Proposed`                                                                                                                               | ?             |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/struct.Pallet.html) for more details.
 
 ### State Queries
 
-| Name                              | Description                                                         | Query                            | Runtime Added |
-|-----------------------------------|---------------------------------------------------------------------|----------------------------------|---------------|
-| Get Max Current Schema Identifier | Fetch current Schema Identifier maximum                             | `currentSchemaIdentifierMaximum` | 1             |
-| Get Schema Model Max Bytes        | Fetch maximum number of bytes per Schema Model as set by Governance | `governanceSchemaModelMaxBytes`  | 1             |
-| Get a Schema Info                 | Fetch the metadata and settings for a schema                        | `schemaInfos`                    | 62            |
-| Get Schema Ids by Name            | Fetch matching Schemas Ids by namespace and name                    | `schemaNameToIds`                | 62            |
-| Get Schema Payload/Model          | Fetch the payload/model JSON for the specified Schema               | `schemaPayloads`                 | 62            |
-| Get Intent Info                   | Fetch the metadata for an Intent                                    | `intentInfos`                    | ??            |
-| Get Intent Group Info             | Fetch the list of Intents registered in an Intent Group             | `intentGroups`                   | ??            |             
+| Name                                    | Description                                                         | Query                                 | Runtime Added |
+|-----------------------------------------|---------------------------------------------------------------------|---------------------------------------|---------------|
+| Get Max Current Schema Identifier       | Fetch current Schema Identifier maximum                             | `currentSchemaIdentifierMaximum`      | 1             |
+| Get Max Current Intent Identifier       | Fetch current Intent Identifier maximum                             | `currentIntentIdentifierMaximum`      | ??            |
+| Get Max Current Intent Group Identifier | Fetch current IntentGroup Identifier maximum                        | `currentIntentGroupIdentifierMaximum` | ??            |
+| Get Schema Model Max Bytes              | Fetch maximum number of bytes per Schema Model as set by Governance | `governanceSchemaModelMaxBytes`       | 1             |
+| Get a Schema Info                       | Fetch the metadata and settings for a schema                        | `schemaInfos`                         | 62            |
+| Get Schema Ids by Name                  | Fetch matching Schemas Ids by namespace and name                    | `schemaNameToIds`                     | 62            |
+| Get Schema Payload/Model                | Fetch the payload/model JSON for the specified Schema               | `schemaPayloads`                      | 62            |
+| Get Intent Info                         | Fetch the metadata for an Intent                                    | `intentInfos`                         | ??            |
+| Get Intent Group Info                   | Fetch the list of Intents registered in an Intent Group             | `intentGroups`                        | ??            |
+| Get Intent/IntentGroup IDs by Name      | Fetch matching Intent/IntentGroup IDs by protocol and descriptor    | `nameToMappedEntityIds`               | ??            |
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/storage_types/index.html) for
 additional state queries and details.
@@ -138,3 +150,15 @@ Note: May be restricted based on node settings and configuration.
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_schemas_rpc/trait.SchemasApiServer.html) for more
 details.
+
+### Runtime API
+
+| Name                                                    | Description                                                    | Call                          | API Version Added | Runtime Added |
+|---------------------------------------------------------|----------------------------------------------------------------|-------------------------------|-------------------|---------------|
+| Get Schema by Id                                        | Retrieves the schema for the given Schema Id                   | `getBySchemaId`               | 1                 | 1             |
+| Get Schema Versions by Name                             | Retrieves the ordered list of Schema Ids for the given name(s) | `getSchemaVersionsByName`     | 2                 | 66            |
+| Get registered entity (Intent, IntentGroup) IDs by Name | Retrieves the entities belonging to the given name(s)          | `getRegisteredEntitiesByName` | 3                 | ?             |
+
+See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html) for
+more details.
+
