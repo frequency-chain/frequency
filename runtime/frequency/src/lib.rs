@@ -263,9 +263,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
 
-			#[cfg(feature = "frequency-bridging")]
+			#[cfg(all(feature = "frequency-bridging", feature = "frequency"))]
 			RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
-			// Everything else is allowed on Mainnet
+			// Everything else is allowed
 			_ => true,
 		}
 	}
