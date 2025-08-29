@@ -365,6 +365,25 @@ build-bridging-local:
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
+# Convenience targets to run individual package/pallet tests
+# To further limit to specific tests, specify `make TEST=<test-name-pattern> <test-target>`
+test-frequency-runtime \
+test-common-runtime \
+test-common-primitives \
+test-common-helpers \
+test-pallet-capacity \
+test-pallet-frequency-tx-payment \
+test-pallet-handles \
+test-pallet-messages \
+test-pallet-msa \
+test-pallet-passkey \
+test-pallet-schemas \
+test-pallet-stateful-storage \
+test-pallet-time-release \
+test-pallet-treasury@27.0.0 \
+test-cli-opt:
+	cargo test -p $(@:test-%=%) --lib -- $(TEST)
+
 test-migrations:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check,try-runtime
 

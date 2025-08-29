@@ -111,7 +111,7 @@ describe('#createSchema', function () {
   });
 
   it('should fail to create schema with invalid character in name v3', async function () {
-    const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'test2.invalid');
+    const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'test@.invalid');
     await assert.rejects(f.fundAndSend(fundingSource), {
       name: 'InvalidSchemaNameCharacters',
     });

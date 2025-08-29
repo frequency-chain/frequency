@@ -11,12 +11,12 @@ use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 extern crate alloc;
 use alloc::{string::String, vec, vec::Vec};
-use frame_support::traits::Len;
+use frame_support::{pallet_prelude::DecodeWithMemTracking, traits::Len};
 
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
 
-/// The maximum size of a fully qualified name, including all parts
+/// The maximum size of a fully qualified name, including all parts and separators
 pub const SCHEMA_NAME_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
 /// A fully qualified name has the following structure PROTOCOL.DESCRIPTOR
 pub type SchemaNamePayload = BoundedVec<u8, ConstU32<SCHEMA_NAME_BYTES_MAX>>;
@@ -84,7 +84,7 @@ pub struct IntentInfo {
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-/// A structure defining a Schema information (excluding the payload)
+/// A structure defining Schema information (excluding the payload)
 pub struct SchemaInfo {
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
@@ -119,9 +119,21 @@ pub struct SchemaVersionId {
 
 impl SchemaName {
 	/// parses and verifies the request and returns the SchemaName type if successful
+	///
+	/// Note: passing `require_descriptor: false` is intended for RPC methods that search the
+	/// name registry by protocol. Operations that validate name creation should always pass
+	/// `require_descriptor: true`.
+	///
+	/// # Errors
+	/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding.
+	/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters.
+	/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`).
+	/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length.
+	/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length.
+	/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length.
 	pub fn try_parse<T: Config>(
 		payload: SchemaNamePayload,
-		is_strict: bool,
+		require_descriptor: bool,
 	) -> Result<SchemaName, DispatchError> {
 		// check if all ascii
 		let mut str = String::from_utf8(payload.into_inner())
@@ -131,16 +143,20 @@ impl SchemaName {
 		// to canonical form
 		str = String::from(str.to_lowercase().trim());
 
-		// check if alphabetic or - or separator character
+		// only allow the following:
+		// - alphanumeric characters
+		// - '-' (hyphen)
+		// - SEPARATOR_CHAR (period)
 		ensure!(
-			str.chars().all(|c| c.is_ascii_alphabetic() || c == '-' || c == SEPARATOR_CHAR),
+			str.chars()
+				.all(|c| c.is_ascii_alphanumeric() || c == '-' || c == SEPARATOR_CHAR),
 			Error::<T>::InvalidSchemaNameCharacters
 		);
 
 		// split to namespace and descriptor
 		let chunks: Vec<_> = str.split(SEPARATOR_CHAR).collect();
 		ensure!(
-			chunks.len() == 2 || (chunks.len() == 1 && !is_strict),
+			chunks.len() == 2 || (chunks.len() == 1 && !require_descriptor),
 			Error::<T>::InvalidSchemaNameStructure
 		);
 
@@ -156,6 +172,10 @@ impl SchemaName {
 			!(namespace.starts_with(b"-") || namespace.ends_with(b"-")),
 			Error::<T>::InvalidSchemaNameStructure
 		);
+		// check that doesn't start with a decimal digit.
+		// (This also handles the case where the value is all numeric, because it would also
+		// start with a decimal digit.)
+		ensure!(namespace[0].is_ascii_alphabetic(), Error::<T>::InvalidSchemaNameCharacters);
 
 		// check descriptor
 		let descriptor = match chunks.len() == 2 {
@@ -170,6 +190,13 @@ impl SchemaName {
 				ensure!(
 					!(descriptor.starts_with(b"-") || descriptor.ends_with(b"-")),
 					Error::<T>::InvalidSchemaNameStructure
+				);
+				// check that doesn't start with a decimal digit.
+				// (This also handles the case where the value is all numeric, because it would also
+				// start with a decimal digit.)
+				ensure!(
+					descriptor[0].is_ascii_alphabetic(),
+					Error::<T>::InvalidSchemaNameCharacters
 				);
 				descriptor
 			},
@@ -236,4 +263,24 @@ impl ConvertToResponse<SchemaName, NameLookupResponse> for MappedEntityIdentifie
 	fn convert_to_response(&self, name: &SchemaName) -> NameLookupResponse {
 		NameLookupResponse { name: name.get_combined_name(), entity_id: *self }
 	}
+}
+
+/// Defines the actions that can be applied to an Intent Group
+#[derive(
+	Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq,
+)]
+#[scale_info(skip_type_params(T))]
+pub enum IntentGroupAction<T: Config> {
+	/// Overwrite the entire list of Intents with the supplied list
+	Overwrite {
+		/// The new set of Intents
+		intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+	},
+	/// Update the group with the indicated added and removed Intents
+	AddRemove {
+		/// Intents to add
+		intent_ids_to_add: Option<BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>>,
+		/// Intents to remove
+		intent_ids_to_remove: Option<BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>>,
+	},
 }

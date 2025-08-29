@@ -251,27 +251,22 @@ pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
-		#[cfg(not(feature = "frequency"))]
-		{
-			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
-				_ => true,
-			}
-		}
-		#[cfg(feature = "frequency")]
-		{
-			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
-				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
-				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
-				#[cfg(feature = "frequency-bridging")]
-				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
-				// Everything else is allowed on Mainnet
-				_ => true,
-			}
+		match call {
+			RuntimeCall::Utility(pallet_utility_call) =>
+				Self::is_utility_call_allowed(pallet_utility_call),
+
+			#[cfg(feature = "frequency")]
+			// Filter out calls that are Governance actions on Mainnet
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
+
+			#[cfg(all(feature = "frequency-bridging", feature = "frequency"))]
+			RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
+			// Everything else is allowed
+			_ => true,
 		}
 	}
 }
@@ -310,9 +305,13 @@ impl BaseCallFilter {
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
-			// Block `create_provider` and `create_schema` calls from utility batch
+			#[cfg(feature = "frequency")]
+			// Block calls from utility (or Capacity) batch that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -1289,28 +1288,29 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
 		use pallet_frequency_tx_payment::capacity_stable_weights::WeightInfo;
 		match call {
-			RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
-				capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
-			),
-			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
-			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
-			&RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
-				capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
-			),
-			&RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
-				capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
-			),
-			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
-			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
-			RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
-			_ => None,
-		}
+            RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
+                capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
+            ),
+            RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
+            RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
+            &RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
+                capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
+            ),
+            &RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
+                capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
+            ),
+            RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
+            RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+            RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
+            RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
+            _ => None,
+        }
 	}
 
 	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {

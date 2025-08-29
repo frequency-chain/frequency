@@ -114,7 +114,7 @@ pub struct IntentGroupResponse {
 	/// The unique identifier for this IntentGroup
 	pub intent_group_id: u16,
 	/// The list of currently supported IntentIds for this IntentGroup
-	pub intent_ids: Option<Vec<IntentId>>,
+	pub intent_ids: Vec<IntentId>,
 }
 
 /// RPC response structure for an Intent

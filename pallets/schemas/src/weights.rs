@@ -42,6 +42,15 @@ pub trait WeightInfo {
 	fn propose_to_create_schema_v2_without_name(m: u32, ) -> Weight;
 	fn propose_to_create_schema_name() -> Weight;
 	fn create_schema_name_via_governance() -> Weight;
+	fn create_intent(m: u32) -> Weight;
+	fn create_intent_via_governance(m: u32) -> Weight;
+	fn propose_to_create_intent() -> Weight;
+	fn create_intent_group(m: u32) -> Weight;
+	fn create_intent_group_via_governance(m: u32) -> Weight;
+	fn propose_to_create_intent_group() -> Weight;
+	fn update_intent_group(m: u32) -> Weight;
+	fn update_intent_group_via_governance(m: u32) -> Weight;
+	fn propose_to_update_intent_group() -> Weight;
 }
 
 /// Weights for `pallet_schemas` using the Substrate node and recommended hardware.
@@ -69,6 +78,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+
 	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
 	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
@@ -218,6 +228,177 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(22_217_000, 4562)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:0 w:1)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn create_intent(_m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `129`
+		//  Estimated: `4055`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 4055)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:0 w:1)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn create_intent_via_governance(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `129`
+		//  Estimated: `4055`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(14_959_745, 4055)
+			// Standard Error: 27_980
+			.saturating_add(Weight::from_parts(19_067, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn propose_to_create_intent() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 17_000_000 picoseconds.
+		Weight::from_parts(17_000_000, 4126)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:10 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentGroupIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentGroupIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentGroups` (r:0 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 10]`.
+	fn create_intent_group(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `210 + m * (39 ±0)`
+		//  Estimated: `4055 + m * (2488 ±0)`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(17_499_362, 4055)
+			// Standard Error: 37_852
+			.saturating_add(Weight::from_parts(2_552_879, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:2 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentGroupIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentGroupIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentGroups` (r:0 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn create_intent_group_via_governance(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `129 + m * (123 ±0)`
+		//  Estimated: `4055 + m * (2488 ±0)`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(14_807_203, 4055)
+			// Standard Error: 117_021
+			.saturating_add(Weight::from_parts(5_459_745, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn propose_to_create_intent_group() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 17_000_000 picoseconds.
+		Weight::from_parts(18_000_000, 4126)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Schemas::IntentGroups` (r:1 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:10 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 10]`.
+	fn update_intent_group(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `403`
+		//  Estimated: `3991 + m * (2488 ±0)`
+		// Minimum execution time: 10_000_000 picoseconds.
+		Weight::from_parts(14_027_395, 3991)
+			// Standard Error: 54_902
+			.saturating_add(Weight::from_parts(2_059_505, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Schemas::IntentGroups` (r:1 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:2 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn update_intent_group_via_governance(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `215 + m * (188 ±0)`
+		//  Estimated: `3991 + m * (2488 ±0)`
+		// Minimum execution time: 10_000_000 picoseconds.
+		Weight::from_parts(10_313_029, 3991)
+			// Standard Error: 72_550
+			.saturating_add(Weight::from_parts(5_397_775, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn propose_to_update_intent_group() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 16_000_000 picoseconds.
+		Weight::from_parts(18_000_000, 4126)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }
 
@@ -395,6 +576,178 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:0 w:1)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn create_intent(_m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `129`
+		//  Estimated: `4055`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 4055)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:0 w:1)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn create_intent_via_governance(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `129`
+		//  Estimated: `4055`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(14_959_745, 4055)
+			// Standard Error: 27_980
+			.saturating_add(Weight::from_parts(19_067, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+	}
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn propose_to_create_intent() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 17_000_000 picoseconds.
+		Weight::from_parts(17_000_000, 4126)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:10 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentGroupIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentGroupIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentGroups` (r:0 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 10]`.
+	fn create_intent_group(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `210 + m * (39 ±0)`
+		//  Estimated: `4055 + m * (2488 ±0)`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(17_499_362, 4055)
+			// Standard Error: 37_852
+			.saturating_add(Weight::from_parts(2_552_879, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
+	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:2 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentIntentGroupIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentIntentGroupIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentGroups` (r:0 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn create_intent_group_via_governance(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `129 + m * (123 ±0)`
+		//  Estimated: `4055 + m * (2488 ±0)`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(14_807_203, 4055)
+			// Standard Error: 117_021
+			.saturating_add(Weight::from_parts(5_459_745, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn propose_to_create_intent_group() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 17_000_000 picoseconds.
+		Weight::from_parts(18_000_000, 4126)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Schemas::IntentGroups` (r:1 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:10 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 10]`.
+	fn update_intent_group(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `403`
+		//  Estimated: `3991 + m * (2488 ±0)`
+		// Minimum execution time: 10_000_000 picoseconds.
+		Weight::from_parts(14_027_395, 3991)
+			// Standard Error: 54_902
+			.saturating_add(Weight::from_parts(2_059_505, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Schemas::IntentGroups` (r:1 w:1)
+	/// Proof: `Schemas::IntentGroups` (`max_values`: None, `max_size`: Some(31), added: 2506, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:2 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[0, 2]`.
+	fn update_intent_group_via_governance(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `215 + m * (188 ±0)`
+		//  Estimated: `3991 + m * (2488 ±0)`
+		// Minimum execution time: 10_000_000 picoseconds.
+		Weight::from_parts(10_313_029, 3991)
+			// Standard Error: 72_550
+			.saturating_add(Weight::from_parts(5_397_775, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(m.into())))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(Weight::from_parts(0, 2488).saturating_mul(m.into()))
+	}
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn propose_to_update_intent_group() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 16_000_000 picoseconds.
+		Weight::from_parts(18_000_000, 4126)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
 }
 
 
@@ -514,6 +867,114 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 4562
+		);
+	}
+	#[test]
+	fn test_create_intent() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4055
+		);
+	}
+	#[test]
+	fn test_create_intent_via_governance() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4055
+		);
+	}
+	#[test]
+	fn test_propose_to_create_intent() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4126
+		);
+	}
+	#[test]
+	fn test_create_intent_group() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4055
+		);
+	}
+	#[test]
+	fn test_create_intent_group_via_governance() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4055
+		);
+	}
+	#[test]
+	fn test_propose_to_create_intent_group() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4126
+		);
+	}
+	#[test]
+	fn test_update_intent_group() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 3991
+		);
+	}
+	#[test]
+	fn test_update_intent_group_via_governance() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 3991
+		);
+	}
+	#[test]
+	fn test_propose_to_update_intent_group() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4126
 		);
 	}
 }
