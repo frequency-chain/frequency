@@ -518,7 +518,7 @@ pub mod pallet {
 		}
 
 		/// Adds a given schema to storage. (testnet)
-		/// 
+		///
 		/// The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
@@ -918,7 +918,7 @@ pub mod pallet {
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::update_intent_group_via_governance {
-                    updater_key: proposer.clone(),
+					updater_key: proposer.clone(),
 					intent_group_id,
 					intent_ids,
 				})

@@ -482,11 +482,11 @@ fn propose_to_update_intent_group_happy_path() {
 			.iter()
 			.filter_map(|event| match event.event {
 				RuntimeEvent::Council(pallet_collective::Event::Proposed {
-										  account: _,
-										  proposal_index,
-										  proposal_hash,
-										  threshold: _,
-									  }) => Some((proposal_index, proposal_hash)),
+					account: _,
+					proposal_index,
+					proposal_hash,
+					threshold: _,
+				}) => Some((proposal_index, proposal_hash)),
 				_ => None,
 			})
 			.collect();
@@ -538,12 +538,12 @@ fn propose_to_update_intent_group_happy_path() {
 			.iter()
 			.filter_map(|event| match event.event {
 				RuntimeEvent::Council(pallet_collective::Event::Voted {
-										  account: _,
-										  proposal_hash: _,
-										  voted,
-										  yes,
-										  no,
-									  }) => Some((voted, yes, no)),
+					account: _,
+					proposal_hash: _,
+					voted,
+					yes,
+					no,
+				}) => Some((voted, yes, no)),
 				_ => None,
 			})
 			.collect();
@@ -565,10 +565,10 @@ fn propose_to_update_intent_group_happy_path() {
 			.iter()
 			.filter_map(|event| match event.event {
 				RuntimeEvent::Council(pallet_collective::Event::Closed {
-										  proposal_hash: _,
-										  yes,
-										  no,
-									  }) => Some((yes, no)),
+					proposal_hash: _,
+					yes,
+					no,
+				}) => Some((yes, no)),
 				_ => None,
 			})
 			.collect();
@@ -581,9 +581,9 @@ fn propose_to_update_intent_group_happy_path() {
 			.iter()
 			.filter_map(|event| match event.event {
 				RuntimeEvent::SchemasPallet(AnnouncementEvent::IntentGroupUpdated {
-												key: _,
-												intent_group_id,
-											}) => Some(intent_group_id),
+					key: _,
+					intent_group_id,
+				}) => Some(intent_group_id),
 				_ => None,
 			})
 			.collect();
@@ -598,5 +598,3 @@ fn propose_to_update_intent_group_happy_path() {
 		assert_eq!(updated_intent_group.unwrap().intent_ids, vec![1, 2]);
 	})
 }
-
-
