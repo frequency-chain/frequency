@@ -314,7 +314,7 @@ export function getEthereumKeyPairFromUnifiedAddress(unifiedAddress: string): Ke
 function canDrainAccount(info: FrameSystemAccountInfo): boolean {
   return (
     !info.isEmpty &&
-    info.data.free.toNumber() > 1_500_000 && // ~Cost to do the transfer
+    info.data.free.toNumber() > 1_900_000 && // ~Cost to do the transfer
     info.data.reserved.toNumber() < 1 &&
     info.data.frozen.toNumber() < 1
   );
