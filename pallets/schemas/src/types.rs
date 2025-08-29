@@ -16,7 +16,7 @@ use frame_support::{pallet_prelude::DecodeWithMemTracking, traits::Len};
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
 
-/// The maximum size of a fully qualified name, including all parts
+/// The maximum size of a fully qualified name, including all parts and separators
 pub const SCHEMA_NAME_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
 /// A fully qualified name has the following structure PROTOCOL.DESCRIPTOR
 pub type SchemaNamePayload = BoundedVec<u8, ConstU32<SCHEMA_NAME_BYTES_MAX>>;
@@ -143,7 +143,10 @@ impl SchemaName {
 		// to canonical form
 		str = String::from(str.to_lowercase().trim());
 
-		// check if alphabetic or - or separator character
+		// only allow the following:
+		// - alphanumeric characters
+		// - '-' (hyphen)
+		// - SEPARATOR_CHAR (period)
 		ensure!(
 			str.chars()
 				.all(|c| c.is_ascii_alphanumeric() || c == '-' || c == SEPARATOR_CHAR),

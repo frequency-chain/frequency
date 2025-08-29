@@ -517,7 +517,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a given schema to storage. The schema in question must be of length
+		/// Adds a given schema to storage. (testnet)
+		/// 
+		/// The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
 		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
@@ -652,7 +654,7 @@ pub mod pallet {
 			)
 		}
 
-		/// Creates a new Intent with a name
+		/// Creates a new Intent with a name (testnet)
 		///
 		/// # Events
 		/// * [`Event::IntentCreated`]
@@ -690,7 +692,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create a schema by means of council approval
+		/// Create an Intent by means of council approval
 		///
 		/// # Events
 		/// * [`Event::IntentCreated`]
@@ -727,7 +729,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
+		/// Propose to create an Intent.  Creates a proposal for council approval to create an Intent
 		///
 		#[pallet::call_index(12)]
 		#[pallet::weight(T::WeightInfo::propose_to_create_intent())]
@@ -909,15 +911,15 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::propose_to_update_intent_group())]
 		pub fn propose_to_update_intent_group(
 			origin: OriginFor<T>,
-			intent_group_name: crate::types::SchemaNamePayload,
+			intent_group_id: IntentGroupId,
 			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
-				(Call::<T>::create_intent_group_via_governance {
-					creator_key: proposer.clone(),
-					intent_group_name,
+				(Call::<T>::update_intent_group_via_governance {
+                    updater_key: proposer.clone(),
+					intent_group_id,
 					intent_ids,
 				})
 				.into(),
@@ -1325,8 +1327,9 @@ pub mod pallet {
 		pub fn validate_intent_ids(
 			intent_ids: &BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
 		) -> Result<(), DispatchError> {
+			let max_intent_id = CurrentIntentIdentifierMaximum::<T>::get();
 			intent_ids.iter().try_for_each::<_, _>(|intent_id| {
-				ensure!(IntentInfos::<T>::contains_key(intent_id), Error::<T>::InvalidIntentId);
+				ensure!(*intent_id <= max_intent_id, Error::<T>::InvalidIntentId);
 				Ok::<(), DispatchError>(())
 			})?;
 			Ok(())

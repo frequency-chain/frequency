@@ -354,11 +354,12 @@ fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 				input: r#"1asbd.hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
-			// protocol too long
+			// protocol too long (by 1)
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
+			// protocol too long (by 2)
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaaa"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,

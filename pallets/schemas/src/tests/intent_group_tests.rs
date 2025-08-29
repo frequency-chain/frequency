@@ -444,3 +444,159 @@ fn update_intent_group_via_governance_with_non_existent_intent_should_fail() {
 		);
 	})
 }
+
+#[test]
+fn propose_to_update_intent_group_happy_path() {
+	new_test_ext().execute_with(|| {
+		let intent_group_id = 1u16;
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(test_public(5)),
+			BoundedVec::try_from("namespace.intent1".to_string().into_bytes())
+				.expect("should convert"),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(test_public(5)),
+			BoundedVec::try_from("namespace.intent2".to_string().into_bytes())
+				.expect("should convert"),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+		assert_ok!(SchemasPallet::create_intent_group(
+			RuntimeOrigin::signed(test_public(5)),
+			BoundedVec::try_from("namespace.group".to_string().into_bytes())
+				.expect("should convert"),
+			BoundedVec::try_from(vec![1]).unwrap(),
+		));
+
+		// Propose a new schema
+		_ = SchemasPallet::propose_to_update_intent_group(
+			test_origin_signed(5),
+			1u16,
+			BoundedVec::try_from(vec![1, 2]).unwrap(),
+		);
+
+		// Find the Proposed event and get its hash and index so it can be voted on
+		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::Council(pallet_collective::Event::Proposed {
+										  account: _,
+										  proposal_index,
+										  proposal_hash,
+										  threshold: _,
+									  }) => Some((proposal_index, proposal_hash)),
+				_ => None,
+			})
+			.collect();
+
+		assert_eq!(proposed_events.len(), 1);
+
+		let proposal_index = proposed_events[0].0;
+		let proposal_hash = proposed_events[0].1;
+		let proposal = ProposalOf::<Test, CouncilCollective>::get(proposal_hash).unwrap();
+		let proposal_len: u32 = proposal.encoded_size() as u32;
+
+		// Set up the council members
+		let council_member_1 = test_public(1); // Use ALICE as a council member
+		let council_member_2 = test_public(2); // Use BOB as a council member
+		let council_member_3 = test_public(3); // Use CHARLIE as a council member
+
+		let incoming = vec![];
+		let outgoing = vec![];
+		Council::change_members(
+			&incoming,
+			&outgoing,
+			vec![council_member_1.clone(), council_member_2.clone(), council_member_3.clone()],
+		);
+
+		// Council member #1 votes AYE on the proposal
+		assert_ok!(Council::vote(
+			RuntimeOrigin::signed(council_member_1.clone()),
+			proposal_hash,
+			proposal_index,
+			true
+		));
+		// Council member #2 votes AYE on the proposal
+		assert_ok!(Council::vote(
+			RuntimeOrigin::signed(council_member_2.clone()),
+			proposal_hash,
+			proposal_index,
+			true
+		));
+		// Council member #3 votes NAY on the proposal
+		assert_ok!(Council::vote(
+			RuntimeOrigin::signed(council_member_3.clone()),
+			proposal_hash,
+			proposal_index,
+			false
+		));
+
+		// Find the Voted event and check if it passed
+		let voted_events: Vec<(bool, u32, u32)> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::Council(pallet_collective::Event::Voted {
+										  account: _,
+										  proposal_hash: _,
+										  voted,
+										  yes,
+										  no,
+									  }) => Some((voted, yes, no)),
+				_ => None,
+			})
+			.collect();
+
+		assert_eq!(voted_events.len(), 3);
+		assert_eq!(voted_events[1].1, 2); // There should be two AYE (out of three) votes to pass
+
+		// Close the voting
+		assert_ok!(Council::close(
+			RuntimeOrigin::signed(test_public(5)),
+			proposal_hash,
+			proposal_index,
+			Weight::MAX,
+			proposal_len
+		));
+
+		// Find the Closed event and check if it passed
+		let closed_events: Vec<(u32, u32)> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::Council(pallet_collective::Event::Closed {
+										  proposal_hash: _,
+										  yes,
+										  no,
+									  }) => Some((yes, no)),
+				_ => None,
+			})
+			.collect();
+
+		assert_eq!(closed_events.len(), 1);
+		assert_eq!(closed_events[0].0, 2); // There should be two YES votes to pass
+
+		// Find the IntentGroupCreated event and check if it passed
+		let intent_events: Vec<IntentId> = System::events()
+			.iter()
+			.filter_map(|event| match event.event {
+				RuntimeEvent::SchemasPallet(AnnouncementEvent::IntentGroupUpdated {
+												key: _,
+												intent_group_id,
+											}) => Some(intent_group_id),
+				_ => None,
+			})
+			.collect();
+
+		// Confirm that the IntentGroup was created
+		assert_eq!(intent_events.len(), 1);
+
+		let updated_intent_group_id = intent_events[0];
+		assert_eq!(updated_intent_group_id, intent_group_id);
+		let updated_intent_group = SchemasPallet::get_intent_group_by_id(updated_intent_group_id);
+		assert!(updated_intent_group.as_ref().is_some());
+		assert_eq!(updated_intent_group.unwrap().intent_ids, vec![1, 2]);
+	})
+}
+
+
