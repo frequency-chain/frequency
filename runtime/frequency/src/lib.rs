@@ -20,16 +20,19 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm;
 
-#[cfg(feature = "frequency-bridging")]
-use frame_support::traits::AsEnsureOriginWithArg;
+// Consolidated runtime mode modules to encapsulate cfg-specific aliases & impls
+mod no_relay;
+mod relay;
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use frame_support::traits::AsEnsureOriginWithArg;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use frame_system::EnsureNever;
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 use xcm::{
 	parameters::{
 		ForeignAssetsAssetId, NativeToken, RelayLocation, RelayOrigin, ReservedDmpWeight,
@@ -45,23 +48,19 @@ mod migration_tests;
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 use staging_xcm::{
 	prelude::AssetId as AssetLocationId, Version as XcmVersion, VersionedAsset, VersionedAssetId,
 	VersionedAssets, VersionedLocation, VersionedXcm,
 };
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 use xcm_runtime_apis::{
 	dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
 	fees::Error as XcmPaymentApiError,
 };
 
-#[cfg(any(
-	not(feature = "frequency-no-relay"),
-	feature = "frequency-lint-check",
-	feature = "frequency-bridging"
-))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
@@ -256,6 +255,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
+				// PolkadotXcm is not available for no-relay because it relies on some cumulus features
+				#[cfg(not(feature = "frequency-no-relay"))]
+				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
 				_ => true,
 			}
 		}
@@ -267,8 +269,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
-				#[cfg(feature = "frequency-bridging")]
-				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
+				// REMOVE: When Bridging is deployed on Mainnet, re-enable `is_xcm_call_allowed`
+				RuntimeCall::PolkadotXcm(pallet_xcm_call) =>
+					Self::is_xcm_call_allowed(pallet_xcm_call),
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -277,7 +280,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
-	#[cfg(all(feature = "frequency", feature = "frequency-bridging"))]
+	// XCM is not available for no-relay because it relies on some cumulus features
+	#[cfg(not(feature = "frequency-no-relay"))]
 	fn is_xcm_call_allowed(call: &pallet_xcm::Call<Runtime>) -> bool {
 		!matches!(
 			call,
@@ -455,32 +459,34 @@ pub type BlockId = generic::BlockId<Block>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
-#[cfg(feature = "frequency-bridging")]
-pub type AssetBalance = Balance;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+pub type AssetBalance = Balance; // kept for backwards compatibility; now centralized in relay::prelude
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
-/// Executive: handles dispatch to the various modules.
-#[cfg(feature = "frequency-bridging")]
-pub type Executive = frame_executive::Executive<
-	Runtime,
-	Block,
-	frame_system::ChainContext<Runtime>,
-	Runtime,
-	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
->;
+#[cfg(feature = "frequency-no-relay")]
+use crate::no_relay::prelude as runtime_mode;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use crate::relay::prelude as runtime_mode;
 
-#[cfg(not(feature = "frequency-bridging"))]
+use runtime_mode::{
+	OnSetCodeHook, OnTimestampSetHook, RuntimeMigrations, TimeReleaseBlockNumberProvider,
+};
+
+// Needed for AuraUnincludedSegmentApi implementation when relay is enabled
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use crate::relay::ConsensusHook;
+
+/// Executive: handles dispatch to the various modules (single definition using alias tuple).
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	RuntimeMigrations,
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -505,10 +511,10 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 /// Migration to set the initial safe XCM version for the XCM pallet.
 pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
 
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 	fn on_runtime_upgrade() -> Weight {
 		use sp_core::Get;
@@ -641,7 +647,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -655,7 +661,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -700,7 +706,7 @@ parameter_types! {
 }
 
 // ---------- Foreign Assets pallet parameters ----------
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 parameter_types! {
 	pub const AssetDeposit: Balance = 0;
 	pub const AssetAccountDeposit: Balance = 0;
@@ -765,15 +771,8 @@ impl frame_system::Config for Runtime {
 	type BlockLength = RuntimeBlockLength;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
-	/// The action to take on a Runtime Upgrade
-	#[cfg(any(
-		not(feature = "frequency-no-relay"),
-		feature = "frequency-lint-check",
-		feature = "frequency-bridging"
-	))]
-	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
-	#[cfg(feature = "frequency-no-relay")]
-	type OnSetCode = ();
+	/// The action to take on a Runtime Upgrade (unified via alias)
+	type OnSetCode = OnSetCodeHook;
 	type MaxConsumers = FrameSystemMaxConsumers;
 	///  A new way of configuring migrations that run in a single block.
 	type SingleBlockMigrations = ();
@@ -941,10 +940,7 @@ impl pallet_time_release::Config for Runtime {
 	type TransferOrigin = EnsureSigned<AccountId>;
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
-	#[cfg(feature = "frequency-no-relay")]
-	type BlockNumberProvider = System;
+	type BlockNumberProvider = TimeReleaseBlockNumberProvider;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type SchedulerProvider = SchedulerProvider;
 	type RuntimeCall = RuntimeCall;
@@ -956,10 +952,7 @@ impl pallet_time_release::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	#[cfg(not(feature = "frequency-no-relay"))]
-	type OnTimestampSet = Aura;
-	#[cfg(feature = "frequency-no-relay")]
-	type OnTimestampSet = ();
+	type OnTimestampSet = OnTimestampSetHook;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
@@ -1347,74 +1340,7 @@ impl pallet_passkey::Config for Runtime {
 	type Currency = Balances;
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-/// Maximum number of blocks simultaneously accepted by the Runtime, not yet included
-/// into the relay chain.
-const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
-
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-/// How many parachain blocks are processed by the relay chain per parent. Limits the
-/// number of blocks authored per slot.
-const BLOCK_PROCESSING_VELOCITY: u32 = 1;
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-/// Relay chain slot duration, in milliseconds.
-const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6_000;
-
-// See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
-// the descriptions of these configs.
-#[cfg(any(
-	not(feature = "frequency-no-relay"),
-	feature = "frequency-lint-check",
-	feature = "frequency-bridging"
-))]
-impl cumulus_pallet_parachain_system::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type OnSystemEvent = ();
-	type SelfParaId = parachain_info::Pallet<Runtime>;
-
-	#[cfg(feature = "frequency-bridging")]
-	type DmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-
-	#[cfg(not(feature = "frequency-bridging"))]
-	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
-
-	#[cfg(not(feature = "frequency-bridging"))]
-	type ReservedDmpWeight = ();
-
-	#[cfg(feature = "frequency-bridging")]
-	type ReservedDmpWeight = ReservedDmpWeight;
-
-	#[cfg(not(feature = "frequency-bridging"))]
-	type OutboundXcmpMessageSource = ();
-
-	#[cfg(feature = "frequency-bridging")]
-	type OutboundXcmpMessageSource = XcmpQueue;
-
-	#[cfg(not(feature = "frequency-bridging"))]
-	type XcmpMessageHandler = ();
-
-	#[cfg(feature = "frequency-bridging")]
-	type XcmpMessageHandler = XcmpQueue;
-
-	#[cfg(not(feature = "frequency-bridging"))]
-	type ReservedXcmpWeight = ();
-
-	#[cfg(feature = "frequency-bridging")]
-	type ReservedXcmpWeight = ReservedXcmpWeight;
-
-	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
-	type WeightInfo = ();
-	type ConsensusHook = ConsensusHook;
-	type SelectCore = DefaultCoreSelector<Runtime>;
-}
-
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-pub type ConsensusHook = cumulus_pallet_aura_ext::FixedVelocityConsensusHook<
-	Runtime,
-	RELAY_CHAIN_SLOT_DURATION_MILLIS,
-	BLOCK_PROCESSING_VELOCITY,
-	UNINCLUDED_SEGMENT_CAPACITY,
->;
+// ConsensusHook now provided inside relay::prelude when relay enabled
 
 impl parachain_info::Config for Runtime {}
 
@@ -1587,7 +1513,7 @@ impl pallet_handles::Config for Runtime {
 }
 
 // ---------- Foreign Assets pallet configuration ----------
-#[cfg(feature = "frequency-bridging")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check",))]
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -1643,7 +1569,6 @@ construct_runtime!(
 		#[cfg(any(
 			not(feature = "frequency-no-relay"),
 			feature = "frequency-lint-check",
-			feature = "frequency-bridging"
 		))]
 		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
@@ -1698,19 +1623,34 @@ construct_runtime!(
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 
-		#[cfg(feature = "frequency-bridging")]
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+		))]
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 
-		#[cfg(feature = "frequency-bridging")]
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+		))]
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
 
-		#[cfg(feature = "frequency-bridging")]
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+		))]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,
 
-		#[cfg(feature = "frequency-bridging")]
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+		))]
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 74,
 
-		#[cfg(feature = "frequency-bridging")]
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+		))]
 		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 75,
 	}
 );
@@ -1756,15 +1696,7 @@ mod benches {
 	);
 }
 
-#[cfg(any(
-	not(feature = "frequency-no-relay"),
-	feature = "frequency-lint-check",
-	feature = "frequency-bridging"
-))]
-cumulus_pallet_parachain_system::register_validate_block! {
-	Runtime = Runtime,
-	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-}
+// validate_block macro relocated into relay.rs for relay-enabled builds
 
 // The implementation has to be here due to the linking in the macro.
 // It CANNOT be extracted into a separate file
@@ -2130,7 +2062,10 @@ sp_api::impl_runtime_apis! {
 			use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
-			#[cfg(feature = "frequency-bridging")]
+			#[cfg(any(
+				not(feature = "frequency-no-relay"),
+				feature = "frequency-lint-check",
+			))]
 			impl pallet_xcm_benchmarks::Config for Runtime {
 				type XcmConfig = xcm::xcm_config::XcmConfig;
 				type AccountIdConverter = xcm::LocationToAccountId;
@@ -2149,7 +2084,10 @@ sp_api::impl_runtime_apis! {
 				}
 			}
 
-			#[cfg(feature = "frequency-bridging")]
+			#[cfg(any(
+				not(feature = "frequency-no-relay"),
+				feature = "frequency-lint-check",
+			))]
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
 				type TransactAsset = Balances;
 				type CheckedAccount = xcm::benchmarks::CheckAccount;
@@ -2162,7 +2100,10 @@ sp_api::impl_runtime_apis! {
 				}
 			}
 
-			#[cfg(feature = "frequency-bridging")]
+			#[cfg(any(
+				not(feature = "frequency-no-relay"),
+				feature = "frequency-lint-check",
+			))]
 			impl pallet_xcm_benchmarks::generic::Config for Runtime {
 				type RuntimeCall = RuntimeCall;
 				type TransactAsset = Balances;
@@ -2218,9 +2159,15 @@ sp_api::impl_runtime_apis! {
 				}
 			}
 
-			#[cfg(feature = "frequency-bridging")]
+			#[cfg(any(
+				not(feature = "frequency-no-relay"),
+				feature = "frequency-lint-check",
+			))]
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
-			#[cfg(feature = "frequency-bridging")]
+			#[cfg(any(
+				not(feature = "frequency-no-relay"),
+				feature = "frequency-lint-check",
+			))]
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
 
@@ -2234,7 +2181,10 @@ sp_api::impl_runtime_apis! {
 
 	}
 
-	#[cfg(feature = "frequency-bridging")]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+	))]
 	impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
 		fn query_acceptable_payment_assets(xcm_version: staging_xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
 			let acceptable_assets = vec![AssetLocationId(RelayLocation::get())];
@@ -2278,7 +2228,10 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
-	#[cfg(feature = "frequency-bridging")]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+	))]
 	impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
 		fn dry_run_call(origin: OriginCaller, call: RuntimeCall, result_xcms_version: XcmVersion) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
 			PolkadotXcm::dry_run_call::<Runtime, XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
@@ -2289,7 +2242,10 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
-	#[cfg(feature = "frequency-bridging")]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+	))]
 	impl xcm_runtime_apis::conversions::LocationToAccountApi<Block, AccountId> for Runtime {
 		fn convert_location(location: VersionedLocation) -> Result<
 			AccountId,
@@ -2302,7 +2258,10 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
-	#[cfg(feature = "frequency-bridging")]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+	))]
 	impl xcm_runtime_apis::trusted_query::TrustedQueryApi<Block> for Runtime {
 		fn is_trusted_reserve(asset: VersionedAsset, location: VersionedLocation) -> xcm_runtime_apis::trusted_query::XcmTrustedQueryResult {
 			PolkadotXcm::is_trusted_reserve(asset, location)
@@ -2312,7 +2271,10 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
-	#[cfg(feature = "frequency-bridging")]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+	))]
 	impl xcm_runtime_apis::authorized_aliases::AuthorizedAliasersApi<Block> for Runtime {
 		fn authorized_aliasers(target: VersionedLocation) -> Result<
 			Vec<xcm_runtime_apis::authorized_aliases::OriginAliaser>,
