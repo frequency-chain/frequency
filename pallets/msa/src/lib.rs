@@ -1542,6 +1542,49 @@ pub mod pallet {
 			Self::deposit_event(Event::ProviderUpdated { msa_id: ProviderId(provider_msa_id) });
 			Ok(())
 		}
+
+		/// Propose to update provider registry via governance
+		///
+		/// # Arguments
+		/// * `origin` - The origin of the call
+		/// * `provider_key` - The key of the provider to update
+		/// * `payload` - The new provider data
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ProviderNotRegistered`] - If the provider is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(26)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
+		pub fn propose_to_update_provider(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
+			Self::ensure_correct_cids(&payload)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::update_provider_via_governance {
+					provider_key: provider_key.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
 	}
 }
 
