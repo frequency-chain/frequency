@@ -126,7 +126,7 @@ fn approve_and_remove_recovery_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry));
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry, false));
 
 		// Approve recovery provider via governance
 		assert_ok!(Msa::approve_recovery_provider(
@@ -158,7 +158,7 @@ fn approve_recovery_provider_already_approved_should_succeed() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry));
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry, false));
 
 		// No events are emitted from `create_provider_for`
 		assert!(System::events().is_empty());
@@ -214,7 +214,7 @@ fn remove_recovery_provider_unauthorized_should_fail() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry));
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), entry, false));
 
 		assert_ok!(Msa::approve_recovery_provider(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),

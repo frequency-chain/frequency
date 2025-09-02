@@ -433,6 +433,11 @@ pub mod pallet {
 			/// The application id for the updated application
 			application_id: Option<ApplicationIndex>,
 		},
+		/// Provider registry is updated
+		ProviderUpdated {
+			/// The MSA id associated with the provider
+			msa_id: ProviderId,
+		},
 	}
 
 	#[pallet::error]
@@ -1329,7 +1334,7 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload)?;
+			Self::create_provider_for(provider_msa_id, payload, false)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1375,6 +1380,8 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - account does not have an MSA
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(21)]
 		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
 		pub fn create_provider_via_governance_v2(
@@ -1390,7 +1397,7 @@ pub mod pallet {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload)?;
+			Self::create_provider_for(provider_msa_id, payload, false)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1504,6 +1511,35 @@ pub mod pallet {
 				provider_id: ProviderId(provider_msa_id),
 				application_id: None,
 			});
+			Ok(())
+		}
+
+		/// Update a provider by means of governance approval
+		///
+		/// # Events
+		/// * [`Event::ProviderUpdated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(25)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
+		pub fn update_provider_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
+			Self::create_provider_for(provider_msa_id, payload, true)?;
+			Self::deposit_event(Event::ProviderUpdated { msa_id: ProviderId(provider_msa_id) });
 			Ok(())
 		}
 	}
@@ -1921,13 +1957,14 @@ impl<T: Config> Pallet<T> {
 			T::MaxLogoCidSize,
 			T::MaxLocaleCount,
 		>,
+		is_update: bool,
 	) -> DispatchResult {
 		Self::update_logo_storage(&payload)?;
 		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
 				ensure!(
-					maybe_metadata.take().is_none(),
+					maybe_metadata.take().is_none() && !is_update,
 					Error::<T>::DuplicateProviderRegistryEntry
 				);
 				*maybe_metadata = Some(payload);

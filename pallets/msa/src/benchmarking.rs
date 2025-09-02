@@ -626,7 +626,7 @@ mod benchmarks {
 			default_logo_250_100_png_cid: BoundedVec::new(),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, entry));
+		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, entry, false));
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, ProviderId(provider_msa_id));
@@ -647,7 +647,7 @@ mod benchmarks {
 			default_logo_250_100_png_cid: BoundedVec::new(),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, entry));
+		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, entry, false));
 
 		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
 
