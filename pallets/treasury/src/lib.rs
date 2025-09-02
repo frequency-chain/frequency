@@ -215,6 +215,7 @@ pub mod pallet {
 		type RejectOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The overarching event type.
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -857,6 +858,7 @@ pub mod pallet {
 		/// Emits [`Event::SpendProcessed`] if the spend payout has succeed.
 		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::check_status())]
+		#[allow(clippy::useless_conversion)]
 		pub fn check_status(origin: OriginFor<T>, index: SpendIndex) -> DispatchResultWithPostInfo {
 			use PaymentState as State;
 			use PaymentStatus as Status;

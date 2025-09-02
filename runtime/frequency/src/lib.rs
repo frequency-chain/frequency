@@ -515,26 +515,24 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 
 		// Access storage directly using storage key because `pallet_xcm` does not provide a direct API to get the safe XCM version.
 		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
-		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+		log::info!("Checking SafeXcmVersion in storage with key: {storage_key:?}");
 
 		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 		match current_version {
 			Some(version) if version == SAFE_XCM_VERSION => {
-				log::info!("SafeXcmVersion already set to {}, skipping migration.", version);
+				log::info!("SafeXcmVersion already set to {version}, skipping migration.");
 				T::DbWeight::get().reads(1)
 			},
 			Some(version) => {
 				log::info!(
-					"SafeXcmVersion currently set to {}, updating to {}",
-					version,
-					SAFE_XCM_VERSION
+					"SafeXcmVersion currently set to {version}, updating to {SAFE_XCM_VERSION}"
 				);
 				// Set the safe XCM version directly in storage
 				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
 				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
 			},
 			None => {
-				log::info!("SafeXcmVersion not set, setting to {}", SAFE_XCM_VERSION);
+				log::info!("SafeXcmVersion not set, setting to {SAFE_XCM_VERSION}");
 				// Set the safe XCM version directly in storage
 				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
 				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
@@ -641,7 +639,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -655,7 +653,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 176,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1406,6 +1404,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
 	type SelectCore = DefaultCoreSelector<Runtime>;
+	type RelayParentOffset = ConstU32<0>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -2198,10 +2197,6 @@ sp_api::impl_runtime_apis! {
 					Ok((origin, ticket, assets))
 				}
 
-				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
-					Ok(xcm::benchmarks::RelayAsset::get())
-				}
-
 				// We do not support locking and unlocking on Frequency
 				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
 					Err(BenchmarkError::Skip)
@@ -2214,6 +2209,11 @@ sp_api::impl_runtime_apis! {
 
 				// We do not support alias origin on Frequency
 				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support worst case for trader on Frequency
+				fn worst_case_for_trader() -> Result<(xcm::benchmarks::Asset, cumulus_primitives_core::WeightLimit), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}
