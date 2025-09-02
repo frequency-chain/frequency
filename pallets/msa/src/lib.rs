@@ -561,6 +561,9 @@ pub mod pallet {
 
 		/// Invalid logo bytes that do not match the approved logo
 		InvalidLogoBytes,
+
+		/// Application not found for given application_id
+		ApplicationNotFound,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -1559,7 +1562,6 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
 		pub fn propose_to_update_provider(
 			origin: OriginFor<T>,
-			provider_key: T::AccountId,
 			payload: ProviderRegistryEntry<
 				T::MaxProviderNameSize,
 				T::MaxLanguageCodeSize,
@@ -1576,7 +1578,100 @@ pub mod pallet {
 			);
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::update_provider_via_governance {
-					provider_key: provider_key.clone(),
+					provider_key: proposer.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Update application via governance for given existing `ApplicationIndex`
+		///
+		/// # Arguments
+		/// * `origin` - The origin of the call
+		/// * `provider_key` - The key of the provider to update
+		/// * `application_index` - The index of the application to update
+		/// * `payload` - The new application data
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(27)]
+		#[pallet::weight(T::WeightInfo::create_application_via_governance())]
+		pub fn update_application_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			application_index: ApplicationIndex,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			Self::ensure_correct_cids(&payload)?;
+			Self::update_application_for(ProviderId(provider_msa_id), application_index, payload)?;
+			Self::deposit_event(Event::ApplicationContextUpdated {
+				provider_id: ProviderId(provider_msa_id),
+				application_id: Some(application_index),
+			});
+			Ok(())
+		}
+
+		/// Propose to update application via governance for a given `ApplicationIndex`
+		///
+		/// # Arguments
+		/// * `origin` - The origin of the call
+		/// * `application_index` - The index of the application to update
+		/// * `payload` - The new application data
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
+		#[pallet::call_index(28)]
+		#[pallet::weight(T::WeightInfo::create_application_via_governance())]
+		pub fn propose_to_update_application(
+			origin: OriginFor<T>,
+			application_index: ApplicationIndex,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			ensure!(
+				ProviderToApplicationRegistry::<T>::contains_key(
+					ProviderId(provider_msa_id),
+					application_index
+				),
+				Error::<T>::ApplicationNotFound
+			);
+			Self::ensure_correct_cids(&payload)?;
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::update_application_via_governance {
+					provider_key: proposer.clone(),
+					application_index,
 					payload,
 				})
 				.into(),
@@ -2046,6 +2141,29 @@ impl<T: Config> Pallet<T> {
 		);
 		NextApplicationIndex::<T>::insert(provider_msa_id, next_application_index + 1);
 		Ok(next_application_index)
+	}
+
+	/// Updates an existing application from `ProviderToApplicationRegistry`
+	///
+	/// # Errors
+	/// * [`Error::ApplicationNotFound`]
+	pub fn update_application_for(
+		provider_msa_id: ProviderId,
+		application_index: ApplicationIndex,
+		payload: ApplicationContext<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		Self::update_logo_storage(&payload)?;
+		ensure!(
+			ProviderToApplicationRegistry::<T>::contains_key(provider_msa_id, application_index),
+			Error::<T>::ApplicationNotFound
+		);
+		ProviderToApplicationRegistry::<T>::insert(provider_msa_id, application_index, payload);
+		Ok(())
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
