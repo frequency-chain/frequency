@@ -1527,7 +1527,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(25)]
-		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
+		#[pallet::weight(T::WeightInfo::update_provider_via_governance())]
 		pub fn update_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
@@ -1559,7 +1559,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(26)]
-		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2())]
+		#[pallet::weight(T::WeightInfo::propose_to_update_provider())]
 		pub fn propose_to_update_provider(
 			origin: OriginFor<T>,
 			payload: ProviderRegistryEntry<
@@ -1602,7 +1602,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(27)]
-		#[pallet::weight(T::WeightInfo::create_application_via_governance())]
+		#[pallet::weight(T::WeightInfo::update_application_via_governance())]
 		pub fn update_application_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
@@ -1643,7 +1643,7 @@ pub mod pallet {
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
 		#[pallet::call_index(28)]
-		#[pallet::weight(T::WeightInfo::create_application_via_governance())]
+		#[pallet::weight(T::WeightInfo::propose_to_update_application())]
 		pub fn propose_to_update_application(
 			origin: OriginFor<T>,
 			application_index: ApplicationIndex,
