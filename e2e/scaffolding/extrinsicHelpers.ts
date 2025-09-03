@@ -678,16 +678,12 @@ export class ExtrinsicHelper {
   ) {
     return new Extrinsic(
       () =>
-        ExtrinsicHelper.api.tx.msa.updateApplicationViaGovernance(
-          getUnifiedPublicKey(providerKeys),
-          applicationIndex,
-          {
-            defaultName: appDetails.defaultName,
-            localizedNames: appDetails.localizedNames,
-            defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
-            localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
-          }
-        ),
+        ExtrinsicHelper.api.tx.msa.updateApplicationViaGovernance(getUnifiedPublicKey(providerKeys), applicationIndex, {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
       sudoKeys,
       ExtrinsicHelper.api.events.msa.ApplicationContextUpdated
     );

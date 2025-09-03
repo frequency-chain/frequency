@@ -4,11 +4,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-import {
-  createAndFundKeypair,
-  DOLLARS,
-  generateValidProviderPayloadWithName,
-} from '../scaffolding/helpers';
+import { createAndFundKeypair, DOLLARS, generateValidProviderPayloadWithName } from '../scaffolding/helpers';
 import { ExtrinsicHelper, EventMap } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
@@ -113,7 +109,11 @@ describe('Update Provider and Application', function () {
       if (isTestnet()) this.skip();
       // create an app to have an index
       const app = generateValidProviderPayloadWithName('PropBase');
-      const { target } = await ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, providerKeys, app).signAndSend();
+      const { target } = await ExtrinsicHelper.createApplicationViaGovernance(
+        sudoKeys,
+        providerKeys,
+        app
+      ).signAndSend();
       assert.notEqual(target, undefined, 'should emit ApplicationCreated');
       const appId = target!.data.applicationId.toBigInt();
 
