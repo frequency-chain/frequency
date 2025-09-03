@@ -1,8 +1,8 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
 use common_primitives::schema::{
-	IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType, NameLookupResponse,
-	PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion, SchemaVersionResponse,
+	IntentGroupId, IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType,
+	NameLookupResponse, PayloadLocation, SchemaId, SchemaVersion, SchemaVersionResponse,
 };
 use core::fmt::Debug;
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
@@ -11,7 +11,7 @@ use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 extern crate alloc;
 use alloc::{string::String, vec, vec::Vec};
-use frame_support::{pallet_prelude::DecodeWithMemTracking, traits::Len};
+use frame_support::traits::Len;
 
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
@@ -43,27 +43,49 @@ pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Genesis Schemas need a way to load up and this is it!
 pub struct GenesisSchema {
+	/// The SchemaId
+	pub schema_id: SchemaId,
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
-	/// The payload location
-	pub payload_location: PayloadLocation,
 	/// The Payload Model
 	pub model: String,
-	/// Schema Full Name: {Namespace}.{Descriptor}
-	pub name: String,
-	/// Settings
-	pub settings: Vec<SchemaSetting>,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Genesis Intents need a way to load up and this is it!
 pub struct GenesisIntent {
+	/// The IntentId
+	pub intent_id: IntentId,
 	/// The payload location
 	pub payload_location: PayloadLocation,
-	/// Schema Full Name: {Namespace}.{Descriptor}
+	/// Schema Full Name: {Protocol}.{Descriptor}
 	pub name: String,
 	/// Settings
 	pub settings: Vec<IntentSetting>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Genesis IntentGroups need a way to load up and this is it!
+pub struct GenesisIntentGroup {
+	/// The IntentGroupId
+	pub intent_group_id: IntentGroupId,
+	/// The name: {Protocol}.{Descriptor}
+	pub name: String,
+	/// The list of Intents in the group
+	pub intent_ids: Vec<IntentId>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Overall Genesis config loading structure for the entire pallet
+pub struct GenesisSchemasPalletConfig {
+	/// The list of Schemas
+	pub schemas: Vec<GenesisSchema>,
+	/// The list of Intents
+	pub intents: Vec<GenesisIntent>,
+	/// The list of IntentGroups
+	pub intent_groups: Vec<GenesisIntentGroup>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -86,14 +108,14 @@ pub struct IntentInfo {
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining Schema information (excluding the payload)
 pub struct SchemaInfo {
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
-	/// The payload location
+	/// The payload location (inherited from the Intent)
 	pub payload_location: PayloadLocation,
-	/// additional control settings for the schema
-	pub settings: SchemaSettings,
-	/// Defines if a schema has a name or not
-	pub has_name: bool,
+	/// additional control settings (inherited from the Intent)
+	pub settings: IntentSettings,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -167,15 +189,17 @@ impl SchemaName {
 			PROTOCOL_NAME_MIN <= namespace.len() as u32,
 			Error::<T>::InvalidSchemaNamespaceLength
 		);
-		// should not start or end with -
-		ensure!(
-			!(namespace.starts_with(b"-") || namespace.ends_with(b"-")),
-			Error::<T>::InvalidSchemaNameStructure
-		);
-		// check that doesn't start with a decimal digit.
+
+		// check that it starts with an alphabetic character.
+		// this ensures:
+		// - does not start with '-'
+		// - does not start with a number
+		// - does not start with a SEPARATOR_CHAR
 		// (This also handles the case where the value is all numeric, because it would also
 		// start with a decimal digit.)
 		ensure!(namespace[0].is_ascii_alphabetic(), Error::<T>::InvalidSchemaNameCharacters);
+		// should not end with -
+		ensure!(!namespace.ends_with(b"-"), Error::<T>::InvalidSchemaNameStructure);
 
 		// check descriptor
 		let descriptor = match chunks.len() == 2 {
@@ -186,18 +210,19 @@ impl SchemaName {
 					DESCRIPTOR_MIN <= descriptor.len() as u32,
 					Error::<T>::InvalidSchemaDescriptorLength
 				);
-				// should not start or end with -
-				ensure!(
-					!(descriptor.starts_with(b"-") || descriptor.ends_with(b"-")),
-					Error::<T>::InvalidSchemaNameStructure
-				);
-				// check that doesn't start with a decimal digit.
+				// check that it starts with an alphabetic character.
+				// this ensures:
+				// - does not start with '-'
+				// - does not start with a number
+				// - does not start with a SEPARATOR_CHAR
 				// (This also handles the case where the value is all numeric, because it would also
 				// start with a decimal digit.)
 				ensure!(
 					descriptor[0].is_ascii_alphabetic(),
 					Error::<T>::InvalidSchemaNameCharacters
 				);
+				// should end with -
+				ensure!(!descriptor.ends_with(b"-"), Error::<T>::InvalidSchemaNameStructure);
 				descriptor
 			},
 			false => BoundedVec::default(),
@@ -263,24 +288,4 @@ impl ConvertToResponse<SchemaName, NameLookupResponse> for MappedEntityIdentifie
 	fn convert_to_response(&self, name: &SchemaName) -> NameLookupResponse {
 		NameLookupResponse { name: name.get_combined_name(), entity_id: *self }
 	}
-}
-
-/// Defines the actions that can be applied to an Intent Group
-#[derive(
-	Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq,
-)]
-#[scale_info(skip_type_params(T))]
-pub enum IntentGroupAction<T: Config> {
-	/// Overwrite the entire list of Intents with the supplied list
-	Overwrite {
-		/// The new set of Intents
-		intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
-	},
-	/// Update the group with the indicated added and removed Intents
-	AddRemove {
-		/// Intents to add
-		intent_ids_to_add: Option<BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>>,
-		/// Intents to remove
-		intent_ids_to_remove: Option<BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>>,
-	},
 }

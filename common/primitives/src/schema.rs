@@ -137,15 +137,17 @@ pub struct IntentResponse {
 pub struct SchemaResponse {
 	/// The unique identifier for this Schema
 	pub schema_id: SchemaId,
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
 	/// The data that represents how this schema is structured
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
 	pub model: Vec<u8>,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
-	/// The payload location
+	/// The payload location associated with this Schema's associated Intent
 	pub payload_location: PayloadLocation,
-	/// grants for the schema
-	pub settings: Vec<SchemaSetting>,
+	/// The settings for this Schema's associated Intent
+	pub settings: Vec<IntentSetting>,
 }
 
 /// RPC Response form for a Schema Info
@@ -154,12 +156,14 @@ pub struct SchemaResponse {
 pub struct SchemaInfoResponse {
 	/// The unique identifier for this Schema
 	pub schema_id: SchemaId,
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
-	/// The payload location
+	/// The payload location associated with this Schema's associated Intent
 	pub payload_location: PayloadLocation,
-	/// grants for the schema
-	pub settings: Vec<SchemaSetting>,
+	/// The settings for this Schema's associated Intent
+	pub settings: Vec<IntentSetting>,
 }
 
 #[derive(
@@ -207,6 +211,9 @@ pub trait SchemaProvider<SchemaId> {
 
 	/// Gets the Schema Info associated with this `SchemaId` if any
 	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse>;
+
+	/// Gets the Intent associated with this `IntentId`, if any
+	fn get_intent_by_id(intent_id: IntentId) -> Option<IntentResponse>;
 }
 
 /// This allows other Pallets to check the validity of schema ids.
@@ -242,6 +249,13 @@ impl SchemaSettings {
 	}
 }
 impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
+
+impl From<Vec<SchemaSetting>> for SchemaSettings {
+	/// Copy the settings from a vector of individual settings enums
+	fn from(settings: Vec<SchemaSetting>) -> Self {
+		Self(BitFlags::from_iter(settings))
+	}
+}
 
 /// RPC Response from a schema name query
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

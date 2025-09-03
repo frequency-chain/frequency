@@ -50,7 +50,7 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
-use common_primitives::schema::{SchemaInfoResponse, SchemaVersionResponse};
+use common_primitives::schema::{IntentSettings, SchemaInfoResponse, SchemaVersionResponse};
 mod types;
 
 pub use pallet::*;
@@ -58,11 +58,14 @@ pub mod weights;
 pub use types::*;
 pub use weights::*;
 
+/// Storage migrations
+pub mod migration;
 mod serde;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::schema::{IntentSetting, IntentSettings};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -330,12 +333,20 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		/// Maximum schema size in bytes at genesis
+		/// Maximum schema identifier at genesis
 		pub initial_schema_identifier_max: u16,
+		/// Maximum Intent identifier at genesis
+		pub initial_intent_identifier_max: u16,
+		/// Maximum IntentGroup identifier at genesis
+		pub initial_intent_group_identifier_max: u16,
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
+		/// Genesis Intents to load for development
+		pub initial_intents: Vec<GenesisIntent>,
 		/// Genesis Schemas to load for development
 		pub initial_schemas: Vec<GenesisSchema>,
+		/// Genesis IntentGroups to load for development
+		pub initial_intent_groups: Vec<GenesisIntentGroup>,
 		/// Phantom type
 		#[serde(skip)]
 		pub _config: PhantomData<T>,
@@ -344,9 +355,13 @@ pub mod pallet {
 	impl<T: Config> core::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
+				initial_intent_identifier_max: 16_000,
 				initial_schema_identifier_max: 16_000,
+				initial_intent_group_identifier_max: 16_000,
 				initial_max_schema_model_size: 1024,
+				initial_intents: Default::default(),
 				initial_schemas: Default::default(),
+				initial_intent_groups: Default::default(),
 				_config: Default::default(),
 			}
 		}
@@ -356,40 +371,70 @@ pub mod pallet {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
 
-			// Load in the Genesis Schemas
+			for intent in self.initial_intents.iter() {
+				let name_payload: SchemaNamePayload =
+					BoundedVec::try_from(intent.name.clone().into_bytes())
+						.expect("Genesis Intent name larger than {SCHEMA_NAME_BYTES_MAX} bytes}");
+				let parsed_name = SchemaName::try_parse::<T>(name_payload, true)
+					.expect("Bad Genesis Intent name");
+				let settings_vec = BoundedVec::<IntentSetting, T::MaxSchemaSettingsPerSchema>::try_from(intent.settings.clone()).expect("Bad Genesis Intent settings. Perhaps larger than MaxSchemaSettingsPerSchema");
+				let mut settings = IntentSettings::default();
+				settings_vec.iter().for_each(|setting| settings.set(*setting));
+
+				let intent_info =
+					IntentInfo { payload_location: intent.payload_location, settings };
+				let _ = Pallet::<T>::store_intent_info(intent.intent_id, intent_info, &parsed_name)
+					.expect("Failed to set Intent in Genesis!");
+			}
+
 			for schema in self.initial_schemas.iter() {
+				let intent = IntentInfos::<T>::try_get(schema.intent_id)
+					.expect("Genesis Schema has no matching Intent.");
 				let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
 					BoundedVec::try_from(schema.model.clone().into_bytes()).expect(
 						"Genesis Schema Model larger than SchemaModelMaxBytesBoundedVecLimit",
 					);
-				let name_payload: SchemaNamePayload =
-					BoundedVec::try_from(schema.name.clone().into_bytes())
-						.expect("Genesis Schema Name larger than SCHEMA_NAME_BYTES_MAX");
-				let parsed_name: Option<SchemaName> = if name_payload.len() > 0 {
-					Some(
-						SchemaName::try_parse::<T>(name_payload, true)
-							.expect("Bad Genesis Schema Name"),
-					)
-				} else {
-					None
+				let schema_info = SchemaInfo {
+					intent_id: schema.intent_id,
+					payload_location: intent.payload_location,
+					model_type: schema.model_type,
+					settings: intent.settings,
 				};
-				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
-                    BoundedVec::try_from(schema.settings.clone()).expect(
-                        "Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
-                    );
 
-				let _ = Pallet::<T>::add_schema(
+				let _ = Pallet::<T>::store_schema_info_and_payload(
+					schema.schema_id,
+					schema_info,
 					model,
-					schema.model_type,
-					schema.payload_location,
-					settings,
-					parsed_name,
 				)
 				.expect("Failed to set Schema in Genesis!");
 			}
 
-			// Set the maximum manually
+			for intent_group in self.initial_intent_groups.iter() {
+				let intent_ids = BoundedVec::try_from(intent_group.intent_ids.clone())
+					.expect("Too many Intents in IntentGroup");
+				intent_ids.iter().for_each(|intent_id| {
+					assert!(
+						IntentInfos::<T>::contains_key(intent_id),
+						"Genesis IntentGroup has no matching Intent."
+					);
+				});
+				let name_payload: SchemaNamePayload = BoundedVec::try_from(
+					intent_group.name.clone().into_bytes(),
+				)
+				.expect("Genesis IntentGroup name larger than {SCHEMA_NAME_BYTES_MAX} bytes}");
+				let parsed_name = SchemaName::try_parse::<T>(name_payload, true)
+					.expect("Bad Genesis IntentGroup name");
+				let _ = Pallet::<T>::store_intent_group(
+					intent_group.intent_group_id,
+					intent_ids,
+					&parsed_name,
+				);
+			}
+
+			// Set the maximums manually
+			CurrentIntentIdentifierMaximum::<T>::put(self.initial_intent_identifier_max);
 			CurrentSchemaIdentifierMaximum::<T>::put(self.initial_schema_identifier_max);
+			CurrentIntentGroupIdentifierMaximum::<T>::put(self.initial_intent_group_identifier_max);
 		}
 	}
 
@@ -428,231 +473,11 @@ pub mod pallet {
 		// REMOVED propose_to_create_schema() at call index 2
 		// REMOVED create_schema_via_governance() at call index 3
 		// REMOVED create_schema_v2() at call index 4
-
-		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
-		///
-		#[pallet::call_index(5)]
-		#[pallet::weight(
-			match schema_name {
-				Some(_) => T::WeightInfo::propose_to_create_schema_v2_with_name(model.len() as u32),
-				None => T::WeightInfo::propose_to_create_schema_v2_without_name(model.len() as u32)
-			}
-        )]
-		pub fn propose_to_create_schema_v2(
-			origin: OriginFor<T>,
-			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-			model_type: ModelType,
-			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			schema_name: Option<SchemaNamePayload>,
-		) -> DispatchResult {
-			let proposer = ensure_signed(origin)?;
-
-			let proposal: Box<T::Proposal> = Box::new(
-				(Call::<T>::create_schema_via_governance_v2 {
-					creator_key: proposer.clone(),
-					model,
-					model_type,
-					payload_location,
-					settings,
-					schema_name,
-				})
-				.into(),
-			);
-			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
-			Ok(())
-		}
-
-		/// Create a schema by means of council approval
-		///
-		/// # Events
-		/// * [`Event::SchemaCreated`]
-		/// * [`Event::SchemaNameCreated`]
-		///
-		/// # Errors
-		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
-		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
-		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
-		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
-		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
-		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
-		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
-		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
-		///
-		#[pallet::call_index(6)]
-		#[pallet::weight(
-			match schema_name {
-				Some(_) => T::WeightInfo::create_schema_via_governance_v2_with_name(model.len() as u32+ settings.len() as u32),
-				None => T::WeightInfo::create_schema_via_governance_v2_without_name(model.len() as u32+ settings.len() as u32)
-			}
-        )]
-		pub fn create_schema_via_governance_v2(
-			origin: OriginFor<T>,
-			creator_key: T::AccountId,
-			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-			model_type: ModelType,
-			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			schema_name: Option<SchemaNamePayload>,
-		) -> DispatchResult {
-			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
-			let (schema_id, schema_name) = Self::create_schema_for(
-				model,
-				model_type,
-				payload_location,
-				settings,
-				schema_name,
-			)?;
-
-			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
-			if let Some(inner_name) = schema_name {
-				Self::deposit_event(Event::SchemaNameCreated {
-					schema_id,
-					name: inner_name.get_combined_name(),
-				});
-			}
-			Ok(())
-		}
-
-		/// Adds a given schema to storage. (testnet)
-		///
-		/// The schema in question must be of length
-		/// between the min and max model size allowed for schemas (see pallet
-		/// constants above). If the pallet's maximum schema limit has been
-		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
-		/// will be thrown.
-		///
-		/// # Events
-		/// * [`Event::SchemaCreated`]
-		/// * [`Event::SchemaNameCreated`]
-		///
-		/// # Errors
-		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
-		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		/// * [`Error::InvalidSetting`] - Invalid setting is provided
-		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
-		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
-		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
-		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
-		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
-		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
-		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
-		///
-		#[pallet::call_index(7)]
-		#[pallet::weight(
-			match schema_name {
-				Some(_) => T::WeightInfo::create_schema_v3_with_name(model.len() as u32 + settings.len() as u32),
-				None => T::WeightInfo::create_schema_v3_without_name(model.len() as u32 + settings.len() as u32)
-			}
-        )]
-		pub fn create_schema_v3(
-			origin: OriginFor<T>,
-			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-			model_type: ModelType,
-			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			schema_name: Option<SchemaNamePayload>,
-		) -> DispatchResult {
-			let sender = ensure_signed(origin)?;
-
-			let (schema_id, schema_name) = Self::create_schema_for(
-				model,
-				model_type,
-				payload_location,
-				settings,
-				schema_name,
-			)?;
-
-			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
-			if let Some(inner_name) = schema_name {
-				Self::deposit_event(Event::SchemaNameCreated {
-					schema_id,
-					name: inner_name.get_combined_name(),
-				});
-			}
-			Ok(())
-		}
-
-		/// Propose to create a schema name.  Creates a proposal for council approval to create a schema name
-		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
-		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
-		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
-		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
-		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
-		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
-		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
-		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
-		/// * [`Error::SchemaIdDoesNotExist`] - The schema id does not exist
-		/// * [`Error::SchemaIdAlreadyHasName`] - The schema id already has a name
-		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::propose_to_create_schema_name())]
-		pub fn propose_to_create_schema_name(
-			origin: OriginFor<T>,
-			schema_id: SchemaId,
-			schema_name: SchemaNamePayload,
-		) -> DispatchResult {
-			let proposer = ensure_signed(origin)?;
-
-			let _ = Self::parse_and_verify_schema_id_and_name(schema_id, &schema_name)?;
-
-			let proposal: Box<T::Proposal> = Box::new(
-				(Call::<T>::create_schema_name_via_governance { schema_id, schema_name }).into(),
-			);
-			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
-			Ok(())
-		}
-
-		/// Assigns a name to a schema without any name
-		///
-		/// # Events
-		/// * [`Event::SchemaNameCreated`]
-		///
-		/// # Errors
-		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
-		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
-		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
-		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
-		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
-		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
-		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
-		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
-		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
-		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
-		/// * [`Error::SchemaIdDoesNotExist`] - The schema id does not exist
-		/// * [`Error::SchemaIdAlreadyHasName`] - The schema id already has a name
-		///
-		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::create_schema_name_via_governance())]
-		pub fn create_schema_name_via_governance(
-			origin: OriginFor<T>,
-			schema_id: SchemaId,
-			schema_name: SchemaNamePayload,
-		) -> DispatchResult {
-			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
-
-			let parsed_name = Self::parse_and_verify_schema_id_and_name(schema_id, &schema_name)?;
-			SchemaNameToIds::<T>::try_mutate(
-				&parsed_name.namespace,
-				&parsed_name.descriptor,
-				|schema_version_id| -> DispatchResult {
-					schema_version_id.add::<T>(schema_id)?;
-
-					Self::deposit_event(Event::SchemaNameCreated {
-						schema_id,
-						name: parsed_name.get_combined_name(),
-					});
-					Ok(())
-				},
-			)
-		}
+		// REMOVED propose_to_create_schema_v2 at call index 5
+		// REMOVED create_schema_via_governance_v2 at call index 6
+		// REMOVED create_schema_v3 at call index 7
+		// REMOVED propose_to_create_schema_name at call index 8
+		// REMOVED create_schema_name_via_governance at call index 9
 
 		/// Creates a new Intent with a name (testnet)
 		///
@@ -927,6 +752,91 @@ pub mod pallet {
 			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
 			Ok(())
 		}
+
+		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
+		///
+		#[pallet::call_index(19)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_schema_v3())]
+		pub fn propose_to_create_schema_v3(
+			origin: OriginFor<T>,
+			intent_id: IntentId,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_schema_via_governance_v3 {
+					creator_key: proposer.clone(),
+					intent_id,
+					model,
+					model_type,
+				})
+				.into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
+			Ok(())
+		}
+
+		/// Create a schema by means of council approval
+		///
+		/// # Events
+		/// * [`Event::SchemaCreated`]
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		///
+		#[pallet::call_index(20)]
+		#[pallet::weight(T::WeightInfo::create_schema_via_governance_v3(model.len() as u32))]
+		pub fn create_schema_via_governance_v3(
+			origin: OriginFor<T>,
+			creator_key: T::AccountId,
+			intent_id: IntentId,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			let schema_id = Self::create_schema_for(intent_id, model, model_type)?;
+
+			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
+			Ok(())
+		}
+
+		/// Adds a given schema to storage. (testnet)
+		///
+		/// The schema in question must be of length
+		/// between the min and max model size allowed for schemas (see pallet
+		/// constants above). If the pallet's maximum schema limit has been
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
+		/// will be thrown.
+		///
+		/// # Events
+		/// * [`Event::SchemaCreated`]
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		///
+		#[pallet::call_index(21)]
+		#[pallet::weight(T::WeightInfo::create_schema_v4(model.len() as u32))]
+		pub fn create_schema_v4(
+			origin: OriginFor<T>,
+			intent_id: IntentId,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			let schema_id = Self::create_schema_for(intent_id, model, model_type)?;
+
+			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -936,42 +846,50 @@ pub mod pallet {
 			<CurrentSchemaIdentifierMaximum<T>>::set(n);
 		}
 
+		/// Lowest-level insertion function for a [`SchemaInfo`] and [`SchemaPayload`] into storage,
+		/// using an already-allocated [`SchemaId`]
+		pub fn store_schema_info_and_payload(
+			schema_id: SchemaId,
+			schema_info: SchemaInfo,
+			schema_payload: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		) -> Result<(), DispatchError> {
+			<SchemaInfos<T>>::insert(schema_id, schema_info);
+			<SchemaPayloads<T>>::insert(schema_id, schema_payload);
+			Ok(())
+		}
+
 		/// Inserts both the [`SchemaInfo`] and Schema Payload into storage
 		/// Updates the `CurrentSchemaIdentifierMaximum` storage
 		pub fn add_schema(
+			intent_id: IntentId,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			schema_name_option: Option<SchemaName>,
+			settings: IntentSettings,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let has_name = schema_name_option.is_some();
-			let mut set_settings = SchemaSettings::all_disabled();
-			if !settings.is_empty() {
-				for i in settings.into_inner() {
-					set_settings.set(i);
-				}
-			}
-
-			if let Some(schema_name) = schema_name_option {
-				SchemaNameToIds::<T>::try_mutate(
-					schema_name.namespace,
-					schema_name.descriptor,
-					|schema_version_id| -> Result<(), DispatchError> {
-						schema_version_id.add::<T>(schema_id)?;
-						Ok(())
-					},
-				)?;
-			};
-
-			let schema_info =
-				SchemaInfo { model_type, payload_location, settings: set_settings, has_name };
+			let schema_info = SchemaInfo { intent_id, model_type, payload_location, settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
-			<SchemaInfos<T>>::insert(schema_id, schema_info);
-			<SchemaPayloads<T>>::insert(schema_id, model);
+			Self::store_schema_info_and_payload(schema_id, schema_info, model)?;
 
 			Ok(schema_id)
+		}
+
+		/// Lowest-level insertion function for a [`IntentInfo`] into storage,
+		/// using an already-allocated [`IntentId`]
+		pub fn store_intent_info(
+			intent_id: IntentId,
+			intent_info: IntentInfo,
+			intent_name: &SchemaName,
+		) -> Result<(), DispatchError> {
+			NameToMappedEntityIds::<T>::insert(
+				&intent_name.namespace,
+				&intent_name.descriptor,
+				MappedEntityIdentifier::Intent(intent_id),
+			);
+			<IntentInfos<T>>::insert(intent_id, intent_info);
+
+			Ok(())
 		}
 
 		/// Inserts the [`IntentInfo`] into storage
@@ -994,17 +912,28 @@ pub mod pallet {
 				}
 			}
 
-			NameToMappedEntityIds::<T>::insert(
-				&intent_name.namespace,
-				&intent_name.descriptor,
-				MappedEntityIdentifier::Intent(intent_id),
-			);
-
 			let intent_info = IntentInfo { payload_location, settings: set_settings };
 			<CurrentIntentIdentifierMaximum<T>>::set(intent_id);
-			<IntentInfos<T>>::insert(intent_id, intent_info);
+			Self::store_intent_info(intent_id, intent_info, intent_name)?;
 
 			Ok(intent_id)
+		}
+
+		/// Lowest-level insertion function for a [`IntentGroup`] into storage,
+		/// using an already-allocated [`IntentGroupId`]
+		pub fn store_intent_group(
+			intent_group_id: IntentGroupId,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+			intent_group_name: &SchemaName,
+		) -> Result<(), DispatchError> {
+			NameToMappedEntityIds::<T>::insert(
+				&intent_group_name.namespace,
+				&intent_group_name.descriptor,
+				MappedEntityIdentifier::IntentGroup(intent_group_id),
+			);
+			Self::update_intent_group_storage(intent_group_id, intent_ids)?;
+
+			Ok(())
 		}
 
 		/// Inserts a list of [`IntentId`]s with a new [`IntentGroupId`] in storage, and adds.
@@ -1021,13 +950,8 @@ pub mod pallet {
 		) -> Result<IntentGroupId, DispatchError> {
 			let intent_group_id = Self::get_next_intent_group_id()?;
 
-			<NameToMappedEntityIds<T>>::insert(
-				&intent_group_name.namespace,
-				&intent_group_name.descriptor,
-				MappedEntityIdentifier::IntentGroup(intent_group_id),
-			);
 			<CurrentIntentGroupIdentifierMaximum<T>>::set(intent_group_id);
-			Self::update_intent_group_storage(intent_group_id, intent_ids)?;
+			Self::store_intent_group(intent_group_id, intent_ids, intent_group_name)?;
 			Ok(intent_group_id)
 		}
 
@@ -1048,14 +972,13 @@ pub mod pallet {
 			match (SchemaInfos::<T>::get(schema_id), SchemaPayloads::<T>::get(schema_id)) {
 				(Some(schema_info), Some(payload)) => {
 					let model_vec: Vec<u8> = payload.into_inner();
-					let saved_settings = schema_info.settings;
-					let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
 					let response = SchemaResponse {
 						schema_id,
+						intent_id: schema_info.intent_id,
 						model: model_vec,
 						model_type: schema_info.model_type,
 						payload_location: schema_info.payload_location,
-						settings,
+						settings: schema_info.settings.0.iter().collect::<Vec<IntentSetting>>(),
 					};
 					Some(response)
 				},
@@ -1070,13 +993,12 @@ pub mod pallet {
 		/// Retrieve a schema info by id
 		pub fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse> {
 			if let Some(schema_info) = SchemaInfos::<T>::get(schema_id) {
-				let saved_settings = schema_info.settings;
-				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
 				let response = SchemaInfoResponse {
 					schema_id,
+					intent_id: schema_info.intent_id,
 					model_type: schema_info.model_type,
 					payload_location: schema_info.payload_location,
-					settings,
+					settings: schema_info.settings.0.iter().collect::<Vec<IntentSetting>>(),
 				};
 				return Some(response);
 			}
@@ -1086,19 +1008,20 @@ pub mod pallet {
 		/// Retrieve an Intent by its ID
 		pub fn get_intent_by_id(
 			intent_id: IntentId,
-			_include_schemas: bool,
+			include_schemas: bool,
 		) -> Option<IntentResponse> {
 			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
 				let saved_settings = intent_info.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
-				let schema_ids: Option<Vec<SchemaId>> = None;
-				// TODO: uncomment when Schemas have been updated to include intent_id in an upcoming PR
-				// if include_schemas {
-				// 	schemas = Some(Vec<SchemaId>::new());
-				// 	SchemaInfos::<T>::iter().filter(|(schema_id, schema_info)| {
-				// 		schema_info.payload_location as u16 == intent_id
-				// 	}).for_each(|(schema_id, _)| { schemas.as_mut().unwrap().push(*schema_id); });
-				// }
+				let schema_ids = match include_schemas {
+					false => None,
+					true => Some(
+						SchemaInfos::<T>::iter()
+							.filter(|(_, info)| info.intent_id == intent_id)
+							.map(|(id, _)| id)
+							.collect::<Vec<SchemaId>>(),
+					),
+				};
 
 				return Some(IntentResponse {
 					intent_id,
@@ -1195,12 +1118,10 @@ pub mod pallet {
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		/// * [`Error::InvalidSetting`] - Invalid setting is provided
 		pub fn create_schema_for(
+			intent_id: IntentId,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
-			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			optional_schema_name: Option<SchemaNamePayload>,
-		) -> Result<(SchemaId, Option<SchemaName>), DispatchError> {
+		) -> Result<SchemaId, DispatchError> {
 			Self::ensure_valid_model(&model_type, &model)?;
 			ensure!(
 				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
@@ -1210,34 +1131,16 @@ pub mod pallet {
 				model.len() <= GovernanceSchemaModelMaxBytes::<T>::get() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
-			// AppendOnly is only valid for Itemized payload location
-			ensure!(
-				!settings.contains(&SchemaSetting::AppendOnly) ||
-					payload_location == PayloadLocation::Itemized,
-				Error::<T>::InvalidSetting
-			);
-			// SignatureRequired is only valid for Itemized and Paginated payload locations
-			ensure!(
-				!settings.contains(&SchemaSetting::SignatureRequired) ||
-					payload_location == PayloadLocation::Itemized ||
-					payload_location == PayloadLocation::Paginated,
-				Error::<T>::InvalidSetting
-			);
-			let schema_name = match optional_schema_name {
-				None => None,
-				Some(name_payload) => {
-					let parsed_name = SchemaName::try_parse::<T>(name_payload, true)?;
-					Some(parsed_name)
-				},
-			};
+			let intent_info =
+				IntentInfos::<T>::get(intent_id).ok_or(Error::<T>::InvalidIntentId)?;
 			let schema_id = Self::add_schema(
+				intent_id,
 				model,
 				model_type,
-				payload_location,
-				settings,
-				schema_name.clone(),
+				intent_info.payload_location,
+				intent_info.settings,
 			)?;
-			Ok((schema_id, schema_name))
+			Ok(schema_id)
 		}
 
 		/// Adds a given Intent to storage. If the pallet's maximum Intent limit has been
@@ -1381,20 +1284,6 @@ pub mod pallet {
 			(!responses.is_empty()).then_some(responses)
 		}
 
-		/// Parses the schema name and makes sure the schema does not have a name
-		fn parse_and_verify_schema_id_and_name(
-			schema_id: SchemaId,
-			schema_name: &SchemaNamePayload,
-		) -> Result<SchemaName, DispatchError> {
-			let schema_option = SchemaInfos::<T>::get(schema_id);
-			ensure!(schema_option.is_some(), Error::<T>::SchemaIdDoesNotExist);
-			if let Some(info) = schema_option {
-				ensure!(!info.has_name, Error::<T>::SchemaIdAlreadyHasName);
-			}
-			let parsed_name = SchemaName::try_parse::<T>(schema_name.clone(), true)?;
-			Ok(parsed_name)
-		}
-
 		/// Parses and validates a new name and makes sure it does not already exist
 		/// # Errors
 		/// * [`Error::NameAlreadyExists`] - The name already exists
@@ -1432,6 +1321,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 
 	/// Creates a schema.
 	fn create_schema(
+		intent_id: IntentId,
 		model: Vec<u8>,
 		model_type: ModelType,
 		payload_location: PayloadLocation,
@@ -1439,7 +1329,13 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 		let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
 			model.try_into().unwrap();
 		Self::ensure_valid_model(&model_type, &model)?;
-		Self::add_schema(model, model_type, payload_location, BoundedVec::default(), None)?;
+		Self::add_schema(
+			intent_id,
+			model,
+			model_type,
+			payload_location,
+			IntentSettings::default(),
+		)?;
 		Ok(())
 	}
 }
@@ -1463,5 +1359,9 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 
 	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse> {
 		Self::get_schema_info_by_id(schema_id)
+	}
+
+	fn get_intent_by_id(intent_id: IntentId) -> Option<IntentResponse> {
+		Self::get_intent_by_id(intent_id, false)
 	}
 }

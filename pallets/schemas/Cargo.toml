@@ -19,7 +19,7 @@ log = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-numtoa = { workspace = true, optional = true }
+numtoa = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["alloc"] }
@@ -42,7 +42,6 @@ runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
   "common-primitives/runtime-benchmarks",
-  "numtoa",
 ]
 std = [
   "parity-scale-codec/std",
