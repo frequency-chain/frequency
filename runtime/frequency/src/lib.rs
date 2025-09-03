@@ -459,9 +459,6 @@ pub type BlockId = generic::BlockId<Block>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-pub type AssetBalance = Balance; // kept for backwards compatibility; now centralized in relay::prelude
-
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;

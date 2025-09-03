@@ -9,7 +9,6 @@ pub mod prelude {
 	use super::*;
 
 	// ---------------- Type Aliases ----------------
-	// AssetBalance previously re-exported; kept in lib for backwards compatibility if needed.
 	pub type RuntimeMigrations =
 		(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>);
 	pub type OnSetCodeHook = cumulus_pallet_parachain_system::ParachainSetCode<Runtime>;
