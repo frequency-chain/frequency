@@ -2101,10 +2101,12 @@ impl<T: Config> Pallet<T> {
 		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
-				ensure!(
-					maybe_metadata.take().is_none() && !is_update,
-					Error::<T>::DuplicateProviderRegistryEntry
-				);
+				if !is_update {
+					ensure!(
+						maybe_metadata.take().is_none(),
+						Error::<T>::DuplicateProviderRegistryEntry
+					);
+				}
 				*maybe_metadata = Some(payload);
 				Ok(())
 			},

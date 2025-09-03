@@ -25,14 +25,17 @@ fn update_provider_via_governance_happy_path() {
 		updated_entry.default_logo_250_100_png_cid =
 			BoundedVec::try_from(new_cid).expect("Logo CID should fit in bounds");
 
-		// Update provider via governance should fail with duplicate (updates not supported here)
-		assert_noop!(
-			Msa::update_provider_via_governance(
-				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-				provider_account.into(),
-				updated_entry.clone()
-			),
-			Error::<Test>::DuplicateProviderRegistryEntry
+		// Update provider via governance should succeed with overwrite
+		assert_ok!(Msa::update_provider_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider_account.into(),
+			updated_entry.clone()
+		));
+		let stored_entry =
+			ProviderToRegistryEntry::<Test>::get(ProviderId(_provider_msa_id)).unwrap();
+		assert_eq!(stored_entry.default_name, b"UpdatedProvider".to_vec());
+		System::assert_last_event(
+			Event::ProviderUpdated { msa_id: ProviderId(_provider_msa_id) }.into(),
 		);
 	})
 }
@@ -191,12 +194,10 @@ fn propose_to_update_provider_happy_path() {
 			proposal_len
 		));
 
-		// Verify the provider was updated
-		let stored_entry = ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id));
-		assert!(stored_entry.is_some());
-		let entry = stored_entry.unwrap();
-		// Proposal executes but update currently not supported, so name stays the same
-		assert_eq!(entry.default_name, b"TestProvider".to_vec());
+		// Verify the provider was updated after proposal executed
+		let stored_entry =
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(stored_entry.default_name, b"ProposedProvider".to_vec());
 	})
 }
 
@@ -623,20 +624,17 @@ fn update_provider_with_localized_names_and_logos() {
 			.expect("Map insertion should not exceed max size");
 		updated_entry.localized_logo_250_100_png_cids = localized_logos;
 
-		// Update provider via governance should fail with duplicate
-		assert_noop!(
-			Msa::update_provider_via_governance(
-				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-				provider_account.into(),
-				updated_entry.clone()
-			),
-			Error::<Test>::DuplicateProviderRegistryEntry
-		);
+		// Update provider via governance should now succeed (overwrite)
+		assert_ok!(Msa::update_provider_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider_account.into(),
+			updated_entry.clone()
+		));
 
-		// Ensure provider entry remains unchanged name-wise
+		// Ensure provider entry updated
 		let stored_entry =
 			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
-		assert_eq!(stored_entry.default_name, b"TestProvider".to_vec());
+		assert_eq!(stored_entry.default_name, b"UpdatedProvider".to_vec());
 	})
 }
 
