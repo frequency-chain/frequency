@@ -84,9 +84,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-local")]
 		"frequency-paseo-local" =>
 			Ok(Box::new(chain_spec::frequency_paseo_local::local_paseo_testnet_config())),
-		#[cfg(feature = "frequency-bridging")]
-		"frequency-westend-local" =>
-			Ok(Box::new(chain_spec::frequency_westend_local::westend_local_config())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
 			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
@@ -118,15 +115,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					}
 					#[cfg(not(feature = "frequency-local"))]
 					return Err("Frequency Local runtime is not available.".into());
-				} else if cfg!(feature = "frequency-bridging") {
-					#[cfg(feature = "frequency-bridging")]
-					{
-						return Ok(Box::new(
-							chain_spec::frequency_westend_local::westend_local_config(),
-						));
-					}
-					#[cfg(not(feature = "frequency-bridging"))]
-					return Err("Frequency Westend Local runtime is not available.".into());
 				} else if cfg!(feature = "frequency-testnet") {
 					#[cfg(feature = "frequency-testnet")]
 					{
@@ -177,15 +165,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				}
 				#[cfg(not(feature = "frequency-local"))]
 				return Err("Frequency Local runtime is not available.".into());
-			} else if ChainIdentity::FrequencyWestendLocal == spec.identify() {
-				#[cfg(feature = "frequency-bridging")]
-				{
-					return Ok(Box::new(
-						chain_spec::frequency_westend_local::ChainSpec::from_json_file(path_buf)?,
-					));
-				}
-				#[cfg(not(feature = "frequency-bridging"))]
-				return Err("Frequency Westend Local runtime is not available.".into());
 			} else if ChainIdentity::FrequencyDev == spec.identify() {
 				#[cfg(feature = "frequency-no-relay")]
 				{

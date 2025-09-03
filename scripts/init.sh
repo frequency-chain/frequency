@@ -146,8 +146,8 @@ start-frequency-instant)
 start-frequency-instant-bridging)
   printf "\nBuilding Frequency without relay and with Bridging. Running with instant sealing ...\n"
   # Uncomment/swap below if you want to see debug logs in the Frequency node
-  # cargo build --features frequency-no-relay,frequency-bridging,force-debug
-  cargo build --features frequency-no-relay,frequency-bridging
+  # cargo build --features frequency-no-relay,force-debug
+  cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -178,7 +178,7 @@ start-frequency-instant-bridging)
 # TODO: This is a work in progress.
 start-bridging-westend-local)
   printf "\nBuilding Frequency for westend-local with Bridging. Running with local relay ...\n"
-  cargo build --features frequency-local,frequency-bridging
+  cargo build --features frequency-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -207,7 +207,7 @@ start-bridging-westend-local)
 # TODO: This needs correct launch parameters for Westend testnet
 start-bridging-westend)
   printf "\nBuilding Frequency for westend-testnet with Bridging. Running with Westend Testnet Relay ...\n"
-  cargo build --release --features frequency-westend,frequency-bridging
+  cargo build --release --features frequency-westend
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;

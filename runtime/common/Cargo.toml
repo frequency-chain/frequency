@@ -60,7 +60,6 @@ runtime-benchmarks = [
   "pallet-message-queue/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
 ]
-frequency-bridging = []
 std = [
   "frame-support/std",
   "frame-system/std",
