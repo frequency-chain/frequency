@@ -426,11 +426,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_provider_v2() -> Result<(), BenchmarkError> {
+	fn create_provider_v2(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let name_size = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..name_size as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -438,7 +439,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
@@ -463,11 +464,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_provider_via_governance_v2() -> Result<(), BenchmarkError> {
+	fn create_provider_via_governance_v2(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -475,7 +477,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
@@ -501,11 +503,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_be_provider_v2() -> Result<(), BenchmarkError> {
+	fn propose_to_be_provider_v2(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -513,7 +516,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
@@ -804,11 +807,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_add_application() -> Result<(), BenchmarkError> {
+	fn propose_to_add_application(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -818,7 +822,7 @@ mod benchmarks {
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
@@ -851,11 +855,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_application_via_governance() -> Result<(), BenchmarkError> {
+	fn create_application_via_governance(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -865,7 +870,7 @@ mod benchmarks {
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
@@ -931,11 +936,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_update_provider() -> Result<(), BenchmarkError> {
+	fn propose_to_update_provider(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -943,7 +949,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
@@ -974,11 +980,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn update_application_via_governance() -> Result<(), BenchmarkError> {
+	fn update_application_via_governance(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -986,7 +993,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
@@ -1030,11 +1037,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_update_application() -> Result<(), BenchmarkError> {
+	fn propose_to_update_application(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -1042,7 +1050,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
@@ -1082,11 +1090,12 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn update_provider_via_governance() -> Result<(), BenchmarkError> {
+	fn update_provider_via_governance(
+		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
-		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -1094,7 +1103,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..max_locale_count {
+		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
