@@ -24,7 +24,7 @@ pub fn listen_addrs_to_normalized_strings(addr: &Option<Vec<RpcEndpoint>>) -> Op
 						SocketAddr::V6(v6) => v6.to_string(),
 					};
 					if !address.starts_with(HTTP_PREFIX) {
-						address = format!("{}{}", HTTP_PREFIX, address);
+						address = format!("{HTTP_PREFIX}{address}");
 					}
 					address.into_bytes()
 				})

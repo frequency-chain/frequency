@@ -70,6 +70,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
@@ -700,10 +701,7 @@ impl<T: Config> Pallet<T> {
 				|e| match e {
 					PageError::ErrorParsing(err) => {
 						log::warn!(
-							"failed parsing Itemized msa={:?} schema_id={:?} {:?}",
-							state_owner_msa_id,
-							schema_id,
-							err
+							"failed parsing Itemized msa={state_owner_msa_id:?} schema_id={schema_id:?} {err:?}",
 						);
 						Error::<T>::CorruptedState
 					},

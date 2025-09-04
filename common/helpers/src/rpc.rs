@@ -12,7 +12,7 @@ pub fn map_rpc_result<T>(response: CoreResult<T, ApiError>) -> RpcResult<T> {
 		Err(e) => Err(ErrorObject::owned(
 			ErrorCode::ServerError(300).code(), // No real reason for this value
 			"Api Error",
-			Some(format!("{:?}", e)),
+			Some(format!("{e:?}")),
 		)),
 	}
 }
