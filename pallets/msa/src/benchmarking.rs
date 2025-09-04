@@ -809,6 +809,7 @@ mod benchmarks {
 	#[benchmark]
 	fn propose_to_add_application(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -826,8 +827,12 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 
@@ -857,6 +862,7 @@ mod benchmarks {
 	#[benchmark]
 	fn create_application_via_governance(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -874,8 +880,12 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 
@@ -982,6 +992,7 @@ mod benchmarks {
 	#[benchmark]
 	fn update_application_via_governance(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -997,8 +1008,12 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 		let provider_caller: T::AccountId = whitelisted_caller();
@@ -1039,6 +1054,7 @@ mod benchmarks {
 	#[benchmark]
 	fn propose_to_update_application(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -1054,8 +1070,12 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 
@@ -1092,6 +1112,7 @@ mod benchmarks {
 	#[benchmark]
 	fn update_provider_via_governance(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -1107,8 +1128,12 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 		let account = create_account::<T>("account_updated", 0);
