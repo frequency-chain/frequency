@@ -427,8 +427,8 @@ mod benchmarks {
 
 	#[benchmark]
 	fn create_provider_v2(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let name_size = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -471,8 +471,8 @@ mod benchmarks {
 
 	#[benchmark]
 	fn create_provider_via_governance_v2(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -872,8 +872,8 @@ mod benchmarks {
 
 	#[benchmark]
 	fn create_application_via_governance(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -1006,8 +1006,8 @@ mod benchmarks {
 
 	#[benchmark]
 	fn update_application_via_governance(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -1124,8 +1124,8 @@ mod benchmarks {
 
 	#[benchmark]
 	fn update_provider_via_governance(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
