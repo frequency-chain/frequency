@@ -443,7 +443,7 @@ jobs:
         run: |
           echo "BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -500,7 +500,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -538,7 +538,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -576,7 +576,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -899,7 +899,7 @@ jobs:
             --tmp \
             &
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
