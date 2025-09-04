@@ -1340,7 +1340,7 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload, false)?;
+			Self::upsert_provider_for(provider_msa_id, payload, false)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1409,7 +1409,7 @@ pub mod pallet {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload, false)?;
+			Self::upsert_provider_for(provider_msa_id, payload, false)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1425,8 +1425,8 @@ pub mod pallet {
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(22)]
 		#[pallet::weight(T::WeightInfo::propose_to_add_application(
-			payload.localized_names.len() as u32
-			+payload.localized_logo_250_100_png_cids.len() as u32,
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
 		))]
 		pub fn propose_to_add_application(
 			origin: OriginFor<T>,
@@ -1468,8 +1468,8 @@ pub mod pallet {
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(23)]
 		#[pallet::weight(T::WeightInfo::create_application_via_governance(
-			payload.localized_names.len() as u32
-			+payload.localized_logo_250_100_png_cids.len() as u32,
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
 		))]
 		pub fn create_application_via_governance(
 			origin: OriginFor<T>,
@@ -1543,8 +1543,8 @@ pub mod pallet {
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(25)]
 		#[pallet::weight(T::WeightInfo::update_provider_via_governance(
-			payload.localized_names.len() as u32
-			+payload.localized_logo_250_100_png_cids.len() as u32,
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
 		))]
 		pub fn update_provider_via_governance(
 			origin: OriginFor<T>,
@@ -1559,7 +1559,7 @@ pub mod pallet {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			Self::create_provider_for(provider_msa_id, payload, true)?;
+			Self::upsert_provider_for(provider_msa_id, payload, true)?;
 			Self::deposit_event(Event::ProviderUpdated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1626,8 +1626,8 @@ pub mod pallet {
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(27)]
 		#[pallet::weight(T::WeightInfo::update_application_via_governance(
-			payload.localized_names.len() as u32
-			+payload.localized_logo_250_100_png_cids.len() as u32
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32
 		))]
 		pub fn update_application_via_governance(
 			origin: OriginFor<T>,
@@ -1647,7 +1647,7 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 			Self::ensure_correct_cids(&payload)?;
-			Self::update_application_for(ProviderId(provider_msa_id), application_index, payload)?;
+			Self::upsert_application_for(ProviderId(provider_msa_id), application_index, payload)?;
 			Self::deposit_event(Event::ApplicationContextUpdated {
 				provider_id: ProviderId(provider_msa_id),
 				application_id: Some(application_index),
@@ -1670,8 +1670,8 @@ pub mod pallet {
 		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
 		#[pallet::call_index(28)]
 		#[pallet::weight(T::WeightInfo::propose_to_update_application(
-			payload.localized_names.len() as u32
-			+payload.localized_logo_250_100_png_cids.len() as u32
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32
 		))]
 		pub fn propose_to_update_application(
 			origin: OriginFor<T>,
@@ -1714,7 +1714,7 @@ pub mod pallet {
 		/// This call is blocked in release mode
 		#[pallet::call_index(29)]
 		#[pallet::weight(T::WeightInfo::create_application_via_governance(
-			payload.localized_names.len() as u32+
+			payload.localized_names.len() as u32,
 			payload.localized_logo_250_100_png_cids.len() as u32,
 		))]
 		pub fn create_application(
@@ -2148,7 +2148,7 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///
-	pub fn create_provider_for(
+	pub fn upsert_provider_for(
 		provider_msa_id: MessageSourceId,
 		payload: ProviderRegistryEntry<
 			T::MaxProviderNameSize,
@@ -2210,7 +2210,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::ApplicationNotFound`]
-	pub fn update_application_for(
+	pub fn upsert_application_for(
 		provider_msa_id: ProviderId,
 		application_index: ApplicationIndex,
 		payload: ApplicationContext<

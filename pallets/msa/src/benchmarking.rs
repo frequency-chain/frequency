@@ -428,6 +428,7 @@ mod benchmarks {
 	#[benchmark]
 	fn create_provider_v2(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let name_size = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -443,10 +444,15 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
+
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) =
 			Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
@@ -466,6 +472,7 @@ mod benchmarks {
 	#[benchmark]
 	fn create_provider_via_governance_v2(
 		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
+		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -481,8 +488,12 @@ mod benchmarks {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 		let account = create_account::<T>("account", 0);
@@ -503,9 +514,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_be_provider_v2(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_be_provider_v2() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
@@ -516,12 +525,17 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
+		let (m, n) = (T::MaxLocaleCount::get(), T::MaxLocaleCount::get());
 		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
 		let account = create_account::<T>("account", 0);
@@ -629,7 +643,7 @@ mod benchmarks {
 			default_logo_250_100_png_cid: BoundedVec::new(),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, entry, false));
+		assert_ok!(Msa::<T>::upsert_provider_for(provider_msa_id, entry, false));
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, ProviderId(provider_msa_id));
@@ -650,7 +664,7 @@ mod benchmarks {
 			default_logo_250_100_png_cid: BoundedVec::new(),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, entry, false));
+		assert_ok!(Msa::<T>::upsert_provider_for(provider_msa_id, entry, false));
 
 		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
 
@@ -807,10 +821,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_add_application(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_add_application() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
@@ -822,7 +833,7 @@ mod benchmarks {
 
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
-
+		let (m, n) = (T::MaxLocaleCount::get(), T::MaxLocaleCount::get());
 		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
@@ -946,9 +957,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_update_provider(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_update_provider() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
@@ -959,14 +968,20 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
+		let (m, n) = (T::MaxLocaleCount::get(), T::MaxLocaleCount::get());
 		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
+
 		let account = create_account::<T>("account", 0);
 		let (_, provider_public_key) = Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
 		let entry = ProviderRegistryEntry {
@@ -1052,10 +1067,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_update_application(
-		n: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-		m: Linear<0, { T::MaxLocaleCount::get() as u32 }>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_update_application() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 		let _cid_size = T::MaxLogoCidSize::get();
@@ -1066,6 +1078,7 @@ mod benchmarks {
 			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
+		let (m, n) = (T::MaxLocaleCount::get(), T::MaxLocaleCount::get());
 		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();

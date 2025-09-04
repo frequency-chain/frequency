@@ -355,7 +355,7 @@ fn recover_account_with_non_approved_provider_should_fail() {
 		// Create a provider but don't approve it for recovery
 		let (provider_msa_id, provider_key_pair) = create_account();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), entry, false));
+		assert_ok!(Msa::upsert_provider_for(provider_msa_id.into(), entry, false));
 
 		// Generate a new control key for recovery
 		let (new_control_key_pair, _) = sr25519::Pair::generate();
@@ -750,7 +750,7 @@ fn ensure_approved_recovery_provider_with_non_approved_provider_should_fail() {
 		let mut entry = ProviderRegistryEntry::default();
 		entry.default_name = BoundedVec::try_from(b"NotApproved".to_vec())
 			.expect("Provider name should fit in bounds");
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), entry, false));
+		assert_ok!(Msa::upsert_provider_for(provider_msa_id.into(), entry, false));
 
 		let result = Msa::ensure_approved_recovery_provider(&provider_key_pair.public().into());
 		assert_noop!(result, Error::<Test>::NotAuthorizedRecoveryProvider);
