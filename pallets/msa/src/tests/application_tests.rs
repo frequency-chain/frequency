@@ -347,6 +347,43 @@ fn upload_logo_fails_mismatch_logo_data() {
 }
 
 #[test]
+fn create_application_and_upload_logo() {
+	new_test_ext().execute_with(|| {
+		let (_, key_pair) = create_provider_with_name("LogoProvider");
+		let logo_data = include_bytes!("../../../../e2e/msa/frequency.png");
+		let cid = common_primitives::cid::compute_cid_v1(logo_data).expect("Failed to compute CID");
+		let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
+		let input_bounded_cid = BoundedVec::try_from(encoded.as_bytes().to_vec()).unwrap();
+		let bounded_logo_data =
+			BoundedVec::<u8, common_runtime::constants::MsaMaxLogoSize>::try_from(
+				logo_data.to_vec(),
+			)
+			.expect("Failed to create BoundedVec");
+		let entry = ApplicationContext {
+			default_logo_250_100_png_cid: input_bounded_cid.clone(),
+			..Default::default()
+		};
+		assert_ok!(Msa::create_application(RuntimeOrigin::signed(key_pair.into()), entry));
+
+		assert!(ApprovedLogos::<Test>::contains_key(&input_bounded_cid));
+		let stored_logo_data =
+			ApprovedLogos::<Test>::get(&input_bounded_cid).expect("Logo should be approved");
+		assert!(stored_logo_data.is_empty());
+
+		assert_ok!(Msa::upload_logo(
+			RuntimeOrigin::signed(key_pair.into()),
+			input_bounded_cid.clone(),
+			bounded_logo_data.clone()
+		));
+
+		assert!(ApprovedLogos::<Test>::contains_key(&input_bounded_cid));
+		let stored_bytes =
+			ApprovedLogos::<Test>::get(&input_bounded_cid).expect("Logo should be approved");
+		assert_eq!(stored_bytes, bounded_logo_data);
+	});
+}
+
+#[test]
 fn compute_cid_v1_test() {
 	new_test_ext().execute_with(|| {
 		// read frequency.png from assets

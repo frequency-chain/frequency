@@ -422,7 +422,7 @@ pub mod pallet {
 		/// Application for provider created
 		ApplicationCreated {
 			/// The MSA id associated with the provider
-			msa_id: ProviderId,
+			provider_id: ProviderId,
 			/// The application id for the created application
 			application_id: ApplicationIndex,
 		},
@@ -1476,7 +1476,7 @@ pub mod pallet {
 			let application_id =
 				Self::create_application_for(ProviderId(provider_msa_id), payload)?;
 			Self::deposit_event(Event::ApplicationCreated {
-				msa_id: ProviderId(provider_msa_id),
+				provider_id: ProviderId(provider_msa_id),
 				application_id,
 			});
 			Ok(())
@@ -1678,6 +1678,35 @@ pub mod pallet {
 			);
 			let threshold = 1;
 			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create application allows creating an application registry without governance
+		/// This call is blocked in release mode
+		#[pallet::call_index(29)]
+		#[pallet::weight(T::WeightInfo::create_application_via_governance())]
+		pub fn create_application(
+			origin: OriginFor<T>,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let provider_account = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_account)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			Self::ensure_correct_cids(&payload)?;
+			let application_id =
+				Self::create_application_for(ProviderId(provider_msa_id), payload)?;
+			Self::deposit_event(Event::ApplicationCreated {
+				provider_id: ProviderId(provider_msa_id),
+				application_id,
+			});
 			Ok(())
 		}
 	}
