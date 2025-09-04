@@ -436,7 +436,7 @@ pub mod pallet {
 		/// Provider registry is updated
 		ProviderUpdated {
 			/// The MSA id associated with the provider
-			msa_id: ProviderId,
+			provider_id: ProviderId,
 		},
 	}
 
@@ -1542,7 +1542,9 @@ pub mod pallet {
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
 			Self::create_provider_for(provider_msa_id, payload, true)?;
-			Self::deposit_event(Event::ProviderUpdated { msa_id: ProviderId(provider_msa_id) });
+			Self::deposit_event(Event::ProviderUpdated {
+				provider_id: ProviderId(provider_msa_id),
+			});
 			Ok(())
 		}
 

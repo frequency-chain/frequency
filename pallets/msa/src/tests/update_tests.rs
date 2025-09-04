@@ -12,7 +12,7 @@ use crate::{tests::mock::*, Error, Event, ProviderToApplicationRegistry, Provide
 #[test]
 fn update_provider_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
-		let (_provider_msa_id, key_pair) = create_provider_with_name("OriginalProvider");
+		let (provider_msa_id, key_pair) = create_provider_with_name("OriginalProvider");
 		let provider_account = key_pair;
 
 		// Create updated provider entry
@@ -32,10 +32,10 @@ fn update_provider_via_governance_happy_path() {
 			updated_entry.clone()
 		));
 		let stored_entry =
-			ProviderToRegistryEntry::<Test>::get(ProviderId(_provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_entry.default_name, b"UpdatedProvider".to_vec());
 		System::assert_last_event(
-			Event::ProviderUpdated { msa_id: ProviderId(_provider_msa_id) }.into(),
+			Event::ProviderUpdated { provider_id: ProviderId(provider_msa_id) }.into(),
 		);
 	})
 }
