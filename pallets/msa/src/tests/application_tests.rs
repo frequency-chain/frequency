@@ -8,7 +8,7 @@ use sp_weights::Weight;
 use pretty_assertions::assert_eq;
 
 use crate::{
-	tests::mock::*, types::compute_cid, ApprovedLogos, Error, NextApplicationIndex,
+	tests::mock::*, types::compute_cid, ApprovedLogos, Error, Event, NextApplicationIndex,
 	ProviderToApplicationRegistry,
 };
 
@@ -17,12 +17,22 @@ fn create_application_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_provider_with_name("AppProvider");
 		let entry = ApplicationContext::default();
+
+		let next_application_id = NextApplicationIndex::<Test>::get(ProviderId(new_msa_id));
 		// Create the application based on 1 yes vote by the council
 		assert_ok!(Msa::create_application_via_governance(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 			key_pair.into(),
 			entry
 		));
+
+		System::assert_last_event(
+			Event::ApplicationCreated {
+				provider_id: ProviderId(new_msa_id),
+				application_id: next_application_id,
+			}
+			.into(),
+		);
 		// Confirm that the MSA is now a provider
 		assert!(Msa::is_registered_provider(new_msa_id));
 		assert_eq!(NextApplicationIndex::<Test>::get(ProviderId(new_msa_id)), 1);
