@@ -9,23 +9,24 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
 
-#[cfg(feature = "std")]
-sp_externalities::decl_extension! {
-	/// Offchain worker custom extension
-	pub struct OcwCustomExt (
-		// rpc address provided to offchain worker
-		Vec<u8>
-	);
-}
+// #[cfg(feature = "std")]
+// sp_externalities::decl_extension! {
+// 	/// Offchain worker custom extension
+// 	pub struct OcwCustomExt (
+// 		// rpc address provided to offchain worker
+// 		Vec<u8>
+// 	);
+// }
 
 /// runtime new customized
-#[runtime_interface]
-pub trait Custom: ExternalitiesExt {
-	/// another function
-	fn get_val(&mut self) -> Option<Vec<u8>> {
-		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
-	}
-}
+// #[runtime_interface]
+// pub trait Custom: ExternalitiesExt {
+// 	/// another function
+// 	fn get_val(&mut self) -> Option<Vec<u8>> {
+// 		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
+// 	}
+// }
+
 /// Lock expiration timeout in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account

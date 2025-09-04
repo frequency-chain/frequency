@@ -57,14 +57,14 @@ type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
-	common_primitives::offchain::custom::HostFunctions,
+	// common_primitives::offchain::custom::HostFunctions,
 );
 
 #[cfg(feature = "runtime-benchmarks")]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 	frame_benchmarking::benchmarking::HostFunctions,
-	common_primitives::offchain::custom::HostFunctions,
+	// common_primitives::offchain::custom::HostFunctions,
 );
 
 use crate::common::start_offchain_workers;
@@ -203,7 +203,7 @@ pub async fn start_parachain_node(
 	override_pool_config: Option<TransactionPoolOptions>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	use crate::common::listen_addrs_to_normalized_strings;
-	use common_primitives::offchain::OcwCustomExt;
+	// use common_primitives::offchain::OcwCustomExt;
 	use sc_client_db::Backend;
 
 	let parachain_config = prepare_node_config(parachain_config);
