@@ -59,7 +59,11 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 }
 
 fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
-	let intent_id = T::SchemaBenchmarkHelper::create_intent(b"benchmark.intent".to_vec(), location, Vec::default())?;
+	let intent_id = T::SchemaBenchmarkHelper::create_intent(
+		b"benchmark.intent".to_vec(),
+		location,
+		Vec::default(),
+	)?;
 	let _ = T::SchemaBenchmarkHelper::create_schema(
 		intent_id,
 		Vec::from(r#"{"Name": "Bond", "Code": "007"}"#.as_bytes()),

@@ -1,15 +1,22 @@
-use crate::{migration::v5, pallet::{IntentInfos, NameToMappedEntityIds, SchemaInfos}, Config, IntentInfo, Pallet, SchemaInfo, SchemaVersionId, SCHEMA_STORAGE_VERSION};
+use crate::{
+	migration::v5,
+	pallet::{IntentInfos, NameToMappedEntityIds, SchemaInfos},
+	Config, IntentInfo, Pallet, SchemaInfo, SchemaVersionId, SCHEMA_STORAGE_VERSION,
+};
+#[cfg(feature = "try-runtime")]
+use alloc::vec::Vec;
 use common_primitives::schema::{IntentId, MappedEntityIdentifier, SchemaId};
 use core::marker::PhantomData;
-use frame_support::{ensure, pallet_prelude::{Get, Weight}, BoundedVec, LOG_TARGET};
-use frame_support::pallet_prelude::GetStorageVersion;
-use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
+use frame_support::{
+	ensure,
+	pallet_prelude::{Get, GetStorageVersion, Weight},
+	traits::{OnRuntimeUpgrade, StorageVersion},
+	BoundedVec, LOG_TARGET,
+};
 use numtoa::NumToA;
 use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
-#[cfg(feature = "try-runtime")]
-use alloc::vec::Vec;
 
 fn convert_from_old(id: SchemaId, old_info: &v5::SchemaInfo) -> crate::SchemaInfo {
 	SchemaInfo {
@@ -88,14 +95,14 @@ impl<T: Config> OnRuntimeUpgrade for MigrateV5ToV6<T> {
 					None
 				},
 			);
-			
+
 			log::info!(target: LOG_TARGET,
 				"Migration complete. \
 				schemas_migrated={:?}, intents_created={:?}, \
 				new_names={:?}, old_names={:?}",
 				schemas_migrated, intents_created, new_names, old_names,
 			);
-			
+
 			// Set storage version to current version
 			SCHEMA_STORAGE_VERSION.put::<Pallet<T>>();
 			log::info!(target: LOG_TARGET, "Schemas storage migrated to version {:?}. reads={:?}, writes={:?}", current_version, reads, writes);

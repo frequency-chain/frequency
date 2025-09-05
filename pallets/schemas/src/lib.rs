@@ -50,7 +50,9 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
-use common_primitives::schema::{IntentSetting, IntentSettings, SchemaInfoResponse, SchemaVersionResponse};
+use common_primitives::schema::{
+	IntentSetting, IntentSettings, SchemaInfoResponse, SchemaVersionResponse,
+};
 mod types;
 
 pub use pallet::*;
@@ -1338,7 +1340,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 		)?;
 		Ok(schema_id)
 	}
-	
+
 	/// Creates an Intent
 	fn create_intent(
 		name_payload: Vec<u8>,
@@ -1346,7 +1348,8 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 		settings: Vec<IntentSetting>,
 	) -> Result<IntentId, DispatchError> {
 		let name = BoundedVec::try_from(name_payload).unwrap();
-		let (intent_id, _) = Self::create_intent_for(name, payload_location, settings.try_into().unwrap())?;
+		let (intent_id, _) =
+			Self::create_intent_for(name, payload_location, settings.try_into().unwrap())?;
 		Ok(intent_id)
 	}
 }

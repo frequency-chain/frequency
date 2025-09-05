@@ -469,7 +469,11 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>,pallet_schemas::migration::MigrateV5ToV6<Runtime>),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		SetSafeXcmVersion<Runtime>,
+		pallet_schemas::migration::MigrateV5ToV6<Runtime>,
+	),
 >;
 
 #[cfg(not(feature = "frequency-bridging"))]
@@ -479,7 +483,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,pallet_schemas::migration::MigrateV5ToV6<Runtime>),
+	(MigratePalletsCurrentStorage<Runtime>, pallet_schemas::migration::MigrateV5ToV6<Runtime>),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);

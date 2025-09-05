@@ -536,7 +536,12 @@ fn create_schema_v4_happy_path() {
 		let name = "namespace.descriptor";
 		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
+		let (intent_id, _) = SchemasPallet::create_intent_for(
+			intent_name,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+		)
+		.expect("should have created an intent");
 
 		// act
 		assert_ok!(SchemasPallet::create_schema_v4(
@@ -566,7 +571,12 @@ fn create_schema_v4_increments_schema_id() {
 		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
 		let mut last_schema_id: SchemaId = 0;
-		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
+		let (intent_id, _) = SchemasPallet::create_intent_for(
+			intent_name,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+		)
+		.expect("should have created an intent");
 
 		// act and assert
 		for fields in [
@@ -620,7 +630,8 @@ fn get_entities_for_protocol_should_return_all_descriptors() {
 		));
 
 		// act
-		let response = SchemasPallet::get_intent_or_group_ids_by_name(String::from(namespace).into_bytes());
+		let response =
+			SchemasPallet::get_intent_or_group_ids_by_name(String::from(namespace).into_bytes());
 
 		// assert
 		assert!(response.is_some());
@@ -751,7 +762,12 @@ fn create_schema_via_governance_v3_happy_path() {
 		let name = "namespace.descriptor";
 		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
+		let (intent_id, _) = SchemasPallet::create_intent_for(
+			intent_name,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+		)
+		.expect("should have created an intent");
 
 		// act
 		assert_ok!(SchemasPallet::create_schema_via_governance_v3(
@@ -780,7 +796,12 @@ fn propose_to_create_schema_v3_happy_path() {
 		let intent_name =
 			SchemaNamePayload::try_from("namespace.descriptor".to_string().into_bytes())
 				.expect("should work");
-		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
+		let (intent_id, _) = SchemasPallet::create_intent_for(
+			intent_name,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+		)
+		.expect("should have created an intent");
 		// Propose a new schema
 		_ = SchemasPallet::propose_to_create_schema_v3(
 			test_origin_signed(5),

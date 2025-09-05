@@ -41,7 +41,8 @@ pub const SEPARATOR_CHAR: char = '.';
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 
 /// Type alias for the model of a schema
-pub type SchemaModelPayload<T: Config> = BoundedVec<u8, <T as Config>::SchemaModelMaxBytesBoundedVecLimit>;
+pub type SchemaModelPayload<T: Config> =
+	BoundedVec<u8, <T as Config>::SchemaModelMaxBytesBoundedVecLimit>;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Genesis Schemas need a way to load up and this is it!

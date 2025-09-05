@@ -1,11 +1,11 @@
 extern crate alloc;
-use alloc::vec::Vec;
-use frame_support::dispatch::DispatchResult;
-
 use crate::{
 	msa::{DelegatorId, MessageSourceId, ProviderId},
-	schema::{IntentId, ModelType, PayloadLocation, SchemaId},
+	schema::{IntentId, IntentSetting, ModelType, PayloadLocation, SchemaId},
 };
+use alloc::vec::Vec;
+use frame_support::dispatch::DispatchResult;
+use sp_runtime::DispatchError;
 
 /// A trait for helping setup state for running benchmarks.
 /// When implementing loosely coupled pallets accessing the dependent
@@ -53,7 +53,14 @@ pub trait SchemaBenchmarkHelper {
 		model: Vec<u8>,
 		model_type: ModelType,
 		payload_location: PayloadLocation,
-	) -> DispatchResult;
+	) -> Result<SchemaId, DispatchError>;
+
+	/// Creates a new Intent
+	fn create_intent(
+		name_payload: Vec<u8>,
+		payload_location: PayloadLocation,
+		settings: Vec<IntentSetting>,
+	) -> Result<IntentId, DispatchError>;
 }
 
 impl SchemaBenchmarkHelper for () {
@@ -66,8 +73,17 @@ impl SchemaBenchmarkHelper for () {
 		_model: Vec<u8>,
 		_model_type: ModelType,
 		_payload_location: PayloadLocation,
-	) -> DispatchResult {
-		Ok(())
+	) -> Result<SchemaId, DispatchError> {
+		Ok(SchemaId::default())
+	}
+
+	/// Adds a new Intent
+	fn create_intent(
+		_name_payload: Vec<u8>,
+		_payload_location: PayloadLocation,
+		_settings: Vec<IntentSetting>,
+	) -> Result<IntentId, DispatchError> {
+		Ok(IntentId::default())
 	}
 }
 

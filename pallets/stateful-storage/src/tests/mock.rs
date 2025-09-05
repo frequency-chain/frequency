@@ -12,8 +12,8 @@ use common_primitives::{
 	},
 	node::AccountId,
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaResponse,
-		SchemaSetting,
+		IntentId, IntentResponse, ModelType, PayloadLocation, SchemaId, SchemaInfoResponse,
+		SchemaProvider, SchemaResponse, SchemaSetting,
 	},
 };
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
@@ -29,7 +29,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	BuildStorage, DispatchError,
 };
-use common_primitives::schema::{IntentId, IntentResponse};
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
