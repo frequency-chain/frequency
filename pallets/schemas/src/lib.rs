@@ -50,7 +50,7 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
-use common_primitives::schema::{IntentSettings, SchemaInfoResponse, SchemaVersionResponse};
+use common_primitives::schema::{IntentSetting, IntentSettings, SchemaInfoResponse, SchemaVersionResponse};
 mod types;
 
 pub use pallet::*;
@@ -1325,18 +1325,29 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 		model: Vec<u8>,
 		model_type: ModelType,
 		payload_location: PayloadLocation,
-	) -> DispatchResult {
+	) -> Result<SchemaId, DispatchError> {
 		let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
 			model.try_into().unwrap();
 		Self::ensure_valid_model(&model_type, &model)?;
-		Self::add_schema(
+		let schema_id = Self::add_schema(
 			intent_id,
 			model,
 			model_type,
 			payload_location,
 			IntentSettings::default(),
 		)?;
-		Ok(())
+		Ok(schema_id)
+	}
+	
+	/// Creates an Intent
+	fn create_intent(
+		name_payload: Vec<u8>,
+		payload_location: PayloadLocation,
+		settings: Vec<IntentSetting>,
+	) -> Result<IntentId, DispatchError> {
+		let name = BoundedVec::try_from(name_payload).unwrap();
+		let (intent_id, _) = Self::create_intent_for(name, payload_location, settings.try_into().unwrap())?;
+		Ok(intent_id)
 	}
 }
 

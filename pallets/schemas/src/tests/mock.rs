@@ -191,9 +191,9 @@ pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
 }
 
 /// creates a bounded vec schema
-pub fn create_bounded_schema_vec(
+pub fn create_bounded_schema_vec<S: sp_core::Get<u32>>(
 	from_string: &str,
-) -> BoundedVec<u8, <Test as crate::Config>::SchemaModelMaxBytesBoundedVecLimit> {
+) -> BoundedVec<u8, S> {
 	let fields_vec = Vec::from(from_string.as_bytes());
 	BoundedVec::try_from(fields_vec).unwrap()
 }

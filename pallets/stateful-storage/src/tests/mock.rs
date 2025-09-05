@@ -29,6 +29,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	BuildStorage, DispatchError,
 };
+use common_primitives::schema::{IntentId, IntentResponse};
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -209,6 +210,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			constants::ITEMIZED_SCHEMA | constants::UNDELEGATED_ITEMIZED_SCHEMA =>
 				Some(SchemaResponse {
 					schema_id,
+					intent_id: schema_id,
 					model: r#"schema"#.to_string().as_bytes().to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::Itemized,
@@ -217,6 +219,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			constants::ITEMIZED_APPEND_ONLY_SCHEMA |
 			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
@@ -224,6 +227,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			}),
 			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponse {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
@@ -232,6 +236,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			constants::PAGINATED_SCHEMA | constants::UNDELEGATED_PAGINATED_SCHEMA =>
 				Some(SchemaResponse {
 					schema_id,
+					intent_id: schema_id,
 					model: r#"schema"#.to_string().as_bytes().to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::Paginated,
@@ -239,6 +244,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				}),
 			constants::PAGINATED_SIGNED_SCHEMA => Some(SchemaResponse {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
@@ -246,6 +252,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 			}),
 			constants::PAGINATED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
@@ -255,6 +262,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 
 			_ => Some(SchemaResponse {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::OnChain,
@@ -267,11 +275,16 @@ impl SchemaProvider<u16> for SchemaHandler {
 		Self::get_schema_by_id(schema_id).and_then(|schema| {
 			Some(SchemaInfoResponse {
 				schema_id: schema.schema_id,
+				intent_id: schema.schema_id,
 				settings: schema.settings,
 				model_type: schema.model_type,
 				payload_location: schema.payload_location,
 			})
 		})
+	}
+
+	fn get_intent_by_id(_intent_id: IntentId) -> Option<IntentResponse> {
+		None
 	}
 }
 

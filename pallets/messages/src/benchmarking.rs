@@ -58,12 +58,15 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	Ok(())
 }
 
-fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
-	T::SchemaBenchmarkHelper::create_schema(
+fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
+	let intent_id = T::SchemaBenchmarkHelper::create_intent(b"benchmark.intent".to_vec(), location, Vec::default())?;
+	let _ = T::SchemaBenchmarkHelper::create_schema(
+		intent_id,
 		Vec::from(r#"{"Name": "Bond", "Code": "007"}"#.as_bytes()),
 		ModelType::AvroBinary,
 		location,
-	)
+	)?;
+	Ok(())
 }
 
 #[benchmarks]
@@ -80,7 +83,7 @@ mod benchmarks {
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for _ in 0..=SCHEMA_SIZE {
-			assert_ok!(create_schema::<T>(PayloadLocation::OnChain));
+			assert_ok!(create_intent_and_schema::<T>(PayloadLocation::OnChain));
 		}
 
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
@@ -121,7 +124,7 @@ mod benchmarks {
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for _ in 0..=SCHEMA_SIZE {
-			assert_ok!(create_schema::<T>(PayloadLocation::IPFS));
+			assert_ok!(create_intent_and_schema::<T>(PayloadLocation::IPFS));
 		}
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
 		for _ in 1..MAX_MESSAGES_IN_BLOCK {

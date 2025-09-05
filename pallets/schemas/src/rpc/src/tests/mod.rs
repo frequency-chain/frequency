@@ -17,6 +17,7 @@ sp_api::mock_impl_runtime_apis! {
 			match schema_id {
 				SUCCESSFUL_SCHEMA_ID => Some(SchemaResponse {
 					schema_id,
+					intent_id: schema_id,
 					model: b"schema".to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::OnChain,

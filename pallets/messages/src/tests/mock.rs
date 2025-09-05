@@ -206,6 +206,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 		if schema_id == IPFS_SCHEMA_ID {
 			return Some(SchemaResponse {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::Parquet,
 				payload_location: PayloadLocation::IPFS,
@@ -215,6 +216,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 
 		Some(SchemaResponse {
 			schema_id,
+			intent_id: schema_id,
 			model: r#"schema"#.to_string().as_bytes().to_vec(),
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
@@ -225,10 +227,15 @@ impl SchemaProvider<u16> for SchemaHandler {
 	fn get_schema_info_by_id(schema_id: u16) -> Option<SchemaInfoResponse> {
 		Self::get_schema_by_id(schema_id).map(|schema| SchemaInfoResponse {
 			schema_id: schema.schema_id,
+			intent_id: schema_id,
 			settings: schema.settings,
 			model_type: schema.model_type,
 			payload_location: schema.payload_location,
 		})
+	}
+
+	fn get_intent_by_id(_intent_id: IntentId) -> Option<IntentResponse> {
+		None
 	}
 }
 

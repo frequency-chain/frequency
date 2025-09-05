@@ -1,3 +1,4 @@
+use super::mock::*;
 use crate::{
 	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
 	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
@@ -24,8 +25,6 @@ use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 use serial_test::serial;
 use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
-
-use super::mock::*;
 
 #[test]
 fn set_max_schema_size_works_if_root() {
@@ -506,9 +505,10 @@ fn schema_version_id_add_with_max_len_should_fail() {
 }
 
 #[test]
-fn create_schema_v3_requires_valid_schema_size() {
+fn create_schema_v4_requires_valid_schema_size() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
+		let (intent_id, _) = SchemasPallet::create_intent_for(create_bounded_schema_vec(r#"test.intent"#), PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
 		let test_cases: [TestCase<(Error<Test>, u8)>; 2] = [
 			TestCase {
 				input: r#"{"a":1}"#,
@@ -521,68 +521,52 @@ fn create_schema_v3_requires_valid_schema_size() {
 		];
 		for tc in test_cases {
 			assert_noop!(
-				SchemasPallet::create_schema_v3(RuntimeOrigin::signed(test_public(1)), create_bounded_schema_vec(tc.input), ModelType::AvroBinary, PayloadLocation::OnChain, BoundedVec::default(), None),
+				SchemasPallet::create_schema_v4(RuntimeOrigin::signed(test_public(1)), intent_id, create_bounded_schema_vec(tc.input), ModelType::AvroBinary),
 				tc.expected.0);
 		}
 	})
 }
 
 #[test]
-fn create_schema_v3_happy_path() {
+fn create_schema_v4_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		sudo_set_max_schema_size();
 		let sender: AccountId = test_public(1);
 		let name = "namespace.descriptor";
-		let schema_name: SchemaNamePayload =
+		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
 
 		// act
-		assert_ok!(SchemasPallet::create_schema_v3(
+		assert_ok!(SchemasPallet::create_schema_v4(
 			RuntimeOrigin::signed(sender.clone()),
+			intent_id,
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain,
-			BoundedVec::default(),
-			Some(schema_name.clone()),
 		));
 		let res = SchemasPallet::get_schema_by_id(1);
-		let versions = SchemasPallet::get_schema_versions(schema_name.clone().into_inner());
 
 		// assert
-		System::assert_has_event(
+		System::assert_last_event(
 			AnnouncementEvent::SchemaCreated { key: sender, schema_id: 1 }.into(),
 		);
-		System::assert_last_event(
-			AnnouncementEvent::SchemaNameCreated {
-				schema_id: 1,
-				name: name.to_string().into_bytes(),
-			}
-			.into(),
-		);
 		assert!(res.as_ref().is_some());
-		assert_eq!(
-			versions,
-			Some(vec![SchemaVersionResponse {
-				schema_id: 1,
-				schema_name: schema_name.into_inner(),
-				schema_version: 1
-			}])
-		);
 	})
 }
 
 #[test]
 #[serial]
-fn create_schema_v3_increments_schema_id_and_version_for_same_name() {
+fn create_schema_v4_increments_schema_id() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		sudo_set_max_schema_size();
 		let sender: AccountId = test_public(1);
 		let name = "namespace.descriptor";
-		let schema_name: SchemaNamePayload =
+		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
 		let mut last_schema_id: SchemaId = 0;
+		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
 
 		// act and assert
 		for fields in [
@@ -591,104 +575,68 @@ fn create_schema_v3_increments_schema_id_and_version_for_same_name() {
 			r#"{"latitude": 48.858093,"longitude": 2.294694}"#,
 		] {
 			let expected_schema_id = last_schema_id + 1;
-			assert_ok!(SchemasPallet::create_schema_v3(
+			assert_ok!(SchemasPallet::create_schema_v4(
 				RuntimeOrigin::signed(sender.clone()),
+				intent_id,
 				create_bounded_schema_vec(fields),
 				ModelType::AvroBinary,
-				PayloadLocation::OnChain,
-				BoundedVec::default(),
-				Some(schema_name.clone()),
 			));
-			System::assert_has_event(
+			System::assert_last_event(
 				AnnouncementEvent::SchemaCreated {
 					key: sender.clone(),
 					schema_id: expected_schema_id,
 				}
 				.into(),
 			);
-			System::assert_last_event(
-				AnnouncementEvent::SchemaNameCreated {
-					schema_id: expected_schema_id,
-					name: name.to_string().into_bytes(),
-				}
-				.into(),
-			);
 			last_schema_id = expected_schema_id;
 		}
-		let versions = SchemasPallet::get_schema_versions(schema_name.clone().into_inner());
-		assert_eq!(
-			versions,
-			Some(vec![
-				SchemaVersionResponse {
-					schema_id: 1,
-					schema_name: schema_name.clone().into_inner(),
-					schema_version: 1
-				},
-				SchemaVersionResponse {
-					schema_id: 2,
-					schema_name: schema_name.clone().into_inner(),
-					schema_version: 2
-				},
-				SchemaVersionResponse {
-					schema_id: 3,
-					schema_name: schema_name.into_inner(),
-					schema_version: 3
-				}
-			])
-		);
 	})
 }
 
 #[test]
-fn get_schema_versions_for_namespace_should_return_all_descriptors() {
+fn get_entities_for_protocol_should_return_all_descriptors() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		sudo_set_max_schema_size();
 		let sender: AccountId = test_public(1);
 		let namespace = "namespace";
 		let name_1 = format!("{}.alice", namespace);
-		let schema_name_1: SchemaNamePayload =
+		let intent_name_1: SchemaNamePayload =
 			BoundedVec::try_from(name_1.to_string().into_bytes()).expect("should convert");
 		let name_2 = format!("{}.bob", namespace);
-		let schema_name_2: SchemaNamePayload =
+		let intent_name_2: SchemaNamePayload =
 			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
-		assert_ok!(SchemasPallet::create_schema_v3(
+		assert_ok!(SchemasPallet::create_intent(
 			RuntimeOrigin::signed(sender.clone()),
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
-			ModelType::AvroBinary,
+			intent_name_1.clone(),
 			PayloadLocation::OnChain,
 			BoundedVec::default(),
-			Some(schema_name_1.clone()),
 		));
-		assert_ok!(SchemasPallet::create_schema_v3(
+		assert_ok!(SchemasPallet::create_intent(
 			RuntimeOrigin::signed(sender.clone()),
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
-			ModelType::AvroBinary,
+			intent_name_2.clone(),
 			PayloadLocation::OnChain,
 			BoundedVec::default(),
-			Some(schema_name_2.clone()),
 		));
 
 		// act
-		let versions = SchemasPallet::get_schema_versions(String::from(namespace).into_bytes());
+		let response = SchemasPallet::get_intent_or_group_ids_by_name(String::from(namespace).into_bytes());
 
 		// assert
-		assert!(versions.is_some());
+		assert!(response.is_some());
 
-		let mut inner = versions.clone().unwrap();
-		inner.sort_by(|a, b| a.schema_name.cmp(&b.schema_name));
+		let mut inner = response.clone().unwrap();
+		inner.sort_by(|a, b| a.name.cmp(&b.name));
 		assert_eq!(
-			versions,
+			response,
 			Some(vec![
-				SchemaVersionResponse {
-					schema_id: 1,
-					schema_name: schema_name_1.into_inner(),
-					schema_version: 1
+				NameLookupResponse {
+					entity_id: MappedEntityIdentifier::Intent(1),
+					name: intent_name_1.into_inner(),
 				},
-				SchemaVersionResponse {
-					schema_id: 2,
-					schema_name: schema_name_2.into_inner(),
-					schema_version: 1
+				NameLookupResponse {
+					entity_id: MappedEntityIdentifier::Intent(2),
+					name: intent_name_2.into_inner(),
 				},
 			])
 		);
@@ -794,139 +742,51 @@ fn get_intent_or_group_ids_for_fully_qualified_name_should_return_single_descrip
 }
 
 #[test]
-fn create_schema_via_governance_v2_happy_path() {
+fn create_schema_via_governance_v3_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		sudo_set_max_schema_size();
 		let settings = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = test_public(5);
 		let name = "namespace.descriptor";
-		let schema_name: SchemaNamePayload =
+		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
 
 		// act
-		assert_ok!(SchemasPallet::create_schema_via_governance_v2(
+		assert_ok!(SchemasPallet::create_schema_via_governance_v3(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
 			sender,
+			intent_id,
 			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
 			ModelType::AvroBinary,
-			PayloadLocation::Itemized,
-			BoundedVec::try_from(settings.clone()).unwrap(),
-			Some(schema_name.clone()),
 		));
 
 		// assert
 		let res = SchemasPallet::get_schema_by_id(1);
-		let versions = SchemasPallet::get_schema_versions(schema_name.clone().into_inner());
 
 		assert_eq!(res.unwrap().settings, settings);
-		assert_eq!(
-			versions,
-			Some(vec![SchemaVersionResponse {
-				schema_id: 1,
-				schema_name: schema_name.into_inner(),
-				schema_version: 1
-			}])
-		);
 	})
 }
 
-#[test]
-fn create_schema_via_governance_v2_with_append_only_setting_and_non_itemized_should_fail() {
-	new_test_ext().execute_with(|| {
-		sudo_set_max_schema_size();
-
-		// arrange
-		let settings = vec![SchemaSetting::AppendOnly];
-		let sender: AccountId = test_public(1);
-		// act and assert
-		assert_noop!(
-			SchemasPallet::create_schema_via_governance_v2(
-				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-				sender.clone(),
-				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
-				ModelType::AvroBinary,
-				PayloadLocation::Paginated,
-				BoundedVec::try_from(settings.clone()).unwrap(),
-				None,
-			),
-			Error::<Test>::InvalidSetting
-		);
-
-		// act and assert
-		assert_noop!(
-			SchemasPallet::create_schema_via_governance_v2(
-				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-				sender.clone(),
-				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
-				ModelType::AvroBinary,
-				PayloadLocation::OnChain,
-				BoundedVec::try_from(settings.clone()).unwrap(),
-				None,
-			),
-			Error::<Test>::InvalidSetting
-		);
-
-		assert_noop!(
-			SchemasPallet::create_schema_via_governance_v2(
-				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-				sender,
-				create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
-				ModelType::AvroBinary,
-				PayloadLocation::IPFS,
-				BoundedVec::try_from(settings.clone()).unwrap(),
-				None,
-			),
-			Error::<Test>::InvalidSetting
-		);
-	})
-}
-#[test]
-fn create_schema_via_governance_v2_with_signature_required_setting_and_wrong_location_should_fail()
-{
-	new_test_ext().execute_with(|| {
-		sudo_set_max_schema_size();
-
-		// arrange
-		let settings = vec![SchemaSetting::SignatureRequired];
-		let sender: AccountId = test_public(1);
-
-		for location in [PayloadLocation::OnChain, PayloadLocation::IPFS] {
-			// act and assert
-			assert_noop!(
-				SchemasPallet::create_schema_via_governance_v2(
-					RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
-					sender.clone(),
-					create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
-					ModelType::AvroBinary,
-					location,
-					BoundedVec::try_from(settings.clone()).unwrap(),
-					None,
-				),
-				Error::<Test>::InvalidSetting
-			);
-		}
-	})
-}
 /// Test that a request to be a provider, makes the MSA a provider after the council approves it.
 #[test]
-fn propose_to_create_schema_v2_happy_path() {
+fn propose_to_create_schema_v3_happy_path() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
 
 		let test_model = r#"{"foo": "bar", "bar": "buzz"}"#;
 		let serialized_fields = Vec::from(test_model.as_bytes());
-		let schema_name =
+		let intent_name =
 			SchemaNamePayload::try_from("namespace.descriptor".to_string().into_bytes())
 				.expect("should work");
+		let (intent_id, _) = SchemasPallet::create_intent_for(intent_name, PayloadLocation::OnChain, BoundedVec::default()).expect("should have created an intent");
 		// Propose a new schema
-		_ = SchemasPallet::propose_to_create_schema_v2(
+		_ = SchemasPallet::propose_to_create_schema_v3(
 			test_origin_signed(5),
+			intent_id,
 			create_bounded_schema_vec(test_model),
 			ModelType::AvroBinary,
-			PayloadLocation::OnChain,
-			BoundedVec::default(),
-			Some(schema_name.clone()),
 		);
 
 		// Find the Proposed event and get its hash and index so it can be voted on
@@ -1051,156 +911,6 @@ fn propose_to_create_schema_v2_happy_path() {
 		let created_schema = SchemasPallet::get_schema_by_id(last_schema_id);
 		assert!(created_schema.as_ref().is_some());
 		assert_eq!(created_schema.as_ref().unwrap().clone().model, serialized_fields);
-	})
-}
-
-#[test]
-fn propose_to_create_schema_name_happy_path() {
-	new_test_ext().execute_with(|| {
-		sudo_set_max_schema_size();
-		let schema_name =
-			SchemaNamePayload::try_from("namespace.descriptor".to_string().into_bytes())
-				.expect("should work");
-		let sender: AccountId = test_public(1);
-
-		assert_ok!(SchemasPallet::create_schema_v3(
-			RuntimeOrigin::signed(sender.clone()),
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
-			ModelType::AvroBinary,
-			PayloadLocation::OnChain,
-			BoundedVec::default(),
-			None,
-		));
-		// Propose a new schema
-		_ = SchemasPallet::propose_to_create_schema_name(
-			test_origin_signed(5),
-			1,
-			schema_name.clone(),
-		);
-
-		// Find the Proposed event and get its hash and index so it can be voted on
-		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
-			.iter()
-			.filter_map(|event| match event.event {
-				RuntimeEvent::Council(pallet_collective::Event::Proposed {
-					account: _,
-					proposal_index,
-					proposal_hash,
-					threshold: _,
-				}) => Some((proposal_index, proposal_hash)),
-				_ => None,
-			})
-			.collect();
-
-		assert_eq!(proposed_events.len(), 1);
-
-		let proposal_index = proposed_events[0].0;
-		let proposal_hash = proposed_events[0].1;
-		let proposal = ProposalOf::<Test, CouncilCollective>::get(proposal_hash).unwrap();
-		let proposal_len: u32 = proposal.encoded_size() as u32;
-
-		// Set up the council members
-		let council_member_1 = test_public(1); // Use ALICE as a council member
-		let council_member_2 = test_public(2); // Use BOB as a council member
-		let council_member_3 = test_public(3); // Use CHARLIE as a council member
-
-		let incoming = vec![];
-		let outgoing = vec![];
-		Council::change_members(
-			&incoming,
-			&outgoing,
-			vec![council_member_1.clone(), council_member_2.clone(), council_member_3.clone()],
-		);
-
-		// Council member #1 votes AYE on the proposal
-		assert_ok!(Council::vote(
-			RuntimeOrigin::signed(council_member_1.clone()),
-			proposal_hash,
-			proposal_index,
-			true
-		));
-		// Council member #2 votes AYE on the proposal
-		assert_ok!(Council::vote(
-			RuntimeOrigin::signed(council_member_2.clone()),
-			proposal_hash,
-			proposal_index,
-			true
-		));
-		// Council member #3 votes NAY on the proposal
-		assert_ok!(Council::vote(
-			RuntimeOrigin::signed(council_member_3.clone()),
-			proposal_hash,
-			proposal_index,
-			false
-		));
-
-		// Find the Voted event and check if it passed
-		let voted_events: Vec<(bool, u32, u32)> = System::events()
-			.iter()
-			.filter_map(|event| match event.event {
-				RuntimeEvent::Council(pallet_collective::Event::Voted {
-					account: _,
-					proposal_hash: _,
-					voted,
-					yes,
-					no,
-				}) => Some((voted, yes, no)),
-				_ => None,
-			})
-			.collect();
-
-		assert_eq!(voted_events.len(), 3);
-		assert_eq!(voted_events[1].1, 2); // There should be two AYE (out of three) votes to pass
-
-		// Close the voting
-		assert_ok!(Council::close(
-			RuntimeOrigin::signed(test_public(5)),
-			proposal_hash,
-			proposal_index,
-			Weight::MAX,
-			proposal_len
-		));
-
-		// Find the Closed event and check if it passed
-		let closed_events: Vec<(u32, u32)> = System::events()
-			.iter()
-			.filter_map(|event| match event.event {
-				RuntimeEvent::Council(pallet_collective::Event::Closed {
-					proposal_hash: _,
-					yes,
-					no,
-				}) => Some((yes, no)),
-				_ => None,
-			})
-			.collect();
-
-		assert_eq!(closed_events.len(), 1);
-		assert_eq!(closed_events[0].0, 2); // There should be two YES votes to pass
-
-		// Find the SchemaCreated event and check if it passed
-		let schema_events: Vec<SchemaId> = System::events()
-			.iter()
-			.filter_map(|event| match event.event {
-				RuntimeEvent::SchemasPallet(AnnouncementEvent::SchemaNameCreated {
-					name: _,
-					schema_id,
-				}) => Some(schema_id),
-				_ => None,
-			})
-			.collect();
-
-		// Confirm that the schema was created
-		assert_eq!(schema_events.len(), 1);
-
-		let versions = SchemasPallet::get_schema_versions(schema_name.clone().into_inner());
-		assert_eq!(
-			versions,
-			Some(vec![SchemaVersionResponse {
-				schema_id: 1,
-				schema_name: schema_name.into_inner(),
-				schema_version: 1
-			}])
-		);
 	})
 }
 
