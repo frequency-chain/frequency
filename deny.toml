@@ -76,7 +76,7 @@ ignore = [
   { id = "RUSTSEC-2023-0091", reason = "'Users prior to 10.0.0 are unaffected', according to the advisory; we are on 8.0.1"},
   { id = "RUSTSEC-2024-0438", reason = "Windows only"},
   { id = "RUSTSEC-2024-0442", reason = "Substrate dependency"},
-  { id = "RUSTSEC-2025-0057", reason = "Substrate dependency, ignoring unmaintained warning, as no known vulnerabilities exist."}
+  { id = "RUSTSEC-2025-0057", reason = "Remove when https://github.com/paritytech/polkadot-sdk/pull/8714 is merged into a stable release."}
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
