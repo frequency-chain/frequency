@@ -8,13 +8,15 @@ use alloc::vec::Vec;
 use common_primitives::schema::{IntentId, MappedEntityIdentifier, SchemaId};
 use core::marker::PhantomData;
 use frame_support::{
-	ensure,
 	pallet_prelude::{Get, GetStorageVersion, Weight},
-	traits::{OnRuntimeUpgrade, StorageVersion},
-	BoundedVec, LOG_TARGET,
+	traits::{OnRuntimeUpgrade},
+	LOG_TARGET,
 };
 use numtoa::NumToA;
+#[cfg(feature = "try-runtime")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "try-runtime")]
+use frame_support::{ensure};
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
 
@@ -27,7 +29,7 @@ fn convert_from_old(id: SchemaId, old_info: &v5::SchemaInfo) -> crate::SchemaInf
 	}
 }
 
-fn convert_to_intent(id: SchemaId, old_info: &v5::SchemaInfo) -> IntentInfo {
+fn convert_to_intent(old_info: &v5::SchemaInfo) -> IntentInfo {
 	IntentInfo { payload_location: old_info.payload_location, settings: old_info.settings }
 }
 
@@ -58,7 +60,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateV5ToV6<T> {
 				writes += 2;
 				IntentInfos::<T>::insert(
 					schema_id as IntentId,
-					convert_to_intent(schema_id, &old_schema_info),
+					convert_to_intent(&old_schema_info),
 				);
 				intents_created += 1;
 				schemas_migrated += 1;
@@ -69,7 +71,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateV5ToV6<T> {
 			v5::SchemaNameToIds::<T>::translate(
 				|schema_id, old_schema_name, version_id: SchemaVersionId| {
 					reads += 1;
-					let mut new_descriptor = BoundedVec::default(); // = old_schema_name.clone();
+					let mut new_descriptor = old_schema_name.clone();
 					match new_descriptor.try_push('-' as u8) {
 						Ok(_) => (),
 						Err(_) => return None,

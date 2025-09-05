@@ -15,7 +15,7 @@ use common_primitives::{
 	},
 	schema::{
 		MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId,
-		SchemaResponse, SchemaSetting, SchemaVersion, SchemaVersionResponse,
+		SchemaResponse, SchemaVersion, SchemaVersionResponse,
 	},
 };
 use frame_support::{

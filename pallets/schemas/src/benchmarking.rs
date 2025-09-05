@@ -150,19 +150,14 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_create_schema_v3(
-		m: Linear<
-			{ T::MinSchemaModelSizeBytes::get() + 8 },
-			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
-		>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_create_schema_v3() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::AvroBinary;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
 			RawOrigin::Root.into(),
 			T::SchemaModelMaxBytesBoundedVecLimit::get()
 		));
-		let schema_input = generate_schema::<T>(m as usize);
+		let schema_input = generate_schema::<T>(T::SchemaModelMaxBytesBoundedVecLimit::get() as usize);
 		let intent_id = 1u16;
 
 		#[extrinsic_call]
@@ -269,17 +264,23 @@ mod benchmarks {
 			.chain(vec![b'.'].into_iter())
 			.chain(descriptor.into_iter())
 			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let bounded_name = BoundedVec::try_from(name.clone()).expect("should resolve");
 		let intent_ids = generate_intents::<T>(m.try_into().expect("should convert"));
+		let intent_group_id: IntentGroupId = CurrentIntentGroupIdentifierMaximum::<T>::get().saturating_add(1);
 
 		#[extrinsic_call]
-		create_intent_group(RawOrigin::Signed(sender), bounded_name, intent_ids);
+		create_intent_group(RawOrigin::Signed(sender.clone()), bounded_name, intent_ids);
 
+		assert_last_event::<T>(Event::<T>::IntentGroupCreated {
+			key: sender,
+			intent_group_id,
+			intent_group_name: name,
+		}.into());
 		ensure!(
 			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
 			"Created intent group count should be > 0"
 		);
-		ensure!(IntentGroups::<T>::get(1).is_some(), "Created intent group should exist");
+		ensure!(IntentGroups::<T>::get(intent_group_id).is_some(), "Created intent group should exist");
 		Ok(())
 	}
 
@@ -295,8 +296,9 @@ mod benchmarks {
 			.chain(vec![b'.'].into_iter())
 			.chain(descriptor.into_iter())
 			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let bounded_name = BoundedVec::try_from(name.clone()).expect("should resolve");
 		let intent_ids = generate_intents::<T>(m.try_into().expect("should convert"));
+		let intent_group_id: IntentGroupId = CurrentIntentGroupIdentifierMaximum::<T>::get().saturating_add(1);
 
 		#[extrinsic_call]
 		create_intent_group_via_governance(
@@ -306,11 +308,16 @@ mod benchmarks {
 			intent_ids,
 		);
 
+		assert_last_event::<T>(Event::<T>::IntentGroupCreated {
+			key: sender,
+			intent_group_id,
+			intent_group_name: name,
+		}.into());
 		ensure!(
 			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
 			"Created intent group count should be > 0"
 		);
-		ensure!(IntentGroups::<T>::get(1).is_some(), "Created intent group should exist");
+		ensure!(IntentGroups::<T>::get(intent_group_id).is_some(), "Created intent group should exist");
 		Ok(())
 	}
 

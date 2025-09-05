@@ -34,8 +34,6 @@ use core::marker::PhantomData;
 /// Weight functions needed for `pallet_schemas`.
 pub trait WeightInfo {
 	fn set_max_schema_model_bytes() -> Weight;
-	fn propose_to_create_schema_name() -> Weight;
-	fn create_schema_name_via_governance() -> Weight;
 	fn create_intent(m: u32) -> Weight;
 	fn create_intent_via_governance(m: u32) -> Weight;
 	fn propose_to_create_intent() -> Weight;
@@ -63,40 +61,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(5_410_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
-	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
-	/// Storage: `Council::Members` (r:1 w:0)
-	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::ProposalOf` (r:1 w:1)
-	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::Proposals` (r:1 w:1)
-	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::ProposalCount` (r:1 w:1)
-	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::Voting` (r:0 w:1)
-	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	fn propose_to_create_schema_name() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `680`
-		//  Estimated: `4640`
-		// Minimum execution time: 32_777_000 picoseconds.
-		Weight::from_parts(34_413_000, 4640)
-			.saturating_add(T::DbWeight::get().reads(5_u64))
-			.saturating_add(T::DbWeight::get().writes(4_u64))
-	}
-	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
-	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::SchemaNameToIds` (r:1 w:1)
-	/// Proof: `Schemas::SchemaNameToIds` (`max_values`: None, `max_size`: Some(602), added: 3077, mode: `MaxEncodedLen`)
-	fn create_schema_name_via_governance() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `569`
-		//  Estimated: `4562`
-		// Minimum execution time: 21_819_000 picoseconds.
-		Weight::from_parts(22_217_000, 4562)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
 	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
 	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
 	/// Storage: `Schemas::CurrentIntentIdentifierMaximum` (r:1 w:1)
@@ -268,17 +232,68 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
-
-	fn create_schema_v4(m: u32) -> Weight {
-		Weight::zero()
+	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
+	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:1 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentSchemaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:0 w:1)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
+	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[16, 65499]`.
+	fn create_schema_v4(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `480`
+		//  Estimated: `3973`
+		// Minimum execution time: 22_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 3973)
+			// Standard Error: 1_174
+			.saturating_add(Weight::from_parts(34_533, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
-
-	fn create_schema_via_governance_v3(m: u32) -> Weight {
-		Weight::zero()
+	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
+	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:1 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentSchemaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:0 w:1)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
+	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[16, 65499]`.
+	fn create_schema_via_governance_v3(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `480`
+		//  Estimated: `3973`
+		// Minimum execution time: 22_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 3973)
+			// Standard Error: 1_038
+			.saturating_add(Weight::from_parts(34_112, 0).saturating_mul(m.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
-
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn propose_to_create_schema_v3() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 142_000_000 picoseconds.
+		Weight::from_parts(326_000_000, 4126)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }
 
@@ -294,41 +309,6 @@ impl WeightInfo for () {
 		Weight::from_parts(5_410_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
-	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
-	/// Storage: `Council::Members` (r:1 w:0)
-	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::ProposalOf` (r:1 w:1)
-	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::Proposals` (r:1 w:1)
-	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::ProposalCount` (r:1 w:1)
-	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Council::Voting` (r:0 w:1)
-	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	fn propose_to_create_schema_name() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `680`
-		//  Estimated: `4640`
-		// Minimum execution time: 32_777_000 picoseconds.
-		Weight::from_parts(34_413_000, 4640)
-			.saturating_add(RocksDbWeight::get().reads(5_u64))
-			.saturating_add(RocksDbWeight::get().writes(4_u64))
-	}
-	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
-	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::SchemaNameToIds` (r:1 w:1)
-	/// Proof: `Schemas::SchemaNameToIds` (`max_values`: None, `max_size`: Some(602), added: 3077, mode: `MaxEncodedLen`)
-	fn create_schema_name_via_governance() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `569`
-		//  Estimated: `4562`
-		// Minimum execution time: 21_819_000 picoseconds.
-		Weight::from_parts(22_217_000, 4562)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-
 	/// Storage: `Schemas::NameToMappedEntityIds` (r:1 w:1)
 	/// Proof: `Schemas::NameToMappedEntityIds` (`max_values`: None, `max_size`: Some(95), added: 2570, mode: `MaxEncodedLen`)
 	/// Storage: `Schemas::CurrentIntentIdentifierMaximum` (r:1 w:1)
@@ -500,17 +480,68 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
-
-	fn create_schema_v4(m: u32) -> Weight {
-		Weight::zero()
+	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
+	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:1 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentSchemaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:0 w:1)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
+	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[16, 65499]`.
+	fn create_schema_v4(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `480`
+		//  Estimated: `3973`
+		// Minimum execution time: 22_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 3973)
+			// Standard Error: 1_174
+			.saturating_add(Weight::from_parts(34_533, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(3_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
-
-	fn create_schema_via_governance_v3(m: u32) -> Weight {
-		Weight::zero()
+	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
+	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::IntentInfos` (r:1 w:0)
+	/// Proof: `Schemas::IntentInfos` (`max_values`: None, `max_size`: Some(13), added: 2488, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
+	/// Proof: `Schemas::CurrentSchemaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:0 w:1)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
+	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
+	/// The range of component `m` is `[16, 65499]`.
+	fn create_schema_via_governance_v3(m: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `480`
+		//  Estimated: `3973`
+		// Minimum execution time: 22_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 3973)
+			// Standard Error: 1_038
+			.saturating_add(Weight::from_parts(34_112, 0).saturating_mul(m.into()))
+			.saturating_add(RocksDbWeight::get().reads(3_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
-
+	/// Storage: `Council::Members` (r:1 w:0)
+	/// Proof: `Council::Members` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalOf` (r:1 w:1)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Proposals` (r:1 w:1)
+	/// Proof: `Council::Proposals` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::ProposalCount` (r:1 w:1)
+	/// Proof: `Council::ProposalCount` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::Voting` (r:0 w:1)
+	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn propose_to_create_schema_v3() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `166`
+		//  Estimated: `4126`
+		// Minimum execution time: 142_000_000 picoseconds.
+		Weight::from_parts(326_000_000, 4126)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 }
 
