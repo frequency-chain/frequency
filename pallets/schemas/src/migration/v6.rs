@@ -7,16 +7,16 @@ use crate::{
 use alloc::vec::Vec;
 use common_primitives::schema::{IntentId, MappedEntityIdentifier, SchemaId};
 use core::marker::PhantomData;
+#[cfg(feature = "try-runtime")]
+use frame_support::ensure;
 use frame_support::{
 	pallet_prelude::{Get, GetStorageVersion, Weight},
-	traits::{OnRuntimeUpgrade},
+	traits::OnRuntimeUpgrade,
 	LOG_TARGET,
 };
 use numtoa::NumToA;
 #[cfg(feature = "try-runtime")]
 use parity_scale_codec::{Decode, Encode};
-#[cfg(feature = "try-runtime")]
-use frame_support::{ensure};
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
 
