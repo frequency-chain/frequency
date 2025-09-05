@@ -15,7 +15,7 @@ use common_primitives::{
 	},
 	schema::{
 		MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId,
-		SchemaSetting, SchemaVersion, SchemaVersionResponse,
+		SchemaResponse, SchemaSetting, SchemaVersion, SchemaVersionResponse,
 	},
 };
 use frame_support::{
@@ -248,15 +248,9 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 				input: r#"¥¤¤.©©©"#, expected: Error::<Test>::InvalidSchemaNameEncoding
 			},
 			// protocol starts with a decimal digit
-			TestCase {
-				input: r#"1asbd.hgd"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
+			TestCase { input: r#"1asbd.hgd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
 			// descriptor starts with a decimal digit
-			TestCase {
-				input: r#"asbd.1hgd"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
+			TestCase { input: r#"asbd.1hgd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
 			// protocol contains a non-alphanumeric character
 			TestCase {
 				input: r#"asb@d.hgd"#,
@@ -285,10 +279,7 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
 			// protocol starts with a decimal digit
-			TestCase {
-				input: r#"1asbd.hgd"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
+			TestCase { input: r#"1asbd.hgd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
 			// descriptor starts with a "-"
 			TestCase {
 				input: r#"asbdsdhks.-shd"#,
@@ -300,10 +291,7 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
 			// descriptor starts with a decimal digit
-			TestCase {
-				input: r#"asbd.1hgd"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
+			TestCase { input: r#"asbd.1hgd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
 			// protocol too long
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa."#,
@@ -335,7 +323,7 @@ fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 			// non-ASCII characters
 			TestCase { input: r#"¥¤¤"#, expected: Error::<Test>::InvalidSchemaNameEncoding },
 			// protocol starts with a decimal digit
-			TestCase { input: r#"1asbd"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
+			TestCase { input: r#"1asbd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
 			// protocol contains a non-alphanumeric character
 			TestCase { input: r#"asb@d"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
 			// protocol starts with a "-"
@@ -349,10 +337,7 @@ fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
 			// protocol starts with a decimal digit
-			TestCase {
-				input: r#"1asbd.hgd"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
+			TestCase { input: r#"1asbd.hgd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
 			// protocol too long (by 1)
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa"#,
@@ -757,7 +742,6 @@ fn create_schema_via_governance_v3_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		sudo_set_max_schema_size();
-		let settings = vec![SchemaSetting::AppendOnly];
 		let sender: AccountId = test_public(5);
 		let name = "namespace.descriptor";
 		let intent_name: SchemaNamePayload =
@@ -768,20 +752,30 @@ fn create_schema_via_governance_v3_happy_path() {
 			BoundedVec::default(),
 		)
 		.expect("should have created an intent");
+		let model = create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#);
 
 		// act
 		assert_ok!(SchemasPallet::create_schema_via_governance_v3(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
 			sender,
 			intent_id,
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
+			model.clone(),
 			ModelType::AvroBinary,
 		));
 
 		// assert
+		let expected_schema_response = SchemaResponse {
+			schema_id: 1,
+			intent_id,
+			model_type: ModelType::AvroBinary,
+			model: model.into_inner(),
+			payload_location: PayloadLocation::OnChain,
+			settings: Vec::default(),
+		};
 		let res = SchemasPallet::get_schema_by_id(1);
 
-		assert_eq!(res.unwrap().settings, settings);
+		assert!(res.is_some());
+		assert_eq!(res.unwrap(), expected_schema_response);
 	})
 }
 
@@ -916,17 +910,13 @@ fn propose_to_create_schema_v3_happy_path() {
 				RuntimeEvent::SchemasPallet(AnnouncementEvent::SchemaCreated {
 					key: _,
 					schema_id,
-				}) |
-				RuntimeEvent::SchemasPallet(AnnouncementEvent::SchemaNameCreated {
-					name: _,
-					schema_id,
 				}) => Some(schema_id),
 				_ => None,
 			})
 			.collect();
 
 		// Confirm that the schema was created
-		assert_eq!(schema_events.len(), 2);
+		assert_eq!(schema_events.len(), 1);
 
 		let last_schema_id = schema_events[0];
 		let created_schema = SchemasPallet::get_schema_by_id(last_schema_id);
@@ -938,11 +928,13 @@ fn propose_to_create_schema_v3_happy_path() {
 #[test]
 fn genesis_config_build_genesis_schemas() {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	let schemas_config: crate::GenesisSchemasPalletConfig =
+		serde_json::from_slice(include_bytes!("../../../../resources/genesis-schemas.json"))
+			.unwrap();
 	crate::GenesisConfig::<Test> {
-		initial_schemas: serde_json::from_slice(include_bytes!(
-			"../../../../resources/genesis-schemas.json"
-		))
-		.unwrap(),
+		initial_schemas: schemas_config.schemas,
+		initial_intents: schemas_config.intents,
+		initial_intent_groups: schemas_config.intent_groups,
 		..Default::default()
 	}
 	.assimilate_storage(&mut t)

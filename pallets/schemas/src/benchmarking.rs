@@ -87,7 +87,7 @@ mod benchmarks {
 			T::SchemaModelMaxBytesBoundedVecLimit::get()
 		));
 		let schema_input = generate_schema::<T>(m as usize);
-		let intent_id = 1u16;
+		let intent_id = generate_intents::<T>(1)[0];
 
 		#[extrinsic_call]
 		create_schema_v4(RawOrigin::Signed(sender), intent_id, schema_input, model_type);
@@ -130,7 +130,7 @@ mod benchmarks {
 			T::SchemaModelMaxBytesBoundedVecLimit::get()
 		));
 		let schema_input = generate_schema::<T>(m as usize);
-		let intent_id = 1u16;
+		let intent_id = generate_intents::<T>(1)[0];
 
 		#[extrinsic_call]
 		create_schema_via_governance_v3(

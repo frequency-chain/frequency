@@ -201,7 +201,7 @@ impl SchemaName {
 		// - does not start with a SEPARATOR_CHAR
 		// (This also handles the case where the value is all numeric, because it would also
 		// start with a decimal digit.)
-		ensure!(namespace[0].is_ascii_alphabetic(), Error::<T>::InvalidSchemaNameCharacters);
+		ensure!(namespace[0].is_ascii_alphabetic(), Error::<T>::InvalidSchemaNameStructure);
 		// should not end with -
 		ensure!(!namespace.ends_with(b"-"), Error::<T>::InvalidSchemaNameStructure);
 
@@ -223,7 +223,7 @@ impl SchemaName {
 				// start with a decimal digit.)
 				ensure!(
 					descriptor[0].is_ascii_alphabetic(),
-					Error::<T>::InvalidSchemaNameCharacters
+					Error::<T>::InvalidSchemaNameStructure
 				);
 				// should end with -
 				ensure!(!descriptor.ends_with(b"-"), Error::<T>::InvalidSchemaNameStructure);
