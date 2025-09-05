@@ -2155,6 +2155,8 @@ impl<T: Config> Pallet<T> {
 						maybe_metadata.take().is_none(),
 						Error::<T>::DuplicateProviderRegistryEntry
 					);
+				} else {
+					Self::remove_logo_storage(maybe_metadata.as_ref())?;
 				}
 				*maybe_metadata = Some(payload);
 				Ok(())
@@ -2213,7 +2215,15 @@ impl<T: Config> Pallet<T> {
 			ProviderToApplicationRegistry::<T>::contains_key(provider_msa_id, application_index),
 			Error::<T>::ApplicationNotFound
 		);
-		ProviderToApplicationRegistry::<T>::insert(provider_msa_id, application_index, payload);
+		ProviderToApplicationRegistry::<T>::try_mutate(
+			provider_msa_id,
+			application_index,
+			|maybe_metadata| -> DispatchResult {
+				Self::remove_logo_storage(maybe_metadata.as_ref())?;
+				*maybe_metadata = Some(payload);
+				Ok(())
+			},
+		)?;
 		Ok(())
 	}
 
@@ -2602,6 +2612,32 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
+		Ok(())
+	}
+
+	/// Remove default logo and localized logos from storage `ApprovedLogos`
+	fn remove_logo_storage(
+		existing_payload: Option<
+			&ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		>,
+	) -> DispatchResult {
+		if let Some(payload) = existing_payload {
+			// remove default logo CID if any
+			if !payload.default_logo_250_100_png_cid.is_empty() {
+				ApprovedLogos::<T>::remove(&payload.default_logo_250_100_png_cid);
+			}
+			// remove localized logos CIDs if any
+			for (_, localized_cid) in &payload.localized_logo_250_100_png_cids {
+				if !localized_cid.is_empty() {
+					ApprovedLogos::<T>::remove(localized_cid);
+				}
+			}
+		}
 		Ok(())
 	}
 
