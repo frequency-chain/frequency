@@ -83,7 +83,7 @@ type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, P
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-#[allow(deprecated)]
+#[allow(deprecated, clippy::result_large_err)]
 pub fn new_partial(
 	config: &Configuration,
 	instant_sealing: bool,
@@ -407,6 +407,7 @@ fn build_import_queue(
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[allow(clippy::result_large_err)]
 fn start_consensus(
 	client: Arc<ParachainClient>,
 	backend: Arc<ParachainBackend>,

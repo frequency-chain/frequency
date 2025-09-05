@@ -58,7 +58,7 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 	let output: serde_json::Value = serde_json::from_slice(
 		include_bytes!("../../../../resources/frequency-paseo.json").as_slice(),
 	)
-	.map_err(|e| format!("Invalid JSON blob {:?}", e))
+	.map_err(|e| format!("Invalid JSON blob {e:?}"))
 	.unwrap();
 
 	let runtime = &output["genesis"]["runtime"];
@@ -72,7 +72,7 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 // 	let output: serde_json::Value = serde_json::from_slice(
 // 		include_bytes!("../../../../resources/frequency-westend.json").as_slice(),
 // 	)
-// 	.map_err(|e| format!("Invalid JSON blob {:?}", e))
+// 	.map_err(|e| format!("Invalid JSON blob {e:?}"))
 // 	.unwrap();
 
 // 	let runtime = &output["genesis"]["runtime"];
@@ -87,7 +87,7 @@ fn frequency_genesis_config() -> serde_json::Value {
 		let output: serde_json::Value = serde_json::from_slice(
 			include_bytes!("../../../../resources/frequency.json").as_slice(),
 		)
-		.map_err(|e| format!("Invalid JSON blob {:?}", e))
+		.map_err(|e| format!("Invalid JSON blob {e:?}"))
 		.unwrap();
 
 		// Return the unmodified output when `runtime-benchmarks` is not enabled
@@ -99,7 +99,7 @@ fn frequency_genesis_config() -> serde_json::Value {
 		let mut output: serde_json::Value = serde_json::from_slice(
 			include_bytes!("../../../../resources/frequency.json").as_slice(),
 		)
-		.map_err(|e| format!("Invalid JSON blob {:?}", e))
+		.map_err(|e| format!("Invalid JSON blob {e:?}"))
 		.unwrap();
 
 		if let Some(runtime) = output["genesis"]["runtime"].as_object_mut() {
@@ -145,7 +145,7 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 	Some(
 		serde_json::to_string(&genesis)
 			.unwrap_or_else(|err| {
-				format!("Serialization to json is expected to work. Error: {:?}", err)
+				format!("Serialization to json is expected to work. Error: {err:?}")
 			})
 			.into_bytes(),
 	)

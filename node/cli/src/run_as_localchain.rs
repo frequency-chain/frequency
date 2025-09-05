@@ -3,6 +3,7 @@ use frequency_service::block_sealing::start_frequency_dev_sealing_node;
 use polkadot_service::TransactionPoolOptions;
 use sc_cli::{SubstrateCli, TransactionPoolType};
 
+#[allow(clippy::result_large_err)]
 pub fn run_as_localchain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	let override_pool_config = TransactionPoolOptions::new_with_params(

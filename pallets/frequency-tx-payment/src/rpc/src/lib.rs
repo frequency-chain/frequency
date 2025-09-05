@@ -102,14 +102,14 @@ where
 			ErrorObject::owned(
 				Error::DecodeError.into(),
 				"Unable to query capacity fee details.",
-				Some(format!("{:?}", e)),
+				Some(format!("{e:?}")),
 			)
 		})?;
 		let fee_details = api.compute_capacity_fee(at_hash, uxt, encoded_len).map_err(|e| {
 			ErrorObject::owned(
 				Error::RuntimeError.into(),
 				"Unable to query capacity fee details.",
-				Some(format!("{:?}", e)),
+				Some(format!("{e:?}")),
 			)
 		})?;
 
@@ -117,7 +117,7 @@ where
 			value.try_into().map_err(|_| {
 				ErrorObject::owned(
 					ErrorCode::InvalidParams.code(),
-					format!("{} doesn't fit in NumberOrHex representation", value),
+					format!("{value} doesn't fit in NumberOrHex representation"),
 					None::<()>,
 				)
 			})
