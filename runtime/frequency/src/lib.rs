@@ -265,8 +265,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			match call {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
-				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
+				// Create provider, create application, and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) => false,
+				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				#[cfg(feature = "frequency-bridging")]
 				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
@@ -311,8 +312,10 @@ impl BaseCallFilter {
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
-			// Block `create_provider_v2` and `create_schema` calls from utility batch
+			// Block `create_provider`, `create_provider_v2`, `create_application` and `create_schema` calls from utility batch
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
 			RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) |
+			RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
@@ -645,7 +648,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 176,
+	spec_version: 177,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -659,7 +662,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 176,
+	spec_version: 177,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

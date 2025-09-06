@@ -638,6 +638,75 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static updateProviderViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    details: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.updateProviderViaGovernance(getUnifiedPublicKey(providerKeys), {
+          defaultName: details.defaultName,
+          localizedNames: details.localizedNames,
+          defaultLogo250100PngCid: details.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: details.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ProviderUpdated
+    );
+  }
+
+  public static proposeToUpdateProvider(providerKeys: KeyringPair, details: ProviderRegistryEntry) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.proposeToUpdateProvider({
+          defaultName: details.defaultName,
+          localizedNames: details.localizedNames,
+          defaultLogo250100PngCid: details.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: details.localizedLogo250100PngCids,
+        }),
+      providerKeys,
+      ExtrinsicHelper.api.events.council.Proposed
+    );
+  }
+
+  public static updateApplicationViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    applicationIndex: AnyNumber,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.updateApplicationViaGovernance(getUnifiedPublicKey(providerKeys), applicationIndex, {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationContextUpdated
+    );
+  }
+
+  public static proposeToUpdateApplication(
+    providerKeys: KeyringPair,
+    applicationIndex: AnyNumber,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.proposeToUpdateApplication(applicationIndex, {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      providerKeys,
+      ExtrinsicHelper.api.events.council.Proposed
+    );
+  }
+
   public static uploadLogo(providerKeys: KeyringPair, logoCid: any, logoBytes: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.uploadLogo(logoCid, logoBytes),

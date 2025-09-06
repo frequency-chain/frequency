@@ -405,9 +405,7 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 	let (provider_msa_id, provider_pair) = create_account();
 	let provider_account = provider_pair.public();
-	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-		.as_bytes()
-		.to_vec();
+	let cid = "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF".as_bytes().to_vec();
 	let mut entry = ProviderRegistryEntry::default();
 	entry.default_name =
 		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Provider name should fit in bounds");
@@ -558,7 +556,7 @@ pub fn create_and_approve_recovery_provider() -> (MessageSourceId, sr25519::Pair
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};
-	assert_ok!(Msa::create_provider_for(provider_msa_id.into(), entry));
+	assert_ok!(Msa::upsert_provider_for(provider_msa_id.into(), entry, false));
 	assert_ok!(Msa::approve_recovery_provider(
 		RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 		provider_key_pair.public().into()

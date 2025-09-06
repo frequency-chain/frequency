@@ -15,3 +15,4 @@ mod schema_permission_tests;
 mod signature_registry_tests;
 mod signed_extension_tests;
 mod subsidized_add_key_tests;
+mod update_tests;
