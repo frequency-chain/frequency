@@ -14,7 +14,12 @@ fn update_provider_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, key_pair) = create_provider_with_name("OriginalProvider");
 		let provider_account = key_pair;
-
+		let old_provider_entry =
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(old_provider_entry.default_name, b"OriginalProvider".to_vec());
+		assert_eq!(old_provider_entry.localized_names.len(), 0);
+		assert_eq!(old_provider_entry.default_logo_250_100_png_cid.is_empty(), false);
+		assert_eq!(old_provider_entry.localized_logo_250_100_png_cids.len(), 0);
 		// Create updated provider entry
 		let mut updated_entry = ProviderRegistryEntry::default();
 		updated_entry.default_name = BoundedVec::try_from(b"UpdatedProvider".to_vec())
@@ -23,7 +28,7 @@ fn update_provider_via_governance_happy_path() {
 			.as_bytes()
 			.to_vec();
 		updated_entry.default_logo_250_100_png_cid =
-			BoundedVec::try_from(new_cid).expect("Logo CID should fit in bounds");
+			BoundedVec::try_from(new_cid.clone()).expect("Logo CID should fit in bounds");
 
 		// Update provider via governance should succeed with overwrite
 		assert_ok!(Msa::update_provider_via_governance(
@@ -37,6 +42,43 @@ fn update_provider_via_governance_happy_path() {
 		System::assert_last_event(
 			Event::ProviderUpdated { provider_id: ProviderId(provider_msa_id) }.into(),
 		);
+		let updated_provider_entry =
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(updated_provider_entry.default_name, b"UpdatedProvider".to_vec());
+		assert_eq!(updated_provider_entry.localized_names.len(), 0);
+		assert_eq!(
+			updated_provider_entry.default_logo_250_100_png_cid.as_slice(),
+			new_cid.as_slice()
+		);
+		assert_eq!(updated_provider_entry.localized_logo_250_100_png_cids.len(), 0);
+
+		// Update again with different data to ensure overwrite
+		let mut second_update_entry = ProviderRegistryEntry::default();
+		second_update_entry.default_name = BoundedVec::try_from(b"SecondUpdate".to_vec())
+			.expect("Provider name should fit in bounds");
+		let second_cid = "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF".as_bytes().to_vec();
+		second_update_entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(second_cid.clone()).expect("Logo CID should fit in bounds");
+		assert_ok!(Msa::update_provider_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider_account.into(),
+			second_update_entry.clone()
+		));
+		let final_stored_entry =
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(final_stored_entry.default_name, b"SecondUpdate".to_vec());
+		System::assert_last_event(
+			Event::ProviderUpdated { provider_id: ProviderId(provider_msa_id) }.into(),
+		);
+		let final_provider_entry =
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(final_provider_entry.default_name, b"SecondUpdate".to_vec());
+		assert_eq!(final_provider_entry.localized_names.len(), 0);
+		assert_eq!(
+			final_provider_entry.default_logo_250_100_png_cid.as_slice(),
+			second_cid.as_slice()
+		);
+		assert_eq!(final_provider_entry.localized_logo_250_100_png_cids.len(), 0);
 	})
 }
 

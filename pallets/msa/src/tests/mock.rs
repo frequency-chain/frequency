@@ -405,9 +405,7 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 	let (provider_msa_id, provider_pair) = create_account();
 	let provider_account = provider_pair.public();
-	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-		.as_bytes()
-		.to_vec();
+	let cid = "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF".as_bytes().to_vec();
 	let mut entry = ProviderRegistryEntry::default();
 	entry.default_name =
 		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Provider name should fit in bounds");
