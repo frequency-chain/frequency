@@ -1,7 +1,9 @@
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-use frame_support::{assert_noop, assert_ok, dispatch::GetDispatchInfo};
+use frame_support::{
+	assert_noop, assert_ok, dispatch::GetDispatchInfo, BoundedBTreeMap, BoundedVec,
+};
 
 use sp_weights::Weight;
 
@@ -11,7 +13,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{DelegatorId, MessageSourceId, ProviderId},
+	msa::{DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
 	utils::wrap_binary_data,
 };
@@ -22,11 +24,9 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		// arrange
 		let (provider_msa, provider_key_pair) = create_account();
 		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
@@ -122,12 +122,9 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
-
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// act
 		assert_noop!(
@@ -191,12 +188,9 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// act
 		assert_noop!(
@@ -318,5 +312,108 @@ fn verify_signature_without_wrapped_bytes() {
 			&key_pair_delegator.public().into(),
 			&add_provider_payload
 		));
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_cid_logo() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let cid = "invalid-cid".as_bytes().to_vec();
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::InvalidCid
+		);
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_cid_localized_logo() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let mut localized_logo_png = BoundedBTreeMap::new();
+		localized_logo_png
+			.try_insert(
+				BoundedVec::try_from("en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from("invalid-cid".as_bytes().to_vec()).expect("CID too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+
+		let mut entry = ProviderRegistryEntry::default();
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::InvalidCid
+		);
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_logo_locale() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+		let mut localized_logo_png = BoundedBTreeMap::new();
+		localized_logo_png
+			.try_insert(
+				BoundedVec::try_from("&en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from(cid.clone()).expect("CID too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+		let mut localized_names = BoundedBTreeMap::new();
+		localized_names
+			.try_insert(
+				BoundedVec::try_from("en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_name =
+			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
+		entry.localized_names = localized_names;
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::InvalidBCP47LanguageCode
+		);
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_name_locale() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let mut localized_names = BoundedBTreeMap::new();
+		localized_names
+			.try_insert(
+				BoundedVec::try_from("&en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+		let mut entry = ProviderRegistryEntry::default();
+		entry.localized_names = localized_names;
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::InvalidBCP47LanguageCode
+		);
 	});
 }

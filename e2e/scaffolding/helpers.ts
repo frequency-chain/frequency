@@ -43,6 +43,9 @@ import { BigInt } from '@polkadot/x-bigint';
 import { ethers, keccak256 } from 'ethers';
 import { secp256k1PairFromSeed } from '@polkadot/util-crypto/secp256k1/pair/fromSeed';
 import { Keypair } from '@polkadot/util-crypto/types';
+import { CID } from 'multiformats/cid';
+import { sha256 } from 'multiformats/hashes/sha2';
+import { base58btc } from 'multiformats/bases/base58';
 
 export interface Account {
   uri: string;
@@ -388,9 +391,11 @@ export async function createProviderKeysAndId(
   waitForInBlock = true
 ): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
+  const providerEntry = generateValidProviderPayloadWithName('PrivateProvider');
+
   const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(providerKeys, [
     ExtrinsicHelper.createMsa(providerKeys).extrinsic(),
-    ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider').extrinsic(),
+    ExtrinsicHelper.createProviderV2(providerKeys, providerEntry).extrinsic(),
   ]).fundAndSend(source, waitForInBlock);
   const providerCreatedEvent = eventMap['msa.ProviderCreated'];
   if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
@@ -473,7 +478,8 @@ export async function createMsaAndProvider(
   waitForInBlock = true
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
+  const providerEntry = generateValidProviderPayloadWithName(providerName);
+  const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
   const minimumFund = (
     await Promise.all([getExistentialDeposit(), createMsaOp.getEstimatedTxFee(), createProviderOp.getEstimatedTxFee()])
   ).reduce((i, j) => i + j, 100_000n);
@@ -791,4 +797,32 @@ export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedu
     periodCount,
     perPeriod,
   };
+}
+
+export function generateValidProviderPayloadWithName(providerName: string) {
+  const providerEntry = {
+    defaultName: providerName,
+    localizedNames: new Map([
+      ['en-UK', providerName],
+      ['en-US', providerName],
+    ]),
+    defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
+    localizedLogo250100PngCids: new Map([
+      ['en-US', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+      ['en-UK', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+    ]),
+  };
+  return providerEntry;
+}
+
+// Helper: compute multibase Base58btc CIDv1 for raw bytes
+export async function computeCid(bytes: Uint8Array): Promise<string> {
+  // Hash the content
+  const hash = await sha256.digest(bytes);
+
+  // Create a CIDv1 with sha256 codec, 0x55 for ipfs
+  const cid = CID.create(1, 0x55, hash);
+
+  // Return base58btc-encoded string
+  return cid.toString(base58btc);
 }
