@@ -111,7 +111,10 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 		log::info!(target: LOG_TARGET, "Current on_chain_version: {:?}", on_chain_version);
 		if on_chain_version >= 2 {
-			return Ok(on_chain_version.encode().to_vec());
+			// Migration already completed, return current count for post_upgrade validation
+			let current_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
+			log::info!(target: LOG_TARGET, "Migration already completed, current count: {}", current_count);
+			return Ok(current_count.encode().to_vec());
 		}
 		log::info!(target: LOG_TARGET, "Current on_chain_version to be upgraded: {:?}", on_chain_version);
 		// Check OLD storage using storage alias
