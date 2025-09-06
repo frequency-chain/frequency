@@ -432,7 +432,6 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let name_size = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let provider_name = (1..name_size as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -476,7 +475,6 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -517,7 +515,6 @@ mod benchmarks {
 	fn propose_to_be_provider_v2() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -824,7 +821,6 @@ mod benchmarks {
 	fn propose_to_add_application() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -877,7 +873,6 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -960,7 +955,6 @@ mod benchmarks {
 	fn propose_to_update_provider() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -1011,7 +1005,6 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -1070,7 +1063,6 @@ mod benchmarks {
 	fn propose_to_update_application() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -1129,7 +1121,6 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let _cid_size = T::MaxLogoCidSize::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
