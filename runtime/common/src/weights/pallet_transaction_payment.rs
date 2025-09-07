@@ -39,8 +39,8 @@ impl<T: frame_system::Config> pallet_transaction_payment::WeightInfo for Substra
 		// Proof Size summary in bytes:
 		//  Measured:  `101`
 		//  Estimated: `4088`
-		// Minimum execution time: 28_975_000 picoseconds.
-		Weight::from_parts(29_447_000, 4088)
+		// Minimum execution time: 29_627_000 picoseconds.
+		Weight::from_parts(30_170_000, 4088)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
