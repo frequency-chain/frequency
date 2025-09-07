@@ -37,8 +37,8 @@ impl<T: frame_system::Config> cumulus_pallet_weight_reclaim::WeightInfo for Subs
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 4_833_000 picoseconds.
-		Weight::from_parts(5_247_000, 0)
+		// Minimum execution time: 4_783_000 picoseconds.
+		Weight::from_parts(5_158_000, 0)
 	}
 }
 
