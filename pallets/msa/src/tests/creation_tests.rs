@@ -417,3 +417,23 @@ pub fn create_provider_fails_with_invalid_name_locale() {
 		);
 	});
 }
+
+#[test]
+pub fn deprecation_tests_create_provider_to_v2() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry::default();
+		// Register provider v1 (this test should fail when removed)
+		assert_ok!(Msa::create_provider(
+			RuntimeOrigin::signed(provider_account.into()),
+			b"YoFoo".to_vec()
+		));
+		// Register provider v2 should fail
+		assert_noop!(
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::DuplicateProviderRegistryEntry
+		);
+	});
+}
