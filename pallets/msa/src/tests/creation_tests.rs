@@ -437,3 +437,40 @@ pub fn deprecation_tests_create_provider_to_v2() {
 		);
 	});
 }
+
+#[test]
+pub fn deprecation_tests_create_provider_to_v2_governance() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry::default();
+		// Register provider v1 (this test should fail when removed)
+		assert_ok!(Msa::create_provider_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider_account.into(),
+			Vec::from("YoFoo")
+		));
+		// Register provider v2 should fail
+		assert_noop!(
+			Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry),
+			Error::<Test>::DuplicateProviderRegistryEntry
+		);
+	});
+}
+
+#[test]
+pub fn deprecation_tests_create_provider_to_v2_proposal() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		_ = Msa::propose_to_be_provider(
+			RuntimeOrigin::signed(provider_key_pair.public().into()),
+			Vec::from("YoFoo"),
+		);
+		let entry = ProviderRegistryEntry::default();
+		// Register provider v2 should fail
+		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+	});
+}
