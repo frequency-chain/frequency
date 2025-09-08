@@ -522,26 +522,24 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 
 		// Access storage directly using storage key because `pallet_xcm` does not provide a direct API to get the safe XCM version.
 		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
-		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+		log::info!("Checking SafeXcmVersion in storage with key: {storage_key:?}");
 
 		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 		match current_version {
 			Some(version) if version == SAFE_XCM_VERSION => {
-				log::info!("SafeXcmVersion already set to {}, skipping migration.", version);
+				log::info!("SafeXcmVersion already set to {version}, skipping migration.");
 				T::DbWeight::get().reads(1)
 			},
 			Some(version) => {
 				log::info!(
-					"SafeXcmVersion currently set to {}, updating to {}",
-					version,
-					SAFE_XCM_VERSION
+					"SafeXcmVersion currently set to {version}, updating to {SAFE_XCM_VERSION}"
 				);
 				// Set the safe XCM version directly in storage
 				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
 				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
 			},
 			None => {
-				log::info!("SafeXcmVersion not set, setting to {}", SAFE_XCM_VERSION);
+				log::info!("SafeXcmVersion not set, setting to {SAFE_XCM_VERSION}");
 				// Set the safe XCM version directly in storage
 				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
 				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
@@ -648,7 +646,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 177,
+	spec_version: 178,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -662,7 +660,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 177,
+	spec_version: 178,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
