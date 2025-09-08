@@ -45,9 +45,9 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 	fn on_runtime_upgrade() -> Weight {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		let current_version = Pallet::<T>::in_code_storage_version();
-		log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
+		log::info!(target: LOG_TARGET, "onchain_version= {onchain_version:?}, current_version={current_version:?}");
 		if STORAGE_VERSION != current_version {
-			log::error!(target: LOG_TARGET, "Storage version mismatch. Expected: {:?}, Found: {:?}", STORAGE_VERSION, current_version);
+			log::error!(target: LOG_TARGET, "Storage version mismatch. Expected: {STORAGE_VERSION:?}, Found: {current_version:?}");
 			return T::DbWeight::get().reads(1)
 		}
 		if onchain_version < current_version {
@@ -55,7 +55,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 
 			// Count items in OLD storage using storage alias
 			let total_count = v1::ProviderToRegistryEntry::<T>::iter().count();
-			log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntry storage: {}", total_count);
+			log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntry storage: {total_count}");
 			// We expect to have providers in the old storage
 			if total_count == 0 {
 				log::error!(target: LOG_TARGET, "No items found in OLD ProviderToRegistryEntry storage, skipping migration.");
@@ -84,22 +84,20 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 				migrated_count.saturating_inc();
 			}
 
-			log::info!(target: LOG_TARGET, "Migration completed: {} items migrated", migrated_count);
+			log::info!(target: LOG_TARGET, "Migration completed: {migrated_count} items migrated");
 
 			// Set storage version to `2`.
 			StorageVersion::new(2).put::<Pallet<T>>();
-			log::info!(target: LOG_TARGET, "MSA Storage migrated to version 2  read={:?}, write={:?}, bytes={:?}", reads, writes, bytes);
+			log::info!(target: LOG_TARGET, "MSA Storage migrated to version 2  read={reads:?}, write={writes:?}, bytes={bytes:?}");
 			// compute the weight
 			let weights = T::DbWeight::get().reads_writes(reads, writes).add_proof_size(bytes);
-			log::info!(target: LOG_TARGET, "Migration Calculated weights={:?}",weights);
+			log::info!(target: LOG_TARGET, "Migration Calculated weights={weights:?}");
 			weights
 		} else {
 			log::info!(
 				target: LOG_TARGET,
 				"Migration did not execute. This can be removed as the storage version is already at 2. \
-				onchain_version: {:?}, current_version: {:?}",
-				onchain_version,
-				current_version
+				onchain_version: {onchain_version:?}, current_version: {current_version:?}",
 			);
 			T::DbWeight::get().reads(1)
 		}
@@ -109,23 +107,23 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 	fn pre_upgrade() -> Result<vec::Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		log::info!(target: LOG_TARGET, "Current on_chain_version: {:?}", on_chain_version);
+		log::info!(target: LOG_TARGET, "Current on_chain_version: {on_chain_version:?}");
 		if on_chain_version >= 2 {
 			// Migration already completed, return current count for post_upgrade validation
 			let current_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
-			log::info!(target: LOG_TARGET, "Migration already completed, current count: {}", current_count);
+			log::info!(target: LOG_TARGET, "Migration already completed, current count: {current_count}");
 			return Ok(current_count.encode().to_vec());
 		}
-		log::info!(target: LOG_TARGET, "Current on_chain_version to be upgraded: {:?}", on_chain_version);
+		log::info!(target: LOG_TARGET, "Current on_chain_version to be upgraded: {on_chain_version:?}");
 		// Check OLD storage using storage alias
 		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count() as u64;
-		log::info!(target: LOG_TARGET, "Found {} items in OLD storage format", old_count);
+		log::info!(target: LOG_TARGET, "Found {old_count} items in OLD storage format");
 
 		let genesis_block: BlockNumberFor<T> = 0u32.into();
 		let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
-		log::info!(target: LOG_TARGET, "Found genesis... {:?}", genesis);
+		log::info!(target: LOG_TARGET, "Found genesis... {genesis:?}");
 		let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
-		log::info!(target: LOG_TARGET,"Detected Chain is {:?}", detected_chain);
+		log::info!(target: LOG_TARGET,"Detected Chain is {detected_chain:?}");
 
 		Ok(old_count.encode().to_vec())
 	}
@@ -145,12 +143,12 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		}
 		for id in known_providers {
 			let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {
-				log::error!(target: LOG_TARGET, "Missing provider entry for provider id: {:?}", id);
+				log::error!(target: LOG_TARGET, "Missing provider entry for provider id: {id:?}");
 				TryRuntimeError::Other("Missing provider entry in post-upgrade check")
 			})?;
 
 			if entry.default_name.is_empty() {
-				log::error!(target: LOG_TARGET, "Missing provider name for provider id: {:?}", id);
+				log::error!(target: LOG_TARGET, "Missing provider name for provider id: {id:?}");
 				return Err(TryRuntimeError::Other("Missing provider name in post-upgrade check"));
 			}
 		}

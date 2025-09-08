@@ -577,9 +577,7 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 
 		log::info!(
-			"post_upgrade: Pre-upgrade version = {:?}, Current version = {:?}",
-			pre_upgrade_version,
-			current_version
+			"post_upgrade: Pre-upgrade version = {pre_upgrade_version:?}, Current version = {current_version:?}",
 		);
 
 		// Verify the migration worked correctly
