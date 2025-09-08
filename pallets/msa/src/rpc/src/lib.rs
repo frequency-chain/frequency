@@ -104,7 +104,7 @@ pub enum MsaOffchainRpcError {
 
 impl From<MsaOffchainRpcError> for ErrorObjectOwned {
 	fn from(e: MsaOffchainRpcError) -> Self {
-		let msg = format!("{:?}", e);
+		let msg = format!("{e:?}");
 
 		match e {
 			MsaOffchainRpcError::ErrorAcquiringLock => ErrorObject::owned(1, msg, None::<()>),
