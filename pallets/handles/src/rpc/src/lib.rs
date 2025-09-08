@@ -76,7 +76,7 @@ pub enum HandlesRpcError {
 
 impl From<HandlesRpcError> for ErrorObjectOwned {
 	fn from(e: HandlesRpcError) -> Self {
-		let msg = format!("{:?}", e);
+		let msg = format!("{e:?}");
 
 		match e {
 			HandlesRpcError::InvalidHandle => ErrorObject::owned(1, msg, None::<()>),
