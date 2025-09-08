@@ -76,7 +76,7 @@ jobs:
     needs: create-release-branch
     name: Run All Benchmarks - Build
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     permissions:
       contents: read
     steps:
@@ -155,7 +155,7 @@ jobs:
     needs: run-all-benchmarks-bench
     name: Run All Benchmarks - Test
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v5
@@ -234,7 +234,7 @@ jobs:
           - arch: arm64
             runner: ubicloud-standard-16-arm
     runs-on: ${{matrix.runner}}
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     env:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
@@ -368,7 +368,7 @@ jobs:
           profile: ${{matrix.build-profile}}
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
-          tag: "1.84.1"
+          tag: "1.88.0"
           runtime_dir: ${{ matrix.runtime-dir }}
       - name: Rename WASM file
         run: |
@@ -376,7 +376,7 @@ jobs:
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.21.3 --force
+          cargo install --git https://github.com/chevdor/subwasm  --force
           subwasm --version
       - name: Test WASM file
         run: |
@@ -395,7 +395,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v5
@@ -428,7 +428,7 @@ jobs:
       RELEASE_FILENAME_PREFIX: frequency-local
       ARCH: amd64
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Set Env Vars
         run: |
@@ -509,7 +509,7 @@ jobs:
   build-js-schemas:
     name: Build JS Schemas
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v5
@@ -538,7 +538,7 @@ jobs:
   build-js-recovery-sdk:
     name: Build JS Recovery SDK
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v5
@@ -782,7 +782,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Built Artifacts
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     permissions:
       contents: write
     steps:
@@ -881,7 +881,7 @@ jobs:
           ls -la
       - name: Install subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          cargo install --git https://github.com/chevdor/subwasm  --force
           subwasm --version
       - name: Get Runtimes Info
         id: get-runtimes-info
