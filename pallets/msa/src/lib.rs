@@ -105,6 +105,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
@@ -483,7 +484,7 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
-			log::info!("Running offchain workers! {:?}", block_number);
+			log::info!("Running offchain workers! {block_number:?}");
 			do_offchain_worker::<T>(block_number)
 		}
 	}
@@ -691,8 +692,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"TransactionExtension did not catch invalid MSA for account {:?}, ",
-						who
+						"TransactionExtension did not catch invalid MSA for account {who:?}, "
 					);
 				},
 			}
@@ -807,8 +807,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"TransactionExtension did not catch invalid MSA for account {:?}, ",
-						who
+						"TransactionExtension did not catch invalid MSA for account {who:?}"
 					);
 				},
 			}
@@ -846,8 +845,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"TransactionExtension did not catch invalid MSA for account {:?}, ",
-						who
+						"TransactionExtension did not catch invalid MSA for account {who:?}"
 					);
 				},
 			}
@@ -894,8 +892,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"TransactionExtension did not catch invalid MSA for account {:?}, ",
-						who
+						"TransactionExtension did not catch invalid MSA for account {who:?}"
 					);
 				},
 			}
@@ -2226,13 +2223,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Returns a `ValidTransaction` or wrapped [`ValidityError::InvalidMsaKey`]
 	/// Arguments:
 	/// * `signing_public_key`: the account id calling for revoking the key, and which
-	///     owns the msa also associated with `key`
+	///   owns the msa also associated with `key`
 	/// * `public_key_to_delete`: the account id to revoke as an access key for account_id's msa
 	///
 	/// # Errors
 	/// * [`ValidityError::InvalidSelfRemoval`] - if `signing_public_key` and `public_key_to_delete` are the same.
 	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA or if
-	///     'public_key_to_delete' does not have an MSA.
+	///   'public_key_to_delete' does not have an MSA.
 	/// * [`ValidityError::NotKeyOwner`] - if the `signing_public_key` and `public_key_to_delete` do not belong to the same MSA ID.
 	pub fn validate_key_delete(
 		signing_public_key: &T::AccountId,
