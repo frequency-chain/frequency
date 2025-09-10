@@ -33,7 +33,7 @@ use common_primitives::{
 	schema::{
 		IntentGroupId, IntentGroupResponse, IntentId, IntentResponse, MappedEntityIdentifier,
 		ModelType, NameLookupResponse, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
-		SchemaSetting, SchemaSettings, SchemaValidator,
+		SchemaSetting, SchemaSettings, SchemaStatus, SchemaValidator,
 	},
 };
 use frame_support::{
@@ -393,7 +393,7 @@ pub mod pallet {
 			for intent in self.initial_intents.iter() {
 				let name_payload: SchemaNamePayload =
 					BoundedVec::try_from(intent.name.clone().into_bytes())
-						.expect("Genesis Intent name larger than {SCHEMA_NAME_BYTES_MAX} bytes}");
+						.expect("Genesis Intent name larger than max bytes");
 				let parsed_name = SchemaName::try_parse::<T>(name_payload, true)
 					.expect("Bad Genesis Intent name");
 				let settings_vec = BoundedVec::<IntentSetting, T::MaxSchemaSettingsPerSchema>::try_from(intent.settings.clone()).expect("Bad Genesis Intent settings. Perhaps larger than MaxSchemaSettingsPerSchema");
@@ -418,6 +418,7 @@ pub mod pallet {
 					payload_location: intent.payload_location,
 					model_type: schema.model_type,
 					settings: intent.settings,
+					status: schema.status,
 				};
 
 				Pallet::<T>::store_schema_info_and_payload(schema.schema_id, schema_info, model)
@@ -882,9 +883,11 @@ pub mod pallet {
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 			settings: IntentSettings,
+			status: SchemaStatus,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let schema_info = SchemaInfo { intent_id, model_type, payload_location, settings };
+			let schema_info =
+				SchemaInfo { intent_id, model_type, payload_location, settings, status };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			Self::store_schema_info_and_payload(schema_id, schema_info, model)?;
 
@@ -995,6 +998,7 @@ pub mod pallet {
 						model_type: schema_info.model_type,
 						payload_location: schema_info.payload_location,
 						settings: schema_info.settings.0.iter().collect::<Vec<IntentSetting>>(),
+						status: schema_info.status,
 					};
 					Some(response)
 				},
@@ -1015,6 +1019,7 @@ pub mod pallet {
 					model_type: schema_info.model_type,
 					payload_location: schema_info.payload_location,
 					settings: schema_info.settings.0.iter().collect::<Vec<IntentSetting>>(),
+					status: schema_info.status,
 				};
 				return Some(response);
 			}
@@ -1155,6 +1160,7 @@ pub mod pallet {
 				model_type,
 				intent_info.payload_location,
 				intent_info.settings,
+				SchemaStatus::Active,
 			)?;
 			Ok(schema_id)
 		}
@@ -1351,6 +1357,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 			model_type,
 			payload_location,
 			IntentSettings::default(),
+			SchemaStatus::Active,
 		)?;
 		Ok(schema_id)
 	}

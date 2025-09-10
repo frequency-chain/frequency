@@ -1,6 +1,10 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
-use common_primitives::schema::{IntentGroupId, IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId, SchemaStatus, SchemaVersion, SchemaVersionResponse};
+use common_primitives::schema::{
+	IntentGroupId, IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType,
+	NameLookupResponse, PayloadLocation, SchemaId, SchemaStatus, SchemaVersion,
+	SchemaVersionResponse,
+};
 use core::fmt::Debug;
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -119,6 +123,10 @@ pub struct SchemaInfo {
 	pub intent_id: IntentId,
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
+	/// The payload location (inherited from the Intent)
+	pub payload_location: PayloadLocation,
+	/// additional control settings (inherited from the Intent)
+	pub settings: IntentSettings,
 	/// The status of the Schema
 	pub status: SchemaStatus,
 }

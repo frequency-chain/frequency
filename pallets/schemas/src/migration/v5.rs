@@ -1,21 +1,18 @@
-use crate::{
-	migration::v4,
-	pallet::{IntentInfos, NameToMappedEntityIds, SchemaInfos},
-	Config, IntentInfo, Pallet, SchemaInfo, SchemaVersionId, SCHEMA_STORAGE_VERSION,
-};
-use alloc::vec::Vec;
-use alloc::format;
-use common_primitives::schema::{IntentId, MappedEntityIdentifier, SchemaId};
+use crate::{migration::v4, pallet::{CurrentIntentIdentifierMaximum, IntentInfos, NameToMappedEntityIds, SchemaInfos}, Config, IntentInfo, Pallet, SchemaInfo, SchemaVersionId, SCHEMA_NAME_BYTES_MAX, SCHEMA_STORAGE_VERSION};
+use alloc::{format, vec::Vec};
+use common_primitives::schema::{IntentId, MappedEntityIdentifier, SchemaId, SchemaStatus};
 use core::marker::PhantomData;
 #[cfg(feature = "try-runtime")]
 use frame_support::ensure;
-use frame_support::{pallet_prelude::{Get, GetStorageVersion, Weight}, traits::Len, BoundedVec};
-use frame_support::traits::UncheckedOnRuntimeUpgrade;
+use frame_support::{
+	pallet_prelude::{Get, GetStorageVersion, Weight},
+	traits::{Len, UncheckedOnRuntimeUpgrade},
+	BoundedVec,
+};
 #[cfg(feature = "try-runtime")]
 use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
-use crate::pallet::CurrentIntentIdentifierMaximum;
 
 const LOG_TARGET: &str = "pallet::schemas::migration::v5";
 
@@ -25,6 +22,7 @@ fn convert_from_old(id: SchemaId, old_info: &v4::SchemaInfo) -> crate::SchemaInf
 		model_type: old_info.model_type,
 		payload_location: old_info.payload_location,
 		settings: old_info.settings,
+		status: SchemaStatus::Active,
 	}
 }
 
@@ -32,8 +30,8 @@ fn convert_to_intent(old_info: &v4::SchemaInfo) -> IntentInfo {
 	IntentInfo { payload_location: old_info.payload_location, settings: old_info.settings }
 }
 
-fn append_or_overlay<S: Get<u32>>(target: &mut BoundedVec<u8, S>, source: &[u8]) -> Result<(), ()> {
-	let max_len = S::get() as usize;
+fn append_or_overlay<S1: Get<u32>, S2: Get<u32>>(target: &mut BoundedVec<u8, S1>, source: &[u8], protocol: &BoundedVec<u8, S2>) -> Result<(), ()> {
+	let max_len = (SCHEMA_NAME_BYTES_MAX as usize - protocol.len() - 1).min(S1::get() as usize);
 	let additional = source.len();
 	let len = target.len();
 	if len + additional > max_len {
@@ -86,7 +84,7 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 						old_names += 1;
 						let index_str = Vec::<u8>::from(format!("-{}", index + 1).as_bytes());
 						let mut name = old_schema_name.clone();
-						match append_or_overlay(&mut name, &index_str) {
+						match append_or_overlay(&mut name, &index_str, &schema_id) {
 							Ok(_) => (),
 							Err(e) => {
 								log::error!(target: LOG_TARGET, "{:?} unable to append id {:?} to name: {:?}", e, index_str, name);
@@ -105,7 +103,7 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 					None
 				},
 			);
-			
+
 			CurrentIntentIdentifierMaximum::<T>::set(max_intent_id);
 
 			log::info!(target: LOG_TARGET,
@@ -119,7 +117,7 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 			SCHEMA_STORAGE_VERSION.put::<Pallet<T>>();
 			let weight = T::DbWeight::get().reads_writes(reads, writes);
 			log::info!(target: LOG_TARGET, "Schemas storage migrated to version {:?}. reads={:?}, writes={:?}, proof_size={:?}, ref_time={:?}", current_version, reads, writes, weight.proof_size(), weight.ref_time());
-			
+
 			weight
 		} else {
 			log::info!(target: LOG_TARGET,
@@ -170,4 +168,3 @@ pub type MigrateV4ToV5<T> = frame_support::migrations::VersionedMigration<
 	crate::pallet::Pallet<T>,
 	<T as frame_system::Config>::DbWeight,
 >;
-

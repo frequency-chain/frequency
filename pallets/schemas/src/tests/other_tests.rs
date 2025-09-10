@@ -15,7 +15,7 @@ use common_primitives::{
 	},
 	schema::{
 		MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId,
-		SchemaResponse, SchemaVersion, SchemaVersionResponse,
+		SchemaResponse, SchemaStatus, SchemaVersion, SchemaVersionResponse,
 	},
 };
 use frame_support::{
@@ -771,6 +771,7 @@ fn create_schema_via_governance_v3_happy_path() {
 			model: model.into_inner(),
 			payload_location: PayloadLocation::OnChain,
 			settings: Vec::default(),
+			status: SchemaStatus::Active,
 		};
 		let res = SchemasPallet::get_schema_by_id(1);
 
@@ -935,7 +936,9 @@ fn genesis_config_build_genesis_schemas() {
 		initial_max_schema_model_size: schemas_config.max_schema_model_size.unwrap_or(1024),
 		initial_schema_identifier_max: schemas_config.schema_identifier_max.unwrap_or(16_000),
 		initial_intent_identifier_max: schemas_config.intent_identifier_max.unwrap_or(16_000),
-		initial_intent_group_identifier_max: schemas_config.intent_group_identifier_max.unwrap_or(16_000),
+		initial_intent_group_identifier_max: schemas_config
+			.intent_group_identifier_max
+			.unwrap_or(16_000),
 		initial_schemas: schemas_config.schemas.unwrap_or_default(),
 		initial_intents: schemas_config.intents.unwrap_or_default(),
 		initial_intent_groups: schemas_config.intent_groups.unwrap_or_default(),
