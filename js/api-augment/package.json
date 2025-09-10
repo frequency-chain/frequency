@@ -40,10 +40,10 @@
     "globals": "16.3.0"
   },
   "devDependencies": {
-    "@eslint/js": "9.35.0",
+    "@eslint/js": "9.32.0",
     "@polkadot/typegen": "16.4.3",
     "@types/mocha": "10.0.10",
-    "eslint": "9.35.0",
+    "eslint": "9.32.0",
     "eslint-plugin-mocha": "11.1.0",
     "mocha": "11.7.1",
     "prettier": "3.6.2",
