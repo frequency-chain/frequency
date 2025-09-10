@@ -258,7 +258,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			#[cfg(feature = "frequency")]
 			// Filter out calls that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
@@ -308,7 +308,7 @@ impl BaseCallFilter {
 			#[cfg(feature = "frequency")]
 			// Block calls from utility (or Capacity) batch that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
