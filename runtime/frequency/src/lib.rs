@@ -475,7 +475,11 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		SetSafeXcmVersion<Runtime>,
+		pallet_msa::migration::MigrateProviderToRegistryEntryV2<Runtime>,
+	),
 >;
 
 #[cfg(not(feature = "frequency-bridging"))]
@@ -824,13 +828,10 @@ impl pallet_msa::Config for Runtime {
 	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
 	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
-	#[cfg(not(feature = "frequency-no-relay"))]
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
-	#[cfg(feature = "frequency-no-relay")]
-	type CreateProviderViaGovernanceOrigin = EnsureSigned<AccountId>;
 	// The Currency type for managing MSA token balances
 	type Currency = Balances;
 	// The maximum language code size (in bytes)

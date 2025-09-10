@@ -1,14 +1,19 @@
 use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry, STORAGE_VERSION};
-use alloc::vec;
-use common_primitives::{
-	msa::{ProviderId, ProviderRegistryEntry},
-	utils::{get_chain_type_by_genesis_hash, DetectedChainType},
-};
+use common_primitives::msa::ProviderRegistryEntry;
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
-use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::Saturating;
 #[cfg(feature = "try-runtime")]
-use sp_runtime::TryRuntimeError;
+mod try_runtime_imports {
+	pub use alloc::vec;
+	pub use common_primitives::{
+		msa::ProviderId,
+		utils::{get_chain_type_by_genesis_hash, DetectedChainType},
+	};
+	pub use frame_system::pallet_prelude::BlockNumberFor;
+	pub use sp_runtime::TryRuntimeError;
+}
+#[cfg(feature = "try-runtime")]
+use try_runtime_imports::*;
 
 const LOG_TARGET: &str = "runtime::provider";
 
