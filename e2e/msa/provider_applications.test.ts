@@ -19,13 +19,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let fundingSource: KeyringPair;
-
 describe('Create Provider Application', function () {
   let keys: KeyringPair;
   let nonProviderKeys: KeyringPair;
   let providerId: bigint;
   let sudoKeys: KeyringPair;
+  let fundingSource: KeyringPair;
 
   before(async function () {
     sudoKeys = getSudo().keys;
@@ -43,43 +42,40 @@ describe('Create Provider Application', function () {
     providerId = providerEvent!.data.providerId.toBigInt();
   });
 
-  describe('create provider applications', function () {
-    it('provider should exists', async function () {
-      assert(providerId > 0n, 'providerId should be greater than 0');
+  it('provider should exists', async function () {
+    assert(providerId > 0n, 'providerId should be greater than 0');
+  });
+
+  it('should successfully create a provider application', async function () {
+    if (isTestnet()) this.skip();
+    const applicationEntry = generateValidProviderPayloadWithName('MyApp1ication');
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const applicationId = applicationEvent!.data.applicationId;
+    assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
+  });
+
+  it('should fail to create a provider application for non provider', async function () {
+    if (isTestnet()) this.skip();
+    const applicationEntry = generateValidProviderPayloadWithName('MyAppSomething');
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(
+      sudoKeys,
+      nonProviderKeys,
+      applicationEntry
+    );
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+      name: 'ProviderNotRegistered',
     });
+  });
 
-    it('should successfully create a provider application', async function () {
-      if (isTestnet()) this.skip();
-      const applicationEntry = generateValidProviderPayloadWithName('MyApp1');
-      const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-      const { target: applicationEvent } = await createProviderOp.signAndSend();
-      assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
-      const applicationId = applicationEvent!.data.applicationId;
-      assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
-    });
-
-    it('should fail to create a provider application for non provider', async function () {
-      if (isTestnet()) this.skip();
-      const applicationEntry = generateValidProviderPayloadWithName('MyApp1');
-      const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(
-        sudoKeys,
-        nonProviderKeys,
-        applicationEntry
-      );
-      await assert.rejects(createProviderOp.signAndSend(), {
-        name: 'ProviderNotRegistered',
-      });
-    });
-
-    it('should fail to create a provider application for long name', async function () {
-      if (isTestnet()) this.skip();
-      const longName = 'a'.repeat(257); // 256 characters long limit
-      const providerEntry = generateValidProviderPayloadWithName(longName);
-
-      const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, providerEntry);
-      await assert.rejects(createProviderOp.signAndSend(), {
-        name: 'RpcError',
-      });
+  it('should fail to create a provider application for long name', async function () {
+    if (isTestnet()) this.skip();
+    const longName = 'a'.repeat(257); // 256 characters long limit
+    const providerEntry = generateValidProviderPayloadWithName(longName);
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, providerEntry);
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+      name: 'RpcError',
     });
   });
 
@@ -90,7 +86,7 @@ describe('Create Provider Application', function () {
       defaultLogo250100PngCid: 'invalid-cid',
     };
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    await assert.rejects(createProviderOp.signAndSend(), {
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
       name: 'InvalidCid',
     });
   });
@@ -105,7 +101,7 @@ describe('Create Provider Application', function () {
       ]),
     };
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    await assert.rejects(createProviderOp.signAndSend(), {
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
       name: 'InvalidBCP47LanguageCode',
     });
   });
@@ -120,7 +116,7 @@ describe('Create Provider Application', function () {
     const logoCidStr = await computeCid(logoBytes);
     applicationEntry.defaultLogo250100PngCid = logoCidStr;
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
     const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
@@ -136,7 +132,7 @@ describe('Create Provider Application', function () {
     const logoCidStr = await computeCid(logoBytes);
     applicationEntry.defaultLogo250100PngCid = logoCidStr;
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
     const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
@@ -170,7 +166,7 @@ describe('Create Provider Application', function () {
     const logoCidStr = await computeCid(logoBytesDifferent);
     const buf = Array.from(logoBytesDifferent);
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
     const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
@@ -186,7 +182,7 @@ describe('Create Provider Application', function () {
     const logoCidStr = await computeCid(logoBytes);
     applicationEntry.defaultLogo250100PngCid = logoCidStr;
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
 
     const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, logoBytes); // this should fail because logoBytes is not a valid input
@@ -213,7 +209,7 @@ describe('Create Provider Application', function () {
     applicationEntry.localizedNames = localizedNames;
     applicationEntry.localizedLogo250100PngCids = localizedLogo;
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.signAndSend();
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
     const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
     const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);

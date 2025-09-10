@@ -43,7 +43,7 @@ describe('Update Provider and Application', function () {
       const updated = generateValidProviderPayloadWithName('UpdProv2');
 
       const op = ExtrinsicHelper.updateProviderViaGovernance(sudoKeys, providerKeys, updated);
-      const { target } = await op.signAndSend();
+      const { target } = await op.sudoSignAndSend();
       assert.notEqual(target, undefined, 'should emit ProviderUpdated');
 
       // Verify default name changed via runtime API
@@ -78,7 +78,7 @@ describe('Update Provider and Application', function () {
       // create a base application to update
       const app = generateValidProviderPayloadWithName('BaseApp');
       const createAppOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, providerKeys, app);
-      const { target } = await createAppOp.signAndSend();
+      const { target } = await createAppOp.sudoSignAndSend();
       assert.notEqual(target, undefined, 'should emit ApplicationCreated');
       applicationId = target!.data.applicationId.toBigInt();
     });
@@ -88,7 +88,7 @@ describe('Update Provider and Application', function () {
       const updated = generateValidProviderPayloadWithName('AppUpdated');
 
       const op = ExtrinsicHelper.updateApplicationViaGovernance(sudoKeys, providerKeys, applicationId, updated);
-      const { target } = await op.signAndSend();
+      const { target } = await op.sudoSignAndSend();
       assert.notEqual(target, undefined, 'should emit ApplicationContextUpdated');
 
       // fetch context and verify name
@@ -113,7 +113,7 @@ describe('Update Provider and Application', function () {
         sudoKeys,
         providerKeys,
         app
-      ).signAndSend();
+      ).sudoSignAndSend();
       assert.notEqual(target, undefined, 'should emit ApplicationCreated');
       const appId = target!.data.applicationId.toBigInt();
 
