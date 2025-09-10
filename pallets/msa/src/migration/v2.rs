@@ -13,6 +13,7 @@ use sp_runtime::TryRuntimeError;
 const LOG_TARGET: &str = "runtime::provider";
 
 /// Get known provider ids from paseo and mainnet
+#[cfg(feature = "try-runtime")]
 pub fn get_known_provider_ids<T: Config>() -> vec::Vec<ProviderId> {
 	let genesis_block: BlockNumberFor<T> = 0u32.into();
 	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
