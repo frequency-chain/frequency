@@ -66,20 +66,18 @@ describe('Update Provider and Application', function () {
       const { target } = await op.signAndSend();
       assert.notEqual(target, undefined, 'should emit Council.Proposed');
     });
-  });
-
-  describe('update application via governance', function () {
 
     it('should update an existing application via governance', async function () {
       if (isTestnet()) this.skip();
       // create a base application to update
       const app = generateValidProviderPayloadWithName('BaseApp');
       const createAppOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, providerKeys, app);
-      const { target: targetApp } = await createAppOp.sudoSignAndSend(true);
+      const { target: targetApp } = await createAppOp.sudoSignAndSend(false);
       assert.notEqual(targetApp, undefined, 'should emit ApplicationCreated');
       const applicationId = targetApp!.data.applicationId.toBigInt();
-      const updated = generateValidProviderPayloadWithName('AppUpdated');
+      assert(applicationId >= 0n, 'applicationId should be > 0');
 
+      const updated = generateValidProviderPayloadWithName('AppUpdated');
       const op = ExtrinsicHelper.updateApplicationViaGovernance(sudoKeys, providerKeys, applicationId, updated);
       const { target } = await op.sudoSignAndSend(false);
       assert.notEqual(target, undefined, 'should emit ApplicationContextUpdated');
@@ -107,7 +105,7 @@ describe('Update Provider and Application', function () {
       ).sudoSignAndSend(false);
       assert.notEqual(target, undefined, 'should emit ApplicationCreated');
       const appId = target!.data.applicationId.toBigInt();
-
+      assert(appId >= 0n, 'applicationId should be > 0');
       const updated = generateValidProviderPayloadWithName('PropUpd');
       const op = ExtrinsicHelper.proposeToUpdateApplication(providerKeys, appId, updated);
       const { target: proposed } = await op.signAndSend();
