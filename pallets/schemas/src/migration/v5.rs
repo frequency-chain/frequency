@@ -75,7 +75,7 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 			SchemaInfos::<T>::translate(|schema_id, old_schema_info: v4::SchemaInfo| {
 				reads += 1;
 				writes += 2;
-				max_intent_id = max_intent_id.max(schema_id as u16);
+				max_intent_id = max_intent_id.max(schema_id);
 				IntentInfos::<T>::insert(
 					schema_id as IntentId,
 					convert_to_intent(&old_schema_info),

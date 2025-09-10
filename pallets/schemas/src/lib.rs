@@ -271,13 +271,8 @@ pub mod pallet {
 	/// - Key: Schema Id
 	/// - Value: [`BoundedVec`](BoundedVec<T::SchemaModelMaxBytesBoundedVecLimit>)
 	#[pallet::storage]
-	pub(super) type SchemaPayloads<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		SchemaId,
-		BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
-		OptionQuery,
-	>;
+	pub(super) type SchemaPayloads<T: Config> =
+		StorageMap<_, Twox64Concat, SchemaId, SchemaPayload<T>, OptionQuery>;
 
 	/// Storage for message schema info struct data
 	/// - Key: Schema Id
@@ -371,12 +366,12 @@ pub mod pallet {
 	impl<T: Config> Into<GenesisConfig<T>> for GenesisSchemasPalletConfig {
 		fn into(self) -> GenesisConfig<T> {
 			GenesisConfig::<T> {
-				initial_intent_identifier_max: self.intent_identifier_max.unwrap_or_else(|| 16_000),
-				initial_schema_identifier_max: self.schema_identifier_max.unwrap_or_else(|| 16_000),
+				initial_intent_identifier_max: self.intent_identifier_max.unwrap_or(16_000),
+				initial_schema_identifier_max: self.schema_identifier_max.unwrap_or(16_000),
 				initial_intent_group_identifier_max: self
 					.intent_group_identifier_max
-					.unwrap_or_else(|| 16_000),
-				initial_max_schema_model_size: self.max_schema_model_size.unwrap_or_else(|| 1024),
+					.unwrap_or(16_000),
+				initial_max_schema_model_size: self.max_schema_model_size.unwrap_or(1024),
 				initial_intents: self.intents.unwrap_or_default(),
 				initial_schemas: self.schemas.unwrap_or_default(),
 				initial_intent_groups: self.intent_groups.unwrap_or_default(),

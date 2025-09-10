@@ -41,6 +41,11 @@ pub const SEPARATOR_CHAR: char = '.';
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 
+/// Type alias for SchemaPayload
+#[allow(type_alias_bounds)]
+pub type SchemaPayload<T: Config> =
+	BoundedVec<u8, <T as Config>::SchemaModelMaxBytesBoundedVecLimit>;
+
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Genesis Schemas need a way to load up and this is it!
 pub struct GenesisSchema {

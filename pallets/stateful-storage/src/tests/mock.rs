@@ -13,7 +13,7 @@ use common_primitives::{
 	node::AccountId,
 	schema::{
 		IntentId, IntentResponse, ModelType, PayloadLocation, SchemaId, SchemaInfoResponse,
-		SchemaProvider, SchemaResponse, SchemaSetting,
+		SchemaProvider, SchemaResponse, SchemaSetting, SchemaStatus,
 	},
 };
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
@@ -214,6 +214,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::Itemized,
 					settings: Vec::new(),
+					status: SchemaStatus::Active,
 				}),
 			constants::ITEMIZED_APPEND_ONLY_SCHEMA |
 			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
@@ -223,6 +224,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
 				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
 			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponse {
 				schema_id,
@@ -231,6 +233,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
 				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
 			constants::PAGINATED_SCHEMA | constants::UNDELEGATED_PAGINATED_SCHEMA =>
 				Some(SchemaResponse {
@@ -240,6 +243,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::Paginated,
 					settings: Vec::new(),
+					status: SchemaStatus::Active,
 				}),
 			constants::PAGINATED_SIGNED_SCHEMA => Some(SchemaResponse {
 				schema_id,
@@ -248,6 +252,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
 				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
 			constants::PAGINATED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
 				schema_id,
@@ -256,6 +261,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
 				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
 			INVALID_SCHEMA_ID => None,
 
@@ -266,6 +272,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::OnChain,
 				settings: Vec::from(vec![SchemaSetting::AppendOnly]),
+				status: SchemaStatus::Active,
 			}),
 		}
 	}
@@ -278,6 +285,7 @@ impl SchemaProvider<u16> for SchemaHandler {
 				settings: schema.settings,
 				model_type: schema.model_type,
 				payload_location: schema.payload_location,
+				status: SchemaStatus::Active,
 			})
 		})
 	}
