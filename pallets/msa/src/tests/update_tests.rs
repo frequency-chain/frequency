@@ -392,7 +392,9 @@ fn update_application_via_governance_fails_for_invalid_cid() {
 		let provider_account = key_pair;
 
 		// First create an application
-		let app_entry = ApplicationContext::default();
+		let mut app_entry = ApplicationContext::default();
+		app_entry.default_name =
+			BoundedVec::try_from(b"default".to_vec()).expect("App name should fit in bounds");
 		assert_ok!(Msa::create_application_via_governance(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 			provider_account.into(),

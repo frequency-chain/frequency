@@ -410,8 +410,9 @@ fn create_application_via_governance_with_no_logos_and_no_localized_names() {
 		let (new_msa_id, key_pair) = create_provider_with_name("BareProvider");
 
 		// ApplicationContext::default() has no logos and no localized names
-		let entry = ApplicationContext::default();
-
+		let mut entry = ApplicationContext::default();
+		entry.default_name =
+			BoundedVec::try_from(b"default".to_vec()).expect("App name should fit in bounds");
 		// Approve application via council governance
 		assert_ok!(Msa::create_application_via_governance(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),

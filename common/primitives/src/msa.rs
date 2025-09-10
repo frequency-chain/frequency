@@ -251,17 +251,8 @@ where
 	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
 {
 	fn default() -> Self {
-		let name_bytes = b"default";
-		let default_name = if (name_bytes.len() as u32) <= NameSize::get() {
-			// Safe because we just checked length
-			name_bytes.to_vec().try_into().expect("Length already checked")
-		} else {
-			// Fallback to empty if the bound is smaller than "default"
-			BoundedVec::default()
-		};
-
 		Self {
-			default_name,
+			default_name: BoundedVec::default(),
 			localized_names: BoundedBTreeMap::default(),
 			default_logo_250_100_png_cid: BoundedVec::default(),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
