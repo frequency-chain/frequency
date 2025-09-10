@@ -266,8 +266,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				RuntimeCall::Utility(pallet_utility_call) =>
 					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider, create application, and create schema are not allowed in mainnet for now. See propose functions.
-				RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) => false,
-				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) => false,
+				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+				RuntimeCall::Msa(pallet_msa::Call::create_provider_v2 { .. }) |
+				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				#[cfg(feature = "frequency-bridging")]
 				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
