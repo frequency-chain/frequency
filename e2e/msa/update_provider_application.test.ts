@@ -43,7 +43,7 @@ describe('Update Provider and Application', function () {
       const updated = generateValidProviderPayloadWithName('UpdProv2');
 
       const op = ExtrinsicHelper.updateProviderViaGovernance(sudoKeys, providerKeys, updated);
-      const { target } = await op.sudoSignAndSend();
+      const { target } = await op.sudoSignAndSend(false);
       assert.notEqual(target, undefined, 'should emit ProviderUpdated');
 
       // Verify default name changed via runtime API
@@ -57,9 +57,7 @@ describe('Update Provider and Application', function () {
       const defaultName = new TextDecoder().decode(result.defaultName.toU8a(true));
       assert.equal(defaultName, 'UpdProv2', 'provider default name should update');
     });
-  });
 
-  describe('propose to update provider', function () {
     it('should submit a proposal to update provider', async function () {
       if (isTestnet()) this.skip();
       const updated = generateValidProviderPayloadWithName('UpdProv3');
@@ -71,24 +69,19 @@ describe('Update Provider and Application', function () {
   });
 
   describe('update application via governance', function () {
-    let applicationId: bigint;
 
-    before(async function () {
+    it('should update an existing application via governance', async function () {
       if (isTestnet()) this.skip();
       // create a base application to update
       const app = generateValidProviderPayloadWithName('BaseApp');
       const createAppOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, providerKeys, app);
-      const { target } = await createAppOp.sudoSignAndSend();
-      assert.notEqual(target, undefined, 'should emit ApplicationCreated');
-      applicationId = target!.data.applicationId.toBigInt();
-    });
-
-    it('should update an existing application via governance', async function () {
-      if (isTestnet()) this.skip();
+      const { target: targetApp } = await createAppOp.sudoSignAndSend(true);
+      assert.notEqual(targetApp, undefined, 'should emit ApplicationCreated');
+      const applicationId = targetApp!.data.applicationId.toBigInt();
       const updated = generateValidProviderPayloadWithName('AppUpdated');
 
       const op = ExtrinsicHelper.updateApplicationViaGovernance(sudoKeys, providerKeys, applicationId, updated);
-      const { target } = await op.sudoSignAndSend();
+      const { target } = await op.sudoSignAndSend(false);
       assert.notEqual(target, undefined, 'should emit ApplicationContextUpdated');
 
       // fetch context and verify name
@@ -102,9 +95,7 @@ describe('Update Provider and Application', function () {
       const defaultName = new TextDecoder().decode(result.defaultName.toU8a(true));
       assert.equal(defaultName, 'AppUpdated', 'app default name should update');
     });
-  });
 
-  describe('propose to update application', function () {
     it('should submit a proposal to update application', async function () {
       if (isTestnet()) this.skip();
       // create an app to have an index
@@ -113,7 +104,7 @@ describe('Update Provider and Application', function () {
         sudoKeys,
         providerKeys,
         app
-      ).sudoSignAndSend();
+      ).sudoSignAndSend(false);
       assert.notEqual(target, undefined, 'should emit ApplicationCreated');
       const appId = target!.data.applicationId.toBigInt();
 
