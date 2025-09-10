@@ -7,10 +7,8 @@ use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{ArithmeticError, MultiSignature};
 
 use crate::{
-	tests::mock::*,
-	types::{AddKeyData, EMPTY_FUNCTION},
-	Config, Error, Event, PayloadSignatureRegistryList, PayloadSignatureRegistryPointer,
-	PublicKeyCountForMsaId, PublicKeyToMsaId,
+	tests::mock::*, types::AddKeyData, Config, Error, Event, PayloadSignatureRegistryList,
+	PayloadSignatureRegistryPointer, PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
 
 use common_primitives::{
@@ -89,7 +87,7 @@ fn it_throws_error_when_not_msa_owner() {
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let (_fake_msa_id, fake_key_pair) = create_account();
 
-		assert_ok!(Msa::create_account(test_public(1), EMPTY_FUNCTION));
+		assert_ok!(Msa::create_account(test_public(1)));
 
 		let add_new_key_data = AddKeyData {
 			msa_id: new_msa_id,
@@ -122,7 +120,7 @@ fn it_throws_error_when_for_duplicate_key() {
 		let (new_msa_id, owner_key_pair) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 
-		let _ = Msa::add_key(new_msa_id, &new_key_pair.public().into(), EMPTY_FUNCTION);
+		let _ = Msa::add_key(new_msa_id, &new_key_pair.public().into());
 
 		let add_new_key_data = AddKeyData {
 			msa_id: new_msa_id,
@@ -418,8 +416,8 @@ fn add_removed_key_to_msa_pass() {
 #[test]
 fn it_deletes_msa_key_successfully() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::add_key(2, &test_public(1), EMPTY_FUNCTION));
-		assert_ok!(Msa::add_key(2, &test_public(2), EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(2, &test_public(1)));
+		assert_ok!(Msa::add_key(2, &test_public(2)));
 
 		assert_ok!(Msa::delete_msa_public_key(test_origin_signed(1), test_public(2)));
 
@@ -448,7 +446,7 @@ pub fn delete_msa_public_key_call_has_correct_costs() {
 #[test]
 pub fn test_delete_key() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(1, &test_public(1)));
 
 		let info = PublicKeyToMsaId::<Test>::get(test_public(1));
 
@@ -461,7 +459,7 @@ pub fn test_delete_key() {
 #[test]
 pub fn test_delete_key_errors() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(1, &test_public(1)));
 
 		assert_ok!(Msa::delete_key_for_msa(1, &test_public(1)));
 	});
