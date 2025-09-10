@@ -1,4 +1,9 @@
-use crate::{migration::v4, pallet::{CurrentIntentIdentifierMaximum, IntentInfos, NameToMappedEntityIds, SchemaInfos}, Config, IntentInfo, Pallet, SchemaInfo, SchemaVersionId, SCHEMA_NAME_BYTES_MAX, SCHEMA_STORAGE_VERSION};
+use crate::{
+	migration::v4,
+	pallet::{CurrentIntentIdentifierMaximum, IntentInfos, NameToMappedEntityIds, SchemaInfos},
+	Config, IntentInfo, Pallet, SchemaInfo, SchemaVersionId, SCHEMA_NAME_BYTES_MAX,
+	SCHEMA_STORAGE_VERSION,
+};
 use alloc::{format, vec::Vec};
 use common_primitives::schema::{IntentId, MappedEntityIdentifier, SchemaId, SchemaStatus};
 use core::marker::PhantomData;
@@ -30,7 +35,11 @@ fn convert_to_intent(old_info: &v4::SchemaInfo) -> IntentInfo {
 	IntentInfo { payload_location: old_info.payload_location, settings: old_info.settings }
 }
 
-fn append_or_overlay<S1: Get<u32>, S2: Get<u32>>(target: &mut BoundedVec<u8, S1>, source: &[u8], protocol: &BoundedVec<u8, S2>) -> Result<(), ()> {
+fn append_or_overlay<S1: Get<u32>, S2: Get<u32>>(
+	target: &mut BoundedVec<u8, S1>,
+	source: &[u8],
+	protocol: &BoundedVec<u8, S2>,
+) -> Result<(), ()> {
 	let max_len = (SCHEMA_NAME_BYTES_MAX as usize - protocol.len() - 1).min(S1::get() as usize);
 	let additional = source.len();
 	let len = target.len();

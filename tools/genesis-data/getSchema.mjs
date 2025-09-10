@@ -114,6 +114,7 @@ export async function getSchemas(sourceUrl) {
             intent_id: Number(v.intentId),
             model_type: v.modelType.toString(),
             payload_location: v.payloadLocation.toString(),
+            status: v.status.toString(),
         };
     });
 
