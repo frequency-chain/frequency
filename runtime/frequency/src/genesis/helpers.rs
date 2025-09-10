@@ -84,12 +84,7 @@ pub fn build_genesis(
 			// Assign network admin rights.
 			key: sudo_key,
 		},
-		schemas: crate::pallet_schemas::GenesisConfig {
-			initial_schemas: schemas_pallet_config.schemas,
-			initial_intents: schemas_pallet_config.intents,
-			initial_intent_groups: schemas_pallet_config.intent_groups,
-			..Default::default()
-		},
+		schemas: schemas_pallet_config.into(),
 		time_release: Default::default(),
 		democracy: Default::default(),
 		treasury: Default::default(),

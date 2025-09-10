@@ -107,6 +107,30 @@ pub type IntentSetting = SchemaSetting;
 /// TODO: temporary alias until Schemas are updated in an upcoming PR
 pub type IntentSettings = SchemaSettings;
 
+/// Status of a Schema
+#[derive(
+	Copy,
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	PartialEq,
+	Debug,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
+pub enum SchemaStatus {
+	/// Schema is current and approved for writing
+	Active,
+	/// Schema is viable for writing, but is deprecated and may become unsupported soon
+	Deprecated,
+	/// Schema is unsupported; writing to this schema is prohibited
+	Unsupported,
+}
+
 /// RPC response structure for an IntentGroup
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -144,6 +168,8 @@ pub struct SchemaResponse {
 	pub model: Vec<u8>,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
+	/// The status of this Schema
+	pub status: SchemaStatus,
 	/// The payload location associated with this Schema's associated Intent
 	pub payload_location: PayloadLocation,
 	/// The settings for this Schema's associated Intent
@@ -160,6 +186,8 @@ pub struct SchemaInfoResponse {
 	pub intent_id: IntentId,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
+	/// The status of this Schema
+	pub status: SchemaStatus,
 	/// The payload location associated with this Schema's associated Intent
 	pub payload_location: PayloadLocation,
 	/// The settings for this Schema's associated Intent

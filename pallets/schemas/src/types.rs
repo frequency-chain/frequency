@@ -1,9 +1,6 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
-use common_primitives::schema::{
-	IntentGroupId, IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType,
-	NameLookupResponse, PayloadLocation, SchemaId, SchemaVersion, SchemaVersionResponse,
-};
+use common_primitives::schema::{IntentGroupId, IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId, SchemaStatus, SchemaVersion, SchemaVersionResponse};
 use core::fmt::Debug;
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -51,6 +48,8 @@ pub struct GenesisSchema {
 	pub model_type: ModelType,
 	/// The Payload Model
 	pub model: String,
+	/// The status of the schema
+	pub status: SchemaStatus,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -80,12 +79,20 @@ pub struct GenesisIntentGroup {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Overall Genesis config loading structure for the entire pallet
 pub struct GenesisSchemasPalletConfig {
+	/// Maximum schema identifier at genesis
+	pub schema_identifier_max: Option<SchemaId>,
+	/// Maximum Intent identifier at genesis
+	pub intent_identifier_max: Option<IntentId>,
+	/// Maximum IntentGroup identifier at genesis
+	pub intent_group_identifier_max: Option<IntentGroupId>,
+	/// Maximum schema size in bytes at genesis
+	pub max_schema_model_size: Option<u32>,
 	/// The list of Schemas
-	pub schemas: Vec<GenesisSchema>,
+	pub schemas: Option<Vec<GenesisSchema>>,
 	/// The list of Intents
-	pub intents: Vec<GenesisIntent>,
+	pub intents: Option<Vec<GenesisIntent>>,
 	/// The list of IntentGroups
-	pub intent_groups: Vec<GenesisIntentGroup>,
+	pub intent_groups: Option<Vec<GenesisIntentGroup>>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -112,10 +119,8 @@ pub struct SchemaInfo {
 	pub intent_id: IntentId,
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
-	/// The payload location (inherited from the Intent)
-	pub payload_location: PayloadLocation,
-	/// additional control settings (inherited from the Intent)
-	pub settings: IntentSettings,
+	/// The status of the Schema
+	pub status: SchemaStatus,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]

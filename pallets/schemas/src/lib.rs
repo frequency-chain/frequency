@@ -67,7 +67,6 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use common_primitives::schema::{IntentSetting, IntentSettings};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -336,11 +335,11 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema identifier at genesis
-		pub initial_schema_identifier_max: u16,
+		pub initial_schema_identifier_max: SchemaId,
 		/// Maximum Intent identifier at genesis
-		pub initial_intent_identifier_max: u16,
+		pub initial_intent_identifier_max: IntentId,
 		/// Maximum IntentGroup identifier at genesis
-		pub initial_intent_group_identifier_max: u16,
+		pub initial_intent_group_identifier_max: IntentGroupId,
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
 		/// Genesis Intents to load for development
@@ -368,6 +367,24 @@ pub mod pallet {
 			}
 		}
 	}
+
+	impl<T: Config> Into<GenesisConfig<T>> for GenesisSchemasPalletConfig {
+		fn into(self) -> GenesisConfig<T> {
+			GenesisConfig::<T> {
+				initial_intent_identifier_max: self.intent_identifier_max.unwrap_or_else(|| 16_000),
+				initial_schema_identifier_max: self.schema_identifier_max.unwrap_or_else(|| 16_000),
+				initial_intent_group_identifier_max: self
+					.intent_group_identifier_max
+					.unwrap_or_else(|| 16_000),
+				initial_max_schema_model_size: self.max_schema_model_size.unwrap_or_else(|| 1024),
+				initial_intents: self.intents.unwrap_or_default(),
+				initial_schemas: self.schemas.unwrap_or_default(),
+				initial_intent_groups: self.intent_groups.unwrap_or_default(),
+				_config: Default::default(),
+			}
+		}
+	}
+
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
@@ -385,7 +402,7 @@ pub mod pallet {
 
 				let intent_info =
 					IntentInfo { payload_location: intent.payload_location, settings };
-				let _ = Pallet::<T>::store_intent_info(intent.intent_id, intent_info, &parsed_name)
+				Pallet::<T>::store_intent_info(intent.intent_id, intent_info, &parsed_name)
 					.expect("Failed to set Intent in Genesis!");
 			}
 
@@ -403,12 +420,8 @@ pub mod pallet {
 					settings: intent.settings,
 				};
 
-				let _ = Pallet::<T>::store_schema_info_and_payload(
-					schema.schema_id,
-					schema_info,
-					model,
-				)
-				.expect("Failed to set Schema in Genesis!");
+				Pallet::<T>::store_schema_info_and_payload(schema.schema_id, schema_info, model)
+					.expect("Failed to set Schema in Genesis!");
 			}
 
 			for intent_group in self.initial_intent_groups.iter() {
@@ -426,11 +439,12 @@ pub mod pallet {
 				.expect("Genesis IntentGroup name larger than {SCHEMA_NAME_BYTES_MAX} bytes}");
 				let parsed_name = SchemaName::try_parse::<T>(name_payload, true)
 					.expect("Bad Genesis IntentGroup name");
-				let _ = Pallet::<T>::store_intent_group(
+				Pallet::<T>::store_intent_group(
 					intent_group.intent_group_id,
 					intent_ids,
 					&parsed_name,
-				);
+				)
+				.expect("Failed to set Schema in Genesis!");
 			}
 
 			// Set the maximums manually

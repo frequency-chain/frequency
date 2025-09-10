@@ -472,7 +472,7 @@ pub type Executive = frame_executive::Executive<
 	(
 		MigratePalletsCurrentStorage<Runtime>,
 		SetSafeXcmVersion<Runtime>,
-		pallet_schemas::migration::MigrateV5ToV6<Runtime>,
+		pallet_schemas::migration::MigrateV4ToV5<Runtime>,
 	),
 >;
 
@@ -483,7 +483,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, pallet_schemas::migration::MigrateV5ToV6<Runtime>),
+	(MigratePalletsCurrentStorage<Runtime>, pallet_schemas::migration::MigrateV4ToV5<Runtime>),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -644,7 +644,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 177,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -658,7 +658,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 175,
+	spec_version: 177,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
