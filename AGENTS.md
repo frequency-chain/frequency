@@ -5,7 +5,7 @@
 ## How to Contribute
 - Fork the repository and create a new branch for your feature or bug fix.
 - Make your changes and commit them with clear, descriptive commit messages.
-- Submit a pull request with a detailed description of your changes.
+- Submit a draft pull request with a detailed description of your changes.
 
 ## Code Review Process
 - All contributions will be reviewed by the project maintainers.
