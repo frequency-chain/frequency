@@ -1,3 +1,5 @@
+use core::u8;
+
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	dispatch::{GetDispatchInfo, Pays},
@@ -10,11 +12,10 @@ use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
 use sp_runtime::{traits::Zero, MultiSignature};
 
 use crate::{
-	ensure,
 	tests::mock::*,
-	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	AddKeyData, AuthorizedKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error,
-	Event, ProviderToRegistryEntry, PublicKeyToMsaId,
+	types::{AddProvider, PermittedDelegationSchemas},
+	AddKeyData, ArithmeticError, AuthorizedKeyData, Config, DelegatorAndProviderToDelegation,
+	Error, Event, ProviderToRegistryEntry, PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
 use common_primitives::signatures::AccountAddressMapper;
 
@@ -63,7 +64,7 @@ pub fn test_ensure_msa_owner() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(Msa::ensure_msa_owner(&test_public(1), 1), Error::<Test>::NoKeyExists);
 
-		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(1, &test_public(1)));
 
 		assert_eq!(Msa::ensure_msa_owner(&test_public(1), 1), Ok(()));
 	});
@@ -141,15 +142,10 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 		// arrange
 		let msa_id = 1u64;
 		let key = test_public(msa_id as u8);
+		PublicKeyCountForMsaId::<Test>::set(msa_id, u8::MAX);
 
 		// act
-		assert_noop!(
-			Msa::add_key(msa_id, &key, |new_msa_id| -> DispatchResult {
-				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRemoval);
-				Ok(())
-			}),
-			Error::<Test>::InvalidSelfRemoval
-		);
+		assert_noop!(Msa::add_key(msa_id, &key,), ArithmeticError::Overflow);
 
 		// assert
 		assert_eq!(PublicKeyToMsaId::<Test>::get(&key), None);
@@ -381,8 +377,7 @@ fn create_provider_max_size_exceeded() {
 fn create_provider_duplicate() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
-		let (_new_msa_id, _) =
-			Msa::create_account(key_pair.public().into(), EMPTY_FUNCTION).unwrap();
+		let (_new_msa_id, _) = Msa::create_account(key_pair.public().into()).unwrap();
 		assert_ok!(Msa::create_provider(
 			RuntimeOrigin::signed(key_pair.public().into()),
 			Vec::from("Foo")
