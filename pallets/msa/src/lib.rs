@@ -690,6 +690,9 @@ pub mod pallet {
 		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 		/// only piece of metadata we are recording is provider name.
 		///
+		/// # Events
+		/// * [`Event::ProviderCreated`]
+		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - origin does not have an MSA
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
