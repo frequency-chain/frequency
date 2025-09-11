@@ -7,7 +7,7 @@ import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkado
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
+import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, getNonce, log, MultiSignatureType } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
@@ -27,6 +27,7 @@ import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime
 import { hasRelayChain } from './env';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
+import { get } from 'http';
 
 export interface ReleaseSchedule {
   start: number;
@@ -248,7 +249,8 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   public async sudoSignAndSend(waitForInBlock = true) {
-    const nonce = await autoNonce.auto(this.keys);
+    const currentNonce = await getNonce(this.keys);
+    const nonce = await autoNonce.auto(this.keys, currentNonce);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
       this.api.tx.sudo
