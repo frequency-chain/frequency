@@ -77,7 +77,10 @@ fn migrate_provider_entries_batch<T: Config>(
 	let mut bytes = 0u64;
 	let mut migrated_count = 0u32;
 
-	let entries: vec::Vec<_> = v1::ProviderToRegistryEntry::<T>::iter()
+	let entries: vec::Vec<(
+		ProviderId,
+		v1::ProviderRegistryEntry<<T as Config>::MaxProviderNameSize>,
+	)> = v1::ProviderToRegistryEntry::<T>::iter()
 		.skip(start_index)
 		.take(batch_size)
 		.collect();
@@ -279,6 +282,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		}
 
 		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count() as u64;
+
 		log::info!(target: LOG_TARGET, "Found {old_count} items in OLD storage format");
 
 		let detected_chain = get_chain_type::<T>();
@@ -290,6 +294,10 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(encoded_numbers: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
+		if is_paseo_testnet::<T>() {
+			log::info!(target: LOG_TARGET, "Paseo detected - migration may continue via hooks");
+			return Ok(())
+		}
 		use parity_scale_codec::Decode;
 
 		let expected: u64 = u64::decode(&mut encoded_numbers.as_slice())
@@ -297,12 +305,6 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 		assert_eq!(on_chain_version, STORAGE_VERSION);
-
-		// For Paseo, migration might still be in progress via hooks
-		if is_paseo_testnet::<T>() {
-			log::info!(target: LOG_TARGET, "Paseo detected - migration may continue via hooks");
-			return Ok(())
-		}
 
 		let known_providers = get_known_provider_ids::<T>();
 		if known_providers.is_empty() {
