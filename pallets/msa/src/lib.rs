@@ -696,12 +696,18 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider_v2(0u32, 0u32))]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
-
-			Self::create_provider_v2(origin, entry)
+			Self::ensure_correct_cids(&entry)?;
+			Self::upsert_provider_for(provider_msa_id, entry, false)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
 		}
 
 		/// Creates a new Delegation for an existing MSA, with `origin` as the Provider and `delegator_key` is the delegator.
@@ -1295,39 +1301,6 @@ pub mod pallet {
 				recovery_commitment,
 			});
 
-			Ok(())
-		}
-
-		/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
-		/// only piece of metadata we are recording is provider name.
-		///
-		/// # Events
-		/// * [`Event::ProviderCreated`]
-		///
-		/// # Errors
-		/// * [`Error::NoKeyExists`] - origin does not have an MSA
-		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
-		#[pallet::call_index(19)]
-		#[pallet::weight(T::WeightInfo::create_provider_v2(
-			payload.localized_names.len() as u32,
-			payload.localized_logo_250_100_png_cids.len() as u32,
-		))]
-		pub fn create_provider_v2(
-			origin: OriginFor<T>,
-			payload: ProviderRegistryEntry<
-				T::MaxProviderNameSize,
-				T::MaxLanguageCodeSize,
-				T::MaxLogoCidSize,
-				T::MaxLocaleCount,
-			>,
-		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::ensure_correct_cids(&payload)?;
-			Self::upsert_provider_for(provider_msa_id, payload, false)?;
-			Self::deposit_event(Event::ProviderCreated {
-				provider_id: ProviderId(provider_msa_id),
-			});
 			Ok(())
 		}
 

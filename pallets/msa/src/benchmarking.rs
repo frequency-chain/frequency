@@ -236,7 +236,11 @@ mod benchmarks {
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
 
-		assert_ok!(Msa::<T>::create_provider_v2(RawOrigin::Signed(caller.clone()).into(), entry));
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			caller.clone(),
+			entry
+		));
 
 		let schemas: Vec<SchemaId> = (0..s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
@@ -369,8 +373,9 @@ mod benchmarks {
 		let (provider_msa_id, _) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
 		let entry = ProviderRegistryEntry::default();
 
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_caller.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
 			entry
 		));
 
@@ -422,42 +427,15 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_provider_v2(
-		n: Linear<0, { T::MaxLocaleCount::get() }>,
-		m: Linear<0, { T::MaxLocaleCount::get() }>,
-	) -> Result<(), BenchmarkError> {
-		let name_size = T::MaxProviderNameSize::get();
-		let lang_size = T::MaxLanguageCodeSize::get();
+	fn create_provider() -> Result<(), BenchmarkError> {
+		let s = T::MaxProviderNameSize::get();
 
-		let provider_name = (1..name_size as u8).collect::<Vec<_>>();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
-			.as_bytes()
-			.to_vec();
-		let mut localized_names = BoundedBTreeMap::new();
-		let mut localized_cids = BoundedBTreeMap::new();
-		for i in 0..n {
-			let lang_code = make_lang_code(i as usize, lang_size as usize);
-			let lang = BoundedVec::try_from(lang_code).unwrap();
-			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
-			localized_names.try_insert(lang.clone(), name).unwrap();
-		}
-		for i in 0..m {
-			let lang_code = make_lang_code(i as usize, lang_size as usize);
-			let lang = BoundedVec::try_from(lang_code).unwrap();
-			let logo = BoundedVec::try_from(cid.clone()).unwrap();
-			localized_cids.try_insert(lang, logo).unwrap();
-		}
-
+		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(provider_name).unwrap_or_default(),
-			localized_names,
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
-			localized_logo_250_100_png_cids: localized_cids,
-		};
+
 		#[extrinsic_call]
-		_(RawOrigin::Signed(provider_public_key), entry);
+		_(RawOrigin::Signed(provider_public_key), provider_name);
 
 		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
 		Ok(())
@@ -839,8 +817,9 @@ mod benchmarks {
 		let (_, provider_public_key) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
 		let entry = ProviderRegistryEntry::default();
 
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_caller.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
 			entry
 		));
 		let application_payload = ApplicationContext {
@@ -891,8 +870,9 @@ mod benchmarks {
 			Msa::<T>::create_account(provider_caller.clone()).unwrap();
 		let entry = ProviderRegistryEntry::default();
 
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_caller.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
 			entry
 		));
 		let application_payload = ApplicationContext {
@@ -919,8 +899,9 @@ mod benchmarks {
 		let (_, provider_public_key) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
 		let entry = ProviderRegistryEntry::default();
 
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_caller.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
 			entry
 		));
 
@@ -976,8 +957,9 @@ mod benchmarks {
 		};
 
 		// Must be an already registered provider to propose update
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_public_key.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_public_key.clone(),
 			ProviderRegistryEntry::default()
 		));
 
@@ -1017,8 +999,9 @@ mod benchmarks {
 		let provider_caller: T::AccountId = whitelisted_caller();
 		let (provider_id, provider_public_key) =
 			Msa::<T>::create_account(provider_caller.clone()).unwrap();
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_caller.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
 			ProviderRegistryEntry::default()
 		));
 
@@ -1076,8 +1059,9 @@ mod benchmarks {
 
 		let provider_caller: T::AccountId = whitelisted_caller();
 		let (_, provider_public_key) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_caller.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
 			ProviderRegistryEntry::default()
 		));
 
@@ -1132,8 +1116,9 @@ mod benchmarks {
 		let account = create_account::<T>("account_updated", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 		// register provider first
-		assert_ok!(Msa::<T>::create_provider_v2(
-			RawOrigin::Signed(provider_public_key.clone()).into(),
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_public_key.clone(),
 			ProviderRegistryEntry::default()
 		));
 

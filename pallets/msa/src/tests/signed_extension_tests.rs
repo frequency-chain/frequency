@@ -1095,7 +1095,11 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let delegator_account = delegator_pair.public();
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 		assert_ok!(Msa::grant_delegation(
@@ -1142,7 +1146,11 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let delegator_account = delegator_pair.public();
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 		assert_ok!(Msa::grant_delegation(

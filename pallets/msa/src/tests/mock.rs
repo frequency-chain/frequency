@@ -16,7 +16,8 @@ use frame_support::{
 	BoundedBTreeMap, BoundedVec,
 };
 
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, RawOrigin};
+
 use pallet_collective::{self, Members};
 use parity_scale_codec::MaxEncodedLen;
 use sp_core::{
@@ -389,7 +390,11 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};
 	// Register provider
-	assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry,));
+	assert_ok!(Msa::create_provider_via_governance_v2(
+		RawOrigin::Root.into(),
+		provider_account.into(),
+		entry.clone()
+	));
 
 	assert_ok!(Msa::grant_delegation(
 		RuntimeOrigin::signed(provider_account.into()),
@@ -411,7 +416,11 @@ pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 	entry.default_logo_250_100_png_cid =
 		BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
 	// Register provider
-	assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+	assert_ok!(Msa::create_provider_via_governance_v2(
+		RawOrigin::Root.into(),
+		provider_account.into(),
+		entry
+	));
 	(provider_msa_id, provider_account)
 }
 

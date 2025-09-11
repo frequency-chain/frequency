@@ -6,7 +6,7 @@ use frame_support::{
 	BoundedBTreeMap, BoundedVec,
 };
 
-use frame_system::pallet_prelude::BlockNumberFor;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 
 use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
 use sp_runtime::{traits::Zero, MultiSignature};
@@ -90,7 +90,11 @@ pub fn add_provider_to_msa_is_success() {
 			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
@@ -162,7 +166,11 @@ pub fn revoke_delegation_by_delegator_is_successful() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		let provider_msa =
 			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
@@ -207,7 +215,11 @@ pub fn revoke_provider_is_successful() {
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		assert_ok!(Msa::grant_delegation(
 			RuntimeOrigin::signed(provider_account.into()),
@@ -277,7 +289,11 @@ fn revoke_delegation_by_delegator_throws_error_when_delegation_already_revoked()
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		assert_ok!(Msa::grant_delegation(
 			RuntimeOrigin::signed(provider_account.into()),
@@ -318,7 +334,11 @@ pub fn revoke_provider_call_has_no_cost() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(test_origin_signed(1), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			test_public(1).into(),
+			entry
+		));
 
 		assert_ok!(Msa::grant_delegation(
 			test_origin_signed(1),
@@ -335,7 +355,7 @@ pub fn revoke_provider_call_has_no_cost() {
 }
 
 #[test]
-fn create_provider_v2() {
+fn create_provider_via_governance() {
 	new_test_ext().execute_with(|| {
 		let (_new_msa_id, key_pair) = create_account();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
@@ -346,7 +366,11 @@ fn create_provider_v2() {
 			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
 		entry.default_name =
 			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(key_pair.public().into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			key_pair.public().into(),
+			entry.clone()
+		));
 	})
 }
 
@@ -356,13 +380,18 @@ fn create_provider_duplicate() {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let (_new_msa_id, _) = Msa::create_account(key_pair.public().into()).unwrap();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_v2(
-			RuntimeOrigin::signed(key_pair.public().into()),
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			key_pair.public().into(),
 			entry.clone()
 		));
 
 		assert_err!(
-			Msa::create_provider_v2(RuntimeOrigin::signed(key_pair.public().into()), entry),
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				key_pair.public().into(),
+				entry
+			),
 			Error::<Test>::DuplicateProviderRegistryEntry
 		)
 	})
@@ -553,7 +582,11 @@ pub fn add_provider_expired() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_key.into()))); // MSA = 1
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_key.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_key.into(),
+			entry
+		));
 
 		// 3. create delegator MSA and provider to provider
 		let expiration: BlockNumber = 0;

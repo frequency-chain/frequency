@@ -2,6 +2,7 @@ use crate::{tests::mock::*, AddKeyData, AddProvider, Error};
 
 use common_primitives::{msa::ProviderRegistryEntry, node::BlockNumber, utils::wrap_binary_data};
 use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_system::RawOrigin;
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
@@ -58,8 +59,9 @@ fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
 	// create MSA for provider and register them
 	assert_ok!(Msa::create(RuntimeOrigin::signed(provider_keypair.public().into())));
 	let entry = ProviderRegistryEntry::default();
-	assert_ok!(Msa::create_provider_v2(
-		RuntimeOrigin::signed(provider_keypair.public().into()),
+	assert_ok!(Msa::create_provider_via_governance_v2(
+		RawOrigin::Root.into(),
+		provider_keypair.public().into(),
 		entry
 	));
 	(delegator_keypair, provider_keypair)

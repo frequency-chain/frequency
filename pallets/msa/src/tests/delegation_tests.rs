@@ -4,6 +4,7 @@ use frame_support::{
 	BoundedBTreeMap,
 };
 
+use frame_system::RawOrigin;
 use sp_runtime::MultiSignature;
 
 use crate::{
@@ -46,7 +47,11 @@ pub fn grant_delegation_changes_schema_permissions() {
 			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		let block_expiration: BlockNumber = 110;
 
@@ -296,7 +301,11 @@ pub fn grant_delegation_throws_unauthorized_delegator_error() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		assert_noop!(
 			Msa::grant_delegation(
@@ -319,7 +328,11 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		let (provider_msa_id, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		// 3. create delegator MSA and provider to provider
 		let (signature, add_provider_payload) =
@@ -368,7 +381,11 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 		let (provider_msa_id, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		// 3. create delegator MSA and provider to provider
 		let (signature, add_provider_payload) =

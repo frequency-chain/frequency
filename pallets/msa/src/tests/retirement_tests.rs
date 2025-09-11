@@ -1,6 +1,7 @@
 use frame_support::{
 	assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction, traits::Currency,
 };
+use frame_system::RawOrigin;
 
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
@@ -81,7 +82,11 @@ fn test_retire_msa_success() {
 		let provider_msa_id =
 			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_v2(RuntimeOrigin::signed(provider_account.into()), entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
+		));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
@@ -121,14 +126,17 @@ fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 		// Create an account
 		let (test_account_key_pair, _) = sr25519::Pair::generate();
 		let test_account = AccountId32::new(test_account_key_pair.public().into());
-		let origin = RuntimeOrigin::signed(test_account.clone());
 
 		// Add an account to the MSA
 		assert_ok!(Msa::add_key(2, &test_account));
 
 		// Register provider
 		let entry = ProviderRegistryEntry::default();
-		assert_ok!(Msa::create_provider_v2(origin, entry));
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			test_account.clone(),
+			entry
+		));
 
 		// Retire MSA
 		assert_noop!(
