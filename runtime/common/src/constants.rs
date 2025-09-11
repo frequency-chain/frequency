@@ -119,7 +119,7 @@ impl Get<u32> for MsaMaxLogoCidSize {
 pub struct MsaMaxLocaleCount;
 impl Get<u32> for MsaMaxLocaleCount {
 	fn get() -> u32 {
-		150
+		10
 	}
 }
 /// The maximum size of a provider logo (in bytes)
