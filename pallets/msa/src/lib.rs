@@ -694,7 +694,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::create_provider_v2(0u32, 0u32))]
+		#[pallet::weight(T::WeightInfo::create_provider())]
 		#[allow(deprecated)]
 		#[deprecated(
 			note = "please use `create_provider_via_governance_v2`, `propose_to_be_provider_v2`which supports additional provider metadata"
