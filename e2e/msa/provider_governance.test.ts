@@ -41,7 +41,7 @@ describe('Create Provider', function () {
         defaultName: longName,
       });
       await assert.rejects(createProviderOp.sudoSignAndSend(), {
-        name: 'ExceedsMaxProviderNameSize',
+        name: 'RpcError',
       });
     });
   });

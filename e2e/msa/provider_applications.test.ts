@@ -194,7 +194,7 @@ describe('Create Provider Application', function () {
   it('should successfully create application with locale and retrieve', async function () {
     if (isTestnet()) this.skip();
     // read frequency.png into logoBytes
-    const logoBytes = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_v2.test.ts')));
+    const logoBytes = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_applications.test.ts')));
     const buf = Array.from(logoBytes);
     const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
     const logoCidStr = await computeCid(logoBytes);
