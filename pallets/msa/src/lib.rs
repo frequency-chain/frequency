@@ -1308,7 +1308,7 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-		#[pallet::call_index(20)]
+		#[pallet::call_index(19)]
 		#[pallet::weight(T::WeightInfo::propose_to_be_provider_v2())]
 		pub fn propose_to_be_provider_v2(
 			origin: OriginFor<T>,
@@ -1345,7 +1345,7 @@ pub mod pallet {
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
-		#[pallet::call_index(21)]
+		#[pallet::call_index(20)]
 		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2(
 			payload.localized_names.len() as u32,
 			payload.localized_logo_250_100_png_cids.len() as u32,
@@ -1377,7 +1377,7 @@ pub mod pallet {
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
-		#[pallet::call_index(22)]
+		#[pallet::call_index(21)]
 		#[pallet::weight(T::WeightInfo::propose_to_add_application())]
 		pub fn propose_to_add_application(
 			origin: OriginFor<T>,
@@ -1417,7 +1417,7 @@ pub mod pallet {
 		/// * [`Error::DuplicateApplicationRegistryEntry`] - an ApplicationRegistryEntry associated with the given MSA id already exists.
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
-		#[pallet::call_index(23)]
+		#[pallet::call_index(22)]
 		#[pallet::weight(T::WeightInfo::create_application_via_governance(
 			payload.localized_names.len() as u32,
 			payload.localized_logo_250_100_png_cids.len() as u32,
@@ -1455,7 +1455,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid and not in approved logos.
 		/// * [`Error::LogoCidNotApproved`] - If the logo CID is not in the approved logos list.
 		///
-		#[pallet::call_index(24)]
+		#[pallet::call_index(23)]
 		#[pallet::weight(T::WeightInfo::upload_logo())]
 		pub fn upload_logo(
 			origin: OriginFor<T>,
@@ -1492,7 +1492,7 @@ pub mod pallet {
 		/// * [`Error::NoKeyExists`] - account does not have an MSA
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
-		#[pallet::call_index(25)]
+		#[pallet::call_index(24)]
 		#[pallet::weight(T::WeightInfo::update_provider_via_governance(
 			payload.localized_names.len() as u32,
 			payload.localized_logo_250_100_png_cids.len() as u32,
@@ -1529,7 +1529,7 @@ pub mod pallet {
 		/// * [`Error::ProviderNotRegistered`] - If the provider is not registered.
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
-		#[pallet::call_index(26)]
+		#[pallet::call_index(25)]
 		#[pallet::weight(T::WeightInfo::propose_to_update_provider())]
 		pub fn propose_to_update_provider(
 			origin: OriginFor<T>,
@@ -1572,7 +1572,7 @@ pub mod pallet {
 		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
-		#[pallet::call_index(27)]
+		#[pallet::call_index(26)]
 		#[pallet::weight(T::WeightInfo::update_application_via_governance(
 			payload.localized_names.len() as u32,
 			payload.localized_logo_250_100_png_cids.len() as u32
@@ -1616,7 +1616,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
-		#[pallet::call_index(28)]
+		#[pallet::call_index(27)]
 		#[pallet::weight(T::WeightInfo::propose_to_update_application())]
 		pub fn propose_to_update_application(
 			origin: OriginFor<T>,
@@ -1657,7 +1657,7 @@ pub mod pallet {
 
 		/// Create application allows creating an application registry without governance
 		/// This call is blocked in release mode
-		#[pallet::call_index(29)]
+		#[pallet::call_index(28)]
 		#[pallet::weight(T::WeightInfo::create_application_via_governance(
 			payload.localized_names.len() as u32,
 			payload.localized_logo_250_100_png_cids.len() as u32,
