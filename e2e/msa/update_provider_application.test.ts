@@ -22,6 +22,7 @@ describe('Update Provider and Application', function () {
   let applicationId: bigint;
 
   before(async function () {
+    if (isTestnet()) this.skip();
     sudoKeys = getSudo().keys;
     fundingSource = await getFundingSource(import.meta.url);
     providerKeys = await createAndFundKeypair(fundingSource, 10n * DOLLARS, 'upd-provider');
@@ -31,8 +32,8 @@ describe('Update Provider and Application', function () {
     await f.fundAndSend(fundingSource);
 
     const providerEntry = generateValidProviderPayloadWithName('UpdProv');
-    const createProviderOp = ExtrinsicHelper.createProviderV2(providerKeys, providerEntry);
-    const { target: providerEvent } = await createProviderOp.signAndSend();
+    const createProviderOp = ExtrinsicHelper.createProviderViaGovernanceV2(sudoKeys, providerKeys, providerEntry);
+    const { target: providerEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(providerEvent, undefined, 'should emit ProviderCreated');
     providerId = providerEvent!.data.providerId.toBigInt();
     assert(providerId > 0n, 'providerId should be > 0');

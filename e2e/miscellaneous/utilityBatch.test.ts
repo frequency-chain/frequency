@@ -105,11 +105,7 @@ describe('Utility Batch Filtering', function () {
   it('should fail to execute ❌ batch with `Pays::Yes` `create_provider`call blocked by Frequency', async function () {
     // bad batch: with frequency related Pays::Yes call
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
-    badBatch.push(
-      ExtrinsicHelper.api.tx.msa.createProviderV2({
-        defaultName: 'I am a ba(tch)d provider',
-      })
-    );
+    badBatch.push(ExtrinsicHelper.api.tx.msa.createProvider('I am a ba(tch)d provider'));
     const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
     try {
       await batch.fundAndSend(fundingSource);
@@ -122,11 +118,7 @@ describe('Utility Batch Filtering', function () {
   it('should fail to execute ❌ batch with `Pays::Yes` `create_schema` call blocked by Frequency', async function () {
     // bad batch: with frequency related Pays::Yes call
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
-    badBatch.push(
-      ExtrinsicHelper.api.tx.msa.createProviderV2({
-        defaultName: 'I am a ba(tch)d provider',
-      })
-    );
+    badBatch.push(ExtrinsicHelper.api.tx.msa.createProvider('I am a ba(tch)d provider'));
     const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
     try {
       await batch.fundAndSend(fundingSource);

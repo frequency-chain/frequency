@@ -391,11 +391,9 @@ export async function createProviderKeysAndId(
   waitForInBlock = true
 ): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
-  const providerEntry = generateValidProviderPayloadWithName('PrivateProvider');
-
   const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(providerKeys, [
     ExtrinsicHelper.createMsa(providerKeys).extrinsic(),
-    ExtrinsicHelper.createProviderV2(providerKeys, providerEntry).extrinsic(),
+    ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider').extrinsic(),
   ]).fundAndSend(source, waitForInBlock);
   const providerCreatedEvent = eventMap['msa.ProviderCreated'];
   if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
@@ -478,8 +476,7 @@ export async function createMsaAndProvider(
   waitForInBlock = true
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const providerEntry = generateValidProviderPayloadWithName(providerName);
-  const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
+  const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
   const minimumFund = (
     await Promise.all([getExistentialDeposit(), createMsaOp.getEstimatedTxFee(), createProviderOp.getEstimatedTxFee()])
   ).reduce((i, j) => i + j, 100_000n);

@@ -27,6 +27,7 @@ describe('Create Provider Application', function () {
   let fundingSource: KeyringPair;
 
   before(async function () {
+    if (isTestnet()) this.skip();
     sudoKeys = getSudo().keys;
     fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 5n * DOLLARS);
@@ -36,8 +37,8 @@ describe('Create Provider Application', function () {
     createMsaOp = ExtrinsicHelper.createMsa(nonProviderKeys);
     await createMsaOp.fundAndSend(fundingSource);
     const providerEntry = generateValidProviderPayloadWithName('MyProvider');
-    const createProviderOp = ExtrinsicHelper.createProviderV2(keys, providerEntry);
-    const { target: providerEvent } = await createProviderOp.signAndSend();
+    const createProviderOp = ExtrinsicHelper.createProviderViaGovernanceV2(sudoKeys, keys, providerEntry);
+    const { target: providerEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     providerId = providerEvent!.data.providerId.toBigInt();
   });

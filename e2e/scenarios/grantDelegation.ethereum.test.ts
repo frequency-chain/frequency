@@ -52,16 +52,15 @@ describe('Delegation Scenario Tests Ethereum', function () {
 
     let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
     await createProviderMsaOp.signAndSend();
-    const providerEntry = generateValidProviderPayloadWithName('MyProvider');
 
-    let createProviderOp = ExtrinsicHelper.createProviderV2(providerKeys, providerEntry);
+    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'MyProvider');
     let { target: providerEvent } = await createProviderOp.signAndSend();
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     providerId = providerEvent!.data.providerId;
 
     createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
     await createProviderMsaOp.signAndSend();
-    createProviderOp = ExtrinsicHelper.createProviderV2(otherProviderKeys, providerEntry);
+    createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, 'MyProvider');
     ({ target: providerEvent } = await createProviderOp.signAndSend());
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;
