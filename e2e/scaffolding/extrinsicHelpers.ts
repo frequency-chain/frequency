@@ -621,7 +621,7 @@ export class ExtrinsicHelper {
           localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
         }),
       sudoKeys,
-      ExtrinsicHelper.api.events.msa.ApplicationCreated
+      ExtrinsicHelper.api.events.msa.ProviderCreated
     );
   }
 
