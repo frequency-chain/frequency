@@ -7,7 +7,14 @@ import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkado
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, getNonce, log, MultiSignatureType } from './helpers';
+import {
+  getBlockNumber,
+  getExistentialDeposit,
+  getFinalizedBlockNumber,
+  getNonce,
+  log,
+  MultiSignatureType,
+} from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
