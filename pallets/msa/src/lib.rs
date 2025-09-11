@@ -78,7 +78,7 @@ use sp_runtime::{
 };
 pub use types::{
 	AddKeyData, AddProvider, ApplicationIndex, AuthorizedKeyData, PermittedDelegationSchemas,
-	RecoveryCommitment, RecoveryCommitmentPayload, EMPTY_FUNCTION,
+	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 pub use weights::*;
 
@@ -605,8 +605,7 @@ pub mod pallet {
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let public_key = ensure_signed(origin)?;
 
-			let (new_msa_id, new_public_key) =
-				Self::create_account(public_key, |_| -> DispatchResult { Ok(()) })?;
+			let (new_msa_id, new_public_key) = Self::create_account(public_key)?;
 
 			let event = Event::MsaCreated { msa_id: new_msa_id, key: new_public_key };
 			offchain_index_event::<T>(Some(&event), new_msa_id);
@@ -667,15 +666,12 @@ pub mod pallet {
 			);
 
 			let (new_delegator_msa_id, new_delegator_public_key) =
-				Self::create_account(delegator_key, |new_msa_id| -> DispatchResult {
-					Self::add_provider(
-						ProviderId(provider_msa_id),
-						DelegatorId(new_msa_id),
-						add_provider_payload.schema_ids,
-					)?;
-					Ok(())
-				})?;
-
+				Self::create_account(delegator_key)?;
+			Self::add_provider(
+				ProviderId(provider_msa_id),
+				DelegatorId(new_delegator_msa_id),
+				add_provider_payload.schema_ids,
+			)?;
 			let event =
 				Event::MsaCreated { msa_id: new_delegator_msa_id, key: new_delegator_public_key };
 			offchain_index_event::<T>(Some(&event), new_delegator_msa_id);
@@ -855,19 +851,12 @@ pub mod pallet {
 
 			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
-			Self::add_key(
-				msa_id,
-				&add_key_payload.new_public_key.clone(),
-				|msa_id| -> DispatchResult {
-					let event = Event::PublicKeyAdded {
-						msa_id,
-						key: add_key_payload.new_public_key.clone(),
-					};
-					offchain_index_event::<T>(Some(&event), msa_id);
-					Self::deposit_event(event);
-					Ok(())
-				},
-			)?;
+			Self::add_key(msa_id, &add_key_payload.new_public_key.clone())?;
+
+			let event =
+				Event::PublicKeyAdded { msa_id, key: add_key_payload.new_public_key.clone() };
+			offchain_index_event::<T>(Some(&event), msa_id);
+			Self::deposit_event(event);
 
 			Ok(())
 		}
@@ -1282,19 +1271,14 @@ pub mod pallet {
 
 			Self::ensure_valid_new_key_owner(&new_control_key_proof, &add_key_payload)?;
 
-			Self::add_key(
-				add_key_payload.msa_id,
-				&add_key_payload.new_public_key.clone(),
-				|msa_id| -> DispatchResult {
-					let event = Event::PublicKeyAdded {
-						msa_id,
-						key: add_key_payload.new_public_key.clone(),
-					};
-					offchain_index_event::<T>(Some(&event), msa_id);
-					Self::deposit_event(event);
-					Ok(())
-				},
-			)?;
+			Self::add_key(add_key_payload.msa_id, &add_key_payload.new_public_key.clone())?;
+
+			let event = Event::PublicKeyAdded {
+				msa_id: add_key_payload.msa_id,
+				key: add_key_payload.new_public_key.clone(),
+			};
+			offchain_index_event::<T>(Some(&event), add_key_payload.msa_id);
+			Self::deposit_event(event);
 
 			// Invalidate the recovery commitment (single-use requirement)
 			MsaIdToRecoveryCommitment::<T>::remove(add_key_payload.msa_id);
@@ -1850,15 +1834,11 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::KeyLimitExceeded`]
 	/// * [`Error::KeyAlreadyRegistered`]
 	///
-	pub fn create_account<F>(
+	pub fn create_account(
 		key: T::AccountId,
-		on_success: F,
-	) -> Result<(MessageSourceId, T::AccountId), DispatchError>
-	where
-		F: FnOnce(MessageSourceId) -> DispatchResult,
-	{
+	) -> Result<(MessageSourceId, T::AccountId), DispatchError> {
 		let next_msa_id = Self::get_next_msa_id()?;
-		Self::add_key(next_msa_id, &key, on_success)?;
+		Self::add_key(next_msa_id, &key)?;
 		let _ = Self::set_msa_identifier(next_msa_id);
 
 		Ok((next_msa_id, key))
@@ -1945,10 +1925,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::KeyLimitExceeded`]
 	/// * [`Error::KeyAlreadyRegistered`]
 	///
-	pub fn add_key<F>(msa_id: MessageSourceId, key: &T::AccountId, on_success: F) -> DispatchResult
-	where
-		F: FnOnce(MessageSourceId) -> DispatchResult,
-	{
+	pub fn add_key(msa_id: MessageSourceId, key: &T::AccountId) -> DispatchResult {
 		PublicKeyToMsaId::<T>::try_mutate(key, |maybe_msa_id| {
 			ensure!(maybe_msa_id.is_none(), Error::<T>::KeyAlreadyRegistered);
 			*maybe_msa_id = Some(msa_id);
@@ -1965,7 +1942,7 @@ impl<T: Config> Pallet<T> {
 				);
 
 				*key_count = incremented_key_count;
-				on_success(msa_id)
+				Ok(())
 			})
 		})
 	}
@@ -2759,7 +2736,7 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 
 	/// adds a new key to specified msa
 	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
-		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
+		Self::add_key(msa_id, &key)?;
 		Ok(())
 	}
 }

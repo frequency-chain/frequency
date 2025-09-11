@@ -1,3 +1,5 @@
+use core::u8;
+
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
@@ -8,8 +10,8 @@ use frame_support::{
 use sp_weights::Weight;
 
 use crate::{
-	ensure, tests::mock::*, types::AddProvider, CurrentMsaIdentifierMaximum,
-	DelegatorAndProviderToDelegation, DispatchResult, Error, Event, PublicKeyToMsaId,
+	tests::mock::*, types::AddProvider, ArithmeticError, CurrentMsaIdentifierMaximum,
+	DelegatorAndProviderToDelegation, Error, Event, PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
 
 use common_primitives::{
@@ -206,24 +208,20 @@ pub fn create_sponsored_account_with_delegation_expired() {
 }
 
 #[test]
-pub fn create_account_with_panic_in_on_success_should_revert_everything() {
+pub fn create_account_with_panic_should_revert_everything() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1u64;
 		let key = test_public(msa_id as u8);
 		let next_msa_id = Msa::get_next_msa_id().unwrap();
+		PublicKeyCountForMsaId::<Test>::set(next_msa_id, u8::MAX);
 
 		// act
-		assert_noop!(
-			Msa::create_account(key, |new_msa_id| -> DispatchResult {
-				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRemoval);
-				Ok(())
-			}),
-			Error::<Test>::InvalidSelfRemoval
-		);
+		assert_noop!(Msa::create_account(key.clone(),), ArithmeticError::Overflow);
 
 		// assert
 		assert_eq!(next_msa_id, Msa::get_next_msa_id().unwrap());
+		assert!(PublicKeyToMsaId::<Test>::get(key).is_none());
 	});
 }
 

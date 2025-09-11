@@ -7,9 +7,8 @@ use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
 use crate::{
-	tests::mock::*,
-	types::{AddKeyData, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Config, Error, Event, PublicKeyCountForMsaId, ValidityError,
+	tests::mock::*, types::AddKeyData, CheckFreeExtrinsicUse, Config, Error, Event,
+	PublicKeyCountForMsaId, ValidityError,
 };
 
 use crate::tests::other_tests::{
@@ -125,9 +124,10 @@ fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 		let origin = RuntimeOrigin::signed(test_account.clone());
 
 		// Add an account to the MSA
-		assert_ok!(Msa::add_key(2, &test_account, EMPTY_FUNCTION));
-		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::add_key(2, &test_account));
+
 		// Register provider
+		let entry = ProviderRegistryEntry::default();
 		assert_ok!(Msa::create_provider_v2(origin, entry));
 
 		// Retire MSA
@@ -152,8 +152,8 @@ fn test_ensure_msa_can_retire_fails_if_more_than_one_account_exists() {
 		let test_account_2 = AccountId32::new(test_account_2_key_pair.public().into());
 
 		// Add two accounts to the MSA
-		assert_ok!(Msa::add_key(msa_id, &test_account_1, EMPTY_FUNCTION));
-		assert_ok!(Msa::add_key(msa_id, &test_account_2, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &test_account_1));
+		assert_ok!(Msa::add_key(msa_id, &test_account_2));
 
 		// Retire the MSA
 		assert_noop!(
@@ -170,7 +170,7 @@ fn test_ensure_msa_can_retire_fails_if_any_active_delegations_exist() {
 		let msa_id = 2;
 		let (test_account_key_pair, _) = sr25519::Pair::generate();
 		let test_account = AccountId32::new(test_account_key_pair.public().into());
-		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &test_account));
 
 		// Create provider
 		let (provider_id, _provider_key) = create_provider_with_name("test");
@@ -196,7 +196,7 @@ fn test_ensure_msa_cannot_retire_if_handle_exists() {
 		let test_account_1 = AccountId32::new(test_account_1_key_pair.public().into());
 
 		// Add two accounts to the MSA
-		assert_ok!(Msa::add_key(msa_id, &test_account_1, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &test_account_1));
 
 		let claim_payload = ClaimHandlePayload::<BlockNumberFor<Test>> {
 			base_handle: "hello".into(),
@@ -222,7 +222,7 @@ fn test_ensure_msa_can_retire_fails_if_msa_holds_token_balance() {
 		let test_account = AccountId32::new(test_account_key_pair.public().into());
 
 		// Add an account to the MSA
-		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &test_account));
 
 		// Fund the MSA with some tokens
 		let transfer_amount: u64 = 10_000_000;

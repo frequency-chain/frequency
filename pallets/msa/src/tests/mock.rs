@@ -1,7 +1,6 @@
 use crate::{
-	self as pallet_msa,
-	types::{RecoveryHash, EMPTY_FUNCTION},
-	AddKeyData, AddProvider, AuthorizedKeyData, RecoveryCommitment, RecoveryCommitmentPayload,
+	self as pallet_msa, types::RecoveryHash, AddKeyData, AddProvider, AuthorizedKeyData,
+	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
 	msa::{MessageSourceId, ProviderRegistryEntry},
@@ -319,7 +318,7 @@ pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
 /// (MessageSourceId, Pair) - a tuple with the MSA and the new Account key pair
 pub fn create_account() -> (MessageSourceId, sr25519::Pair) {
 	let (key_pair, _) = sr25519::Pair::generate();
-	let result_key = Msa::create_account(AccountId32::from(key_pair.public()), EMPTY_FUNCTION);
+	let result_key = Msa::create_account(AccountId32::from(key_pair.public()));
 	assert_ok!(&result_key);
 	let (msa_id, _) = result_key.unwrap();
 	(msa_id, key_pair)

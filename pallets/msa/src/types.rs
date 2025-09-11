@@ -18,9 +18,6 @@ use common_primitives::{
 use scale_info::TypeInfo;
 use sp_core::U256;
 
-/// Dispatch Empty
-pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
-
 /// LogoCID type
 pub type LogoCid<T> = BoundedVec<u8, <T as Config>::MaxLogoCidSize>;
 

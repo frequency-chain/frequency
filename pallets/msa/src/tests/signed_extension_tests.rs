@@ -1,7 +1,6 @@
 use crate::{
-	tests::mock::*,
-	types::{PayloadTypeDiscriminator, EMPTY_FUNCTION},
-	AuthorizedKeyData, CheckFreeExtrinsicUse, Config, ValidityError,
+	tests::mock::*, types::PayloadTypeDiscriminator, AuthorizedKeyData, CheckFreeExtrinsicUse,
+	Config, ValidityError,
 };
 use common_primitives::{
 	msa::{ProviderRegistryEntry, H160},
@@ -409,7 +408,7 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &new_key));
 
 		let original_key: AccountId32 = original_key_pair.public().into();
 
@@ -451,7 +450,7 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(owner_msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(owner_msa_id, &new_key));
 
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
@@ -1216,7 +1215,7 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_delete_ms
 		let (msa_id, original_key_pair) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &new_key));
 		let original_key: AccountId32 = original_key_pair.public().into();
 		let call: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
@@ -1252,7 +1251,7 @@ fn check_free_extrinsic_use_refunds_extension_weight_for_root_origin_delete_msa_
 		let (msa_id, _) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &new_key));
 		let call: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
 				public_key_to_delete: new_key.clone(),
