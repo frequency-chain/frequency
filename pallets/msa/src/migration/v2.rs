@@ -1,20 +1,15 @@
 use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry, STORAGE_VERSION};
 use common_primitives::{
-	msa::ProviderRegistryEntry,
+	msa::{ProviderId, ProviderRegistryEntry},
 	utils::{get_chain_type_by_genesis_hash, DetectedChainType},
 };
 use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade, weights::Weight};
 pub use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::Saturating;
 
+pub use alloc::vec;
 #[cfg(feature = "try-runtime")]
-mod try_runtime_imports {
-	pub use alloc::vec;
-	pub use common_primitives::msa::ProviderId;
-	pub use sp_runtime::TryRuntimeError;
-}
-#[cfg(feature = "try-runtime")]
-use try_runtime_imports::*;
+pub use sp_runtime::TryRuntimeError;
 
 const LOG_TARGET: &str = "runtime::provider";
 const MAX_ITEMS_PER_BLOCK: u32 = 50; // Conservative batch size for Paseo
