@@ -152,7 +152,6 @@ fn on_runtime_upgrade_successful_migration() {
 	new_test_ext().execute_with(|| {
 		// Setup: Create old entries and ensure version is 1
 		StorageVersion::new(1).put::<Pallet<Test>>();
-
 		let providers = vec![(ProviderId(1), "TestProvider1"), (ProviderId(2), "TestProvider2")];
 
 		for (id, name) in &providers {
@@ -161,7 +160,8 @@ fn on_runtime_upgrade_successful_migration() {
 			};
 			v1::ProviderToRegistryEntry::<Test>::insert(id, old_entry);
 		}
-
+		let count = v1::ProviderToRegistryEntry::<Test>::iter().count();
+		assert_eq!(count, providers.len() as usize);
 		// Execute migration
 		let weight = MigrateProviderToRegistryEntryV2::<Test>::on_runtime_upgrade();
 		assert!(!weight.is_zero());
@@ -237,11 +237,10 @@ fn batch_migration_respects_boundaries() {
 #[test]
 fn on_initialize_migration_progresses_batches() {
 	new_test_ext().execute_with(|| {
-		// Step 1: Force testnet to Paseo
-		unsafe {
-			FORCE_PASEO = true;
-		}
-		// Step 2: Insert more than MAX_ITEMS_PER_BLOCK old entries
+		ForcePaseoTestFlag::<Test>::put(true);
+		// Setup: Create old entries and ensure version is 1
+		StorageVersion::new(1).put::<Pallet<Test>>();
+		// Step 1: Insert more than MAX_ITEMS_PER_BLOCK old entries
 		let total_entries = 55u32; // MAX_ITEMS_PER_BLOCK = 50
 		for i in 1..=total_entries {
 			let old_entry = v1::ProviderRegistryEntry {
@@ -251,9 +250,14 @@ fn on_initialize_migration_progresses_batches() {
 			v1::ProviderToRegistryEntry::<Test>::insert(ProviderId(i.into()), old_entry);
 		}
 
-		// Step 3: Call on_initialize_migration for first block that prepares status
+		// Step 2: Call on_initialize_migration for first block that prepares status
 		let weight1 = on_initialize_migration::<Test>();
 		assert!(weight1.is_zero());
+
+		let status = MigrationProgressV2::<Test>::get();
+		assert_eq!(status.migrated_count, 0);
+		assert_eq!(status.total_count, total_entries);
+		assert!(!status.completed);
 
 		let weight2 = on_initialize_migration::<Test>();
 		assert!(!weight2.is_zero());
@@ -277,5 +281,7 @@ fn on_initialize_migration_progresses_batches() {
 			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
 			assert!(v1::ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_none());
 		}
+
+		ForcePaseoTestFlag::<Test>::kill();
 	});
 }

@@ -35,17 +35,16 @@ fn get_chain_type<T: Config>() -> DetectedChainType {
 	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 	get_chain_type_by_genesis_hash(&genesis.encode()[..])
 }
-
+/// Test-only flag to force Paseo testnet behavior
 #[cfg(test)]
-pub static mut FORCE_PASEO: bool = false;
+#[storage_alias]
+pub type ForcePaseoTestFlag<T: Config> = StorageValue<Pallet<T>, bool, ValueQuery>;
 
 /// Check if running on Paseo testnet
 pub fn is_paseo_testnet<T: Config>() -> bool {
 	#[cfg(test)]
-	unsafe {
-		if FORCE_PASEO {
-			return true;
-		}
+	if ForcePaseoTestFlag::<T>::get() {
+		return true;
 	}
 	matches!(get_chain_type::<T>(), DetectedChainType::FrequencyPaseoTestNet)
 }
