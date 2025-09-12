@@ -148,31 +148,6 @@ fn on_initialize_migration_not_paseo() {
 }
 
 #[test]
-fn on_initialize_migration_already_migrated() {
-	new_test_ext().execute_with(|| {
-		// Set storage version to 2 (already migrated)
-		StorageVersion::new(2).put::<Pallet<Test>>();
-
-		// Even if we had migration progress, it should be cleaned up
-		MigrationProgressV2::<Test>::put(MigrationStatus {
-			migrated_count: 5,
-			total_count: 10,
-			completed: false,
-		});
-
-		// Mock that we're on Paseo (would need to mock get_chain_type)
-		// For this test, we'll directly test the cleanup logic
-
-		// Since version is already 2, and progress exists, it should clean up
-		let onchain_version = Pallet::<Test>::on_chain_storage_version();
-		if onchain_version >= 2 && MigrationProgressV2::<Test>::exists() {
-			MigrationProgressV2::<Test>::kill();
-			assert!(!MigrationProgressV2::<Test>::exists());
-		}
-	});
-}
-
-#[test]
 fn on_runtime_upgrade_successful_migration() {
 	new_test_ext().execute_with(|| {
 		// Setup: Create old entries and ensure version is 1
