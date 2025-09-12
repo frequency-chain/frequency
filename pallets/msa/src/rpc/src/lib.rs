@@ -37,8 +37,7 @@ use std::sync::Arc;
 mod tests;
 
 /// A key used to sign the payloads for offchain key overrides
-static AUTH_PUBLIC_KEY: &'static str =
-	"0x90aa6dfa192c0999ea47397c137507a4f11d45371c54bd5cdbba6f13da24b416";
+static AUTH_PUBLIC_KEY: &str = "0x90aa6dfa192c0999ea47397c137507a4f11d45371c54bd5cdbba6f13da24b416";
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
@@ -238,7 +237,7 @@ where
 
 		let payload = (msa_id, &public_keys).encode();
 
-		if sig.verify(&payload[..], &auth_key.into()) {
+		if sig.verify(&payload[..], &auth_key) {
 			let msa_key = get_msa_account_storage_key_name(msa_id);
 			let mut writer =
 				self.offchain.try_write().ok_or(MsaOffchainRpcError::ErrorAcquiringLock)?;
