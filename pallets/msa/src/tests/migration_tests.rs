@@ -173,6 +173,7 @@ fn on_initialize_migration_progresses_batches() {
 		assert_eq!(status.total_count, total_entries);
 		assert!(!status.completed);
 
+		// Step 3: Call on_initialize_migration for first block that processes first batch
 		let weight2 = on_initialize_migration::<Test>();
 		assert!(!weight2.is_zero());
 
