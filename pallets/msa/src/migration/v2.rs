@@ -143,7 +143,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 				"Migration already completed or not needed. onchain_version: {onchain_version:?}, current_version: {current_version:?}",
 			);
 		}
-		return T::DbWeight::get().reads(1)
+		T::DbWeight::get().reads(1)
 	}
 
 	#[cfg(feature = "try-runtime")]
