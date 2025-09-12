@@ -11,13 +11,12 @@ use sp_runtime::traits::Zero;
 #[test]
 fn test_migration_status_encoding() {
 	// Test that MigrationStatus can be encoded/decoded properly
-	let status = MigrationStatus { migrated_count: 10, total_count: 100, completed: false };
+	let status = MigrationStatus { migrated_count: 10, completed: false };
 
 	let encoded = status.encode();
 	let decoded = MigrationStatus::decode(&mut &encoded[..]).unwrap();
 
 	assert_eq!(status.migrated_count, decoded.migrated_count);
-	assert_eq!(status.total_count, decoded.total_count);
 	assert_eq!(status.completed, decoded.completed);
 }
 
@@ -145,11 +144,10 @@ fn on_initialize_migration_progresses_batches() {
 
 		// Step 2: Call on_initialize_migration for first block that prepares status
 		let weight1 = on_initialize_migration::<Test>();
-		assert!(weight1.is_zero());
+		assert!(!weight1.is_zero());
 
 		let status = MigrationProgressV2::<Test>::get();
-		assert_eq!(status.migrated_count, 0);
-		assert_eq!(status.total_count, total_entries);
+		assert_eq!(status.migrated_count, MAX_ITEMS_PER_BLOCK);
 		assert!(!status.completed);
 
 		// Step 3: Call on_initialize_migration for first block that processes first batch
@@ -158,13 +156,12 @@ fn on_initialize_migration_progresses_batches() {
 
 		// Step 4: Check progress
 		let status = MigrationProgressV2::<Test>::get();
-		assert_eq!(status.migrated_count, MAX_ITEMS_PER_BLOCK);
-		assert_eq!(status.total_count, total_entries);
+		assert_eq!(status.migrated_count, 55); // All 55 should be migrated now
 		assert!(!status.completed);
 
 		// Step 6: Call on_initialize_migration for second block
 		let weight3 = on_initialize_migration::<Test>();
-		assert!(!weight3.is_zero());
+		assert!(weight3.is_zero());
 
 		// Step 7: Progress should be complete
 		assert!(!MigrationProgressV2::<Test>::exists());

@@ -14,8 +14,6 @@ pub const MAX_ITEMS_PER_BLOCK: u32 = 50; // Conservative batch size for Paseo
 pub struct MigrationStatus {
 	/// Number of items migrated so far
 	pub migrated_count: u32,
-	/// Total number of items to migrate
-	pub total_count: u32,
 	/// Whether migration is complete
 	pub completed: bool,
 }
@@ -75,38 +73,19 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 	let mut writes = 0u64;
 
 	// Initialize migration if not started
-	if migration_status.total_count == 0 {
-		let total_count = v1::ProviderToRegistryEntry::<T>::iter().count() as u32;
-		reads += 1;
-
-		if total_count == 0 {
-			// No items to migrate, complete immediately
-			StorageVersion::new(2).put::<Pallet<T>>();
-			return T::DbWeight::get().reads_writes(reads, 1)
-		}
-
-		log::info!(target: LOG_TARGET, "Initializing hook-based migration for Paseo. Total items: {total_count}");
-
-		MigrationProgressV2::<T>::put(MigrationStatus {
-			migrated_count: 0,
-			total_count,
-			completed: false,
-		});
-		writes += 1;
-		return T::DbWeight::get().reads_writes(reads, writes)
-	}
-
-	// Continue migration if not complete
-	if migration_status.migrated_count < migration_status.total_count {
+	if migration_status.completed {
+		log::info!(target: LOG_TARGET, "Migration of ProviderToRegistryEntry to v2 completed in previous runs.");
+		return Weight::zero()
+	} else {
 		let (batch_weight, migrated_in_this_block) =
 			migrate_provider_entries_batch::<T>(MAX_ITEMS_PER_BLOCK as usize);
 
 		let mut updated_status = migration_status;
 		updated_status.migrated_count += migrated_in_this_block;
-
+		updated_status.completed = migrated_in_this_block == 0;
+		reads += 1;
 		// Check if migration is complete
-		if updated_status.migrated_count >= updated_status.total_count {
-			updated_status.completed = true;
+		if updated_status.completed {
 			StorageVersion::new(2).put::<Pallet<T>>();
 			MigrationProgressV2::<T>::kill();
 			writes += 2;
@@ -114,17 +93,7 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 		} else {
 			MigrationProgressV2::<T>::put(&updated_status);
 			writes += 1;
-			log::info!(
-				target: LOG_TARGET,
-				"Provider registry migration progress: {}/{} (this block: {})",
-				updated_status.migrated_count,
-				updated_status.total_count,
-				migrated_in_this_block
-			);
 		}
-
 		return T::DbWeight::get().reads_writes(reads, writes).saturating_add(batch_weight)
 	}
-
-	Weight::zero()
 }
