@@ -1,3 +1,8 @@
+use crate::{
+	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
+	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
+	SchemaProtocolName, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
+};
 use common_primitives::{
 	node::AccountId,
 	parquet::{
@@ -8,7 +13,8 @@ use common_primitives::{
 		ParquetModel,
 	},
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaVersion, SchemaVersionResponse,
+		MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId,
+		SchemaSetting, SchemaVersion, SchemaVersionResponse,
 	},
 };
 use frame_support::{
@@ -18,12 +24,6 @@ use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 use serial_test::serial;
 use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
-
-use crate::{
-	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
-	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
-	SchemaNamespace, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
-};
 
 use super::mock::*;
 
@@ -244,52 +244,81 @@ fn dsnp_broadcast() {
 fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_cases = [
+			// non-ASCII characters
 			TestCase {
 				input: r#"¥¤¤.©©©"#, expected: Error::<Test>::InvalidSchemaNameEncoding
 			},
+			// protocol starts with a decimal digit
 			TestCase {
 				input: r#"1asbd.hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
+			// descriptor starts with a decimal digit
 			TestCase {
-				input: r#"asbd.hg1d"#,
+				input: r#"asbd.1hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
+			// protocol contains a non-alphanumeric character
+			TestCase {
+				input: r#"asb@d.hgd"#,
+				expected: Error::<Test>::InvalidSchemaNameCharacters,
+			},
+			// descriptor contains a non-alphanumeric character
 			TestCase {
 				input: r#"asbd.hg@d"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
+			// descriptor missing
 			TestCase { input: r#"asbd"#, expected: Error::<Test>::InvalidSchemaNameStructure },
+			// extra "." delimiter
 			TestCase {
 				input: r#"asbd.sdhks.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// protocol starts with a "-"
 			TestCase {
 				input: r#"-asbdsdhks.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// protocol ends with a "-"
 			TestCase {
 				input: r#"asbdsdhks-.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// protocol starts with a decimal digit
+			TestCase {
+				input: r#"1asbd.hgd"#,
+				expected: Error::<Test>::InvalidSchemaNameCharacters,
+			},
+			// descriptor starts with a "-"
 			TestCase {
 				input: r#"asbdsdhks.-shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// descriptor ends with a "-"
 			TestCase {
 				input: r#"asbdsdhks.shd-"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
+			// descriptor starts with a decimal digit
+			TestCase {
+				input: r#"asbd.1hgd"#,
+				expected: Error::<Test>::InvalidSchemaNameCharacters,
+			},
+			// protocol too long
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa."#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
+			// protocol too short
 			TestCase { input: r#"a.sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// protocol too short
 			TestCase {
 				input: r#"aa.sdhks"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
 			TestCase { input: r#".sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// descriptor too short
 			TestCase { input: r#"hjs."#, expected: Error::<Test>::InvalidSchemaDescriptorLength },
 		];
 		for tc in test_cases {
@@ -304,53 +333,41 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_cases = [
-			TestCase {
-				input: r#"¥¤¤.©©©"#, expected: Error::<Test>::InvalidSchemaNameEncoding
-			},
+			// non-ASCII characters
 			TestCase { input: r#"¥¤¤"#, expected: Error::<Test>::InvalidSchemaNameEncoding },
+			// protocol starts with a decimal digit
+			TestCase { input: r#"1asbd"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
+			// protocol contains a non-alphanumeric character
+			TestCase { input: r#"asb@d"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
+			// protocol starts with a "-"
+			TestCase {
+				input: r#"-asbdsdhks"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			// protocol ends with a "-"
+			TestCase {
+				input: r#"asbdsdhks-"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			// protocol starts with a decimal digit
 			TestCase {
 				input: r#"1asbd.hgd"#,
 				expected: Error::<Test>::InvalidSchemaNameCharacters,
 			},
-			TestCase { input: r#"1asbd"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
-			TestCase {
-				input: r#"asbd.hg1d"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
-			TestCase {
-				input: r#"asbd.hg@d"#,
-				expected: Error::<Test>::InvalidSchemaNameCharacters,
-			},
-			TestCase { input: r#"hg@d"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
-			TestCase {
-				input: r#"asbd.sdhks.shd"#,
-				expected: Error::<Test>::InvalidSchemaNameStructure,
-			},
-			TestCase {
-				input: r#"-asbdsdhks.shd"#,
-				expected: Error::<Test>::InvalidSchemaNameStructure,
-			},
-			TestCase {
-				input: r#"asbdsdhks-.shd"#,
-				expected: Error::<Test>::InvalidSchemaNameStructure,
-			},
-			TestCase {
-				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa."#,
-				expected: Error::<Test>::InvalidSchemaNamespaceLength,
-			},
+			// protocol too long (by 1)
 			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
-			TestCase { input: r#"a.sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
-			TestCase { input: r#"a"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// protocol too long (by 2)
 			TestCase {
-				input: r#"aa.sdhks"#,
+				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaaa"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
-			TestCase { input: r#".sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
+			// protocol too short
+			TestCase { input: r#"a"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 			TestCase { input: r#"aa"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
-			TestCase { input: r#"hjs."#, expected: Error::<Test>::InvalidSchemaDescriptorLength },
+			TestCase { input: r#""#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 		];
 		for tc in test_cases {
 			let payload: SchemaNamePayload =
@@ -366,15 +383,15 @@ fn schema_name_try_parse_with_strict_valid_names_should_succeed() {
 		let valid_names = ["Abc.a", "a-v.D-D", "aZxcvBnmkjhgfds.asdfghKkloiuyTre"];
 		let parsed_names = vec![
 			SchemaName {
-				namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("abc".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::try_from("a".to_string().into_bytes()).unwrap(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("a-v".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("a-v".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::try_from("d-d".to_string().into_bytes()).unwrap(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
+				namespace: SchemaProtocolName::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
 					.unwrap(),
 				descriptor: SchemaDescriptor::try_from("asdfghkkloiuytre".to_string().into_bytes())
 					.unwrap(),
@@ -394,15 +411,15 @@ fn schema_name_try_parse_with_non_strict_valid_names_should_succeed() {
 		let valid_names = ["Abc", "a-v", "aZxcvBnmkjhgfds"];
 		let parsed_names = vec![
 			SchemaName {
-				namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("abc".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::default(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("a-v".to_string().into_bytes()).unwrap(),
+				namespace: SchemaProtocolName::try_from("a-v".to_string().into_bytes()).unwrap(),
 				descriptor: SchemaDescriptor::default(),
 			},
 			SchemaName {
-				namespace: SchemaNamespace::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
+				namespace: SchemaProtocolName::try_from("azxcvbnmkjhgfds".to_string().into_bytes())
 					.unwrap(),
 				descriptor: SchemaDescriptor::default(),
 			},
@@ -436,7 +453,7 @@ fn schema_version_id_add_should_work() {
 		let schema_id_1: SchemaId = 55;
 		let schema_id_2: SchemaId = 200;
 		let schema_name = SchemaName {
-			namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
+			namespace: SchemaProtocolName::try_from("abc".to_string().into_bytes()).unwrap(),
 			descriptor: SchemaDescriptor::try_from("d-d".to_string().into_bytes()).unwrap(),
 		};
 		assert_ok!(val.add::<Test>(schema_id_1));
@@ -679,6 +696,104 @@ fn get_schema_versions_for_namespace_should_return_all_descriptors() {
 }
 
 #[test]
+fn get_intent_or_group_ids_for_namespace_should_return_all_descriptors() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		let namespace = "namespace";
+		let name_1 = format!("{}.alice", namespace);
+		let name_payload_1: SchemaNamePayload =
+			BoundedVec::try_from(name_1.to_string().into_bytes()).expect("should convert");
+		let name_2 = format!("{}.bob", namespace);
+		let name_payload_2: SchemaNamePayload =
+			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
+
+		// Create multiple entities in protocol namespace
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_1.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_2.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+
+		// act
+		let entity_ids =
+			SchemasPallet::get_intent_or_group_ids_by_name(String::from(namespace).into_bytes());
+
+		// assert
+		assert!(entity_ids.is_some());
+
+		let mut inner = entity_ids.clone().unwrap();
+		inner.sort_by(|a, b| a.name.cmp(&b.name));
+		assert_eq!(
+			entity_ids,
+			Some(vec![
+				NameLookupResponse {
+					entity_id: MappedEntityIdentifier::Intent(1),
+					name: name_payload_1.into_inner(),
+				},
+				NameLookupResponse {
+					entity_id: MappedEntityIdentifier::Intent(2),
+					name: name_payload_2.into_inner(),
+				},
+			])
+		);
+	})
+}
+
+#[test]
+fn get_intent_or_group_ids_for_fully_qualified_name_should_return_single_descriptor() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		let namespace = "namespace";
+		let name_1 = format!("{}.alice", namespace);
+		let name_payload_1: SchemaNamePayload =
+			BoundedVec::try_from(name_1.to_string().into_bytes()).expect("should convert");
+		let name_2 = format!("{}.bob", namespace);
+		let name_payload_2: SchemaNamePayload =
+			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
+
+		// Create multiple entities in protocol namespace
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_1.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+		assert_ok!(SchemasPallet::create_intent(
+			RuntimeOrigin::signed(sender.clone()),
+			name_payload_2.clone(),
+			PayloadLocation::Paginated,
+			BoundedVec::default(),
+		));
+
+		// act
+		let entity_ids =
+			SchemasPallet::get_intent_or_group_ids_by_name(String::from(name_1).into_bytes());
+
+		// assert
+		assert!(entity_ids.is_some());
+
+		assert_eq!(
+			entity_ids,
+			Some(vec![NameLookupResponse {
+				entity_id: MappedEntityIdentifier::Intent(1),
+				name: name_payload_1.into_inner(),
+			},])
+		);
+	})
+}
+
+#[test]
 fn create_schema_via_governance_v2_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -814,7 +929,7 @@ fn propose_to_create_schema_v2_happy_path() {
 			Some(schema_name.clone()),
 		);
 
-		// Find the Proposed event and get it's hash and index so it can be voted on
+		// Find the Proposed event and get its hash and index so it can be voted on
 		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {
@@ -963,7 +1078,7 @@ fn propose_to_create_schema_name_happy_path() {
 			schema_name.clone(),
 		);
 
-		// Find the Proposed event and get it's hash and index so it can be voted on
+		// Find the Proposed event and get its hash and index so it can be voted on
 		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {
@@ -1109,7 +1224,7 @@ fn genesis_config_build_genesis_schemas() {
 		let res = CurrentSchemaIdentifierMaximum::<Test>::get();
 
 		// Should be set to 16_000
-		assert!(res == 16_000);
+		assert_eq!(res, 16_000);
 
 		// Check that the first schema exists
 		let res = SchemasPallet::get_schema_by_id(1);
