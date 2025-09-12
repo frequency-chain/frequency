@@ -179,7 +179,7 @@ describe('Create Provider Application', function () {
     // Create fake logo bytes, 130 bytes long
     const logoBytes = new Uint8Array(11);
     for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
-    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProviderInvalid');
     const logoCidStr = await computeCid(logoBytes);
     applicationEntry.defaultLogo250100PngCid = logoCidStr;
     const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);

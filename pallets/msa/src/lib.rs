@@ -582,7 +582,7 @@ pub mod pallet {
 			#[allow(unused_assignments)]
 			let mut migration_weight = Weight::zero();
 			// run ProviderRegistryEntry migration
-			//#[cfg(any(feature = "frequency-testnet", test))]
+			#[cfg(any(feature = "frequency-testnet", test))]
 			{
 				migration_weight = crate::migration::v2::on_initialize_migration::<T>();
 			}
