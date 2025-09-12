@@ -4,7 +4,7 @@ use crate::{
 	Config, Pallet, ProviderToRegistryEntryV2,
 };
 use common_primitives::msa::ProviderId;
-use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, BoundedVec};
+use frame_support::{pallet_prelude::*, BoundedVec};
 use sp_core::Encode;
 use sp_runtime::traits::Zero;
 
@@ -100,27 +100,6 @@ fn on_initialize_migration_test() {
 	new_test_ext().execute_with(|| {
 		// Since test environment is not Paseo, should return zero weight
 		let weight = on_initialize_migration::<Test>();
-		assert!(weight.is_zero());
-	});
-}
-
-#[test]
-fn on_runtime_upgrade_noop() {
-	new_test_ext().execute_with(|| {
-		// Setup: Create old entries and ensure version is 1
-		StorageVersion::new(1).put::<Pallet<Test>>();
-		let providers = vec![(ProviderId(1), "TestProvider1"), (ProviderId(2), "TestProvider2")];
-
-		for (id, name) in &providers {
-			let old_entry = v1::ProviderRegistryEntry {
-				provider_name: BoundedVec::try_from(name.as_bytes().to_vec()).unwrap(),
-			};
-			v1::ProviderToRegistryEntry::<Test>::insert(id, old_entry);
-		}
-		let count = v1::ProviderToRegistryEntry::<Test>::iter().count();
-		assert_eq!(count, providers.len() as usize);
-		// Execute migration
-		let weight = MigrateProviderToRegistryEntryV2::<Test>::on_runtime_upgrade();
 		assert!(weight.is_zero());
 	});
 }

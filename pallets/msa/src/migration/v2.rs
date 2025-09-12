@@ -1,7 +1,7 @@
 use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2};
 pub use alloc::vec;
 use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
-use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade, weights::Weight};
+use frame_support::{pallet_prelude::*, storage_alias, weights::Weight};
 pub use frame_system::pallet_prelude::BlockNumberFor;
 #[cfg(feature = "try-runtime")]
 pub use sp_runtime::TryRuntimeError;
@@ -127,34 +127,4 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 	}
 
 	Weight::zero()
-}
-
-/// migrate `ProviderToRegistryEntryV2` translating to new `ProviderRegistryEntry`
-pub struct MigrateProviderToRegistryEntryV2<T>(PhantomData<T>);
-
-impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
-	fn on_runtime_upgrade() -> Weight {
-		let onchain_version = Pallet::<T>::on_chain_storage_version();
-		let current_version = Pallet::<T>::in_code_storage_version();
-
-		if onchain_version >= current_version {
-			log::info!(
-				target: LOG_TARGET,
-				"Migration already completed or not needed. onchain_version: {onchain_version:?}, current_version: {current_version:?}",
-			);
-		}
-		T::DbWeight::get().reads(1)
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<vec::Vec<u8>, TryRuntimeError> {
-		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
-		Ok(vec::Vec::new())
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_encoded_numbers: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
-		log::info!(target: LOG_TARGET, "Running post_upgrade...");
-		Ok(())
-	}
 }

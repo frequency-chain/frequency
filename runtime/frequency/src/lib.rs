@@ -473,11 +473,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(
-		MigratePalletsCurrentStorage<Runtime>,
-		SetSafeXcmVersion<Runtime>,
-		pallet_msa::migration::MigrateProviderToRegistryEntryV2<Runtime>,
-	),
+	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
 >;
 
 #[cfg(not(feature = "frequency-bridging"))]
@@ -487,10 +483,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(
-		MigratePalletsCurrentStorage<Runtime>,
-		pallet_msa::migration::MigrateProviderToRegistryEntryV2<Runtime>,
-	),
+	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
