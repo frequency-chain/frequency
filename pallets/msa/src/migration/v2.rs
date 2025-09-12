@@ -74,7 +74,7 @@ pub fn get_known_provider_ids<T: Config>() -> vec::Vec<ProviderId> {
 }
 
 /// Core migration function that can be called from both contexts
-pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, u32, bool) {
+pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, u32) {
 	let mut reads = 0u64;
 	let mut writes = 0u64;
 	let mut bytes = 0u64;
@@ -84,8 +84,6 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 		ProviderId,
 		v1::ProviderRegistryEntry<<T as Config>::MaxProviderNameSize>,
 	)> = v1::ProviderToRegistryEntry::<T>::drain().take(batch_size).collect();
-
-	let is_last_batch = entries.len() < batch_size;
 
 	for (provider_id, old_entry) in entries {
 		// Build new registry entry with old provider name
@@ -104,7 +102,7 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 	}
 
 	let weight = T::DbWeight::get().reads_writes(reads, writes).add_proof_size(bytes);
-	(weight, migrated_count, is_last_batch)
+	(weight, migrated_count)
 }
 
 /// Single-block migration for mainnet and smaller chains
@@ -198,7 +196,7 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 
 	// Continue migration if not complete
 	if migration_status.migrated_count < migration_status.total_count {
-		let (batch_weight, migrated_in_this_block, _) =
+		let (batch_weight, migrated_in_this_block) =
 			migrate_provider_entries_batch::<T>(MAX_ITEMS_PER_BLOCK as usize);
 
 		let mut updated_status = migration_status;

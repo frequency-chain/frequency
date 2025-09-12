@@ -25,10 +25,9 @@ fn test_migration_status_encoding() {
 fn migrate_provider_entries_batch_empty() {
 	new_test_ext().execute_with(|| {
 		// Test with empty storage
-		let (weight, count, is_last) = migrate_provider_entries_batch::<Test>(10);
+		let (weight, count) = migrate_provider_entries_batch::<Test>(10);
 
 		assert_eq!(count, 0);
-		assert!(is_last);
 		assert!(weight.is_zero());
 	});
 }
@@ -45,10 +44,9 @@ fn migrate_provider_entries_batch_single_item() {
 		v1::ProviderToRegistryEntry::<Test>::insert(provider_id, old_entry.clone());
 
 		// Migrate batch
-		let (weight, count, is_last) = migrate_provider_entries_batch::<Test>(10);
+		let (weight, count) = migrate_provider_entries_batch::<Test>(10);
 
 		assert_eq!(count, 1);
-		assert!(is_last);
 		assert!(!weight.is_zero());
 
 		// Check new storage
@@ -77,15 +75,13 @@ fn migrate_provider_entries_batch_multiple_items() {
 		}
 
 		// Migrate first batch (size 3)
-		let (weight1, count1, is_last1) = migrate_provider_entries_batch::<Test>(3);
+		let (weight1, count1) = migrate_provider_entries_batch::<Test>(3);
 		assert_eq!(count1, 3);
-		assert!(!is_last1);
 		assert!(!weight1.is_zero());
 
 		// Migrate second batch (remaining 2)
-		let (weight2, count2, is_last2) = migrate_provider_entries_batch::<Test>(3);
+		let (weight2, count2) = migrate_provider_entries_batch::<Test>(3);
 		assert_eq!(count2, 2);
-		assert!(is_last2);
 		assert!(!weight2.is_zero());
 
 		// Verify all migrated
@@ -223,14 +219,12 @@ fn batch_migration_respects_boundaries() {
 		}
 
 		// First batch should migrate exactly 50 items
-		let (_, count1, is_last1) = migrate_provider_entries_batch::<Test>(50);
+		let (_, count1) = migrate_provider_entries_batch::<Test>(50);
 		assert_eq!(count1, 50);
-		assert!(!is_last1);
 
 		// Second batch should migrate remaining 1 item
-		let (_, count2, is_last2) = migrate_provider_entries_batch::<Test>(50);
+		let (_, count2) = migrate_provider_entries_batch::<Test>(50);
 		assert_eq!(count2, 1);
-		assert!(is_last2);
 	});
 }
 
