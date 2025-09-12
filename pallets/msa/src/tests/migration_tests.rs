@@ -190,7 +190,6 @@ fn on_runtime_upgrade_successful_migration() {
 		// Execute migration
 		let weight = MigrateProviderToRegistryEntryV2::<Test>::on_runtime_upgrade();
 		assert!(!weight.is_zero());
-
 		// Verify migration completed (for non-Paseo)
 		// Since test env is not Paseo, it should do single-block migration
 		for (id, name) in providers {
