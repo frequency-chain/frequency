@@ -259,3 +259,49 @@ fn batch_migration_respects_boundaries() {
 		assert!(is_last2);
 	});
 }
+
+#[test]
+fn on_initialize_migration_progresses_batches() {
+	new_test_ext().execute_with(|| {
+		// Step 1: Force testnet to Paseo
+		unsafe {
+			FORCE_PASEO = true;
+		}
+		// Step 2: Insert more than MAX_ITEMS_PER_BLOCK old entries
+		let total_entries = 55u32; // MAX_ITEMS_PER_BLOCK = 50
+		for i in 1..=total_entries {
+			let old_entry = v1::ProviderRegistryEntry {
+				provider_name: BoundedVec::try_from(format!("Provider{}", i).as_bytes().to_vec())
+					.unwrap(),
+			};
+			v1::ProviderToRegistryEntry::<Test>::insert(ProviderId(i.into()), old_entry);
+		}
+
+		// Step 3: Call on_initialize_migration for first block that prepares status
+		let weight1 = on_initialize_migration::<Test>();
+		assert!(weight1.is_zero());
+
+		let weight2 = on_initialize_migration::<Test>();
+		assert!(!weight2.is_zero());
+
+		// Step 4: Check progress
+		let status = MigrationProgressV2::<Test>::get();
+		assert_eq!(status.migrated_count, MAX_ITEMS_PER_BLOCK);
+		assert_eq!(status.total_count, total_entries);
+		assert!(!status.completed);
+
+		// Step 6: Call on_initialize_migration for second block
+		let weight3 = on_initialize_migration::<Test>();
+		assert!(!weight3.is_zero());
+
+		// Step 7: Progress should be complete
+		assert!(!MigrationProgressV2::<Test>::exists());
+		assert_eq!(Pallet::<Test>::on_chain_storage_version(), StorageVersion::new(2));
+
+		// Step 8: All old entries migrated
+		for i in 1..=total_entries {
+			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
+			assert!(v1::ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_none());
+		}
+	});
+}

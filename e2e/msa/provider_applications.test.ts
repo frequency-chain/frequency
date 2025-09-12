@@ -36,7 +36,7 @@ describe('Create Provider Application', function () {
     await createMsaOp.fundAndSend(fundingSource);
     createMsaOp = ExtrinsicHelper.createMsa(nonProviderKeys);
     await createMsaOp.fundAndSend(fundingSource);
-    const providerEntry = generateValidProviderPayloadWithName('MyProvider');
+    const providerEntry = generateValidProviderPayloadWithName('MyProvider1');
     const createProviderOp = ExtrinsicHelper.createProviderViaGovernanceV2(sudoKeys, keys, providerEntry);
     const { target: providerEvent } = await createProviderOp.sudoSignAndSend();
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');

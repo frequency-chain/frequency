@@ -24,7 +24,7 @@ describe('Create Provider', function () {
       const f = ExtrinsicHelper.createMsa(keys);
       await f.fundAndSend(fundingSource);
       const createProviderOp = ExtrinsicHelper.createProviderViaGovernanceV2(sudoKeys, keys, {
-        defaultName: 'MyProvider',
+        defaultName: 'MyProviderNew',
       });
       const { target: providerEvent } = await createProviderOp.sudoSignAndSend();
       assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');

@@ -12,7 +12,7 @@ pub use alloc::vec;
 pub use sp_runtime::TryRuntimeError;
 
 const LOG_TARGET: &str = "runtime::provider";
-const MAX_ITEMS_PER_BLOCK: u32 = 50; // Conservative batch size for Paseo
+pub const MAX_ITEMS_PER_BLOCK: u32 = 50; // Conservative batch size for Paseo
 
 /// Storage item to track migration progress for Paseo
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -36,8 +36,17 @@ fn get_chain_type<T: Config>() -> DetectedChainType {
 	get_chain_type_by_genesis_hash(&genesis.encode()[..])
 }
 
+#[cfg(test)]
+pub static mut FORCE_PASEO: bool = false;
+
 /// Check if running on Paseo testnet
-fn is_paseo_testnet<T: Config>() -> bool {
+pub fn is_paseo_testnet<T: Config>() -> bool {
+	#[cfg(test)]
+	unsafe {
+		if FORCE_PASEO {
+			return true;
+		}
+	}
 	matches!(get_chain_type::<T>(), DetectedChainType::FrequencyPaseoTestNet)
 }
 
@@ -89,7 +98,6 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 		};
 		// Insert into new storage
 		ProviderToRegistryEntryV2::<T>::insert(provider_id, migrated_provider_entry);
-
 		reads += 1;
 		writes += 1;
 		bytes += old_entry.encoded_size() as u64;
@@ -152,7 +160,6 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 	if !is_paseo_testnet::<T>() {
 		return Weight::zero()
 	}
-
 	// Check if migration is needed
 	let onchain_version = Pallet::<T>::on_chain_storage_version();
 	if onchain_version >= 2 {
@@ -187,7 +194,6 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 			completed: false,
 		});
 		writes += 1;
-
 		return T::DbWeight::get().reads_writes(reads, writes)
 	}
 
