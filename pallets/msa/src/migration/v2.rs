@@ -73,10 +73,7 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 	let mut writes = 0u64;
 
 	// Initialize migration if not started
-	if migration_status.completed {
-		log::info!(target: LOG_TARGET, "Migration of ProviderToRegistryEntry to v2 completed in previous runs.");
-		Weight::zero()
-	} else {
+	if !migration_status.completed {
 		let (batch_weight, migrated_in_this_block) =
 			migrate_provider_entries_batch::<T>(MAX_ITEMS_PER_BLOCK as usize);
 
@@ -94,6 +91,8 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 			MigrationProgressV2::<T>::put(&updated_status);
 			writes += 1;
 		}
-		T::DbWeight::get().reads_writes(reads, writes).saturating_add(batch_weight)
+		return T::DbWeight::get().reads_writes(reads, writes).saturating_add(batch_weight);
 	}
+	log::info!(target: LOG_TARGET, "Provider Registry Migration already completed.");
+	Weight::zero()
 }
