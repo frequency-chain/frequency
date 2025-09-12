@@ -1,13 +1,8 @@
-use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2, STORAGE_VERSION};
-use common_primitives::{
-	msa::{ProviderId, ProviderRegistryEntry},
-	utils::{get_chain_type_by_genesis_hash, DetectedChainType},
-};
+use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2};
+pub use alloc::vec;
+use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
 use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade, weights::Weight};
 pub use frame_system::pallet_prelude::BlockNumberFor;
-use sp_runtime::Saturating;
-
-pub use alloc::vec;
 #[cfg(feature = "try-runtime")]
 pub use sp_runtime::TryRuntimeError;
 
@@ -28,50 +23,6 @@ pub struct MigrationStatus {
 /// Storage for tracking migration progress
 #[storage_alias]
 pub type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatus, ValueQuery>;
-
-/// Function to check current chain type - available in all contexts
-fn get_chain_type<T: Config>() -> DetectedChainType {
-	let genesis_block: BlockNumberFor<T> = 0u32.into();
-	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
-	get_chain_type_by_genesis_hash(&genesis.encode()[..])
-}
-/// Test-only flag to force Paseo testnet behavior
-#[cfg(test)]
-#[storage_alias]
-pub type ForcePaseoTestFlag<T: Config> = StorageValue<Pallet<T>, bool, ValueQuery>;
-
-/// Check if running on Paseo testnet
-pub fn is_paseo_testnet<T: Config>() -> bool {
-	#[cfg(test)]
-	if ForcePaseoTestFlag::<T>::get() {
-		return true;
-	}
-	matches!(get_chain_type::<T>(), DetectedChainType::FrequencyPaseoTestNet)
-}
-
-/// Get known provider ids from paseo and mainnet
-#[cfg(feature = "try-runtime")]
-pub fn get_known_provider_ids<T: Config>() -> vec::Vec<ProviderId> {
-	match get_chain_type::<T>() {
-		DetectedChainType::FrequencyPaseoTestNet => vec![
-			// name: PrivateProvider
-			ProviderId::from(5213u64),
-			// name: CapacityProvider
-			ProviderId::from(77_716u64),
-			// name: Provider1
-			ProviderId::from(77_674u64),
-		],
-		DetectedChainType::FrequencyMainNet => vec![
-			// Soar.ai
-			ProviderId::from(1_610_732u64),
-			// AmplicaTest1
-			ProviderId::from(1u64),
-			// MeWe
-			ProviderId::from(2u64),
-		],
-		_ => vec::Vec::new(),
-	}
-}
 
 /// Core migration function that can be called from both contexts
 pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, u32) {
@@ -105,58 +56,9 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 	(weight, migrated_count)
 }
 
-/// Single-block migration for mainnet and smaller chains
-pub fn migrate_all_provider_entries<T: Config>() -> Weight {
-	log::info!(target: LOG_TARGET, "Starting single-block migration from v1 to v2...");
-
-	let total_count = v1::ProviderToRegistryEntry::<T>::iter().count();
-	log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntryV2 storage: {total_count}");
-
-	if total_count == 0 {
-		log::error!(target: LOG_TARGET, "No items found in OLD ProviderToRegistryEntryV2 storage, skipping migration.");
-		return T::DbWeight::get().reads(1)
-	}
-
-	let mut total_reads = 1u64; // Initial count read
-	let mut total_writes = 0u64;
-	let mut total_bytes = 0u64;
-	let mut migrated_count = 0u64;
-
-	// Drain all entries in single block
-	for (provider_id, old_entry) in v1::ProviderToRegistryEntry::<T>::drain() {
-		let migrated_provider_entry = ProviderRegistryEntry {
-			default_name: old_entry.provider_name.clone(),
-			default_logo_250_100_png_cid: BoundedVec::default(),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
-			localized_names: BoundedBTreeMap::default(),
-		};
-
-		ProviderToRegistryEntryV2::<T>::insert(provider_id, migrated_provider_entry);
-		total_reads.saturating_inc();
-		total_writes.saturating_inc();
-		total_bytes += old_entry.encoded_size() as u64;
-		migrated_count.saturating_inc();
-	}
-
-	// Set storage version
-	StorageVersion::new(2).put::<Pallet<T>>();
-	total_writes.saturating_inc();
-
-	log::info!(target: LOG_TARGET, "Migration completed: {migrated_count} items migrated");
-	log::info!(target: LOG_TARGET, "Storage migrated to version 2  read={total_reads:?}, write={total_writes:?}, bytes={total_bytes:?}");
-
-	T::DbWeight::get()
-		.reads_writes(total_reads, total_writes)
-		.add_proof_size(total_bytes)
-}
-
-/// Hook-based multi-block migration for Paseo testnet
+/// Hook-based multi-block migration for Frequency Provider Migration
 /// This should be called from your pallet's on_initialize hook
 pub fn on_initialize_migration<T: Config>() -> Weight {
-	// Only run on Paseo testnet
-	if !is_paseo_testnet::<T>() {
-		return Weight::zero()
-	}
 	// Check if migration is needed
 	let onchain_version = Pallet::<T>::on_chain_storage_version();
 	if onchain_version >= 2 {
@@ -234,94 +136,25 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 	fn on_runtime_upgrade() -> Weight {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		let current_version = Pallet::<T>::in_code_storage_version();
-		log::info!(target: LOG_TARGET, "onchain_version= {onchain_version:?}, current_version={current_version:?}");
-
-		if STORAGE_VERSION != current_version {
-			log::error!(target: LOG_TARGET, "Storage version mismatch. Expected: {STORAGE_VERSION:?}, Found: {current_version:?}");
-			return T::DbWeight::get().reads(1)
-		}
 
 		if onchain_version >= current_version {
 			log::info!(
 				target: LOG_TARGET,
 				"Migration already completed or not needed. onchain_version: {onchain_version:?}, current_version: {current_version:?}",
 			);
-			return T::DbWeight::get().reads(1)
 		}
-
-		// For Paseo testnet, migration runs via hooks
-		if is_paseo_testnet::<T>() {
-			log::info!(target: LOG_TARGET, "Paseo testnet detected - migration will run via on_initialize hooks");
-			return T::DbWeight::get().reads(1)
-		}
-
-		// For mainnet and other chains, do single-block migration
-		log::info!(target: LOG_TARGET, "Migrating v1 ProviderToRegistryEntryV2 to updated ProviderRegistryEntry...");
-		migrate_all_provider_entries::<T>()
+		return T::DbWeight::get().reads(1)
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<vec::Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
-		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		log::info!(target: LOG_TARGET, "Current on_chain_version: {on_chain_version:?}");
-
-		if on_chain_version >= 2 {
-			let current_count = ProviderToRegistryEntryV2::<T>::iter().count() as u64;
-			log::info!(target: LOG_TARGET, "Migration already completed, current count: {current_count}");
-			return Ok(current_count.encode().to_vec());
-		}
-
-		let old_count = v1::ProviderToRegistryEntry::<T>::iter().count() as u64;
-
-		log::info!(target: LOG_TARGET, "Found {old_count} items in OLD storage format");
-
-		let detected_chain = get_chain_type::<T>();
-		log::info!(target: LOG_TARGET, "Detected Chain: {detected_chain:?}");
-
-		Ok(old_count.encode().to_vec())
+		Ok(vec::Vec::new())
 	}
 
 	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(encoded_numbers: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
+	fn post_upgrade(_encoded_numbers: vec::Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
-		if is_paseo_testnet::<T>() {
-			log::info!(target: LOG_TARGET, "Paseo detected - migration may continue via hooks");
-			return Ok(())
-		}
-		use parity_scale_codec::Decode;
-
-		let expected: u64 = u64::decode(&mut encoded_numbers.as_slice())
-			.map_err(|_| TryRuntimeError::Other("Cannot decode expected count"))?;
-
-		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		assert_eq!(on_chain_version, STORAGE_VERSION);
-
-		let known_providers = get_known_provider_ids::<T>();
-		if known_providers.is_empty() {
-			log::warn!(target: LOG_TARGET, "No known providers found for post-upgrade check");
-		} else {
-			for id in known_providers {
-				let entry = ProviderToRegistryEntryV2::<T>::get(id).ok_or_else(|| {
-					log::error!(target: LOG_TARGET, "Missing provider entry for provider id: {id:?}");
-					TryRuntimeError::Other("Missing provider entry in post-upgrade check")
-				})?;
-
-				ensure!(
-					!entry.default_name.is_empty(),
-					"Missing provider name in post-upgrade check"
-				);
-			}
-		}
-
-		let post_count = ProviderToRegistryEntryV2::<T>::iter().count() as u64;
-		ensure!(post_count == expected, "Post-upgrade count mismatch");
-
-		// Ensure old storage is empty (for non-Paseo chains)
-		let old_remaining = v1::ProviderToRegistryEntry::<T>::iter().count();
-		ensure!(old_remaining == 0, "Old storage not completely drained");
-
-		log::info!(target: LOG_TARGET, "Migration completed successfully. Migrated {} items", post_count);
 		Ok(())
 	}
 }

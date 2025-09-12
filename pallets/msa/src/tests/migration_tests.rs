@@ -96,46 +96,7 @@ fn migrate_provider_entries_batch_multiple_items() {
 }
 
 #[test]
-fn migrate_all_provider_entries_with_data() {
-	new_test_ext().execute_with(|| {
-		// Setup: Create old entries
-		let providers = vec![
-			(ProviderId(1), "Provider1"),
-			(ProviderId(2), "Provider2"),
-			(ProviderId(3), "Provider3"),
-		];
-
-		for (id, name) in &providers {
-			let old_entry = v1::ProviderRegistryEntry {
-				provider_name: BoundedVec::try_from(name.as_bytes().to_vec()).unwrap(),
-			};
-			v1::ProviderToRegistryEntry::<Test>::insert(id, old_entry);
-		}
-
-		// Execute migration
-		let weight = migrate_all_provider_entries::<Test>();
-		assert!(!weight.is_zero());
-
-		// Verify storage version updated
-		assert_eq!(Pallet::<Test>::on_chain_storage_version(), StorageVersion::new(2));
-
-		// Verify all entries migrated
-		for (id, name) in providers {
-			let new_entry = ProviderToRegistryEntryV2::<Test>::get(id).unwrap();
-			let name: BoundedVec<u8, <Test as Config>::MaxProviderNameSize> =
-				BoundedVec::try_from(name.as_bytes().to_vec()).unwrap();
-			assert_eq!(new_entry.default_name, name);
-			assert!(new_entry.default_logo_250_100_png_cid.is_empty());
-			assert!(new_entry.localized_names.is_empty());
-		}
-
-		// Verify old storage is empty
-		assert_eq!(v1::ProviderToRegistryEntry::<Test>::iter().count(), 0);
-	});
-}
-
-#[test]
-fn on_initialize_migration_not_paseo() {
+fn on_initialize_migration_test() {
 	new_test_ext().execute_with(|| {
 		// Since test environment is not Paseo, should return zero weight
 		let weight = on_initialize_migration::<Test>();
@@ -144,7 +105,7 @@ fn on_initialize_migration_not_paseo() {
 }
 
 #[test]
-fn on_runtime_upgrade_successful_migration() {
+fn on_runtime_upgrade_noop() {
 	new_test_ext().execute_with(|| {
 		// Setup: Create old entries and ensure version is 1
 		StorageVersion::new(1).put::<Pallet<Test>>();
@@ -160,47 +121,7 @@ fn on_runtime_upgrade_successful_migration() {
 		assert_eq!(count, providers.len() as usize);
 		// Execute migration
 		let weight = MigrateProviderToRegistryEntryV2::<Test>::on_runtime_upgrade();
-		assert!(!weight.is_zero());
-		// Verify migration completed (for non-Paseo)
-		// Since test env is not Paseo, it should do single-block migration
-		for (id, name) in providers {
-			let new_entry = ProviderToRegistryEntryV2::<Test>::get(id).unwrap();
-			let name: BoundedVec<u8, <Test as Config>::MaxProviderNameSize> =
-				BoundedVec::try_from(name.as_bytes().to_vec()).unwrap();
-			assert_eq!(new_entry.default_name, name);
-		}
-	});
-}
-
-#[test]
-fn migration_preserves_provider_names() {
-	new_test_ext().execute_with(|| {
-		// Test that provider names are correctly preserved during migration
-		let test_cases = vec![
-			(ProviderId(1), b"SimpleProvider".to_vec()),
-			(ProviderId(2), b"Provider-With-Dashes".to_vec()),
-			(ProviderId(3), b"Provider_With_Underscores".to_vec()),
-			(ProviderId(4), b"Provider123".to_vec()),
-			(ProviderId(5), b"".to_vec()), // Empty name edge case
-		];
-
-		// Setup old entries
-		for (id, name) in &test_cases {
-			if let Ok(bounded_name) = BoundedVec::try_from(name.clone()) {
-				let old_entry = v1::ProviderRegistryEntry { provider_name: bounded_name };
-				v1::ProviderToRegistryEntry::<Test>::insert(id, old_entry);
-			}
-		}
-
-		// Migrate
-		migrate_all_provider_entries::<Test>();
-
-		// Verify names preserved
-		for (id, expected_name) in test_cases {
-			if let Some(entry) = ProviderToRegistryEntryV2::<Test>::get(id) {
-				assert_eq!(entry.default_name.to_vec(), expected_name);
-			}
-		}
+		assert!(weight.is_zero());
 	});
 }
 
@@ -231,7 +152,6 @@ fn batch_migration_respects_boundaries() {
 #[test]
 fn on_initialize_migration_progresses_batches() {
 	new_test_ext().execute_with(|| {
-		ForcePaseoTestFlag::<Test>::put(true);
 		// Setup: Create old entries and ensure version is 1
 		StorageVersion::new(1).put::<Pallet<Test>>();
 		// Step 1: Insert more than MAX_ITEMS_PER_BLOCK old entries
@@ -275,7 +195,5 @@ fn on_initialize_migration_progresses_batches() {
 			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
 			assert!(v1::ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_none());
 		}
-
-		ForcePaseoTestFlag::<Test>::kill();
 	});
 }
