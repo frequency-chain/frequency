@@ -67,7 +67,7 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 			MigrationProgressV2::<T>::kill();
 			return T::DbWeight::get().writes(1)
 		}
-		return Weight::zero()
+		return T::DbWeight::get().reads(1)
 	}
 
 	let migration_status = MigrationProgressV2::<T>::get();
