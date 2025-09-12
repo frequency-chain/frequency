@@ -4,8 +4,15 @@ use frame_support::{pallet_prelude::*, storage_alias};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
-/// Storage alias for the old ProviderToRegistryEntry storage format
+/// Storage alias for the old `ProviderToRegistryEntry` storage format used in migration v1.
+///
+/// This maps:
+/// - `ProviderId` → a legacy [`ProviderRegistryEntry`] bounded by `MaxProviderNameSize`.
+///
+/// # Type Parameters
+/// * `T` - The pallet's configuration trait, which supplies `MaxProviderNameSize`.
 #[storage_alias]
+#[allow(missing_docs)]
 pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 	crate::Pallet<T>,
 	Twox64Concat,

@@ -157,7 +157,7 @@ fn prep_recovery_benchmark_storage<T: Config>(
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};
-	ProviderToRegistryEntry::<T>::insert(ProviderId(provider_msa_id), entry);
+	ProviderToRegistryEntryV2::<T>::insert(ProviderId(provider_msa_id), entry);
 
 	// Pre-approve as recovery provider directly in storage
 	RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
@@ -437,7 +437,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_public_key), provider_name);
 
-		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
+		assert!(ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).is_some());
 		Ok(())
 	}
 
@@ -635,7 +635,7 @@ mod benchmarks {
 		};
 		assert_ok!(Msa::<T>::upsert_provider_for(provider_msa_id, entry, false));
 
-		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
+		assert!(ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).is_some());
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, provider_public_key);

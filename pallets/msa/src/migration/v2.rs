@@ -1,4 +1,4 @@
-use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry, STORAGE_VERSION};
+use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2, STORAGE_VERSION};
 use common_primitives::{
 	msa::{ProviderId, ProviderRegistryEntry},
 	utils::{get_chain_type_by_genesis_hash, DetectedChainType},
@@ -16,15 +16,18 @@ const MAX_ITEMS_PER_BLOCK: u32 = 50; // Conservative batch size for Paseo
 
 /// Storage item to track migration progress for Paseo
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-struct MigrationStatus {
+pub struct MigrationStatus {
+	/// Number of items migrated so far
 	pub migrated_count: u32,
+	/// Total number of items to migrate
 	pub total_count: u32,
+	/// Whether migration is complete
 	pub completed: bool,
 }
 
-// Storage for tracking migration progress
+/// Storage for tracking migration progress
 #[storage_alias]
-type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatus, ValueQuery>;
+pub type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatus, ValueQuery>;
 
 /// Function to check current chain type - available in all contexts
 fn get_chain_type<T: Config>() -> DetectedChainType {
@@ -63,10 +66,7 @@ pub fn get_known_provider_ids<T: Config>() -> vec::Vec<ProviderId> {
 }
 
 /// Core migration function that can be called from both contexts
-fn migrate_provider_entries_batch<T: Config>(
-	start_index: usize,
-	batch_size: usize,
-) -> (Weight, u32, bool) {
+pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, u32, bool) {
 	let mut reads = 0u64;
 	let mut writes = 0u64;
 	let mut bytes = 0u64;
@@ -75,10 +75,7 @@ fn migrate_provider_entries_batch<T: Config>(
 	let entries: vec::Vec<(
 		ProviderId,
 		v1::ProviderRegistryEntry<<T as Config>::MaxProviderNameSize>,
-	)> = v1::ProviderToRegistryEntry::<T>::iter()
-		.skip(start_index)
-		.take(batch_size)
-		.collect();
+	)> = v1::ProviderToRegistryEntry::<T>::drain().take(batch_size).collect();
 
 	let is_last_batch = entries.len() < batch_size;
 
@@ -90,13 +87,11 @@ fn migrate_provider_entries_batch<T: Config>(
 			localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
 			localized_names: BoundedBTreeMap::default(),
 		};
-
-		// Remove from old storage and insert into new storage
-		v1::ProviderToRegistryEntry::<T>::remove(provider_id);
-		ProviderToRegistryEntry::<T>::insert(provider_id, migrated_provider_entry);
+		// Insert into new storage
+		ProviderToRegistryEntryV2::<T>::insert(provider_id, migrated_provider_entry);
 
 		reads += 1;
-		writes += 2; // One remove, one insert
+		writes += 1;
 		bytes += old_entry.encoded_size() as u64;
 		migrated_count += 1;
 	}
@@ -106,14 +101,14 @@ fn migrate_provider_entries_batch<T: Config>(
 }
 
 /// Single-block migration for mainnet and smaller chains
-fn migrate_all_provider_entries<T: Config>() -> Weight {
+pub fn migrate_all_provider_entries<T: Config>() -> Weight {
 	log::info!(target: LOG_TARGET, "Starting single-block migration from v1 to v2...");
 
 	let total_count = v1::ProviderToRegistryEntry::<T>::iter().count();
-	log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntry storage: {total_count}");
+	log::info!(target: LOG_TARGET, "Total items in OLD ProviderToRegistryEntryV2 storage: {total_count}");
 
 	if total_count == 0 {
-		log::error!(target: LOG_TARGET, "No items found in OLD ProviderToRegistryEntry storage, skipping migration.");
+		log::error!(target: LOG_TARGET, "No items found in OLD ProviderToRegistryEntryV2 storage, skipping migration.");
 		return T::DbWeight::get().reads(1)
 	}
 
@@ -131,7 +126,7 @@ fn migrate_all_provider_entries<T: Config>() -> Weight {
 			localized_names: BoundedBTreeMap::default(),
 		};
 
-		ProviderToRegistryEntry::<T>::insert(provider_id, migrated_provider_entry);
+		ProviderToRegistryEntryV2::<T>::insert(provider_id, migrated_provider_entry);
 		total_reads.saturating_inc();
 		total_writes.saturating_inc();
 		total_bytes += old_entry.encoded_size() as u64;
@@ -198,10 +193,8 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 
 	// Continue migration if not complete
 	if migration_status.migrated_count < migration_status.total_count {
-		let (batch_weight, migrated_in_this_block, _) = migrate_provider_entries_batch::<T>(
-			migration_status.migrated_count as usize,
-			MAX_ITEMS_PER_BLOCK as usize,
-		);
+		let (batch_weight, migrated_in_this_block, _) =
+			migrate_provider_entries_batch::<T>(MAX_ITEMS_PER_BLOCK as usize);
 
 		let mut updated_status = migration_status;
 		updated_status.migrated_count += migrated_in_this_block;
@@ -231,7 +224,7 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 	Weight::zero()
 }
 
-/// migrate `ProviderToRegistryEntry` translating to new `ProviderRegistryEntry`
+/// migrate `ProviderToRegistryEntryV2` translating to new `ProviderRegistryEntry`
 pub struct MigrateProviderToRegistryEntryV2<T>(PhantomData<T>);
 
 impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
@@ -260,7 +253,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		}
 
 		// For mainnet and other chains, do single-block migration
-		log::info!(target: LOG_TARGET, "Migrating v1 ProviderToRegistryEntry to updated ProviderRegistryEntry...");
+		log::info!(target: LOG_TARGET, "Migrating v1 ProviderToRegistryEntryV2 to updated ProviderRegistryEntry...");
 		migrate_all_provider_entries::<T>()
 	}
 
@@ -271,7 +264,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 		log::info!(target: LOG_TARGET, "Current on_chain_version: {on_chain_version:?}");
 
 		if on_chain_version >= 2 {
-			let current_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
+			let current_count = ProviderToRegistryEntryV2::<T>::iter().count() as u64;
 			log::info!(target: LOG_TARGET, "Migration already completed, current count: {current_count}");
 			return Ok(current_count.encode().to_vec());
 		}
@@ -306,7 +299,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 			log::warn!(target: LOG_TARGET, "No known providers found for post-upgrade check");
 		} else {
 			for id in known_providers {
-				let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {
+				let entry = ProviderToRegistryEntryV2::<T>::get(id).ok_or_else(|| {
 					log::error!(target: LOG_TARGET, "Missing provider entry for provider id: {id:?}");
 					TryRuntimeError::Other("Missing provider entry in post-upgrade check")
 				})?;
@@ -318,7 +311,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntryV2<T> {
 			}
 		}
 
-		let post_count = ProviderToRegistryEntry::<T>::iter().count() as u64;
+		let post_count = ProviderToRegistryEntryV2::<T>::iter().count() as u64;
 		ensure!(post_count == expected, "Post-upgrade count mismatch");
 
 		// Ensure old storage is empty (for non-Paseo chains)

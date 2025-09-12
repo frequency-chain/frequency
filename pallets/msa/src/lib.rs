@@ -98,6 +98,7 @@ pub mod types;
 pub mod weights;
 
 /// Migrations
+#[allow(missing_docs)]
 pub mod migration;
 
 #[frame_support::pallet]
@@ -217,7 +218,7 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
-	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
+	pub type ProviderToRegistryEntryV2<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		ProviderId,
@@ -580,6 +581,7 @@ pub mod pallet {
 		fn on_initialize(_block_number: BlockNumberFor<T>) -> Weight {
 			<OffchainIndexEventCount<T>>::set(0u16);
 			#[allow(unused_assignments)]
+			#[allow(unused_mut)]
 			let mut migration_weight = Weight::zero();
 			// run ProviderRegistryEntry migration
 			#[cfg(any(feature = "frequency-testnet", test))]
@@ -1866,11 +1868,17 @@ impl<T: Config> Pallet<T> {
 			T::MaxLocaleCount,
 		>,
 	) -> DispatchResult {
-		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
-			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
-			*maybe_metadata = Some(payload);
-			Ok(())
-		})
+		ProviderToRegistryEntryV2::<T>::try_mutate(
+			provider_id,
+			|maybe_metadata| -> DispatchResult {
+				ensure!(
+					maybe_metadata.take().is_none(),
+					Error::<T>::DuplicateProviderRegistryEntry
+				);
+				*maybe_metadata = Some(payload);
+				Ok(())
+			},
+		)
 	}
 
 	/// Adds a list of schema permissions to a delegation relationship.
@@ -1958,9 +1966,9 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntry`] contains the MSA id
+	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntryV2`] contains the MSA id
 	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
-		ProviderToRegistryEntry::<T>::contains_key(ProviderId(msa_id))
+		ProviderToRegistryEntryV2::<T>::contains_key(ProviderId(msa_id))
 	}
 
 	/// Checks that a provider and delegator keys are valid
@@ -2116,7 +2124,7 @@ impl<T: Config> Pallet<T> {
 		is_update: bool,
 	) -> DispatchResult {
 		Self::update_logo_storage(&payload)?;
-		ProviderToRegistryEntry::<T>::try_mutate(
+		ProviderToRegistryEntryV2::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
 				if !is_update {
@@ -2681,7 +2689,7 @@ impl<T: Config> Pallet<T> {
 		let bounded_locale = locale.and_then(|loc| BoundedVec::try_from(loc).ok());
 		let provider_or_application_registry = match application_id {
 			Some(app_id) => ProviderToApplicationRegistry::<T>::get(provider_id, app_id)?,
-			None => ProviderToRegistryEntry::<T>::get(provider_id)?,
+			None => ProviderToRegistryEntryV2::<T>::get(provider_id)?,
 		};
 		let default_name = provider_or_application_registry.default_name.to_vec();
 		let default_logo_cid = provider_or_application_registry.default_logo_250_100_png_cid;

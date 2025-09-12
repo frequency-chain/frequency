@@ -4,6 +4,7 @@ mod application_tests;
 mod creation_tests;
 mod delegation_tests;
 mod governance_tests;
+mod migration_tests;
 mod msa_token_tests;
 mod offchain_tests;
 mod other_tests;
