@@ -1011,9 +1011,10 @@ mod benchmarks {
 		let provider_caller: T::AccountId = whitelisted_caller();
 		let (provider_id, provider_public_key) =
 			Msa::<T>::create_account(provider_caller.clone()).unwrap();
-		let mut provider_entry = ProviderRegistryEntry::default();
-		provider_entry.default_name =
-			BoundedVec::try_from(b"Test Provider".to_vec()).unwrap_or_default();
+		let provider_entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Test Provider".to_vec()).unwrap_or_default(),
+			..Default::default()
+		};
 		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
 			RawOrigin::Root.into(),
 			provider_caller.clone(),
