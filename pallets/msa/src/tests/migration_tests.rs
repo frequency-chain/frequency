@@ -159,15 +159,15 @@ fn on_initialize_migration_progresses_batches() {
 		assert_eq!(status.migrated_count, 55); // All 55 should be migrated now
 		assert!(!status.completed);
 
-		// Step 6: Call on_initialize_migration for second block
+		// Step 5: Call on_initialize_migration for second block
 		let weight3 = on_initialize_migration::<Test>();
 		assert!(weight3.is_zero());
 
-		// Step 7: Progress should be complete
+		// Step 6: Progress should be complete
 		assert!(!MigrationProgressV2::<Test>::exists());
 		assert_eq!(Pallet::<Test>::on_chain_storage_version(), StorageVersion::new(2));
 
-		// Step 8: All old entries migrated
+		// Step 7: All old entries migrated
 		for i in 1..=total_entries {
 			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
 			assert!(v1::ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_none());
