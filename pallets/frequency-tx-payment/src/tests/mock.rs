@@ -22,10 +22,7 @@ use frame_support::{
 
 use pallet_capacity::CapacityLedger;
 
-pub use common_runtime::{
-	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
-	weights::rocksdb_weights::constants::RocksDbWeight,
-};
+pub use common_runtime::{constants::*, weights::rocksdb_weights::constants::RocksDbWeight};
 
 use frame_support::weights::Weight;
 
@@ -166,7 +163,11 @@ impl pallet_msa::Config for Test {
 	type ConvertIntoAccountId32 = TestAccountId;
 	type MaxPublicKeysPerMsa = ConstU8<255>;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type MaxProviderNameSize = ConstU32<16>;
+	type MaxProviderNameSize = MsaMaxProviderNameSize;
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	type MaxLogoSize = MsaMaxLogoSize;
+	type MaxLocaleCount = MsaMaxLocaleCount;
 	type SchemaValidator = Schemas;
 	type HandleProvider = ();
 	type MortalityWindowSize = ConstU32<100>;
