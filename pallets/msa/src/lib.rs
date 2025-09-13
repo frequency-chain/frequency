@@ -2116,7 +2116,6 @@ impl<T: Config> Pallet<T> {
 		>,
 		is_update: bool,
 	) -> DispatchResult {
-		Self::update_logo_storage(&payload)?;
 		ProviderToRegistryEntryV2::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
@@ -2128,11 +2127,12 @@ impl<T: Config> Pallet<T> {
 				} else {
 					Self::remove_logo_storage(maybe_metadata.as_ref())?;
 				}
+				Self::update_logo_storage(&payload)?;
+
 				*maybe_metadata = Some(payload);
 				Ok(())
 			},
-		)?;
-		Ok(())
+		)
 	}
 
 	/// Adds an association between Provider MSA id and ProviderToApplicationRegistryEntry
@@ -2180,21 +2180,21 @@ impl<T: Config> Pallet<T> {
 			T::MaxLocaleCount,
 		>,
 	) -> DispatchResult {
-		Self::update_logo_storage(&payload)?;
 		ensure!(
 			ProviderToApplicationRegistry::<T>::contains_key(provider_msa_id, application_index),
 			Error::<T>::ApplicationNotFound
 		);
+
 		ProviderToApplicationRegistry::<T>::try_mutate(
 			provider_msa_id,
 			application_index,
 			|maybe_metadata| -> DispatchResult {
 				Self::remove_logo_storage(maybe_metadata.as_ref())?;
+				Self::update_logo_storage(&payload)?;
 				*maybe_metadata = Some(payload);
 				Ok(())
 			},
-		)?;
-		Ok(())
+		)
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
