@@ -1024,8 +1024,8 @@ mod benchmarks {
 		let initial_payload = ApplicationContext {
 			default_name: BoundedVec::truncate_from(Vec::from("init")),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::new(),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid.clone()).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids.clone(),
 		};
 		// create an initial application to update
 		assert_ok!(Msa::<T>::create_application_via_governance(
@@ -1034,9 +1034,12 @@ mod benchmarks {
 			initial_payload
 		));
 
+		let stored_application =
+			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).unwrap();
+		assert_eq!(stored_application.localized_names.len(), 0);
 		let application_payload = ApplicationContext {
 			default_name: BoundedVec::try_from(application_name).unwrap_or_default(),
-			localized_names,
+			localized_names: localized_names.clone(),
 			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
 			localized_logo_250_100_png_cids: localized_cids,
 		};
@@ -1045,6 +1048,12 @@ mod benchmarks {
 		_(RawOrigin::Root, provider_public_key, 0u16, application_payload);
 
 		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
+		assert_eq!(
+			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0)
+				.unwrap()
+				.localized_names,
+			localized_names
+		);
 		Ok(())
 	}
 
@@ -1144,10 +1153,10 @@ mod benchmarks {
 		let account = create_account::<T>("account_updated", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 		let provider_entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"Initial".to_vec()).unwrap_or_default(),
+			default_name: BoundedVec::try_from(provider_name.clone()).unwrap_or_default(),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::new(),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid.clone()).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids.clone(),
 		};
 		// register provider first
 		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
@@ -1155,6 +1164,10 @@ mod benchmarks {
 			provider_public_key.clone(),
 			provider_entry
 		));
+
+		let stored_provider =
+			ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(stored_provider.localized_names.len(), 0);
 
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(provider_name).unwrap_or_default(),
