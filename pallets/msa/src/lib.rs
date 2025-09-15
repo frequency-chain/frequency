@@ -1509,7 +1509,6 @@ pub mod pallet {
 		#[pallet::call_index(24)]
 		#[pallet::weight(T::WeightInfo::update_provider_via_governance(
 			payload.localized_names.len() as u32,
-			payload.localized_logo_250_100_png_cids.len() as u32,
 		))]
 		pub fn update_provider_via_governance(
 			origin: OriginFor<T>,
@@ -1520,15 +1519,17 @@ pub mod pallet {
 				T::MaxLogoCidSize,
 				T::MaxLocaleCount,
 			>,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			Self::upsert_provider_for(provider_msa_id, payload, true)?;
+			let base_weight =
+				T::WeightInfo::update_provider_via_governance(payload.localized_names.len() as u32);
+			let total_logos_removed = Self::upsert_provider_for(provider_msa_id, payload, true)?;
 			Self::deposit_event(Event::ProviderUpdated {
 				provider_id: ProviderId(provider_msa_id),
 			});
-			Ok(())
+			Self::refund_logo_removal_weight_by_count(total_logos_removed, base_weight)
 		}
 
 		/// Propose to update provider registry via governance
@@ -1588,9 +1589,7 @@ pub mod pallet {
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(26)]
 		#[pallet::weight(T::WeightInfo::update_application_via_governance(
-			payload.localized_names.len() as u32,
-			payload.localized_logo_250_100_png_cids.len() as u32
-		))]
+			payload.localized_names.len() as u32,	))]
 		pub fn update_application_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
@@ -1601,7 +1600,7 @@ pub mod pallet {
 				T::MaxLogoCidSize,
 				T::MaxLocaleCount,
 			>,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			ensure!(
@@ -1609,12 +1608,19 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 			Self::ensure_correct_cids(&payload)?;
-			Self::upsert_application_for(ProviderId(provider_msa_id), application_index, payload)?;
+			let base_weight = T::WeightInfo::update_application_via_governance(
+				payload.localized_names.len() as u32,
+			);
+			let total_logos_removed = Self::upsert_application_for(
+				ProviderId(provider_msa_id),
+				application_index,
+				payload,
+			)?;
 			Self::deposit_event(Event::ApplicationContextUpdated {
 				provider_id: ProviderId(provider_msa_id),
 				application_id: Some(application_index),
 			});
-			Ok(())
+			Self::refund_logo_removal_weight_by_count(total_logos_removed, base_weight)
 		}
 
 		/// Propose to update application via governance for a given `ApplicationIndex`
@@ -2115,7 +2121,8 @@ impl<T: Config> Pallet<T> {
 			T::MaxLocaleCount,
 		>,
 		is_update: bool,
-	) -> DispatchResult {
+	) -> Result<u32, DispatchError> {
+		let mut total_logos_removed = 0;
 		ProviderToRegistryEntryV2::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
@@ -2125,7 +2132,7 @@ impl<T: Config> Pallet<T> {
 						Error::<T>::DuplicateProviderRegistryEntry
 					);
 				} else {
-					Self::remove_logo_storage(maybe_metadata.as_ref())?;
+					total_logos_removed = Self::remove_logo_storage(maybe_metadata.as_ref())?;
 				}
 				Self::update_logo_storage(&payload)?;
 
@@ -2133,6 +2140,7 @@ impl<T: Config> Pallet<T> {
 				Ok(())
 			},
 		)
+		.map(|_| total_logos_removed)
 	}
 
 	/// Adds an association between Provider MSA id and ProviderToApplicationRegistryEntry
@@ -2179,22 +2187,23 @@ impl<T: Config> Pallet<T> {
 			T::MaxLogoCidSize,
 			T::MaxLocaleCount,
 		>,
-	) -> DispatchResult {
+	) -> Result<u32, DispatchError> {
 		ensure!(
 			ProviderToApplicationRegistry::<T>::contains_key(provider_msa_id, application_index),
 			Error::<T>::ApplicationNotFound
 		);
-
+		let mut total_logos_removed = 0;
 		ProviderToApplicationRegistry::<T>::try_mutate(
 			provider_msa_id,
 			application_index,
 			|maybe_metadata| -> DispatchResult {
-				Self::remove_logo_storage(maybe_metadata.as_ref())?;
+				total_logos_removed = Self::remove_logo_storage(maybe_metadata.as_ref())?;
 				Self::update_logo_storage(&payload)?;
 				*maybe_metadata = Some(payload);
 				Ok(())
 			},
 		)
+		.map(|_| total_logos_removed)
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
@@ -2595,20 +2604,23 @@ impl<T: Config> Pallet<T> {
 				T::MaxLocaleCount,
 			>,
 		>,
-	) -> DispatchResult {
+	) -> Result<u32, DispatchError> {
+		let mut total_logo_removed = 0;
 		if let Some(payload) = existing_payload {
 			// remove default logo CID if any
 			if !payload.default_logo_250_100_png_cid.is_empty() {
+				total_logo_removed += 1;
 				ApprovedLogos::<T>::remove(&payload.default_logo_250_100_png_cid);
 			}
 			// remove localized logos CIDs if any
 			for (_, localized_cid) in &payload.localized_logo_250_100_png_cids {
 				if !localized_cid.is_empty() {
+					total_logo_removed += 1;
 					ApprovedLogos::<T>::remove(localized_cid);
 				}
 			}
 		}
-		Ok(())
+		Ok(total_logo_removed)
 	}
 
 	/// Checks if cid for logo and localized logos is valid
@@ -2712,6 +2724,22 @@ impl<T: Config> Pallet<T> {
 			localized_logo_250_100_png_bytes,
 			localized_name,
 		})
+	}
+
+	/// Refund weights for logos not removed from worst case scenario
+	fn refund_logo_removal_weight_by_count(
+		total_logos_removed: u32,
+		base_weight: Weight,
+	) -> DispatchResultWithPostInfo {
+		// Weight adjustment: refund weight for logos that were NOT removed
+		let max_logos_benchmark_assumed = T::MaxLocaleCount::get();
+		let removal_over_charged_by =
+			max_logos_benchmark_assumed.saturating_sub(total_logos_removed);
+		let weight_per_logo_removal = T::DbWeight::get().writes(1);
+		let weight_to_refund =
+			weight_per_logo_removal.saturating_mul(removal_over_charged_by as u64);
+		let actual_weight_used = base_weight.saturating_sub(weight_to_refund);
+		Ok(PostDispatchInfo { actual_weight: Some(actual_weight_used), pays_fee: Pays::Yes })
 	}
 }
 
