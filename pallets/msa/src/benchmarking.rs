@@ -3,10 +3,7 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as Msa;
-use crate::{
-	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
-	MsaIdToRecoveryCommitment,
-};
+use crate::{types::RecoveryCommitmentPayload, MsaIdToRecoveryCommitment};
 use common_primitives::utils::wrap_binary_data;
 use frame_benchmarking::{account, v2::*};
 use frame_support::{assert_ok, traits::fungible::Inspect};
@@ -84,7 +81,7 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	let key_pair = SignerId::generate_pair(None);
 	let account_id = T::AccountId::decode(&mut &key_pair.encode()[..]).unwrap();
 
-	let (msa_id, _) = Msa::<T>::create_account(account_id.clone(), EMPTY_FUNCTION).unwrap();
+	let (msa_id, _) = Msa::<T>::create_account(account_id.clone()).unwrap();
 
 	(account_id, key_pair, msa_id)
 }
@@ -227,11 +224,10 @@ mod benchmarks {
 	fn revoke_delegation_by_provider() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("account", 1);
-		let (delegator_msa_id, _) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -341,8 +337,7 @@ mod benchmarks {
 		let schemas: Vec<SchemaId> = (0..s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 
-		let (provider_msa_id, _) =
-			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
 		assert_ok!(Msa::<T>::create_provider(
 			RawOrigin::Signed(provider_caller.clone()).into(),
 			Vec::from("Foo")
@@ -350,8 +345,7 @@ mod benchmarks {
 
 		let (payload, signature, delegator_key) =
 			create_payload_and_signature::<T>(schemas, provider_msa_id);
-		let (delegator_msa_id, _) =
-			Msa::<T>::create_account(delegator_key.clone(), EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_key.clone()).unwrap();
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_caller), delegator_key, signature, payload);
@@ -368,12 +362,11 @@ mod benchmarks {
 	#[benchmark]
 	fn revoke_delegation_by_delegator() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("account", 0);
-		let (provider_msa_id, _) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("account", 1);
 		let (delegator_msa_id, delegator_public_key) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -403,8 +396,7 @@ mod benchmarks {
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_public_key), provider_name);
@@ -419,8 +411,7 @@ mod benchmarks {
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, provider_public_key, provider_name);
@@ -435,7 +426,7 @@ mod benchmarks {
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (_, provider_public_key) = Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
+		let (_, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_public_key), provider_name);
@@ -526,7 +517,7 @@ mod benchmarks {
 	fn remove_recovery_provider() -> Result<(), BenchmarkError> {
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, _provider_public_key) =
-			Msa::<T>::create_account(account.clone(), EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(account.clone()).unwrap();
 
 		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("Foo")));
 
@@ -542,7 +533,7 @@ mod benchmarks {
 	fn approve_recovery_provider() -> Result<(), BenchmarkError> {
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(account.clone(), EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(account.clone()).unwrap();
 
 		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("Foo")));
 
@@ -560,11 +551,10 @@ mod benchmarks {
 	fn check_free_extrinsic_use_revoke_delegation_by_provider() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("provider", 0);
 		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("delegator", 1);
-		let (delegator_msa_id, _) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -585,12 +575,11 @@ mod benchmarks {
 	#[benchmark]
 	fn check_free_extrinsic_use_revoke_delegation_by_delegator() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("provider", 0);
-		let (provider_msa_id, _) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("delegator", 1);
 		let (delegator_msa_id, delegator_public_key) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -613,7 +602,7 @@ mod benchmarks {
 		let (original_key, _original_key_pair, msa_id) = create_msa_account_and_keys::<T>();
 		let new_keys = SignerId::generate_pair(None);
 		let new_key: T::AccountId = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
-		assert_ok!(Msa::<T>::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::<T>::add_key(msa_id, &new_key));
 
 		#[block]
 		{
