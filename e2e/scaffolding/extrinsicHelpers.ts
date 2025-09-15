@@ -255,19 +255,37 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
+  // Add a mutex property to your class
+  private sudoMutex: Promise<void> = Promise.resolve();
+
   public async sudoSignAndSend(waitForInBlock = true) {
-    const currentNonce = await getNonce(this.keys);
-    const nonce = await autoNonce.auto(this.keys, currentNonce);
-    // Era is 0 for tests due to issues with BirthBlock
-    return await firstValueFrom(
-      this.api.tx.sudo
-        .sudo(this.extrinsic())
-        .signAndSend(this.keys, { nonce, era: 0 })
-        .pipe(
-          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
-          this.parseResult(this.event)
-        )
-    );
+    // Serialize calls using the mutex
+    let release!: () => void;
+    const lock = new Promise<void>((resolve) => (release = resolve));
+    const previous = this.sudoMutex;
+    this.sudoMutex = previous.then(() => lock);
+
+    // Wait for previous execution to finish
+    await previous;
+
+    try {
+      const currentNonce = await getNonce(this.keys);
+      const nonce = await autoNonce.auto(this.keys, currentNonce);
+
+      // Era is 0 for tests due to issues with BirthBlock
+      return await firstValueFrom(
+        this.api.tx.sudo
+          .sudo(this.extrinsic())
+          .signAndSend(this.keys, { nonce, era: 0 })
+          .pipe(
+            filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
+            this.parseResult(this.event)
+          )
+      );
+    } finally {
+      // Release the lock so the next queued call can run
+      release();
+    }
   }
 
   public async payWithCapacity(inputNonce?: AutoNonce, waitForInBlock = true) {
