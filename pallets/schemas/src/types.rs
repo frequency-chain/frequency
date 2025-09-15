@@ -302,6 +302,19 @@ pub trait ConvertToResponse<I, R> {
 	fn convert_to_response(&self, name: &I) -> R;
 }
 
+impl ConvertToResponse<Vec<u8>, Vec<SchemaVersionResponse>> for Vec<SchemaId> {
+	fn convert_to_response(&self, schema_name: &Vec<u8>) -> Vec<SchemaVersionResponse> {
+		self.iter()
+			.enumerate()
+			.map(|(index, id)| SchemaVersionResponse {
+				schema_name: schema_name.clone(),
+				schema_id: *id,
+				schema_version: (index + 1) as SchemaVersion,
+			})
+			.collect()
+	}
+}
+
 impl ConvertToResponse<SchemaName, NameLookupResponse> for MappedEntityIdentifier {
 	fn convert_to_response(&self, name: &SchemaName) -> NameLookupResponse {
 		NameLookupResponse { name: name.get_combined_name(), entity_id: *self }

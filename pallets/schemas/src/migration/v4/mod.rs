@@ -1,5 +1,5 @@
 use crate::{Config, Pallet, SchemaDescriptor, SchemaProtocolName, SchemaVersionId};
-use common_primitives::schema::{ModelType, PayloadLocation, SchemaId, SchemaSettings};
+use common_primitives::schema::{IntentSettings, ModelType, PayloadLocation, SchemaId};
 use frame_support::{pallet_prelude::*, storage_alias};
 use sp_runtime::codec::{Decode, Encode};
 
@@ -33,7 +33,7 @@ pub struct SchemaInfo {
 	/// The payload location
 	pub payload_location: PayloadLocation,
 	/// additional control settings for the schema
-	pub settings: SchemaSettings,
+	pub settings: IntentSettings,
 	/// Defines if a schema has a name or not
 	pub has_name: bool,
 }

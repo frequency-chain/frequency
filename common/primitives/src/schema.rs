@@ -89,22 +89,22 @@ pub enum PayloadLocation {
 	Deserialize,
 )]
 pub enum SchemaSetting {
-	/// Schema setting to enforce append-only behavior on payload.
-	/// Applied to schemas of type `PayloadLocation::Itemized`.
+	/// Intent setting to enforce append-only behavior on payload.
+	/// Applied to Intents of type `PayloadLocation::Itemized`.
 	AppendOnly,
-	/// Schema may enforce signature requirement on payload.
-	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
+	/// Intent may enforce signature requirement on payload.
+	/// Applied to Intents of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
 	SignatureRequired,
 }
 
-/// Wrapper type for `BitFlags<SchemaSetting>` that implements `Codec`.
+/// Wrapper type for `BitFlags<IntentSetting>` that implements `Codec`.
 #[derive(Clone, Copy, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct SchemaSettings(pub BitFlags<SchemaSetting>);
+pub struct SchemaSettings(pub BitFlags<IntentSetting>);
 
-/// TODO: temporary alias until Schemas are updated in an upcoming PR
+/// TODO: temporary alias until we can remove this type from the public API
 pub type IntentSetting = SchemaSetting;
 
-/// TODO: temporary alias until Schemas are updated in an upcoming PR
+/// TODO: temporary alias until we can remove this type from the public API
 pub type IntentSettings = SchemaSettings;
 
 /// Status of a Schema
@@ -161,6 +161,23 @@ pub struct IntentResponse {
 pub struct SchemaResponse {
 	/// The unique identifier for this Schema
 	pub schema_id: SchemaId,
+	/// The data that represents how this schema is structured
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub model: Vec<u8>,
+	/// The model format type for how the schema model is represented
+	pub model_type: ModelType,
+	/// The payload location associated with this Schema's associated Intent
+	pub payload_location: PayloadLocation,
+	/// The settings for this Schema's associated Intent
+	pub settings: Vec<SchemaSetting>,
+}
+
+/// RPC Response form for a Schema V2
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct SchemaResponseV2 {
+	/// The unique identifier for this Schema
+	pub schema_id: SchemaId,
 	/// The IntentId of the Intent that this Schema implements
 	pub intent_id: IntentId,
 	/// The data that represents how this schema is structured
@@ -174,6 +191,19 @@ pub struct SchemaResponse {
 	pub payload_location: PayloadLocation,
 	/// The settings for this Schema's associated Intent
 	pub settings: Vec<IntentSetting>,
+}
+
+impl Into<SchemaResponse> for SchemaResponseV2 {
+	/// Convert SchemaResponseV2 into SchemaResponse
+	fn into(self) -> SchemaResponse {
+		SchemaResponse {
+			schema_id: self.schema_id,
+			model: self.model,
+			model_type: self.model_type,
+			payload_location: self.payload_location,
+			settings: self.settings,
+		}
+	}
 }
 
 /// RPC Response form for a Schema Info
@@ -235,7 +265,7 @@ pub struct NameLookupResponse {
 /// This allows other pallets to resolve Schema information. With generic SchemaId
 pub trait SchemaProvider<SchemaId> {
 	/// Gets the Schema details associated with this `SchemaId` if any
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2>;
 
 	/// Gets the Schema Info associated with this `SchemaId` if any
 	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse>;
@@ -254,33 +284,33 @@ pub trait SchemaValidator<SchemaId> {
 	fn set_schema_count(n: SchemaId);
 }
 
-impl SchemaSettings {
+impl IntentSettings {
 	/// Returns new SchemaSettings with all settings disabled
 	pub fn all_disabled() -> Self {
 		Self(BitFlags::EMPTY)
 	}
 	/// Get all setting enabled
-	pub fn get_enabled(&self) -> BitFlags<SchemaSetting> {
+	pub fn get_enabled(&self) -> BitFlags<IntentSetting> {
 		self.0
 	}
 	/// Check if a setting is enabled
-	pub fn is_enabled(&self, grant: SchemaSetting) -> bool {
+	pub fn is_enabled(&self, grant: IntentSetting) -> bool {
 		self.0.contains(grant)
 	}
 	/// Enable a setting
-	pub fn set(&mut self, grant: SchemaSetting) {
+	pub fn set(&mut self, grant: IntentSetting) {
 		self.0.insert(grant)
 	}
 	/// Copy the settings from a BitFlags
-	pub fn from(settings: BitFlags<SchemaSetting>) -> Self {
+	pub fn from(settings: BitFlags<IntentSetting>) -> Self {
 		Self(settings)
 	}
 }
-impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
+impl_codec_bitflags!(IntentSettings, u16, IntentSetting);
 
-impl From<Vec<SchemaSetting>> for SchemaSettings {
+impl From<Vec<IntentSetting>> for IntentSettings {
 	/// Copy the settings from a vector of individual settings enums
-	fn from(settings: Vec<SchemaSetting>) -> Self {
+	fn from(settings: Vec<IntentSetting>) -> Self {
 		Self(BitFlags::from_iter(settings))
 	}
 }
@@ -304,14 +334,14 @@ mod tests {
 
 	#[test]
 	fn schema_settings_when_disabled_has_no_enabled() {
-		let settings = SchemaSettings::all_disabled();
+		let settings = IntentSettings::all_disabled();
 		assert_eq!(settings.get_enabled(), BitFlags::EMPTY);
 	}
 
 	#[test]
 	fn schema_settings_set_from_all_enabled_check() {
-		let settings = SchemaSettings::from(BitFlags::ALL);
-		assert!(settings.is_enabled(SchemaSetting::AppendOnly));
-		assert!(settings.is_enabled(SchemaSetting::SignatureRequired));
+		let settings = IntentSettings::from(BitFlags::ALL);
+		assert!(settings.is_enabled(IntentSetting::AppendOnly));
+		assert!(settings.is_enabled(IntentSetting::SignatureRequired));
 	}
 }

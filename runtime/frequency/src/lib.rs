@@ -104,7 +104,7 @@ use common_primitives::{
 		UtilityProvider,
 	},
 	rpc::RpcEvent,
-	schema::{PayloadLocation, SchemaId, SchemaResponse, SchemaVersionResponse},
+	schema::{PayloadLocation, SchemaId, SchemaVersionResponse},
 	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
 };
 
@@ -159,7 +159,7 @@ pub use pallet_time_release::types::{ScheduleName, SchedulerProviderTrait};
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use common_primitives::{capacity::UnclaimedRewardInfo, schema::NameLookupResponse};
+use common_primitives::{capacity::UnclaimedRewardInfo, schema::*};
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
@@ -1978,7 +1978,7 @@ sp_api::impl_runtime_apis! {
 			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
 		}
 
-		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 			Schemas::get_schema_by_id(schema_id)
 		}
 	}
@@ -1986,6 +1986,12 @@ sp_api::impl_runtime_apis! {
 	#[api_version(3)]
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			let response = Schemas::get_schema_by_id(schema_id).map(|v2| v2.into());
+			log::error!("RPC response: {:?}", response);
+			response
+		}
+
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 			Schemas::get_schema_by_id(schema_id)
 		}
 
@@ -1995,6 +2001,14 @@ sp_api::impl_runtime_apis! {
 
 		fn get_registered_entities_by_name(name: Vec<u8>) -> Option<Vec<NameLookupResponse>> {
 			Schemas::get_intent_or_group_ids_by_name(name)
+		}
+
+		fn get_intent_by_id(intent_id: IntentId, include_schemas: bool) -> Option<IntentResponse> {
+			Schemas::get_intent_by_id(intent_id, include_schemas)
+		}
+
+		fn get_intent_group_by_id(group_id: IntentGroupId) -> Option<IntentGroupResponse> {
+			Schemas::get_intent_group_by_id(group_id)
 		}
 	}
 

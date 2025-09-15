@@ -89,17 +89,22 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 			v4::SchemaNameToIds::<T>::translate(
 				|schema_id, old_schema_name, version_id: SchemaVersionId| {
 					reads += 1;
+					let max_index = version_id.ids.len() - 1;
 					for (index, id) in version_id.ids.iter().enumerate() {
 						old_names += 1;
-						let index_str = Vec::<u8>::from(format!("-{}", index + 1).as_bytes());
 						let mut name = old_schema_name.clone();
-						match append_or_overlay(&mut name, &index_str, &schema_id) {
-							Ok(_) => (),
-							Err(e) => {
-								log::error!(target: LOG_TARGET, "{:?} unable to append id {:?} to name: {:?}", e, index_str, name);
-								return Some(version_id)
-							},
-						};
+						// Let the latest schema version be the original name, and postfix previous versions
+						// with "-<version>"
+						if index < max_index {
+							let index_str = Vec::<u8>::from(format!("-{}", index + 1).as_bytes());
+							match append_or_overlay(&mut name, &index_str, &schema_id) {
+								Ok(_) => (),
+								Err(e) => {
+									log::error!(target: LOG_TARGET, "{:?} unable to append id {:?} to name: {:?}", e, index_str, name);
+									return Some(version_id)
+								},
+							};
+						}
 						NameToMappedEntityIds::<T>::insert(
 							&schema_id,
 							name,

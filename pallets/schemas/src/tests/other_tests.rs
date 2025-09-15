@@ -15,7 +15,7 @@ use common_primitives::{
 	},
 	schema::{
 		MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation, SchemaId,
-		SchemaResponse, SchemaStatus, SchemaVersion, SchemaVersionResponse,
+		SchemaResponseV2, SchemaStatus, SchemaVersion, SchemaVersionResponse,
 	},
 };
 use frame_support::{
@@ -764,7 +764,7 @@ fn create_schema_via_governance_v3_happy_path() {
 		));
 
 		// assert
-		let expected_schema_response = SchemaResponse {
+		let expected_schema_response = SchemaResponseV2 {
 			schema_id: 1,
 			intent_id,
 			model_type: ModelType::AvroBinary,

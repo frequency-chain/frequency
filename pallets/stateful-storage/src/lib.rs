@@ -49,7 +49,7 @@ use common_primitives::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
 	node::EIP712Encode,
-	schema::{PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaSetting},
+	schema::{IntentSetting, PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider},
 	stateful_storage::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
 		PaginatedStorageResponse,
@@ -634,12 +634,12 @@ impl<T: Config> Pallet<T> {
 
 		// Ensure that the schema allows signed payloads.
 		// If so, calling extrinsic must be of signature type.
-		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
+		if schema.settings.contains(&IntentSetting::SignatureRequired) {
 			ensure!(is_payload_signed, Error::<T>::UnsupportedOperationForSchema);
 		}
 
 		// Ensure that the schema does not allow deletion for AppendOnly SchemaSetting.
-		if schema.settings.contains(&SchemaSetting::AppendOnly) {
+		if schema.settings.contains(&IntentSetting::AppendOnly) {
 			ensure!(!is_deleting, Error::<T>::UnsupportedOperationForSchema);
 		}
 

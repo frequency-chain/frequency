@@ -31,9 +31,10 @@ use common_primitives::{
 	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
-		IntentGroupId, IntentGroupResponse, IntentId, IntentResponse, MappedEntityIdentifier,
-		ModelType, NameLookupResponse, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
-		SchemaSetting, SchemaSettings, SchemaStatus, SchemaValidator,
+		IntentGroupId, IntentGroupResponse, IntentId, IntentResponse, IntentSetting,
+		IntentSettings, MappedEntityIdentifier, ModelType, NameLookupResponse, PayloadLocation,
+		SchemaId, SchemaInfoResponse, SchemaProvider, SchemaStatus, SchemaValidator,
+		SchemaVersionResponse,
 	},
 };
 use frame_support::{
@@ -50,9 +51,8 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
-use common_primitives::schema::{
-	IntentSetting, IntentSettings, SchemaInfoResponse, SchemaVersionResponse,
-};
+use common_primitives::schema::SchemaResponseV2;
+
 mod types;
 
 pub use pallet::*;
@@ -67,6 +67,7 @@ mod serde;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::schema::SchemaResponseV2;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -513,7 +514,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			intent_name: SchemaNamePayload,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			settings: BoundedVec<IntentSetting, T::MaxSchemaSettingsPerSchema>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -551,7 +552,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			settings: BoundedVec<IntentSetting, T::MaxSchemaSettingsPerSchema>,
 			intent_name: SchemaNamePayload,
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
@@ -573,7 +574,7 @@ pub mod pallet {
 		pub fn propose_to_create_intent(
 			origin: OriginFor<T>,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			settings: BoundedVec<IntentSetting, T::MaxSchemaSettingsPerSchema>,
 			intent_name: SchemaNamePayload,
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
@@ -915,11 +916,11 @@ pub mod pallet {
 		/// * [`Error::IntentCountOverflow`]
 		pub fn add_intent(
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			settings: BoundedVec<IntentSetting, T::MaxSchemaSettingsPerSchema>,
 			intent_name: &SchemaName,
 		) -> Result<IntentId, DispatchError> {
 			let intent_id = Self::get_next_intent_id()?;
-			let mut set_settings = SchemaSettings::all_disabled();
+			let mut set_settings = IntentSettings::all_disabled();
 			if !settings.is_empty() {
 				for i in settings.into_inner() {
 					set_settings.set(i);
@@ -982,11 +983,11 @@ pub mod pallet {
 		}
 
 		/// Retrieve a schema by id
-		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 			match (SchemaInfos::<T>::get(schema_id), SchemaPayloads::<T>::get(schema_id)) {
 				(Some(schema_info), Some(payload)) => {
 					let model_vec: Vec<u8> = payload.into_inner();
-					let response = SchemaResponse {
+					let response = SchemaResponseV2 {
 						schema_id,
 						intent_id: schema_info.intent_id,
 						model: model_vec,
@@ -1028,7 +1029,7 @@ pub mod pallet {
 		) -> Option<IntentResponse> {
 			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
 				let saved_settings = intent_info.settings;
-				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
+				let settings = saved_settings.0.iter().collect::<Vec<IntentSetting>>();
 				let schema_ids = match include_schemas {
 					false => None,
 					true => Some(
@@ -1177,17 +1178,17 @@ pub mod pallet {
 		pub fn create_intent_for(
 			intent_name_payload: SchemaNamePayload,
 			payload_location: PayloadLocation,
-			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			settings: BoundedVec<IntentSetting, T::MaxSchemaSettingsPerSchema>,
 		) -> Result<(IntentId, SchemaName), DispatchError> {
 			// AppendOnly is only valid for Itemized payload location
 			ensure!(
-				!settings.contains(&SchemaSetting::AppendOnly) ||
+				!settings.contains(&IntentSetting::AppendOnly) ||
 					payload_location == PayloadLocation::Itemized,
 				Error::<T>::InvalidSetting
 			);
 			// SignatureRequired is only valid for Itemized and Paginated payload locations
 			ensure!(
-				!settings.contains(&SchemaSetting::SignatureRequired) ||
+				!settings.contains(&IntentSetting::SignatureRequired) ||
 					payload_location == PayloadLocation::Itemized ||
 					payload_location == PayloadLocation::Paginated,
 				Error::<T>::InvalidSetting
@@ -1258,18 +1259,30 @@ pub mod pallet {
 		/// a method to return all versions of a schema name with their schemaIds
 		/// Warning: Must only get called from RPC, since the number of DB accesses is not deterministic
 		pub fn get_schema_versions(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
-			let bounded_name = BoundedVec::try_from(schema_name).ok()?;
-			let parsed_name = SchemaName::try_parse::<T>(bounded_name, false).ok()?;
-			let versions: Vec<_> = match parsed_name.descriptor_exists() {
-				true => SchemaNameToIds::<T>::get(&parsed_name.namespace, &parsed_name.descriptor)
-					.convert_to_response(&parsed_name),
-				false => SchemaNameToIds::<T>::iter_prefix(&parsed_name.namespace)
-					.flat_map(|(descriptor, val)| {
-						val.convert_to_response(&parsed_name.new_with_descriptor(descriptor))
-					})
-					.collect(),
-			};
-			Some(versions)
+			if let Some(mut entities) = Self::get_intent_or_group_ids_by_name(schema_name.clone()) {
+				entities.retain(|e| matches!(e.entity_id, MappedEntityIdentifier::Intent(_)));
+				return Some(
+					entities
+						.iter()
+						.flat_map(|e| {
+							let schema_ids: Vec<SchemaId> = SchemaInfos::<T>::iter()
+								.filter_map(|(id, info)| match e.entity_id {
+									MappedEntityIdentifier::Intent(intent_id) => {
+										if info.intent_id == intent_id {
+											Some(id)
+										} else {
+											None
+										}
+									},
+									_ => None,
+								})
+								.collect();
+							schema_ids.convert_to_response(&e.name)
+						})
+						.collect::<Vec<SchemaVersionResponse>>(),
+				);
+			}
+			None
 		}
 
 		/// method to return the entity ID (Intent or IntentGroup) associated with a name
@@ -1383,7 +1396,7 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 }
 
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 		Self::get_schema_by_id(schema_id)
 	}
 

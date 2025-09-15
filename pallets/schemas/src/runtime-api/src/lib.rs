@@ -24,21 +24,32 @@ use alloc::vec::Vec;
 sp_api::decl_runtime_apis! {
 
 	/// Runtime Version for Schemas
-	/// - MUST be incremented if anything changes
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(2)]
+	#[api_version(3)]
 
 	/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
 	pub trait SchemasRuntimeApi
 	{
 		/// Fetch the schema by id
+		// TODO: Deprecated method; keep in place until all RPC nodes have been upgraded to remove the custom RPC `get_by_schema_id`
+		#[deprecated(note = "Please use get_schema_by_id")]
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 
+		/// Fetch the schema by id
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2>;
+
 		/// Fetch the schema versions by name
+		// TODO: Deprecated method; keep in place until all RPC nodes have been upgraded to remove the custom RPC `get_versions`
+		#[deprecated(note = "Schemas no longer have names; use get_registered_entities_by_name instead")]
 		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>>;
 
-		#[api_version(3)]
 		/// Fetch registered entity identifiers by name
 		fn get_registered_entities_by_name(name: Vec<u8>) -> Option<Vec<NameLookupResponse>>;
+
+		/// Fetch the Intent by id
+		fn get_intent_by_id(intent_id: IntentId, include_schemas: bool) -> Option<IntentResponse>;
+
+		/// Fetch the IntentGroup by id
+		fn get_intent_group_by_id(intent_group_id: IntentGroupId) -> Option<IntentGroupResponse>;
 	}
 }

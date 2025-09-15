@@ -93,7 +93,7 @@ where
 		let at = self.client.info().best_hash;
 
 		// Schema Fetch and Check
-		let schema: SchemaResponse = match api.get_schema_by_id(at, schema_id) {
+		let schema: SchemaResponseV2 = match api.get_schema_by_id(at, schema_id) {
 			Ok(Some(s)) => s,
 			_ => fail!(MessageRpcError::InvalidSchemaId),
 		};

@@ -38,6 +38,6 @@ sp_api::decl_runtime_apis! {
 			Vec<MessageResponse>;
 
 		/// Retrieve a schema by id
-		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2>;
 	}
 }
