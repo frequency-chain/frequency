@@ -94,5 +94,5 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 		return T::DbWeight::get().reads_writes(reads, writes).saturating_add(batch_weight);
 	}
 	log::info!(target: LOG_TARGET, "Provider Registry Migration already completed.");
-	Weight::zero()
+	T::DbWeight::get().reads(1)
 }
