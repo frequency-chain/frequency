@@ -19,9 +19,9 @@ fn update_provider_via_governance_happy_path() {
 		let old_provider_entry =
 			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(old_provider_entry.default_name, b"OriginalProvider".to_vec());
-		assert_eq!(old_provider_entry.localized_names.len(), 0);
+		assert_eq!(old_provider_entry.localized_names.len(), 1);
 		assert_eq!(old_provider_entry.default_logo_250_100_png_cid.is_empty(), false);
-		assert_eq!(old_provider_entry.localized_logo_250_100_png_cids.len(), 0);
+		assert_eq!(old_provider_entry.localized_logo_250_100_png_cids.len(), 1);
 		// Create updated provider entry
 		let mut updated_entry = ProviderRegistryEntry::default();
 		updated_entry.default_name = BoundedVec::try_from(b"UpdatedProvider".to_vec())
