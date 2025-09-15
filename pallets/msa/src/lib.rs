@@ -2737,7 +2737,7 @@ impl<T: Config> Pallet<T> {
 		let max_logos_benchmark_assumed = T::MaxLocaleCount::get();
 		let removal_over_charged_by =
 			max_logos_benchmark_assumed.saturating_sub(total_logos_removed);
-		let weight_per_logo_removal = T::DbWeight::get().writes(1);
+		let weight_per_logo_removal = T::DbWeight::get().reads_writes(1, 1);
 		let weight_to_refund =
 			weight_per_logo_removal.saturating_mul(removal_over_charged_by as u64);
 		let actual_weight_used = base_weight.saturating_sub(weight_to_refund);
