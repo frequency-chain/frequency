@@ -63,7 +63,7 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 		// Clean up any leftover migration state
 		if MigrationProgressV2::<T>::exists() {
 			MigrationProgressV2::<T>::kill();
-			return T::DbWeight::get().reads_writes(1,1)
+			return T::DbWeight::get().reads_writes(1, 1)
 		}
 		return T::DbWeight::get().reads(1)
 	}

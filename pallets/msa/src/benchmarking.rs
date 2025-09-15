@@ -973,61 +973,75 @@ mod benchmarks {
 	#[benchmark]
 	fn update_application_via_governance(
 		n: Linear<0, { T::MaxLocaleCount::get() }>,
-		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 
 		let application_name = (1..s as u8).collect::<Vec<_>>();
 		let mut localized_names = BoundedBTreeMap::new();
-		let mut localized_cids = BoundedBTreeMap::new();
+
+		// Create the maximum number of logos that can be stored for worst-case scenario
+		let max_logos = T::MaxLocaleCount::get();
 		let default_logo_bytes =
 			(0..T::MaxLogoSize::get() as u8).map(|x| (x + 1u8)).collect::<Vec<_>>();
-		let cid = compute_cid(default_logo_bytes.as_slice());
-		let default_bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
-		// Insert all CIDs in approved logo to simulate purging old logos
+		let default_cid = compute_cid(default_logo_bytes.as_slice());
+		let default_bounded_cid = BoundedVec::try_from(default_cid.clone()).unwrap();
+
+		// Insert default logo in approved logos
 		ApprovedLogos::<T>::insert(
 			&default_bounded_cid,
 			BoundedVec::try_from(default_logo_bytes).unwrap(),
 		);
+
+		// Set up localized names based on parameter n
 		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
 			localized_names.try_insert(lang.clone(), name).unwrap();
 		}
-		for i in 0..m {
+
+		// Create maximum number of localized logos for worst-case removal cost
+		let mut max_localized_cids = BoundedBTreeMap::new();
+		for i in 0..max_logos {
 			let logo_bytes =
-				(0..T::MaxLogoSize::get() as u8).map(|x| (x + i as u8)).collect::<Vec<_>>();
+				(0..T::MaxLogoSize::get() as u8).map(|x| (x + i as u8 + 10)).collect::<Vec<_>>();
 			let cid = compute_cid(&logo_bytes);
 			let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
-			// Insert all CIDs in approved logo to simulate purging old logos
+
+			// Insert all CIDs in approved logo storage
 			ApprovedLogos::<T>::insert(&bounded_cid, BoundedVec::try_from(logo_bytes).unwrap());
+
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let logo = BoundedVec::try_from(cid.clone()).unwrap();
-			localized_cids.try_insert(lang, logo).unwrap();
+			max_localized_cids.try_insert(lang, logo).unwrap();
 		}
+
 		let provider_caller: T::AccountId = whitelisted_caller();
 		let (provider_id, provider_public_key) =
 			Msa::<T>::create_account(provider_caller.clone()).unwrap();
+
 		let provider_entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"Test Provider".to_vec()).unwrap_or_default(),
 			..Default::default()
 		};
+
 		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
 			RawOrigin::Root.into(),
 			provider_caller.clone(),
 			provider_entry
 		));
 
+		// Create initial application with maximum number of localized logos
 		let initial_payload = ApplicationContext {
 			default_name: BoundedVec::truncate_from(Vec::from("init")),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid.clone()).unwrap(),
-			localized_logo_250_100_png_cids: localized_cids.clone(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(default_cid.clone()).unwrap(),
+			localized_logo_250_100_png_cids: max_localized_cids,
 		};
-		// create an initial application to update
+
+		// Create an initial application to update with maximum logos for worst-case removal
 		assert_ok!(Msa::<T>::create_application_via_governance(
 			RawOrigin::Root.into(),
 			provider_public_key.clone(),
@@ -1036,17 +1050,44 @@ mod benchmarks {
 
 		let stored_application =
 			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).unwrap();
-		assert_eq!(stored_application.localized_names.len(), 0);
+		assert_eq!(stored_application.default_logo_250_100_png_cid, default_bounded_cid);
+		assert_eq!(stored_application.localized_names.len() as u32, 0);
+		assert_eq!(
+			stored_application.localized_logo_250_100_png_cids.len() as u32,
+			T::MaxLocaleCount::get()
+		);
+		// Create new entry for update (could have different number of logos)
+		let new_localized_cids = {
+			let mut new_cids = BoundedBTreeMap::new();
+			// Create fewer new logos to test the removal logic
+			for i in 0..(max_logos / 2) {
+				let logo_bytes = (0..T::MaxLogoSize::get() as u8)
+					.map(|x| (x + i as u8 + 50))
+					.collect::<Vec<_>>();
+				let cid = compute_cid(&logo_bytes);
+				let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
+
+				ApprovedLogos::<T>::insert(&bounded_cid, BoundedVec::try_from(logo_bytes).unwrap());
+
+				let lang_code = make_lang_code(i as usize, lang_size as usize);
+				let lang = BoundedVec::try_from(lang_code).unwrap();
+				let logo = BoundedVec::try_from(cid.clone()).unwrap();
+				new_cids.try_insert(lang, logo).unwrap();
+			}
+			new_cids
+		};
+
 		let application_payload = ApplicationContext {
 			default_name: BoundedVec::try_from(application_name).unwrap_or_default(),
 			localized_names: localized_names.clone(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
-			localized_logo_250_100_png_cids: localized_cids,
+			default_logo_250_100_png_cid: BoundedVec::try_from(default_cid).unwrap(),
+			localized_logo_250_100_png_cids: new_localized_cids,
 		};
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, provider_public_key, 0u16, application_payload);
 
+		// Verify the update was successful
 		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
 		assert_eq!(
 			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0)
@@ -1054,6 +1095,7 @@ mod benchmarks {
 				.localized_names,
 			localized_names
 		);
+
 		Ok(())
 	}
 
@@ -1115,7 +1157,6 @@ mod benchmarks {
 	#[benchmark]
 	fn update_provider_via_governance(
 		n: Linear<0, { T::MaxLocaleCount::get() }>,
-		m: Linear<0, { T::MaxLocaleCount::get() }>,
 	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
@@ -1123,61 +1164,103 @@ mod benchmarks {
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
+
+		// Create the maximum number of logos that can be stored for worst-case scenario
+		let max_logos = T::MaxLocaleCount::get();
 		let default_logo_bytes =
 			(0..T::MaxLogoSize::get() as u8).map(|x| (x + 1u8)).collect::<Vec<_>>();
-		let cid = compute_cid(default_logo_bytes.as_slice());
-		let default_bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
-		// Insert all CIDs in approved logo to simulate purging old logos
+		let default_cid = compute_cid(default_logo_bytes.as_slice());
+		let default_bounded_cid = BoundedVec::try_from(default_cid.clone()).unwrap();
+
+		// Insert default logo in approved logos
 		ApprovedLogos::<T>::insert(
 			&default_bounded_cid,
 			BoundedVec::try_from(default_logo_bytes).unwrap(),
 		);
+
+		// Set up localized names based on parameter n
 		for i in 0..n {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
 			localized_names.try_insert(lang.clone(), name).unwrap();
 		}
-		for i in 0..m {
+
+		// Create maximum number of localized logos for worst-case removal cost
+		for i in 0..max_logos {
 			let logo_bytes =
-				(0..T::MaxLogoSize::get() as u8).map(|x| (x + i as u8)).collect::<Vec<_>>();
+				(0..T::MaxLogoSize::get() as u8).map(|x| (x + i as u8 + 10)).collect::<Vec<_>>();
 			let cid = compute_cid(&logo_bytes);
 			let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
-			// Insert all CIDs in approved logo to simulate purging old logos
+
+			// Insert all CIDs in approved logo storage
 			ApprovedLogos::<T>::insert(&bounded_cid, BoundedVec::try_from(logo_bytes).unwrap());
+
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let logo = BoundedVec::try_from(cid.clone()).unwrap();
 			localized_cids.try_insert(lang, logo).unwrap();
 		}
+
 		let account = create_account::<T>("account_updated", 0);
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
-		let provider_entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(provider_name.clone()).unwrap_or_default(),
+
+		// Create initial provider entry with maximum number of localized logos
+		let initial_provider_entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Initial Provider".to_vec()).unwrap_or_default(),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid.clone()).unwrap(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(default_cid.clone()).unwrap(),
 			localized_logo_250_100_png_cids: localized_cids.clone(),
 		};
-		// register provider first
+
+		// Register provider with maximum logos to simulate worst-case removal scenario
 		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
 			RawOrigin::Root.into(),
 			provider_public_key.clone(),
-			provider_entry
+			initial_provider_entry
 		));
 
 		let stored_provider =
 			ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).unwrap();
-		assert_eq!(stored_provider.localized_names.len(), 0);
+		assert_eq!(stored_provider.default_logo_250_100_png_cid, default_bounded_cid);
+		assert_eq!(stored_provider.localized_names.len() as u32, 0);
+		assert_eq!(
+			stored_provider.localized_logo_250_100_png_cids.len() as u32,
+			T::MaxLocaleCount::get()
+		);
+
+		// Create new entry for update (could have different number of logos)
+		let new_localized_cids = {
+			let mut new_cids = BoundedBTreeMap::new();
+			// Create fewer new logos to test the removal logic
+			for i in 0..(max_logos / 2) {
+				let logo_bytes = (0..T::MaxLogoSize::get() as u8)
+					.map(|x| (x + i as u8 + 50))
+					.collect::<Vec<_>>();
+				let cid = compute_cid(&logo_bytes);
+				let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
+
+				ApprovedLogos::<T>::insert(&bounded_cid, BoundedVec::try_from(logo_bytes).unwrap());
+
+				let lang_code = make_lang_code(i as usize, lang_size as usize);
+				let lang = BoundedVec::try_from(lang_code).unwrap();
+				let logo = BoundedVec::try_from(cid.clone()).unwrap();
+				new_cids.try_insert(lang, logo).unwrap();
+			}
+			new_cids
+		};
 
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(provider_name).unwrap_or_default(),
 			localized_names,
-			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
-			localized_logo_250_100_png_cids: localized_cids,
+			default_logo_250_100_png_cid: BoundedVec::try_from(default_cid).unwrap(),
+			localized_logo_250_100_png_cids: new_localized_cids,
 		};
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, provider_public_key, entry.clone());
+
+		// Verify the update was successful
 		assert!(Msa::<T>::is_registered_provider(provider_msa_id));
 		let provider_entry = ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id))
 			.expect("Provider must exist");
@@ -1188,6 +1271,7 @@ mod benchmarks {
 			provider_entry.localized_logo_250_100_png_cids,
 			entry.localized_logo_250_100_png_cids
 		);
+
 		Ok(())
 	}
 
