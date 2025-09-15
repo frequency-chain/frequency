@@ -21,6 +21,7 @@ pub type IntentId = u16;
 pub type SchemaId = u16;
 
 /// Schema version number
+// TODO: Remove once all traces of this are gone (ie, removed from runtime API)
 pub type SchemaVersion = u8;
 
 /// Types of modeling in which a message payload may be defined

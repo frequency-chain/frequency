@@ -36,15 +36,16 @@ fn test_messages() -> Vec<MessageResponse> {
 
 sp_api::mock_impl_runtime_apis! {
 	impl MessagesRuntimeApi<Block> for TestRuntimeApi {
-		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 			match schema_id {
-				SCHEMA_ID_EMPTY | SCHEMA_ID_HAS_MESSAGES => Some(SchemaResponse {
+				SCHEMA_ID_EMPTY | SCHEMA_ID_HAS_MESSAGES => Some(SchemaResponseV2 {
 					schema_id,
 					intent_id: schema_id,
 					model: b"schema".to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::OnChain,
 					settings: Vec::new(),
+					status: SchemaStatus::Active,
 				}),
 				_ => None,
 			}

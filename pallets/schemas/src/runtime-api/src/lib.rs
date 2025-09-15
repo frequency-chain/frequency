@@ -25,7 +25,8 @@ sp_api::decl_runtime_apis! {
 
 	/// Runtime Version for Schemas
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(3)]
+	// TODO: When deprecated methods are removed, bump base version
+	#[api_version(2)]
 
 	/// Runtime API definition for [Schemas](../pallet_schemas/index.html)
 	pub trait SchemasRuntimeApi
@@ -36,6 +37,7 @@ sp_api::decl_runtime_apis! {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 
 		/// Fetch the schema by id
+		#[api_version(3)]
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2>;
 
 		/// Fetch the schema versions by name
@@ -44,12 +46,15 @@ sp_api::decl_runtime_apis! {
 		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>>;
 
 		/// Fetch registered entity identifiers by name
+		#[api_version(3)]
 		fn get_registered_entities_by_name(name: Vec<u8>) -> Option<Vec<NameLookupResponse>>;
 
 		/// Fetch the Intent by id
+		#[api_version(3)]
 		fn get_intent_by_id(intent_id: IntentId, include_schemas: bool) -> Option<IntentResponse>;
 
 		/// Fetch the IntentGroup by id
+		#[api_version(3)]
 		fn get_intent_group_by_id(intent_group_id: IntentGroupId) -> Option<IntentGroupResponse>;
 	}
 }
