@@ -1,10 +1,10 @@
 use frame_support::{assert_ok, pallet_prelude::Hooks, traits::OriginTrait};
 
 use crate::{
-	get_bucket_number, tests::mock::*, Config, DispatchResult, FinalizedBlockResponse,
-	IndexedEvent, MsaOffchainReplayEvent, OffchainReplayEvent, Pallet,
-	LAST_PROCESSED_BLOCK_STORAGE_NAME, MSA_INITIAL_INDEXED_STORAGE_NAME,
-	RPC_FINALIZED_BLOCK_REQUEST_BODY, RPC_FINALIZED_BLOCK_REQUEST_URL,
+	get_bucket_number, tests::mock::*, Config, FinalizedBlockResponse, IndexedEvent,
+	MsaOffchainReplayEvent, OffchainReplayEvent, Pallet, LAST_PROCESSED_BLOCK_STORAGE_NAME,
+	MSA_INITIAL_INDEXED_STORAGE_NAME, RPC_FINALIZED_BLOCK_REQUEST_BODY,
+	RPC_FINALIZED_BLOCK_REQUEST_URL,
 };
 use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
@@ -30,9 +30,7 @@ where
 		result.push(public_key.clone());
 		match with_indexing {
 			false => {
-				assert_ok!(Pallet::<T>::create_account(public_key, |_| -> DispatchResult {
-					Ok(())
-				}));
+				assert_ok!(Pallet::<T>::create_account(public_key));
 			},
 			true => {
 				assert_ok!(Pallet::<T>::create(T::RuntimeOrigin::signed(account.into())));
