@@ -33,11 +33,25 @@ fn update_provider_via_governance_happy_path() {
 			BoundedVec::try_from(new_cid.clone()).expect("Logo CID should fit in bounds");
 
 		// Update provider via governance should succeed with overwrite
-		assert_ok!(Msa::update_provider_via_governance(
+		let result = Msa::update_provider_via_governance(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 			provider_account.into(),
-			updated_entry.clone()
-		));
+			updated_entry.clone(),
+		);
+
+		// Assert that the call succeeded
+		assert!(result.is_ok());
+
+		// Extract and verify the weight information
+		let dispatch_info = result.unwrap();
+
+		// Assert that we got some weight refund information
+		if let Some(actual_weight) = dispatch_info.actual_weight {
+			// Assert that actual weight consumed is positive
+			assert!(actual_weight.ref_time() > 0, "Expected positive weight consumption");
+			assert!(actual_weight.proof_size() > 0, "Expected non-negative proof size");
+			println!("Actual weight consumed: {:?}", actual_weight);
+		}
 		let stored_entry =
 			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_entry.default_name, b"UpdatedProvider".to_vec());

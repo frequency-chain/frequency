@@ -1510,6 +1510,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::update_provider_via_governance(
 			payload.localized_names.len() as u32,
 		))]
+		#[allow(clippy::useless_conversion)]
 		pub fn update_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
@@ -1590,6 +1591,7 @@ pub mod pallet {
 		#[pallet::call_index(26)]
 		#[pallet::weight(T::WeightInfo::update_application_via_governance(
 			payload.localized_names.len() as u32,	))]
+		#[allow(clippy::useless_conversion)]
 		pub fn update_application_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
