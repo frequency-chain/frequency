@@ -415,6 +415,17 @@ pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Provider name should fit in bounds");
 	entry.default_logo_250_100_png_cid =
 		BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+	let mut localized_names = BoundedBTreeMap::new();
+	let locale = BoundedVec::try_from(b"en".to_vec()).expect("Should fit locale");
+	localized_names
+		.try_insert(locale.clone(), entry.default_name.clone())
+		.expect("Should insert localized name");
+	entry.localized_names = localized_names;
+	let mut localized_logo_cids = BoundedBTreeMap::new();
+	localized_logo_cids
+		.try_insert(locale, entry.default_logo_250_100_png_cid.clone())
+		.expect("Should insert localized logo cid");
+	entry.localized_logo_250_100_png_cids = localized_logo_cids;
 	// Register provider
 	assert_ok!(Msa::create_provider_via_governance_v2(
 		RawOrigin::Root.into(),

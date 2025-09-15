@@ -523,6 +523,28 @@ fn propose_to_update_application_happy_path() {
 }
 
 #[test]
+fn update_application_requires_registered_provider() {
+	new_test_ext().execute_with(|| {
+		let (_, key_pair) = create_account();
+		let provider_account = key_pair;
+
+		let updated_entry = ApplicationContext::default();
+		let application_index = 0;
+
+		// Propose should fail because the account is not a registered provider
+		assert_noop!(
+			Msa::update_application_via_governance(
+				RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+				provider_account.public().into(),
+				application_index,
+				updated_entry
+			),
+			Error::<Test>::ProviderNotRegistered
+		);
+	})
+}
+
+#[test]
 fn propose_to_update_application_requires_registered_provider() {
 	new_test_ext().execute_with(|| {
 		let (_, key_pair) = create_account();
