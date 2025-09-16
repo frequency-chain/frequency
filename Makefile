@@ -512,7 +512,7 @@ version-reset:
 	find ./ -type f -name 'Cargo.toml' -exec sed -i '' 's/^version = \".*+polkadot.*\"/version = \"0.0.0\"/g' {} \;
 
 .PHONY: genesis-schemas
-genesis-schemas:
+genesis-schemas: js
 	cd tools/genesis-data && \
 	npm i && \
 	npm run --silent schemas > ../../resources/genesis-schemas.json

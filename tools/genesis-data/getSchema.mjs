@@ -2,46 +2,9 @@
 console.warn = () => {
 };
 
-import {options} from '@frequency-chain/api-augment';
+import { options } from '@frequency-chain/api-augment';
 import {ApiPromise, WsProvider} from "@polkadot/api";
 import {u8aToString} from "@polkadot/util";
-
-// const options = {
-//   rpc: {
-//     schemas: {
-//       getBySchemaId: {
-//         description: "Get a Schema by Id",
-//         params: [
-//           {
-//             name: "schema_id",
-//             type: "SchemaId",
-//           },
-//         ],
-//         type: "Option<SchemaResponse>",
-//       },
-//     },
-//   },
-//   types: {
-//     SchemaId: "u16",
-//     SchemaModel: "Vec<u8>",
-//     SchemaResponse: {
-//       schema_id: "SchemaId",
-//       model: "SchemaModel",
-//       model_type: "ModelType",
-//       payload_location: "PayloadLocation",
-//       settings: "Vec<SchemaSetting>",
-//     },
-//     ModelType: {
-//       _enum: ["AvroBinary", "Parquet"],
-//     },
-//     PayloadLocation: {
-//       _enum: ["OnChain", "IPFS", "Itemized", "Paginated"],
-//     },
-//     SchemaSetting: {
-//       _enum: ["AppendOnly", "SignatureRequired"],
-//     },
-//   },
-// };
 
 /// Schema genesis format
 // interface GenesisSchemaConfig {
