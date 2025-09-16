@@ -32,7 +32,7 @@ jobs:
       ci-docker-image: ${{steps.filter.outputs.ci-docker-image}}
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check for Changed Files
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
         id: filter
@@ -193,7 +193,7 @@ jobs:
       NETWORK: mainnet
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{matrix.git_branch}}
       - name: Set Env Vars
@@ -239,7 +239,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set Up Cargo Deny
         run: |
           cargo install --force --locked cargo-deny@0.17.0
@@ -255,7 +255,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.8
     steps:
       - name: Check Out Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Verify Rust Code Formatting
         run: |
           rustup +${{env.NIGHTLY_TOOLCHAIN}} show
@@ -269,7 +269,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Lint
         # Fail on warnings
         run: |
@@ -285,7 +285,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build Docs
         run: |
           RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --workspace --features frequency
@@ -298,7 +298,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check
         run: SKIP_WASM_BUILD=1 cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -310,7 +310,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Init Git
         run: |
           git config --global --add safe.directory /__w/frequency/frequency
@@ -325,7 +325,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Generate and Upload Code Coverage
         id: codecov
         uses: ./.github/workflows/common/codecov
@@ -373,7 +373,7 @@ jobs:
     runs-on: ubicloud-standard-8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Rust Toolchain
         # Match installation steps to CI base docker image
         run: |
@@ -438,7 +438,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set Env Vars
         run: |
           echo "BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
@@ -456,7 +456,7 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -498,7 +498,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -536,7 +536,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -574,7 +574,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -612,11 +612,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download amd64 Binaries
         id: download-amd64-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-binary-mainnet-amd64-pr-${{github.run_id}}
           path: ./binaries-amd64
@@ -624,7 +624,7 @@ jobs:
       # For PR verification, just use the mainnet arm64 build
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-binary-mainnet-arm64-pr-${{github.run_id}}
           path: ./binaries-arm64
@@ -728,13 +728,13 @@ jobs:
     runs-on: ${{matrix.runner}}
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet.${{matrix.arch}}.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
           path: ${{matrix.bin-dir}}
@@ -762,7 +762,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set Env Vars
@@ -771,7 +771,7 @@ jobs:
           echo "REF_BIN_FILENAME=frequency.local.amd64.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-local-*-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -843,7 +843,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Set Env Vars
@@ -852,7 +852,7 @@ jobs:
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -863,17 +863,17 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Download ethereum-utils tarball
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
       - name: Download recovery-sdk tarball
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist
@@ -941,7 +941,7 @@ jobs:
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.amd64.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-*-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
