@@ -1005,7 +1005,7 @@ mod benchmarks {
 		let mut max_localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_logos {
 			let logo_bytes =
-				(0..T::MaxLogoSize::get() as u8).map(|x| (x + i as u8 + 10)).collect::<Vec<_>>();
+				(0..T::MaxLogoSize::get() as u8).map(|x| (x * i as u8 + 10)).collect::<Vec<_>>();
 			let cid = compute_cid(&logo_bytes);
 			let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
 
@@ -1036,7 +1036,7 @@ mod benchmarks {
 		// Create initial application with maximum number of localized logos
 		let initial_payload = ApplicationContext {
 			default_name: BoundedVec::truncate_from(Vec::from("init")),
-			localized_names: BoundedBTreeMap::new(),
+			localized_names: localized_names.clone(),
 			default_logo_250_100_png_cid: BoundedVec::try_from(default_cid.clone()).unwrap(),
 			localized_logo_250_100_png_cids: max_localized_cids,
 		};
@@ -1051,7 +1051,7 @@ mod benchmarks {
 		let stored_application =
 			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).unwrap();
 		assert_eq!(stored_application.default_logo_250_100_png_cid, default_bounded_cid);
-		assert_eq!(stored_application.localized_names.len() as u32, 0);
+		assert_eq!(stored_application.localized_names.len() as u32, n);
 		assert_eq!(
 			stored_application.localized_logo_250_100_png_cids.len() as u32,
 			T::MaxLocaleCount::get()
@@ -1060,9 +1060,9 @@ mod benchmarks {
 		let new_localized_cids = {
 			let mut new_cids = BoundedBTreeMap::new();
 			// Create fewer new logos to test the removal logic
-			for i in 0..(max_logos / 2) {
+			for i in 0..max_logos {
 				let logo_bytes = (0..T::MaxLogoSize::get() as u8)
-					.map(|x| (x + i as u8 + 50))
+					.map(|x| (x * i as u8 + 50))
 					.collect::<Vec<_>>();
 				let cid = compute_cid(&logo_bytes);
 				let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
@@ -1189,7 +1189,7 @@ mod benchmarks {
 		// Create maximum number of localized logos for worst-case removal cost
 		for i in 0..max_logos {
 			let logo_bytes =
-				(0..T::MaxLogoSize::get() as u8).map(|x| (x + i as u8 + 10)).collect::<Vec<_>>();
+				(0..T::MaxLogoSize::get() as u8).map(|x| (x * i as u8 + 10)).collect::<Vec<_>>();
 			let cid = compute_cid(&logo_bytes);
 			let bounded_cid = BoundedVec::try_from(cid.clone()).unwrap();
 
@@ -1208,7 +1208,7 @@ mod benchmarks {
 		// Create initial provider entry with maximum number of localized logos
 		let initial_provider_entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"Initial Provider".to_vec()).unwrap_or_default(),
-			localized_names: BoundedBTreeMap::new(),
+			localized_names: localized_names.clone(),
 			default_logo_250_100_png_cid: BoundedVec::try_from(default_cid.clone()).unwrap(),
 			localized_logo_250_100_png_cids: localized_cids.clone(),
 		};
@@ -1223,7 +1223,7 @@ mod benchmarks {
 		let stored_provider =
 			ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_provider.default_logo_250_100_png_cid, default_bounded_cid);
-		assert_eq!(stored_provider.localized_names.len() as u32, 0);
+		assert_eq!(stored_provider.localized_names.len() as u32, n);
 		assert_eq!(
 			stored_provider.localized_logo_250_100_png_cids.len() as u32,
 			T::MaxLocaleCount::get()
