@@ -971,9 +971,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn update_application_via_governance(
-		n: Linear<0, { T::MaxLocaleCount::get() }>,
-	) -> Result<(), BenchmarkError> {
+	fn update_application_via_governance() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 
@@ -982,6 +980,7 @@ mod benchmarks {
 
 		// Create the maximum number of logos that can be stored for worst-case scenario
 		let max_logos = T::MaxLocaleCount::get();
+		let max_locales = T::MaxLocaleCount::get();
 		let default_logo_bytes =
 			(0..T::MaxLogoSize::get() as u8).map(|x| (x + 1u8)).collect::<Vec<_>>();
 		let default_cid = compute_cid(default_logo_bytes.as_slice());
@@ -994,7 +993,7 @@ mod benchmarks {
 		);
 
 		// Set up localized names based on parameter n
-		for i in 0..n {
+		for i in 0..max_locales {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
@@ -1051,7 +1050,7 @@ mod benchmarks {
 		let stored_application =
 			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).unwrap();
 		assert_eq!(stored_application.default_logo_250_100_png_cid, default_bounded_cid);
-		assert_eq!(stored_application.localized_names.len() as u32, n);
+		assert_eq!(stored_application.localized_names.len() as u32, max_locales);
 		assert_eq!(
 			stored_application.localized_logo_250_100_png_cids.len() as u32,
 			T::MaxLocaleCount::get()
@@ -1155,9 +1154,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn update_provider_via_governance(
-		n: Linear<0, { T::MaxLocaleCount::get() }>,
-	) -> Result<(), BenchmarkError> {
+	fn update_provider_via_governance() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
 
@@ -1167,6 +1164,7 @@ mod benchmarks {
 
 		// Create the maximum number of logos that can be stored for worst-case scenario
 		let max_logos = T::MaxLocaleCount::get();
+		let max_locales = T::MaxLocaleCount::get();
 		let default_logo_bytes =
 			(0..T::MaxLogoSize::get() as u8).map(|x| (x + 1u8)).collect::<Vec<_>>();
 		let default_cid = compute_cid(default_logo_bytes.as_slice());
@@ -1179,7 +1177,7 @@ mod benchmarks {
 		);
 
 		// Set up localized names based on parameter n
-		for i in 0..n {
+		for i in 0..max_locales {
 			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
@@ -1223,7 +1221,7 @@ mod benchmarks {
 		let stored_provider =
 			ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_provider.default_logo_250_100_png_cid, default_bounded_cid);
-		assert_eq!(stored_provider.localized_names.len() as u32, n);
+		assert_eq!(stored_provider.localized_names.len() as u32, max_locales);
 		assert_eq!(
 			stored_provider.localized_logo_250_100_png_cids.len() as u32,
 			T::MaxLocaleCount::get()
