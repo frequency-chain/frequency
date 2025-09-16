@@ -1335,7 +1335,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
-			Self::ensure_correct_cids(&payload)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance_v2 {
@@ -1404,7 +1403,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
-			Self::ensure_correct_cids(&payload)?;
 			ensure!(
 				Self::is_registered_provider(provider_msa_id),
 				Error::<T>::ProviderNotRegistered
@@ -1555,7 +1553,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
-			Self::ensure_correct_cids(&payload)?;
 			ensure!(
 				Self::is_registered_provider(provider_msa_id),
 				Error::<T>::ProviderNotRegistered
