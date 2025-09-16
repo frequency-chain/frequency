@@ -1507,9 +1507,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(24)]
-		#[pallet::weight(T::WeightInfo::update_provider_via_governance(
-			payload.localized_names.len() as u32,
-		))]
+		#[pallet::weight(T::WeightInfo::update_provider_via_governance())]
 		#[allow(clippy::useless_conversion)]
 		pub fn update_provider_via_governance(
 			origin: OriginFor<T>,
@@ -1524,8 +1522,7 @@ pub mod pallet {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 			Self::ensure_correct_cids(&payload)?;
-			let base_weight =
-				T::WeightInfo::update_provider_via_governance(payload.localized_names.len() as u32);
+			let base_weight = T::WeightInfo::update_provider_via_governance();
 			let total_logos_removed = Self::upsert_provider_for(provider_msa_id, payload, true)?;
 			Self::deposit_event(Event::ProviderUpdated {
 				provider_id: ProviderId(provider_msa_id),
@@ -1589,8 +1586,7 @@ pub mod pallet {
 		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
 		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
 		#[pallet::call_index(26)]
-		#[pallet::weight(T::WeightInfo::update_application_via_governance(
-			payload.localized_names.len() as u32,	))]
+		#[pallet::weight(T::WeightInfo::update_application_via_governance())]
 		#[allow(clippy::useless_conversion)]
 		pub fn update_application_via_governance(
 			origin: OriginFor<T>,
@@ -1610,9 +1606,7 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 			Self::ensure_correct_cids(&payload)?;
-			let base_weight = T::WeightInfo::update_application_via_governance(
-				payload.localized_names.len() as u32,
-			);
+			let base_weight = T::WeightInfo::update_application_via_governance();
 			let total_logos_removed = Self::upsert_application_for(
 				ProviderId(provider_msa_id),
 				application_index,
