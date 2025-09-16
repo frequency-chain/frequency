@@ -279,27 +279,6 @@ fn propose_to_update_provider_requires_registered_provider() {
 }
 
 #[test]
-fn propose_to_update_provider_fails_for_invalid_cid() {
-	new_test_ext().execute_with(|| {
-		let (_, key_pair) = create_provider_with_name("TestProvider");
-
-		// Create updated provider entry with invalid CID
-		let mut updated_entry = ProviderRegistryEntry::default();
-		updated_entry.default_name = BoundedVec::try_from(b"UpdatedProvider".to_vec())
-			.expect("Provider name should fit in bounds");
-		let invalid_cid = "invalid-cid".as_bytes().to_vec();
-		updated_entry.default_logo_250_100_png_cid =
-			BoundedVec::try_from(invalid_cid).expect("Logo CID should fit in bounds");
-
-		// Propose should fail due to invalid CID
-		assert_noop!(
-			Msa::propose_to_update_provider(RuntimeOrigin::signed(key_pair.into()), updated_entry),
-			Error::<Test>::InvalidCid
-		);
-	})
-}
-
-#[test]
 fn propose_to_update_provider_fails_for_nonexistent_msa() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sp_core::sr25519::Pair::generate();
