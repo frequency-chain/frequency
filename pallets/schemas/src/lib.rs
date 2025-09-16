@@ -1030,15 +1030,12 @@ pub mod pallet {
 			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
 				let saved_settings = intent_info.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<IntentSetting>>();
-				let schema_ids = match include_schemas {
-					false => None,
-					true => Some(
-						SchemaInfos::<T>::iter()
-							.filter(|(_, info)| info.intent_id == intent_id)
-							.map(|(id, _)| id)
-							.collect::<Vec<SchemaId>>(),
-					),
-				};
+				let schema_ids = include_schemas.then_some(
+					SchemaInfos::<T>::iter()
+						.filter(|(_, info)| info.intent_id == intent_id)
+						.map(|(id, _)| id)
+						.collect::<Vec<SchemaId>>(),
+				);
 
 				return Some(IntentResponse {
 					intent_id,
