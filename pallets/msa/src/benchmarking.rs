@@ -243,7 +243,6 @@ fn generate_provider_registry_entry<T: Config>(
 		localized_names.try_insert(lang.clone(), name).unwrap();
 	}
 
-	// Create maximum number of localized logos for worst-case removal cost
 	for i in 0..logos_len {
 		let logo_bytes = (0..T::MaxLogoSize::get() as u8).map(|_| rng.gen_u8()).collect::<Vec<_>>();
 		let bounded_cid = compute_cid(&logo_bytes).try_into().unwrap();
