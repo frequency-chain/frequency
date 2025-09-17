@@ -459,11 +459,10 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR_DEBUG}}/artifacts-binary-local-amd64-pr-${{github.run_id}}
+          path: ${{env.BIN_DIR_DEBUG}}
       - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
@@ -737,11 +736,10 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
-          path: ${{matrix.bin-dir}}/artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
+          path: ${{matrix.bin-dir}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
@@ -855,11 +853,10 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR_DEBUG}}/artifacts-binary-dev-amd64-pr-${{github.run_id}}
+          path: ${{env.BIN_DIR_DEBUG}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
