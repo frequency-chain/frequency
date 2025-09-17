@@ -9,10 +9,6 @@ import { ExtrinsicHelper, EventMap } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
 
-// reconstruct __dirname in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 let fundingSource: KeyringPair;
 
 describe('Update Provider and Application', function () {
