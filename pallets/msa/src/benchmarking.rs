@@ -253,9 +253,7 @@ fn generate_provider_registry_entry<T: Config>(
 			ApprovedLogos::<T>::insert(&bounded_cid, BoundedVec::try_from(logo_bytes).unwrap());
 		}
 
-		let lang = make_lang_code(i as usize, T::MaxLanguageCodeSize::get() as usize)
-			.try_into()
-			.unwrap();
+		let lang = make_lang_code(i, T::MaxLanguageCodeSize::get() as usize).try_into().unwrap();
 		localized_cids.try_insert(lang, bounded_cid).unwrap();
 	}
 
@@ -1027,7 +1025,7 @@ mod benchmarks {
 			T::MaxLocaleCount::get() as usize,
 			T::MaxLocaleCount::get() as usize,
 			b"init".to_vec(),
-			01011111u64,
+			10101111u64,
 			true,
 		);
 
@@ -1125,7 +1123,7 @@ mod benchmarks {
 			T::MaxLocaleCount::get() as usize,
 			T::MaxLocaleCount::get() as usize,
 			provider_name.clone(),
-			01011111u64,
+			10101111u64,
 			true,
 		);
 
