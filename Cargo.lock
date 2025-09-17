@@ -1557,7 +1557,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
 name = "cli-opt"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "clap",
 ]
@@ -1612,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "common-helpers"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "apache-avro",
  "jsonrpsee",
@@ -1628,7 +1628,7 @@ checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
 
 [[package]]
 name = "common-primitives"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "cid 0.11.1",
  "enumflags2",
@@ -1652,7 +1652,7 @@ dependencies = [
 
 [[package]]
 name = "common-runtime"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "cumulus-pallet-weight-reclaim",
@@ -3971,7 +3971,7 @@ dependencies = [
 
 [[package]]
 name = "frequency"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "frequency-cli",
  "substrate-build-script-utils",
@@ -3979,7 +3979,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-cli"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "clap",
  "cli-opt",
@@ -4021,7 +4021,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-runtime"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -4112,7 +4112,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-service"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "cli-opt",
  "common-helpers",
@@ -4575,7 +4575,7 @@ dependencies = [
 
 [[package]]
 name = "handles-utils"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "oorandom",
  "phf",
@@ -7492,7 +7492,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-capacity"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -7511,7 +7511,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-capacity-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "parity-scale-codec",
@@ -7694,7 +7694,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -7715,7 +7715,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment-rpc"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "jsonrpsee",
@@ -7732,7 +7732,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "frame-support",
  "pallet-transaction-payment",
@@ -7764,7 +7764,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -7786,7 +7786,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles-rpc"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -7801,7 +7801,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "sp-api",
@@ -7894,7 +7894,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "cid 0.11.1",
  "common-primitives",
@@ -7916,7 +7916,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages-rpc"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -7932,7 +7932,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "sp-api",
@@ -7989,7 +7989,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "cid 0.11.1",
  "common-primitives",
@@ -8021,7 +8021,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa-rpc"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -8041,7 +8041,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "parity-scale-codec",
@@ -8174,7 +8174,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-passkey"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "base64-url",
  "common-primitives",
@@ -8304,7 +8304,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -8328,7 +8328,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas-rpc"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -8343,7 +8343,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "sp-api",
@@ -8462,7 +8462,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -8485,7 +8485,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage-rpc"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "jsonrpsee",
@@ -8499,7 +8499,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "sp-api",
@@ -8523,7 +8523,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-time-release"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "chrono",
  "common-primitives",
@@ -15050,7 +15050,7 @@ dependencies = [
 
 [[package]]
 name = "system-runtime-api"
-version = "0.0.0"
+version = "1.17.5-rc2+polkadotstable2503-7"
 dependencies = [
  "common-primitives",
  "sp-api",
