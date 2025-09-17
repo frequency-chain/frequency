@@ -159,6 +159,28 @@ pub fn wrap_binary_data(data: Vec<u8>) -> Vec<u8> {
 	encapsuled
 }
 
+/// This is useful for testing and benchmarks and should not be used for any
+/// cryptographically secure operation
+pub struct XorRng {
+	state: u64,
+}
+
+impl XorRng {
+	/// Creates Rnd from the seed
+	pub fn new(seed: u64) -> Self {
+		Self { state: if seed == 0 { 1 } else { seed } }
+	}
+
+	/// Generates the next u8
+	pub fn gen_u8(&mut self) -> u8 {
+		// XorShift64
+		self.state ^= self.state << 13;
+		self.state ^= self.state >> 7;
+		self.state ^= self.state << 17;
+		self.state as u8
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
