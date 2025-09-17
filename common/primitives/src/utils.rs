@@ -161,10 +161,12 @@ pub fn wrap_binary_data(data: Vec<u8>) -> Vec<u8> {
 
 /// This is useful for testing and benchmarks and should not be used for any
 /// cryptographically secure operation
+#[cfg(any(test, feature = "runtime-benchmarks"))]
 pub struct XorRng {
 	state: u64,
 }
 
+#[cfg(any(test, feature = "runtime-benchmarks"))]
 impl XorRng {
 	/// Creates Rnd from the seed
 	pub fn new(seed: u64) -> Self {
