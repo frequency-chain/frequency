@@ -25,12 +25,15 @@
 	missing_docs
 )]
 
+extern crate alloc;
+use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	node::ProposalProvider,
 	parquet::ParquetModel,
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting,
-		SchemaSettings, SchemaValidator,
+		IntentGroupId, IntentGroupResponse, IntentId, IntentResponse, MappedEntityIdentifier,
+		ModelType, NameLookupResponse, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse,
+		SchemaSetting, SchemaSettings, SchemaValidator,
 	},
 };
 use frame_support::{
@@ -39,8 +42,6 @@ use frame_support::{
 	traits::{BuildGenesisConfig, Get},
 };
 use sp_runtime::{traits::Dispatchable, BoundedVec, DispatchError};
-extern crate alloc;
-use alloc::{boxed::Box, vec::Vec};
 
 #[cfg(test)]
 mod tests;
@@ -86,6 +87,14 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSchemaRegistrations: Get<SchemaId>;
 
+		/// Maximum number of Intents that can be registered
+		#[pallet::constant]
+		type MaxIntentRegistrations: Get<IntentId>;
+
+		/// Maximum number of Intents that can belong to an IntentGroup
+		#[pallet::constant]
+		type MaxIntentsPerIntentGroup: Get<u32>;
+
 		/// The origin that is allowed to create providers via governance
 		type CreateSchemaViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
@@ -126,6 +135,39 @@ pub mod pallet {
 			schema_id: SchemaId,
 			/// ASCII string in bytes of the assigned name
 			name: Vec<u8>,
+		},
+
+		/// Emitted when an Intent is registered
+		IntentCreated {
+			/// Account ID
+			key: T::AccountId,
+
+			/// IntentId of newly created Intent
+			intent_id: IntentId,
+
+			/// Name of newly created Intent (ASCII bytes)
+			intent_name: Vec<u8>,
+		},
+
+		/// Emitted when an IntentGroup is registered
+		IntentGroupCreated {
+			/// Account ID of creator
+			key: T::AccountId,
+
+			/// IntentGroupId of newly created IntentGroup
+			intent_group_id: IntentGroupId,
+
+			/// Name of newly created IntentGroup (ASCII bytes)
+			intent_group_name: Vec<u8>,
+		},
+
+		/// Emitted when an IntentGroup is updated
+		IntentGroupUpdated {
+			/// Account ID that did the update
+			key: T::AccountId,
+
+			/// IntentGroupId of the IntentGroup that was updated
+			intent_group_id: IntentGroupId,
 		},
 	}
 
@@ -176,6 +218,26 @@ pub mod pallet {
 
 		/// SchemaId has a name already
 		SchemaIdAlreadyHasName,
+
+		/// Name already exists in the registry
+		NameAlreadyExists,
+
+		/// Attempted to add a new Intent that would cause CurrentIntentIdentifierMaximum
+		/// to exceed MaxIntentRegistrations
+		IntentCountOverflow,
+
+		/// The indicated [`IntentId`] does not exist
+		InvalidIntentId,
+
+		/// The indicated [`IntentGroupId`] does not exist
+		InvalidIntentGroupId,
+
+		/// Attempted to add a new IntentGroup that would cause CurrentIntentGroupIdentifierMaximum
+		/// to exceed MaxIntentGroupRegistrations
+		IntentGroupCountOverflow,
+
+		/// Too many intents in the group
+		TooManyIntentsInGroup,
 	}
 
 	#[pallet::pallet]
@@ -190,7 +252,7 @@ pub mod pallet {
 
 	/// Storage type for current number of schemas
 	/// Useful for retrieving latest schema id
-	/// - Value: Last Schema Id
+	/// - Value: Last Schema ID
 	#[pallet::storage]
 	pub(super) type CurrentSchemaIdentifierMaximum<T: Config> =
 		StorageValue<_, SchemaId, ValueQuery>;
@@ -221,12 +283,51 @@ pub mod pallet {
 	pub(super) type SchemaNameToIds<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		SchemaNamespace,
+		SchemaProtocolName,
 		Blake2_128Concat,
 		SchemaDescriptor,
 		SchemaVersionId,
 		ValueQuery,
 	>;
+
+	/// Storage for mapping names to IDs
+	/// - Key: Protocol Name
+	/// - Key: Descriptor
+	/// - Value: MappedEntityIdentifier
+	#[pallet::storage]
+	pub(super) type NameToMappedEntityIds<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		SchemaProtocolName,
+		Blake2_128Concat,
+		SchemaDescriptor,
+		MappedEntityIdentifier,
+		ValueQuery,
+	>;
+
+	/// Storage type for current number of Intents
+	/// Useful for retrieving latest IntentId
+	/// - Value: Last IntentId
+	#[pallet::storage]
+	pub(super) type CurrentIntentIdentifierMaximum<T: Config> =
+		StorageValue<_, IntentId, ValueQuery>;
+
+	/// Storage for Intents
+	#[pallet::storage]
+	pub(super) type IntentInfos<T: Config> =
+		StorageMap<_, Twox64Concat, IntentId, IntentInfo, OptionQuery>;
+
+	/// Storage type for current number of IntentGroups
+	/// Useful for retrieving the latest IntentGroupId
+	/// - Value: Last IntentGroupId
+	#[pallet::storage]
+	pub(super) type CurrentIntentGroupIdentifierMaximum<T: Config> =
+		StorageValue<_, IntentGroupId, ValueQuery>;
+
+	/// Storage for IntentGroups
+	#[pallet::storage]
+	pub(super) type IntentGroups<T: Config> =
+		StorageMap<_, Twox64Concat, IntentGroupId, IntentGroup<T>, OptionQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -274,9 +375,9 @@ pub mod pallet {
 					None
 				};
 				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
-					BoundedVec::try_from(schema.settings.clone()).expect(
-						"Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
-					);
+                    BoundedVec::try_from(schema.settings.clone()).expect(
+                        "Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
+                    );
 
 				let _ = Pallet::<T>::add_schema(
 					model,
@@ -337,7 +438,7 @@ pub mod pallet {
 				Some(_) => T::WeightInfo::propose_to_create_schema_v2_with_name(model.len() as u32),
 				None => T::WeightInfo::propose_to_create_schema_v2_without_name(model.len() as u32)
 			}
-		)]
+        )]
 		pub fn propose_to_create_schema_v2(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -388,7 +489,7 @@ pub mod pallet {
 				Some(_) => T::WeightInfo::create_schema_via_governance_v2_with_name(model.len() as u32+ settings.len() as u32),
 				None => T::WeightInfo::create_schema_via_governance_v2_without_name(model.len() as u32+ settings.len() as u32)
 			}
-		)]
+        )]
 		pub fn create_schema_via_governance_v2(
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,
@@ -417,7 +518,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a given schema to storage. The schema in question must be of length
+		/// Adds a given schema to storage. (testnet)
+		///
+		/// The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
 		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
@@ -447,7 +550,7 @@ pub mod pallet {
 				Some(_) => T::WeightInfo::create_schema_v3_with_name(model.len() as u32 + settings.len() as u32),
 				None => T::WeightInfo::create_schema_v3_without_name(model.len() as u32 + settings.len() as u32)
 			}
-		)]
+        )]
 		pub fn create_schema_v3(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -498,7 +601,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 
-			let _ = Self::parse_and_verify_schema_name(schema_id, &schema_name)?;
+			let _ = Self::parse_and_verify_schema_id_and_name(schema_id, &schema_name)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_schema_name_via_governance { schema_id, schema_name }).into(),
@@ -536,7 +639,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
 
-			let parsed_name = Self::parse_and_verify_schema_name(schema_id, &schema_name)?;
+			let parsed_name = Self::parse_and_verify_schema_id_and_name(schema_id, &schema_name)?;
 			SchemaNameToIds::<T>::try_mutate(
 				&parsed_name.namespace,
 				&parsed_name.descriptor,
@@ -550,6 +653,280 @@ pub mod pallet {
 					Ok(())
 				},
 			)
+		}
+
+		/// Creates a new Intent with a name (testnet)
+		///
+		/// # Events
+		/// * [`Event::IntentCreated`]
+		///
+		/// # Errors
+		/// * [`Error::IntentCountOverflow`] - The Intent count has exceeded its bounds
+		/// * [`Error::InvalidSetting`] - Invalid setting is provided
+		/// * [`Error::NameAlreadyExists`] - The name already exists
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
+		///
+		#[pallet::call_index(10)]
+		#[pallet::weight(T::WeightInfo::create_intent(settings.len() as u32))]
+		pub fn create_intent(
+			origin: OriginFor<T>,
+			intent_name: SchemaNamePayload,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			let (intent_id, parsed_name) =
+				Self::create_intent_for(intent_name, payload_location, settings)?;
+
+			Self::deposit_event(Event::IntentCreated {
+				key: sender,
+				intent_id,
+				intent_name: parsed_name.get_combined_name(),
+			});
+
+			Ok(())
+		}
+
+		/// Create an Intent by means of council approval
+		///
+		/// # Events
+		/// * [`Event::IntentCreated`]
+		///
+		/// # Errors
+		/// * [`Error::IntentCountOverflow`] - The Intent count has exceeded its bounds
+		/// * [`Error::InvalidSetting`] - Invalid setting is provided
+		/// * [`Error::NameAlreadyExists`] - The name already exists
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
+		///
+		#[pallet::call_index(11)]
+		#[pallet::weight(T::WeightInfo::create_intent_via_governance(settings.len() as u32))]
+		pub fn create_intent_via_governance(
+			origin: OriginFor<T>,
+			creator_key: T::AccountId,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			intent_name: SchemaNamePayload,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			let (intent_id, parsed_name) =
+				Self::create_intent_for(intent_name, payload_location, settings)?;
+
+			Self::deposit_event(Event::IntentCreated {
+				key: creator_key,
+				intent_id,
+				intent_name: parsed_name.get_combined_name(),
+			});
+			Ok(())
+		}
+
+		/// Propose to create an Intent.  Creates a proposal for council approval to create an Intent
+		///
+		#[pallet::call_index(12)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_intent())]
+		pub fn propose_to_create_intent(
+			origin: OriginFor<T>,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			intent_name: SchemaNamePayload,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_intent_via_governance {
+					creator_key: proposer.clone(),
+					payload_location,
+					settings,
+					intent_name,
+				})
+				.into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
+			Ok(())
+		}
+
+		/// Create an intent group (testnet)
+		///
+		/// # Events
+		/// * [`Event::IntentGroupCreated`]
+		///
+		/// # Errors
+		/// * [`Error::IntentGroupCountOverflow`] - The Intent Group count has exceeded its bounds.
+		/// * [`Error::NameAlreadyExists`] - The name already exists.
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding.
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters.
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`).
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length.
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length.
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length.
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist.
+		///
+		#[pallet::call_index(13)]
+		#[pallet::weight(T::WeightInfo::create_intent_group(intent_ids.len() as u32))]
+		pub fn create_intent_group(
+			origin: OriginFor<T>,
+			intent_group_name: SchemaNamePayload,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			let (intent_group_id, parsed_name) =
+				Self::create_intent_group_for(intent_group_name, intent_ids)?;
+
+			Self::deposit_event(Event::IntentGroupCreated {
+				key: sender,
+				intent_group_id,
+				intent_group_name: parsed_name.get_combined_name(),
+			});
+			Ok(())
+		}
+
+		/// Create an IntentGroup by means of council approval
+		///
+		/// # Events
+		/// * [`Event::IntentGroupCreated`]
+		///
+		/// # Errors
+		/// * [`Error::IntentGroupCountOverflow`] - The Intent Group count has exceeded its bounds
+		/// * [`Error::NameAlreadyExists`] - The name already exists.
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding.
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters.
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`).
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length.
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length.
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length.
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist
+		///
+		#[pallet::call_index(14)]
+		#[pallet::weight(
+            T::WeightInfo::create_intent_group_via_governance(intent_ids.len() as u32)
+        )]
+		pub fn create_intent_group_via_governance(
+			origin: OriginFor<T>,
+			creator_key: T::AccountId,
+			intent_group_name: SchemaNamePayload,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			let (intent_group_id, parsed_name) =
+				Self::create_intent_group_for(intent_group_name, intent_ids)?;
+
+			Self::deposit_event(Event::IntentGroupCreated {
+				key: creator_key,
+				intent_group_id,
+				intent_group_name: parsed_name.get_combined_name(),
+			});
+			Ok(())
+		}
+
+		/// Propose to create an Intent Group. Creates a proposal for council approval to create an Intent Group.
+		///
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_intent_group())]
+		pub fn propose_to_create_intent_group(
+			origin: OriginFor<T>,
+			intent_group_name: crate::types::SchemaNamePayload,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_intent_group_via_governance {
+					creator_key: proposer.clone(),
+					intent_group_name,
+					intent_ids,
+				})
+				.into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
+			Ok(())
+		}
+
+		/// Update an IntentGroup (testnet)
+		///
+		/// # Events
+		/// * [`Event::IntentGroupUpdated`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidIntentGroupId`] - The specified [`IntentGroupId`] does not exist.
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist.
+		/// * [`Error::TooManyIntentsInGroup`] - The update would result in too many Intents in the group.
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::update_intent_group(intent_ids.len() as u32))]
+		pub fn update_intent_group(
+			origin: OriginFor<T>,
+			intent_group_id: IntentGroupId,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			Self::update_intent_group_for(intent_group_id, intent_ids)?;
+			Self::deposit_event(Event::IntentGroupUpdated { key: sender, intent_group_id });
+			Ok(())
+		}
+
+		/// Update an IntentGroup by means of council approval
+		///
+		/// # Events
+		/// * [`Event::IntentGroupUpdated`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidIntentGroupId`] - The specified [`IntentGroupId`] does not exist.
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist.
+		/// * [`Error::TooManyIntentsInGroup`] - The update would result in too many Intents in the group.
+		///
+		#[pallet::call_index(17)]
+		#[pallet::weight(
+            T::WeightInfo::update_intent_group_via_governance(intent_ids.len() as u32)
+        )]
+		pub fn update_intent_group_via_governance(
+			origin: OriginFor<T>,
+			updater_key: T::AccountId,
+			intent_group_id: IntentGroupId,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			ensure!(
+				IntentGroups::<T>::contains_key(intent_group_id),
+				Error::<T>::InvalidIntentGroupId
+			);
+			Self::update_intent_group_for(intent_group_id, intent_ids)?;
+
+			Self::deposit_event(Event::IntentGroupUpdated { key: updater_key, intent_group_id });
+			Ok(())
+		}
+
+		/// Propose to update an Intent Group. Creates a proposal for council approval to update an existing Intent Group.
+		///
+		#[pallet::call_index(18)]
+		#[pallet::weight(T::WeightInfo::propose_to_update_intent_group())]
+		pub fn propose_to_update_intent_group(
+			origin: OriginFor<T>,
+			intent_group_id: IntentGroupId,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::update_intent_group_via_governance {
+					updater_key: proposer.clone(),
+					intent_group_id,
+					intent_ids,
+				})
+				.into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
+			Ok(())
 		}
 	}
 
@@ -598,6 +975,75 @@ pub mod pallet {
 			Ok(schema_id)
 		}
 
+		/// Inserts the [`IntentInfo`] into storage
+		/// Updates the `CurrentIntentIdentifierMaximum` storage
+		/// Does little validation, as this is an internal method intended to be called
+		/// by higher-level extrinsics that perform various validations.
+		///
+		/// # Errors
+		/// * [`Error::IntentCountOverflow`]
+		pub fn add_intent(
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			intent_name: &SchemaName,
+		) -> Result<IntentId, DispatchError> {
+			let intent_id = Self::get_next_intent_id()?;
+			let mut set_settings = SchemaSettings::all_disabled();
+			if !settings.is_empty() {
+				for i in settings.into_inner() {
+					set_settings.set(i);
+				}
+			}
+
+			NameToMappedEntityIds::<T>::insert(
+				&intent_name.namespace,
+				&intent_name.descriptor,
+				MappedEntityIdentifier::Intent(intent_id),
+			);
+
+			let intent_info = IntentInfo { payload_location, settings: set_settings };
+			<CurrentIntentIdentifierMaximum<T>>::set(intent_id);
+			<IntentInfos<T>>::insert(intent_id, intent_info);
+
+			Ok(intent_id)
+		}
+
+		/// Inserts a list of [`IntentId`]s with a new [`IntentGroupId`] in storage, and adds.
+		/// a new name mapping to the [`IntentGroupId`].
+		/// Updates the `CurrentIntentGroupIdentifierMaximum` storage.
+		/// Does little validation, as this is an internal method intended to be called by.
+		/// higher-level extrinsics that perform the validations.
+		///
+		/// Errors
+		/// * [`Error::IntentGroupCountOverflow`]
+		pub fn add_intent_group(
+			intent_group_name: &SchemaName,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> Result<IntentGroupId, DispatchError> {
+			let intent_group_id = Self::get_next_intent_group_id()?;
+
+			<NameToMappedEntityIds<T>>::insert(
+				&intent_group_name.namespace,
+				&intent_group_name.descriptor,
+				MappedEntityIdentifier::IntentGroup(intent_group_id),
+			);
+			<CurrentIntentGroupIdentifierMaximum<T>>::set(intent_group_id);
+			Self::update_intent_group_storage(intent_group_id, intent_ids)?;
+			Ok(intent_group_id)
+		}
+
+		/// Updates the list of [`IntentId`]s associated with a given [`IntentGroupId`]
+		/// Does little validation, as this is an internal method intended to be called by
+		/// higher-level extrinsics that perform the validations.
+		///
+		pub fn update_intent_group_storage(
+			intent_group_id: IntentGroupId,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> DispatchResult {
+			IntentGroups::<T>::set(intent_group_id, Some(IntentGroup { intent_ids }));
+			Ok(())
+		}
+
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			match (SchemaInfos::<T>::get(schema_id), SchemaPayloads::<T>::get(schema_id)) {
@@ -638,6 +1084,46 @@ pub mod pallet {
 			None
 		}
 
+		/// Retrieve an Intent by its ID
+		pub fn get_intent_by_id(
+			intent_id: IntentId,
+			_include_schemas: bool,
+		) -> Option<IntentResponse> {
+			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
+				let saved_settings = intent_info.settings;
+				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
+				let schema_ids: Option<Vec<SchemaId>> = None;
+				// TODO: uncomment when Schemas have been updated to include intent_id in an upcoming PR
+				// if include_schemas {
+				// 	schemas = Some(Vec<SchemaId>::new());
+				// 	SchemaInfos::<T>::iter().filter(|(schema_id, schema_info)| {
+				// 		schema_info.payload_location as u16 == intent_id
+				// 	}).for_each(|(schema_id, _)| { schemas.as_mut().unwrap().push(*schema_id); });
+				// }
+
+				return Some(IntentResponse {
+					intent_id,
+					payload_location: intent_info.payload_location,
+					settings,
+					schema_ids,
+				});
+			}
+			None
+		}
+
+		/// Retrieve an IntentGroup by its ID
+		pub fn get_intent_group_by_id(
+			intent_group_id: IntentGroupId,
+		) -> Option<IntentGroupResponse> {
+			if let Some(intent_group) = IntentGroups::<T>::get(intent_group_id) {
+				return Some(IntentGroupResponse {
+					intent_group_id,
+					intent_ids: intent_group.intent_ids.into(),
+				});
+			}
+			None
+		}
+
 		/// Ensures that a given u8 Vector conforms to a recognized Parquet shape
 		///
 		/// # Errors
@@ -669,6 +1155,31 @@ pub mod pallet {
 				.checked_add(1)
 				.ok_or(Error::<T>::SchemaCountOverflow)?;
 
+			Ok(next)
+		}
+
+		/// Get the next available [`IntentId`]
+		///
+		/// # Errors
+		/// * [`Error::IntentCountOverflow`]
+		///
+		fn get_next_intent_id() -> Result<IntentId, DispatchError> {
+			let next = CurrentIntentIdentifierMaximum::<T>::get()
+				.checked_add(1)
+				.ok_or(Error::<T>::IntentCountOverflow)?;
+
+			Ok(next)
+		}
+
+		/// Get the next available [`IntentGroupId`]
+		///
+		/// Errors
+		/// * [`Error::IntentGroupCountOverflow`]
+		///
+		fn get_next_intent_group_id() -> Result<IntentGroupId, DispatchError> {
+			let next = CurrentIntentGroupIdentifierMaximum::<T>::get()
+				.checked_add(1)
+				.ok_or(Error::<T>::IntentGroupCountOverflow)?;
 			Ok(next)
 		}
 
@@ -730,6 +1241,101 @@ pub mod pallet {
 			Ok((schema_id, schema_name))
 		}
 
+		/// Adds a given Intent to storage. If the pallet's maximum Intent limit has been
+		/// fulfilled by the time this extrinsic is called, an IntentCountOverflow error
+		/// will be thrown.
+		///
+		/// # Errors
+		/// * [`Error::IntentCountOverflow`] - The Intent count has exceeded its bounds
+		/// * [`Error::InvalidSetting`] - Invalid setting is provided
+		/// * [`Error::NameAlreadyExists`] - The name already exists
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceed the allowed overall name length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
+		pub fn create_intent_for(
+			intent_name_payload: SchemaNamePayload,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+		) -> Result<(IntentId, SchemaName), DispatchError> {
+			// AppendOnly is only valid for Itemized payload location
+			ensure!(
+				!settings.contains(&SchemaSetting::AppendOnly) ||
+					payload_location == PayloadLocation::Itemized,
+				Error::<T>::InvalidSetting
+			);
+			// SignatureRequired is only valid for Itemized and Paginated payload locations
+			ensure!(
+				!settings.contains(&SchemaSetting::SignatureRequired) ||
+					payload_location == PayloadLocation::Itemized ||
+					payload_location == PayloadLocation::Paginated,
+				Error::<T>::InvalidSetting
+			);
+			let parsed_name = Self::parse_and_verify_new_name(&intent_name_payload)?;
+			let intent_id = Self::add_intent(payload_location, settings, &parsed_name)?;
+			Ok((intent_id, parsed_name))
+		}
+
+		/// Adds a given Intent to storage. If the pallet's maximum Intent limit has been
+		/// fulfilled by the time this extrinsic is called, an IntentCountOverflow error
+		/// will be thrown.
+		///
+		/// # Errors
+		/// * [`Error::IntentGroupCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::NameAlreadyExists`] - The name already exists
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceed the allowed overall name length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
+		/// * [`Error::InvalidIntentId`] - One of the [`IntentId`]s specified does not exist
+		pub fn create_intent_group_for(
+			intent_group_name: SchemaNamePayload,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> Result<(IntentGroupId, SchemaName), DispatchError> {
+			let intent_group_name = Self::parse_and_verify_new_name(&intent_group_name)?;
+			Self::validate_intent_ids(&intent_ids)?;
+			let intent_id = Self::add_intent_group(&intent_group_name, intent_ids)?;
+			Ok((intent_id, intent_group_name))
+		}
+
+		/// Update the list of [`IntentId`]s associated with a given [`IntentGroupId`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidIntentGroupId`] - The specified [`IntentGroupId`] doesn't exist
+		/// * [`Error::InvalidIntentId`] - One of the [`IntentId`]s specified doesn't exist
+		pub fn update_intent_group_for(
+			intent_group_id: IntentGroupId,
+			intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> Result<(), DispatchError> {
+			ensure!(
+				IntentGroups::<T>::contains_key(intent_group_id),
+				Error::<T>::InvalidIntentGroupId
+			);
+			Self::validate_intent_ids(&intent_ids)?;
+			Self::update_intent_group_storage(intent_group_id, intent_ids)?;
+			Ok(())
+		}
+
+		/// Validate that all items in a list of [`IntentId`]s exist
+		///
+		/// # Errors
+		/// * [`Error::InvalidIntentId`] - At least one of the specified [`IntentId`]s does not exist
+		///
+		pub fn validate_intent_ids(
+			intent_ids: &BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+		) -> Result<(), DispatchError> {
+			let max_intent_id = CurrentIntentIdentifierMaximum::<T>::get();
+			intent_ids.iter().try_for_each::<_, _>(|intent_id| {
+				ensure!(*intent_id <= max_intent_id, Error::<T>::InvalidIntentId);
+				Ok::<(), DispatchError>(())
+			})?;
+			Ok(())
+		}
+
 		/// a method to return all versions of a schema name with their schemaIds
 		/// Warning: Must only get called from RPC, since the number of DB accesses is not deterministic
 		pub fn get_schema_versions(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
@@ -747,8 +1353,37 @@ pub mod pallet {
 			Some(versions)
 		}
 
+		/// method to return the entity ID (Intent or IntentGroup) associated with a name
+		/// Warning: Must only get called from RPC, since the number of DB accesses is not deterministic
+		pub fn get_intent_or_group_ids_by_name(
+			entity_name: Vec<u8>,
+		) -> Option<Vec<NameLookupResponse>> {
+			let parsed_name =
+				FullyQualifiedName::try_parse::<T>(BoundedVec::try_from(entity_name).ok()?, false)
+					.ok()?;
+
+			if parsed_name.descriptor_exists() {
+				if let Ok(id) = NameToMappedEntityIds::<T>::try_get(
+					&parsed_name.namespace,
+					&parsed_name.descriptor,
+				) {
+					return Some(vec![id.convert_to_response(&parsed_name)]);
+				}
+				return None;
+			}
+
+			let responses: Vec<NameLookupResponse> =
+				NameToMappedEntityIds::<T>::iter_prefix(&parsed_name.namespace)
+					.map(|(descriptor, val)| {
+						val.convert_to_response(&parsed_name.new_with_descriptor(descriptor))
+					})
+					.collect();
+
+			(!responses.is_empty()).then_some(responses)
+		}
+
 		/// Parses the schema name and makes sure the schema does not have a name
-		fn parse_and_verify_schema_name(
+		fn parse_and_verify_schema_id_and_name(
 			schema_id: SchemaId,
 			schema_name: &SchemaNamePayload,
 		) -> Result<SchemaName, DispatchError> {
@@ -758,6 +1393,31 @@ pub mod pallet {
 				ensure!(!info.has_name, Error::<T>::SchemaIdAlreadyHasName);
 			}
 			let parsed_name = SchemaName::try_parse::<T>(schema_name.clone(), true)?;
+			Ok(parsed_name)
+		}
+
+		/// Parses and validates a new name and makes sure it does not already exist
+		/// # Errors
+		/// * [`Error::NameAlreadyExists`] - The name already exists
+		/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`)
+		/// * [`Error::InvalidSchemaNameLength`] - The name exceed the allowed overall name length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length
+		fn parse_and_verify_new_name(
+			name: &SchemaNamePayload,
+		) -> Result<SchemaName, DispatchError> {
+			let parsed_name = SchemaName::try_parse::<T>(name.clone(), true)?;
+
+			ensure!(
+				!NameToMappedEntityIds::<T>::contains_key(
+					&parsed_name.namespace,
+					&parsed_name.descriptor,
+				),
+				Error::<T>::NameAlreadyExists,
+			);
+
 			Ok(parsed_name)
 		}
 	}
