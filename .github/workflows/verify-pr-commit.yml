@@ -459,7 +459,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR_DEBUG}}
+          path: ${{env.BIN_DIR_DEBUG}}/artifacts-binary-local-amd64-pr-${{github.run_id}}
       - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -737,7 +737,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
-          path: ${{matrix.bin-dir}}
+          path: ${{matrix.bin-dir}}/artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -855,7 +855,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR_DEBUG}}
+          path: ${{env.BIN_DIR_DEBUG}}/artifacts-binary-dev-amd64-pr-${{github.run_id}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
