@@ -139,7 +139,7 @@ additional state queries and details.
 ### RPCs
 
 Note: May be restricted based on node settings and configuration.<br/>
-_RPCs have been marked deprecated and removed from the node as of runtime version `?`, Frequencye release `1.17.?`, to be fully removed from the runtime once all RPC nodes have been upgraded to >= `1.17.?`. Existing nodes may continue to serve existing RPCs until upgraded._ 
+_RPCs have been marked deprecated and removed from the node as of runtime version `?`, Frequency release `1.17.?`, to be fully removed from the runtime once all RPC nodes have been upgraded to >= `1.17.?`. Existing nodes may continue to serve existing RPCs until upgraded._ 
 
 | Name                  | Description                                                         | Call                                                                                                                                               | Node Version |
 |-----------------------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|--------------|

@@ -172,8 +172,8 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 
 /// [`UncheckedOnRuntimeUpgrade`] implementation [`InnerMigrateV4ToV5`] wrapped in a
 /// [`VersionedMigration`](frame_support::migrations::VersionedMigration), which ensures that:
-/// - The migration only runs once when the on-chain storage version is 0
-/// - The on-chain storage version is updated to `1` after the migration executes
+/// - The migration only runs once when the on-chain storage version is 4
+/// - The on-chain storage version is updated to `5` after the migration executes
 /// - Reads/Writes from checking/settings the on-chain storage version are accounted for
 pub type MigrateV4ToV5<T> = frame_support::migrations::VersionedMigration<
 	4, // The migration will only execute when the on-chain storage version is 4
