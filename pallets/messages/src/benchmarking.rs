@@ -33,6 +33,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		provider_id.into(),
 		Some(message_source_id.into()),
 		bounded_payload,
+		schema_id, // intent_id
 		schema_id,
 		BlockNumberFor::<T>::one(),
 	)?;
@@ -51,6 +52,7 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		provider_id.into(),
 		None,
 		bounded_payload,
+		schema_id, // intent_id
 		schema_id,
 		BlockNumberFor::<T>::one(),
 	)?;
@@ -73,6 +75,10 @@ fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> DispatchRes
 	Ok(())
 }
 
+fn set_storage_v3_block<T: Config>(block_number: BlockNumberFor<T>) {
+	StorageV3BlockNumber::<T>::put(block_number);
+}
+
 #[benchmarks]
 mod benchmarks {
 	use super::*;
@@ -84,6 +90,9 @@ mod benchmarks {
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
 		let schema_id = ON_CHAIN_SCHEMA_ID;
+		let intent_id = ON_CHAIN_SCHEMA_ID as IntentId;
+		
+		set_storage_v3_block::<T>(BlockNumberFor::<T>::one());
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for _ in 0..=SCHEMA_SIZE {
@@ -106,8 +115,8 @@ mod benchmarks {
 		_(RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload);
 
 		assert_eq!(
-			MessagesPallet::<T>::get_messages_by_schema_and_block(
-				schema_id,
+			MessagesPallet::<T>::get_messages_by_intent_and_block(
+				intent_id,
 				PayloadLocation::OnChain,
 				BlockNumberFor::<T>::one()
 			)
@@ -125,6 +134,9 @@ mod benchmarks {
 			.as_bytes()
 			.to_vec();
 		let schema_id = IPFS_SCHEMA_ID;
+		let intent_id = IPFS_SCHEMA_ID as IntentId;
+
+		set_storage_v3_block::<T>(BlockNumberFor::<T>::one());
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for _ in 0..=SCHEMA_SIZE {
@@ -139,8 +151,8 @@ mod benchmarks {
 		_(RawOrigin::Signed(caller), schema_id, cid, IPFS_PAYLOAD_LENGTH);
 
 		assert_eq!(
-			MessagesPallet::<T>::get_messages_by_schema_and_block(
-				schema_id,
+			MessagesPallet::<T>::get_messages_by_intent_and_block(
+				intent_id,
 				PayloadLocation::IPFS,
 				BlockNumberFor::<T>::one()
 			)

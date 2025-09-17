@@ -33,6 +33,8 @@ pub const DUMMY_CID_BASE32: &[u8; 59] =
 	b"bafkreieb2x7yyuhy6hmct4j7tkmgnthrfpqyo4mt5nscx7pvc6oiweiwjq";
 pub const DUMMY_CID_BASE64: &[u8; 49] = b"mAVUSIIHV/4xQ+PHYKfE/mphmzPEr4Ydxk+tkK/31F5yLERZM";
 
+pub const DUMMY_MSA_ID: u64 = 10;
+
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test

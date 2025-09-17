@@ -53,6 +53,7 @@ pub use types::*;
 pub use weights::*;
 
 use cid::Cid;
+use common_primitives::node::BlockNumber;
 use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
@@ -61,7 +62,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 
 	/// The current storage version.
-	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -103,6 +104,7 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, MessageIndex, ValueQuery>;
 
+	/// Storage for messages in STORAGE_VERSION(2) and lower
 	#[pallet::storage]
 	pub(super) type MessagesV2<T: Config> = StorageNMap<
 		_,
@@ -114,6 +116,24 @@ pub mod pallet {
 		Message<T::MessagesMaxPayloadSizeBytes>,
 		OptionQuery,
 	>;
+
+	/// Storage for messages in STORAGE_VERSION(3) and higher
+	#[pallet::storage]
+	pub(super) type MessagesV3<T: Config> = StorageNMap<
+		_,
+		(
+			storage::Key<Twox64Concat, BlockNumberFor<T>>,
+			storage::Key<Twox64Concat, IntentId>,
+			storage::Key<Twox64Concat, MessageIndex>,
+		),
+		MessageV3<T::MessagesMaxPayloadSizeBytes>,
+		OptionQuery,
+	>;
+
+	/// The block number at which the STORAGE_VERSION(3) migration was completed
+	#[pallet::storage]
+	pub(super) type StorageV3BlockNumber<T: Config> =
+		StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -218,6 +238,7 @@ pub mod pallet {
 					provider_msa_id,
 					None,
 					bounded_payload,
+					schema.intent_id,
 					schema_id,
 					current_block,
 				)? {
@@ -285,6 +306,7 @@ pub mod pallet {
 					provider_msa_id,
 					Some(maybe_delegator.into()),
 					bounded_payload,
+					schema.intent_id,
 					schema_id,
 					current_block,
 				)? {
@@ -309,18 +331,20 @@ impl<T: Config> Pallet<T> {
 		provider_msa_id: MessageSourceId,
 		msa_id: Option<MessageSourceId>,
 		payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes>,
+		intent_id: IntentId,
 		schema_id: SchemaId,
 		current_block: BlockNumberFor<T>,
 	) -> Result<bool, DispatchError> {
 		let index = BlockMessageIndex::<T>::get();
 		let first = index == 0;
-		let msg = Message {
+		let msg = MessageV3 {
+			schema_id,
 			payload, // size is checked on top of extrinsic
 			provider_msa_id,
 			msa_id,
 		};
 
-		<MessagesV2<T>>::insert((current_block, schema_id, index), msg);
+		<MessagesV3<T>>::insert((current_block, intent_id, index), msg);
 		BlockMessageIndex::<T>::set(index.saturating_add(1));
 		Ok(first)
 	}
@@ -336,27 +360,42 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 
-	/// Gets a messages for a given schema-id and block-number.
+	/// Gets messages for a given IntentId and block number.
 	///
-	/// Payload location is included to map to correct response (To avoid fetching the schema in this method)
+	/// Payload location is included to map to correct response (To avoid fetching the Intent in this method)
 	///
-	/// Result is a vector of [`MessageResponse`].
+	/// Result is a vector of [`MessageResponseV2`].
 	///
-	pub fn get_messages_by_schema_and_block(
-		schema_id: SchemaId,
-		schema_payload_location: PayloadLocation,
+	pub fn get_messages_by_intent_and_block(
+		intent_id: IntentId,
+		payload_location: PayloadLocation,
 		block_number: BlockNumberFor<T>,
-	) -> Vec<MessageResponse> {
-		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
+	) -> Vec<MessageResponseV2> {
+		let block_number_value: BlockNumber = block_number.try_into().unwrap_or_default();
 
-		match schema_payload_location {
+		match payload_location {
 			PayloadLocation::Itemized | PayloadLocation::Paginated => Vec::new(),
 			_ => {
-				let mut messages: Vec<_> = <MessagesV2<T>>::iter_prefix((block_number, schema_id))
-					.map(|(index, msg)| {
-						msg.map_to_response(block_number_value, schema_payload_location, index)
-					})
-					.collect();
+				let mut messages: Vec<MessageResponseV2> =
+					if StorageV3BlockNumber::<T>::get().gt(&block_number) {
+						// Get message from pre-V3 storage. Pre-V3 intent ids equal schema ids.
+						MessagesV2::<T>::iter_prefix((block_number, intent_id as SchemaId))
+							.filter_map(|(index, msg)| {
+								msg.map_to_response((
+									block_number_value,
+									intent_id as SchemaId,
+									payload_location,
+									index,
+								))
+							})
+							.collect()
+					} else {
+						MessagesV3::<T>::iter_prefix((block_number, intent_id))
+							.filter_map(|(index, msg)| {
+								msg.map_to_response((block_number_value, payload_location, index))
+							})
+							.collect()
+					};
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
 				messages
 			},
