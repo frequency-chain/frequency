@@ -1,11 +1,9 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
 import { createAndFundKeypair, DOLLARS, generateValidProviderPayloadWithName } from '../scaffolding/helpers';
-import { ExtrinsicHelper, EventMap } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
 
