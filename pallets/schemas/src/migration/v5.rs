@@ -49,7 +49,7 @@ fn append_or_overlay<S1: Get<u32>, S2: Get<u32>>(
 	target.try_append(&mut source.to_vec())
 }
 
-/// Migrate from v4 to v6.
+/// Migrate from v4 to v5.
 pub struct InnerMigrateV4ToV5<T: Config>(PhantomData<T>);
 
 impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
