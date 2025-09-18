@@ -89,9 +89,9 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 			v4::SchemaNameToIds::<T>::translate(
 				|schema_id, old_schema_name, version_id: SchemaVersionId| {
 					reads += 1;
+					old_names += 1;
 					let max_index = version_id.ids.len() - 1;
 					for (index, id) in version_id.ids.iter().enumerate() {
-						old_names += 1;
 						let mut name = old_schema_name.clone();
 						// Let the latest schema version be the original name, and postfix previous versions
 						// with "-<version>"

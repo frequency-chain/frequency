@@ -9,7 +9,7 @@ export default {
     IntentId: 'u16',
     IntentResponse: {
       intent_id: 'IntentId',
-      payload_location:  'PayloadLocation',
+      payload_location: 'PayloadLocation',
       settings: 'Vec<IntentSetting>',
       schema_ids: 'Option<Vec<SchemaId>>',
     },
@@ -20,7 +20,7 @@ export default {
       _enum: {
         Intent: 'IntentId',
         IntentGroup: 'IntentGroupId',
-      }
+      },
     },
     ModelType: {
       _enum: ['AvroBinary', 'Parquet'],
