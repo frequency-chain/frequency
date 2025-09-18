@@ -908,7 +908,7 @@ jobs:
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836
         with:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
@@ -920,7 +920,7 @@ jobs:
             /tmp/polkadot-api-types-json/json/types.json
       - name: Publish Full Release on GitHub
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836
         with:
           body_path: tools/ci/release-notes/release-notes.md
           tag_name: ${{env.NEW_RELEASE_TAG}}
