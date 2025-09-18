@@ -408,66 +408,86 @@ e2e-tests-testnet-paseo:
 e2e-tests-paseo-local:
 	./scripts/run_e2e_tests.sh -c paseo_local
 
+.PHONY: check-try-runtime-installed
 check-try-runtime-installed:
 	@which try-runtime > /dev/null || (echo "try-runtime is not installed. Please install it" && exit 1)
 
-.PHONY: try-runtime-create-snapshot-mainnet try-runtime-upgrade-mainnet try-runtime-use-snapshot-mainnet try-runtime-create-snapshot-paseo-testnet try-runtime-use-snapshot-paseo-testnet try-runtime-upgrade-paseo-testnet
+MAINNET_URI=wss://1.rpc.frequency.xyz:443
+PASEO_URI=wss://0.rpc.testnet.amplica.io:443
+WESTEND_URI=wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY)
+LOCAL_URI=ws://localhost:9944
+WASM_PATH=./target/release/wbuild/frequency-runtime/frequency_runtime.wasm
+# Without the state from this minimal set of pallets, try-runtime panics when trying to validate multi-block migrations
+MINIMAL_PALLETS=ParachainSystem ParachainInfo System Timestamp Aura Authorship
 
-try-runtime-create-snapshot-paseo-testnet: check-try-runtime-installed
-	try-runtime create-snapshot --uri wss://0.rpc.testnet.amplica.io:443 testnet-paseo-all-pallets.state
-
-try-runtime-create-snapshot-westend-testnet: check-try-runtime-installed
-	@if [ -z "$(ONFINALITY_APIKEY)" ]; then \
+.PHONY: check-onfinality-api-key
+check-onfinality-api-key:
+	@if [ "$(CHAIN)" == "testnet-westend" -a -z "$(ONFINALITY_APIKEY)" ]; then \
 		echo "Error: ONFINALITY_APIKEY environment variable is not set. Please set it before running this target."; \
 		echo "Example: ONFINALITY_APIKEY=your-api-key-here make try-runtime-check-migrations-westend-testnet"; \
 		exit 1; \
 	fi
-	try-runtime create-snapshot --uri wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY) testnet-paseo-all-pallets.state
 
-# mainnet snapshot takes as many as 24 hours to complete
-try-runtime-create-snapshot-mainnet: check-try-runtime-installed
-	try-runtime create-snapshot --uri wss://1.rpc.frequency.xyz:443 mainnet-all-pallets.state
+space := $(subst ,, )
 
-try-runtime-upgrade-paseo-testnet: check-try-runtime-installed
-	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 live --uri wss://0.rpc.testnet.amplica.io:443
+try-runtime-%: PALLET_FLAGS=$(if $(strip $(PALLETS)),$(PALLETS:%=-p %) $(MINIMAL_PALLETS:%=-p %),)
+try-runtime-%: SNAPSHOT_PALLETS=$(if $(strip $(PALLETS)),$(subst  $(space),-,$(strip $(PALLETS))),all-pallets)
+try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: URI := $(PASEO_URI)
+try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: CHAIN := testnet-paseo
+try-runtime-%-westend-testnet: URI := $(WESTEND_URI)
+try-runtime-%-westend-testnet: CHAIN := testnet-westend
+try-runtime-%-mainnet: URI := $(MAINNET_URI)
+try-runtime-%-mainnet: CHAIN := mainnet
+try-runtime-%-local: URI := $(LOCAL_URI)
+try-runtime-%-local: CHAIN := local
 
-try-runtime-upgrade-mainnet: check-try-runtime-installed
-	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 live --uri wss://1.rpc.frequency.xyz:443
+build-runtime-paseo-testnet: FEATURES := frequency-testnet
+build-runtime-bridging-testnet: FEATURES := frequency-testnet,frequency-bridging
+build-runtime-mainnet: FEATURES := frequency
+build-runtime-westend-testnet: FEATURES := frequency-westend,frequency-bridging
+build-runtime-local: FEATURES := frequency-no-relay,frequency-bridging
 
-try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
-	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path testnet-paseo-all-pallets.state
+.PHONY: build-runtime-paseo-testnet build-runtime-westend-testnet build-runtime-mainnet build-runtime-local
+build-runtime-paseo-testnet \
+build-runtime-westend-testnet \
+build-runtime-mainnet:
+	cargo build --package frequency-runtime --release --features $(FEATURES),try-runtime --locked
 
-try-runtime-use-snapshot-mainnet: check-try-runtime-installed
-	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path mainnet-all-pallets.state
+#
+# The 'try-runtime' targets can optionally be constrained to fetch state for only specific pallets. This is useful to
+# avoid unnecessarily fetching large state trees for pallets not under test. The list of pallets is:
+# Msa Messages StatefulStorage Capacity FrequencyTxPayment Handles Passkey Schemas
 
-try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
-	cargo build --release --features frequency-testnet,try-runtime -q --locked && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
+.PHONY: try-runtime-create-snapshot-paseo-testnet try-runtime-create-snapshot-westend-testnet try-runtime-create-snapshot-mainnet
+try-runtime-create-snapshot-paseo-testnet \
+try-runtime-create-snapshot-westend-testnet \
+try-runtime-create-snapshot-mainnet: check-try-runtime-installed check-onfinality-api-key
+	try-runtime create-snapshot $(PALLET_FLAGS) --uri $(URI) $(CHAIN)-$(SNAPSHOT_PALLETS).state
 
-try-runtime-check-migrations-bridging-testnet: check-try-runtime-installed
-	cargo build --release --features frequency-bridging,frequency-testnet,try-runtime -q --locked && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 
-try-runtime-check-migrations-westend-testnet: check-try-runtime-installed
-	@if [ -z "$(ONFINALITY_APIKEY)" ]; then \
-		echo "Error: ONFINALITY_APIKEY environment variable is not set. Please set it before running this target."; \
-		echo "Example: ONFINALITY_APIKEY=your-api-key-here make try-runtime-check-migrations-westend-testnet"; \
-		exit 1; \
-	fi
-	cargo build --release --features frequency-westend,frequency-bridging,try-runtime -q --locked && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY)
+.PHONY: try-runtime-upgrade-paseo-testnet try-runtime-upgrade-mainnet
+try-runtime-upgrade-paseo-testnet \
+try-runtime-upgrade-mainnet: try-runtime-upgrade-%: check-try-runtime-installed build-runtime-%
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 live --uri $(URI)
 
-try-runtime-check-migrations-local: check-try-runtime-installed
-	cargo build --features frequency-local,frequency-bridging,try-runtime -q --locked && \
-	try-runtime --runtime ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri ws://localhost:9944
+.PHONY: try-runtime-use-snapshot-paseo-testnet try-runtime-use-snapshot-mainnet
+try-runtime-use-snapshot-paseo-testnet \
+try-runtime-use-snapshot-mainnet: try-runtime-use-snapshot-%: check-try-runtime-installed build-runtime-%
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
 
-try-runtime-check-migrations-none-local: check-try-runtime-installed
-	cargo build --features frequency-local,frequency-bridging,try-runtime -q --locked && \
-	try-runtime --runtime ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri ws://localhost:9944
+.PHONY: try-runtime-check-migrations-paseo-testnet try-runtime-check-migrations-bridging-testnet try-runtime-check-migrations-westend-testnet
+try-runtime-check-migrations-paseo-testnet \
+try-runtime-check-migrations-bridging-testnet \
+try-runtime-check-migrations-westend-testnet: try-runtime-check-migrations-%: check-try-runtime-installed check-onfinality-api-key build-runtime-%
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PALLET_FLAGS)
+
+.PHONY: try-runtime-check-migrations-local
+try-runtime-check-migrations-local: check-try-runtime-installed build-runtime-local
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri $(URI) $(PALLET_FLAGS)
+
+.PHONY: try-runtime-check-migrations-none-local
+try-runtime-check-migrations-none-local: check-try-runtime-installed build-runtime-local
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri $(URI) $(PALLET_FLAGS)
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes

@@ -1,5 +1,7 @@
 export default {
-  rpc: {},
+  rpc: {
+    dummy: { description: 'This API has no custom RPCs', params: [], type: 'undefined' },
+  },
   types: {
     IntentGroupId: 'u16',
     IntentGroupResponse: {
