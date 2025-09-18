@@ -1,7 +1,7 @@
 use crate::{Error, Event as AnnouncementEvent, SchemaNamePayload};
 use common_primitives::{
 	node::AccountId,
-	schema::{IntentId, MappedEntityIdentifier, PayloadLocation, SchemaSetting},
+	schema::{IntentId, IntentSetting, MappedEntityIdentifier, PayloadLocation},
 };
 use frame_support::{assert_noop, assert_ok, traits::ChangeMembers, weights::Weight, BoundedVec};
 use pallet_collective::ProposalOf;
@@ -56,7 +56,7 @@ fn create_intent_happy_path() {
 fn create_intent_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let settings = vec![SchemaSetting::AppendOnly];
+		let settings = vec![IntentSetting::AppendOnly];
 		let sender: AccountId = test_public(5);
 		let name = "namespace.descriptor";
 		let intent_name: SchemaNamePayload =
@@ -92,7 +92,7 @@ fn create_intent_via_governance_happy_path() {
 fn create_intent_via_governance_with_append_only_setting_and_non_itemized_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let settings = vec![SchemaSetting::AppendOnly];
+		let settings = vec![IntentSetting::AppendOnly];
 		let sender: AccountId = test_public(1);
 		let name = "namespace.descriptor";
 		let intent_name: SchemaNamePayload =
@@ -121,7 +121,7 @@ fn create_intent_via_governance_with_signature_required_setting_and_wrong_locati
 		sudo_set_max_schema_size();
 
 		// arrange
-		let settings = vec![SchemaSetting::SignatureRequired];
+		let settings = vec![IntentSetting::SignatureRequired];
 		let sender: AccountId = test_public(1);
 		let name = "namespace.descriptor";
 		let intent_name: SchemaNamePayload =

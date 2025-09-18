@@ -12,8 +12,8 @@ use common_primitives::{
 	},
 	node::AccountId,
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaResponse,
-		SchemaSetting,
+		IntentId, IntentResponse, IntentSetting, ModelType, PayloadLocation, SchemaId,
+		SchemaInfoResponse, SchemaProvider, SchemaResponseV2, SchemaStatus,
 	},
 };
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
@@ -204,61 +204,75 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 pub struct SchemaHandler;
 impl SchemaProvider<u16> for SchemaHandler {
 	// For testing/benchmarking. Zero value returns None, Odd for Itemized, Even for Paginated
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 		match schema_id {
 			constants::ITEMIZED_SCHEMA | constants::UNDELEGATED_ITEMIZED_SCHEMA =>
-				Some(SchemaResponse {
+				Some(SchemaResponseV2 {
 					schema_id,
+					intent_id: schema_id,
 					model: r#"schema"#.to_string().as_bytes().to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::Itemized,
 					settings: Vec::new(),
+					status: SchemaStatus::Active,
 				}),
 			constants::ITEMIZED_APPEND_ONLY_SCHEMA |
-			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
+			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
-				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
+				settings: Vec::try_from(vec![IntentSetting::AppendOnly]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
-			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponse {
+			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Itemized,
-				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
+				settings: Vec::try_from(vec![IntentSetting::SignatureRequired]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
 			constants::PAGINATED_SCHEMA | constants::UNDELEGATED_PAGINATED_SCHEMA =>
-				Some(SchemaResponse {
+				Some(SchemaResponseV2 {
 					schema_id,
+					intent_id: schema_id,
 					model: r#"schema"#.to_string().as_bytes().to_vec(),
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::Paginated,
 					settings: Vec::new(),
+					status: SchemaStatus::Active,
 				}),
-			constants::PAGINATED_SIGNED_SCHEMA => Some(SchemaResponse {
+			constants::PAGINATED_SIGNED_SCHEMA => Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
-				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
+				settings: Vec::try_from(vec![IntentSetting::SignatureRequired]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
-			constants::PAGINATED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
+			constants::PAGINATED_APPEND_ONLY_SCHEMA => Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::Paginated,
-				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
+				settings: Vec::try_from(vec![IntentSetting::AppendOnly]).unwrap(),
+				status: SchemaStatus::Active,
 			}),
 			INVALID_SCHEMA_ID => None,
 
-			_ => Some(SchemaResponse {
+			_ => Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::AvroBinary,
 				payload_location: PayloadLocation::OnChain,
-				settings: Vec::from(vec![SchemaSetting::AppendOnly]),
+				settings: Vec::from(vec![IntentSetting::AppendOnly]),
+				status: SchemaStatus::Active,
 			}),
 		}
 	}
@@ -267,11 +281,17 @@ impl SchemaProvider<u16> for SchemaHandler {
 		Self::get_schema_by_id(schema_id).and_then(|schema| {
 			Some(SchemaInfoResponse {
 				schema_id: schema.schema_id,
+				intent_id: schema.schema_id,
 				settings: schema.settings,
 				model_type: schema.model_type,
 				payload_location: schema.payload_location,
+				status: SchemaStatus::Active,
 			})
 		})
+	}
+
+	fn get_intent_by_id(_intent_id: IntentId) -> Option<IntentResponse> {
+		None
 	}
 }
 

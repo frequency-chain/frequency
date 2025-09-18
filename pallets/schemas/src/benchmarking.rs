@@ -74,49 +74,7 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn create_schema_v3_with_name(
-		m: Linear<
-			{ T::MinSchemaModelSizeBytes::get() + 8 },
-			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
-		>,
-	) -> Result<(), BenchmarkError> {
-		let sender: T::AccountId = whitelisted_caller();
-		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
-		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
-		let name: Vec<u8> = namespace
-			.into_iter()
-			.chain(vec![b'.'].into_iter())
-			.chain(descriptor.into_iter())
-			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
-			RawOrigin::Root.into(),
-			T::SchemaModelMaxBytesBoundedVecLimit::get()
-		));
-		let schema_input = generate_schema::<T>(m as usize);
-
-		#[extrinsic_call]
-		create_schema_v3(
-			RawOrigin::Signed(sender),
-			schema_input,
-			model_type,
-			payload_location,
-			BoundedVec::default(),
-			Some(bounded_name),
-		);
-
-		ensure!(
-			CurrentSchemaIdentifierMaximum::<T>::get() > 0,
-			"Created schema count should be > 0"
-		);
-		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
-		Ok(())
-	}
-
-	#[benchmark]
-	fn create_schema_v3_without_name(
+	fn create_schema_v4(
 		m: Linear<
 			{ T::MinSchemaModelSizeBytes::get() + 8 },
 			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
@@ -124,22 +82,15 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
 			RawOrigin::Root.into(),
 			T::SchemaModelMaxBytesBoundedVecLimit::get()
 		));
 		let schema_input = generate_schema::<T>(m as usize);
+		let intent_id = generate_intents::<T>(1)[0];
 
 		#[extrinsic_call]
-		create_schema_v3(
-			RawOrigin::Signed(sender),
-			schema_input,
-			model_type,
-			payload_location,
-			BoundedVec::default(),
-			None,
-		);
+		create_schema_v4(RawOrigin::Signed(sender), intent_id, schema_input, model_type);
 
 		ensure!(
 			CurrentSchemaIdentifierMaximum::<T>::get() > 0,
@@ -166,38 +117,28 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_schema_via_governance_v2_with_name(
+	fn create_schema_via_governance_v3(
 		m: Linear<
 			{ T::MinSchemaModelSizeBytes::get() + 8 },
 			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
 		>,
 	) -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
-		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
-		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
-		let name: Vec<u8> = namespace
-			.into_iter()
-			.chain(vec![b'.'].into_iter())
-			.chain(descriptor.into_iter())
-			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
 		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
 			RawOrigin::Root.into(),
 			T::SchemaModelMaxBytesBoundedVecLimit::get()
 		));
 		let schema_input = generate_schema::<T>(m as usize);
+		let intent_id = generate_intents::<T>(1)[0];
 
 		#[extrinsic_call]
-		create_schema_via_governance_v2(
+		create_schema_via_governance_v3(
 			RawOrigin::Root,
 			sender.clone(),
+			intent_id,
 			schema_input,
 			model_type,
-			payload_location,
-			BoundedVec::default(),
-			Some(bounded_name),
 		);
 
 		ensure!(
@@ -209,170 +150,21 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_schema_via_governance_v2_without_name(
-		m: Linear<
-			{ T::MinSchemaModelSizeBytes::get() + 8 },
-			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
-		>,
-	) -> Result<(), BenchmarkError> {
+	fn propose_to_create_schema_v3() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
 		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
 			RawOrigin::Root.into(),
 			T::SchemaModelMaxBytesBoundedVecLimit::get()
 		));
-		let schema_input = generate_schema::<T>(m as usize);
+		let schema_input =
+			generate_schema::<T>(T::SchemaModelMaxBytesBoundedVecLimit::get() as usize);
+		let intent_id = 1u16;
 
 		#[extrinsic_call]
-		create_schema_via_governance_v2(
-			RawOrigin::Root,
-			sender.clone(),
-			schema_input,
-			model_type,
-			payload_location,
-			BoundedVec::default(),
-			None,
-		);
-
-		ensure!(
-			CurrentSchemaIdentifierMaximum::<T>::get() > 0,
-			"Created schema count should be > 0"
-		);
-		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
-		Ok(())
-	}
-
-	#[benchmark]
-	fn propose_to_create_schema_v2_with_name(
-		m: Linear<
-			{ T::MinSchemaModelSizeBytes::get() + 8 },
-			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
-		>,
-	) -> Result<(), BenchmarkError> {
-		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
-		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
-		let name: Vec<u8> = namespace
-			.into_iter()
-			.chain(vec![b'.'].into_iter())
-			.chain(descriptor.into_iter())
-			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
-			RawOrigin::Root.into(),
-			T::SchemaModelMaxBytesBoundedVecLimit::get()
-		));
-		let schema_input = generate_schema::<T>(m as usize);
-
-		#[extrinsic_call]
-		propose_to_create_schema_v2(
-			RawOrigin::Signed(sender),
-			schema_input,
-			model_type,
-			payload_location,
-			BoundedVec::default(),
-			Some(bounded_name),
-		);
+		propose_to_create_schema_v3(RawOrigin::Signed(sender), intent_id, schema_input, model_type);
 
 		assert_eq!(T::ProposalProvider::proposal_count(), 1);
-		Ok(())
-	}
-
-	#[benchmark]
-	fn propose_to_create_schema_v2_without_name(
-		m: Linear<
-			{ T::MinSchemaModelSizeBytes::get() + 8 },
-			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
-		>,
-	) -> Result<(), BenchmarkError> {
-		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
-			RawOrigin::Root.into(),
-			T::SchemaModelMaxBytesBoundedVecLimit::get()
-		));
-		let schema_input = generate_schema::<T>(m as usize);
-
-		#[extrinsic_call]
-		propose_to_create_schema_v2(
-			RawOrigin::Signed(sender),
-			schema_input,
-			model_type,
-			payload_location,
-			BoundedVec::default(),
-			None,
-		);
-
-		assert_eq!(T::ProposalProvider::proposal_count(), 1);
-		Ok(())
-	}
-
-	#[benchmark]
-	fn propose_to_create_schema_name() -> Result<(), BenchmarkError> {
-		let sender: T::AccountId = whitelisted_caller();
-		let model = generate_schema::<T>(100_usize);
-		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
-		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
-		let name: Vec<u8> = namespace
-			.into_iter()
-			.chain(vec![b'.'].into_iter())
-			.chain(descriptor.into_iter())
-			.collect();
-		let schema_name = SchemaNamePayload::try_from(name).expect("should resolve");
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
-			RawOrigin::Root.into(),
-			T::SchemaModelMaxBytesBoundedVecLimit::get()
-		));
-		let schema_id = SchemasPallet::<T>::add_schema(
-			model,
-			ModelType::AvroBinary,
-			PayloadLocation::OnChain,
-			BoundedVec::default(),
-			None,
-		)
-		.map_err(|e| BenchmarkError::Stop(e.into()))?;
-
-		#[extrinsic_call]
-		_(RawOrigin::Signed(sender), schema_id, schema_name);
-
-		assert_eq!(T::ProposalProvider::proposal_count(), 1);
-		Ok(())
-	}
-
-	#[benchmark]
-	fn create_schema_name_via_governance() -> Result<(), BenchmarkError> {
-		let model = generate_schema::<T>(100_usize);
-		let namespace = vec![b'a'; PROTOCOL_NAME_MIN as usize];
-		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
-		let name: Vec<u8> = namespace
-			.into_iter()
-			.chain(vec![b'.'].into_iter())
-			.chain(descriptor.into_iter())
-			.collect();
-		let schema_name = SchemaNamePayload::try_from(name).expect("should resolve");
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
-			RawOrigin::Root.into(),
-			T::SchemaModelMaxBytesBoundedVecLimit::get()
-		));
-		let schema_id = SchemasPallet::<T>::add_schema(
-			model,
-			ModelType::AvroBinary,
-			PayloadLocation::OnChain,
-			BoundedVec::default(),
-			None,
-		)
-		.map_err(|e| BenchmarkError::Stop(e.into()))?;
-
-		#[extrinsic_call]
-		_(RawOrigin::Root, schema_id, schema_name.clone());
-
-		let versions = SchemasPallet::<T>::get_schema_versions(schema_name.into_inner());
-		ensure!(versions.is_some(), "Created schema name should exist");
-		ensure!(versions.unwrap().len() == 1, "Version should be added!");
 		Ok(())
 	}
 
@@ -473,17 +265,30 @@ mod benchmarks {
 			.chain(vec![b'.'].into_iter())
 			.chain(descriptor.into_iter())
 			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let bounded_name = BoundedVec::try_from(name.clone()).expect("should resolve");
 		let intent_ids = generate_intents::<T>(m.try_into().expect("should convert"));
+		let intent_group_id: IntentGroupId =
+			CurrentIntentGroupIdentifierMaximum::<T>::get().saturating_add(1);
 
 		#[extrinsic_call]
-		create_intent_group(RawOrigin::Signed(sender), bounded_name, intent_ids);
+		create_intent_group(RawOrigin::Signed(sender.clone()), bounded_name, intent_ids);
 
+		assert_last_event::<T>(
+			Event::<T>::IntentGroupCreated {
+				key: sender,
+				intent_group_id,
+				intent_group_name: name,
+			}
+			.into(),
+		);
 		ensure!(
 			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
 			"Created intent group count should be > 0"
 		);
-		ensure!(IntentGroups::<T>::get(1).is_some(), "Created intent group should exist");
+		ensure!(
+			IntentGroups::<T>::get(intent_group_id).is_some(),
+			"Created intent group should exist"
+		);
 		Ok(())
 	}
 
@@ -499,8 +304,10 @@ mod benchmarks {
 			.chain(vec![b'.'].into_iter())
 			.chain(descriptor.into_iter())
 			.collect();
-		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let bounded_name = BoundedVec::try_from(name.clone()).expect("should resolve");
 		let intent_ids = generate_intents::<T>(m.try_into().expect("should convert"));
+		let intent_group_id: IntentGroupId =
+			CurrentIntentGroupIdentifierMaximum::<T>::get().saturating_add(1);
 
 		#[extrinsic_call]
 		create_intent_group_via_governance(
@@ -510,11 +317,22 @@ mod benchmarks {
 			intent_ids,
 		);
 
+		assert_last_event::<T>(
+			Event::<T>::IntentGroupCreated {
+				key: sender,
+				intent_group_id,
+				intent_group_name: name,
+			}
+			.into(),
+		);
 		ensure!(
 			CurrentIntentGroupIdentifierMaximum::<T>::get() > 0,
 			"Created intent group count should be > 0"
 		);
-		ensure!(IntentGroups::<T>::get(1).is_some(), "Created intent group should exist");
+		ensure!(
+			IntentGroups::<T>::get(intent_group_id).is_some(),
+			"Created intent group should exist"
+		);
 		Ok(())
 	}
 

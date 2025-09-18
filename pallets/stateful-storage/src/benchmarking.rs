@@ -45,12 +45,19 @@ fn itemized_actions_populate<T: Config>(
 	actions.try_into().expect("Invalid actions")
 }
 
-fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
-	T::SchemaBenchmarkHelper::create_schema(
+fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
+	let intent_id = T::SchemaBenchmarkHelper::create_intent(
+		b"benchmark.test".to_vec(),
+		location,
+		Vec::default(),
+	)?;
+	let _ = T::SchemaBenchmarkHelper::create_schema(
+		intent_id,
 		Vec::from(r#"{"Message": "some-random-hash"}"#.as_bytes()),
 		ModelType::AvroBinary,
 		location,
-	)
+	)?;
+	Ok(())
 }
 
 fn get_itemized_page<T: Config>(
@@ -100,7 +107,7 @@ mod benchmarks {
 		let num_of_items = s / T::MaxItemizedBlobSizeBytes::get();
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
@@ -145,7 +152,7 @@ mod benchmarks {
 		let key = (schema_id,);
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
@@ -215,7 +222,7 @@ mod benchmarks {
 		let page = PaginatedPage::<T>::from(BoundedVec::try_from(max_payload).unwrap());
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
@@ -267,7 +274,7 @@ mod benchmarks {
 		let payload = vec![0u8; T::MaxPaginatedPageSizeBytes::get() as usize];
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
@@ -322,7 +329,7 @@ mod benchmarks {
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
@@ -382,7 +389,7 @@ mod benchmarks {
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
@@ -466,7 +473,7 @@ mod benchmarks {
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
 		let key = (schema_id, page_id);
@@ -527,7 +534,7 @@ mod benchmarks {
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
-		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
+		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
 		let key = (schema_id, page_id);

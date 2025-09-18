@@ -199,36 +199,46 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 
 pub struct SchemaHandler;
 impl SchemaProvider<u16> for SchemaHandler {
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 		if schema_id == INVALID_SCHEMA_ID {
 			return None
 		}
 		if schema_id == IPFS_SCHEMA_ID {
-			return Some(SchemaResponse {
+			return Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::Parquet,
 				payload_location: PayloadLocation::IPFS,
 				settings: Vec::new(),
+				status: SchemaStatus::Active,
 			})
 		}
 
-		Some(SchemaResponse {
+		Some(SchemaResponseV2 {
 			schema_id,
+			intent_id: schema_id,
 			model: r#"schema"#.to_string().as_bytes().to_vec(),
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
 			settings: Vec::new(),
+			status: SchemaStatus::Active,
 		})
 	}
 
 	fn get_schema_info_by_id(schema_id: u16) -> Option<SchemaInfoResponse> {
 		Self::get_schema_by_id(schema_id).map(|schema| SchemaInfoResponse {
 			schema_id: schema.schema_id,
+			intent_id: schema.intent_id,
 			settings: schema.settings,
 			model_type: schema.model_type,
 			payload_location: schema.payload_location,
+			status: schema.status,
 		})
+	}
+
+	fn get_intent_by_id(_intent_id: IntentId) -> Option<IntentResponse> {
+		None
 	}
 }
 

@@ -1,156 +1,308 @@
-[
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.tombstone"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
-    "name": "dsnp.broadcast"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
-    "name": "dsnp.reply"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"emoji\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"apply\",\"column_type\":{\"INTEGER\":{\"bit_width\":8,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.reaction"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.update"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
-    "name": "dsnp.profile"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Itemized",
-    "settings": [
-      "AppendOnly",
-      "SignatureRequired"
-    ],
-    "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}",
-    "name": "dsnp.public-key-key-agreement"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Paginated",
-    "settings": [],
-    "model": "{\"type\":\"record\",\"name\":\"UserPublicFollowsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"compressedPublicGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PublicGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
-    "name": "dsnp.public-follows"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Paginated",
-    "settings": [],
-    "model": "{\"type\":\"record\",\"name\":\"UserPrivateFollowsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
-    "name": "dsnp.private-follows"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Paginated",
-    "settings": [],
-    "model": "{\"type\":\"record\",\"name\":\"UserPrivateConnectionsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"name\":\"pridList\",\"type\":{\"type\":\"array\",\"items\":{\"name\":\"prid\",\"type\":\"fixed\",\"size\":8,\"doc\":\"Pseudonymous Relationship Identifier\"}}},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
-    "name": "dsnp.private-connections"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.user-attribute-set"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.dsnp-content-attribute-set"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subjectContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.ext-content-attribute-set"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Itemized",
-    "settings": [
-      "SignatureRequired"
-    ],
-    "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}",
-    "name": "dsnp.public-key-assertion-method"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Itemized",
-    "settings": [],
-    "model": "{\"namespace\":\"org.dsnp\",\"name\":\"ProfileResource\",\"type\":\"record\",\"doc\":\"Profile-linked resource\",\"fields\":[{\"name\":\"type\",\"type\":\"int\",\"doc\":\"Type of resource\"},{\"name\":\"contentAddress\",\"type\":\"string\",\"doc\":\"Content address for the resource\"}]}",
-    "name": "dsnp.profile-resources"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.tombstone"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
-    "name": "dsnp.broadcast"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
-    "name": "dsnp.reply"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.update"
-  },
-  {
-    "model_type": "Parquet",
-    "payload_location": "IPFS",
-    "settings": [],
-    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
-    "name": "dsnp.user-attribute-set"
-  },
-  {
-    "model_type": "AvroBinary",
-    "payload_location": "Itemized",
-    "settings": [
-      "SignatureRequired"
-    ],
-    "model": "{\"default\":{\"type\":\"record\",\"name\":\"DefaultTokenAddress\",\"namespace\":\"frequency\",\"fields\":[{\"name\":\"token_slip_0044\",\"type\":\"int\",\"doc\":\"Network for this token address using SLIP-0044 registered coin type integers\"},{\"name\":\"address\",\"type\":\"string\",\"doc\":\"The address as a string encoded in standard way for the given coin type\"}]}}",
-    "name": "frequency.default-token-address"
-  }
-]
+{
+  "schemas": [
+    {
+      "schema_id": 18,
+      "intent_id": 18,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]"
+    },
+    {
+      "schema_id": 3,
+      "intent_id": 3,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]"
+    },
+    {
+      "schema_id": 14,
+      "intent_id": 14,
+      "model_type": "AvroBinary",
+      "payload_location": "Itemized",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}"
+    },
+    {
+      "schema_id": 2,
+      "intent_id": 2,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]"
+    },
+    {
+      "schema_id": 21,
+      "intent_id": 21,
+      "model_type": "AvroBinary",
+      "payload_location": "Itemized",
+      "status": "Active",
+      "model": "{\"default\":{\"type\":\"record\",\"name\":\"DefaultTokenAddress\",\"namespace\":\"frequency\",\"fields\":[{\"name\":\"token_slip_0044\",\"type\":\"int\",\"doc\":\"Network for this token address using SLIP-0044 registered coin type integers\"},{\"name\":\"address\",\"type\":\"string\",\"doc\":\"The address as a string encoded in standard way for the given coin type\"}]}}"
+    },
+    {
+      "schema_id": 12,
+      "intent_id": 12,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 13,
+      "intent_id": 13,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subjectContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 4,
+      "intent_id": 4,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"emoji\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"apply\",\"column_type\":{\"INTEGER\":{\"bit_width\":8,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 8,
+      "intent_id": 8,
+      "model_type": "AvroBinary",
+      "payload_location": "Paginated",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"UserPublicFollowsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"compressedPublicGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PublicGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}"
+    },
+    {
+      "schema_id": 11,
+      "intent_id": 11,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 16,
+      "intent_id": 16,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 6,
+      "intent_id": 6,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]"
+    },
+    {
+      "schema_id": 5,
+      "intent_id": 5,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 7,
+      "intent_id": 7,
+      "model_type": "AvroBinary",
+      "payload_location": "Itemized",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}"
+    },
+    {
+      "schema_id": 9,
+      "intent_id": 9,
+      "model_type": "AvroBinary",
+      "payload_location": "Paginated",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"UserPrivateFollowsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}"
+    },
+    {
+      "schema_id": 15,
+      "intent_id": 15,
+      "model_type": "AvroBinary",
+      "payload_location": "Itemized",
+      "status": "Active",
+      "model": "{\"namespace\":\"org.dsnp\",\"name\":\"ProfileResource\",\"type\":\"record\",\"doc\":\"Profile-linked resource\",\"fields\":[{\"name\":\"type\",\"type\":\"int\",\"doc\":\"Type of resource\"},{\"name\":\"contentAddress\",\"type\":\"string\",\"doc\":\"Content address for the resource\"}]}"
+    },
+    {
+      "schema_id": 17,
+      "intent_id": 17,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]"
+    },
+    {
+      "schema_id": 10,
+      "intent_id": 10,
+      "model_type": "AvroBinary",
+      "payload_location": "Paginated",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"UserPrivateConnectionsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"name\":\"pridList\",\"type\":{\"type\":\"array\",\"items\":{\"name\":\"prid\",\"type\":\"fixed\",\"size\":8,\"doc\":\"Pseudonymous Relationship Identifier\"}}},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}"
+    },
+    {
+      "schema_id": 19,
+      "intent_id": 19,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 1,
+      "intent_id": 1,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    },
+    {
+      "schema_id": 20,
+      "intent_id": 20,
+      "model_type": "Parquet",
+      "payload_location": "IPFS",
+      "status": "Active",
+      "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]"
+    }
+  ],
+  "intents": [
+    {
+      "intent_id": 18,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.reply-2"
+    },
+    {
+      "intent_id": 3,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.reply-1"
+    },
+    {
+      "intent_id": 14,
+      "payload_location": "Itemized",
+      "settings": [
+        "SignatureRequired"
+      ],
+      "name": "dsnp.public-key-assertion-meth-1"
+    },
+    {
+      "intent_id": 2,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.broadcast-1"
+    },
+    {
+      "intent_id": 21,
+      "payload_location": "Itemized",
+      "settings": [
+        "SignatureRequired"
+      ],
+      "name": "frequency.default-token-addres-1"
+    },
+    {
+      "intent_id": 12,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.dsnp-content-attribute-se-1"
+    },
+    {
+      "intent_id": 13,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.ext-content-attribute-set-1"
+    },
+    {
+      "intent_id": 4,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.reaction-1"
+    },
+    {
+      "intent_id": 8,
+      "payload_location": "Paginated",
+      "settings": [],
+      "name": "dsnp.public-follows-1"
+    },
+    {
+      "intent_id": 11,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.user-attribute-set-1"
+    },
+    {
+      "intent_id": 16,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.tombstone-2"
+    },
+    {
+      "intent_id": 6,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.profile-1"
+    },
+    {
+      "intent_id": 5,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.update-1"
+    },
+    {
+      "intent_id": 7,
+      "payload_location": "Itemized",
+      "settings": [
+        "AppendOnly",
+        "SignatureRequired"
+      ],
+      "name": "dsnp.public-key-key-agreement-1"
+    },
+    {
+      "intent_id": 9,
+      "payload_location": "Paginated",
+      "settings": [],
+      "name": "dsnp.private-follows-1"
+    },
+    {
+      "intent_id": 15,
+      "payload_location": "Itemized",
+      "settings": [],
+      "name": "dsnp.profile-resources-1"
+    },
+    {
+      "intent_id": 17,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.broadcast-2"
+    },
+    {
+      "intent_id": 10,
+      "payload_location": "Paginated",
+      "settings": [],
+      "name": "dsnp.private-connections-1"
+    },
+    {
+      "intent_id": 19,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.update-2"
+    },
+    {
+      "intent_id": 1,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.tombstone-1"
+    },
+    {
+      "intent_id": 20,
+      "payload_location": "IPFS",
+      "settings": [],
+      "name": "dsnp.user-attribute-set-2"
+    }
+  ],
+  "intent_groups": []
+}

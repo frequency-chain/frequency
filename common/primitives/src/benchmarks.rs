@@ -1,18 +1,18 @@
-use frame_support::dispatch::DispatchResult;
 extern crate alloc;
-use alloc::vec::Vec;
-
 use crate::{
 	msa::{DelegatorId, MessageSourceId, ProviderId},
-	schema::{ModelType, PayloadLocation, SchemaId},
+	schema::{IntentId, IntentSetting, ModelType, PayloadLocation, SchemaId},
 };
+use alloc::vec::Vec;
+use frame_support::dispatch::DispatchResult;
+use sp_runtime::DispatchError;
 
 /// A trait for helping setup state for running benchmarks.
 /// When implementing loosely coupled pallets accessing the dependent
 /// pallet state is not possible. Therefore, an alternative solution to
 /// setting up the state is necessary to run benchmarks on an extrinsic.
 /// Implementing this trait and adding the runtime-benchmarks feature flag
-/// makes it possible for the messages pallet to access functions that allow
+/// makes it possible for the `messages` pallet to access functions that allow
 /// one to set up the necessary state for running benchmarks for messages.
 pub trait MsaBenchmarkHelper<AccountId> {
 	/// Sets the delegation relationship of between Provider and Delegator.
@@ -36,7 +36,7 @@ impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
 		Ok(())
 	}
 
-	/// Sets a publickey to an MSA.
+	/// Sets a public key to an MSA.
 	fn add_key(_msa_id: MessageSourceId, _key: AccountId) -> DispatchResult {
 		Ok(())
 	}
@@ -49,10 +49,18 @@ pub trait SchemaBenchmarkHelper {
 
 	/// Creates a new schema.
 	fn create_schema(
+		intent_id: IntentId,
 		model: Vec<u8>,
 		model_type: ModelType,
 		payload_location: PayloadLocation,
-	) -> DispatchResult;
+	) -> Result<SchemaId, DispatchError>;
+
+	/// Creates a new Intent
+	fn create_intent(
+		name_payload: Vec<u8>,
+		payload_location: PayloadLocation,
+		settings: Vec<IntentSetting>,
+	) -> Result<IntentId, DispatchError>;
 }
 
 impl SchemaBenchmarkHelper for () {
@@ -61,11 +69,21 @@ impl SchemaBenchmarkHelper for () {
 
 	/// Adds a new schema.
 	fn create_schema(
+		_intent_id: IntentId,
 		_model: Vec<u8>,
 		_model_type: ModelType,
 		_payload_location: PayloadLocation,
-	) -> DispatchResult {
-		Ok(())
+	) -> Result<SchemaId, DispatchError> {
+		Ok(SchemaId::default())
+	}
+
+	/// Adds a new Intent
+	fn create_intent(
+		_name_payload: Vec<u8>,
+		_payload_location: PayloadLocation,
+		_settings: Vec<IntentSetting>,
+	) -> Result<IntentId, DispatchError> {
+		Ok(IntentId::default())
 	}
 }
 

@@ -402,7 +402,7 @@ upgrade-frequency-no-relay)
     --package frequency-runtime \
     --features frequency-no-relay
 
-  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.wasm
 
   ./scripts/runtime-dev-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
