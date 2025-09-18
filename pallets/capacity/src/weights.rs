@@ -47,8 +47,8 @@ pub trait WeightInfo {
 /// Weights for `pallet_capacity` using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
@@ -146,8 +146,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Capacity::Retargets` (r:1 w:1)
 	/// Proof: `Capacity::Retargets` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:0)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingTargetLedger` (r:2 w:2)
@@ -163,8 +163,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
-	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
@@ -207,8 +207,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests.
 impl WeightInfo for () {
-	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
@@ -306,8 +306,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Capacity::Retargets` (r:1 w:1)
 	/// Proof: `Capacity::Retargets` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:0)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingTargetLedger` (r:2 w:2)
@@ -323,8 +323,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
-	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)

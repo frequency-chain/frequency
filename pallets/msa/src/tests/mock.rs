@@ -3,15 +3,21 @@ use crate::{
 	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
-	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
+	msa::{MessageSourceId, ProviderRegistryEntry},
+	node::BlockNumber,
+	schema::SchemaId,
+	utils::wrap_binary_data,
 };
-use common_runtime::constants::DAYS;
+use common_runtime::constants::*;
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, Get, OnFinalize, OnInitialize},
 	weights::Weight,
+	BoundedBTreeMap, BoundedVec,
 };
-use frame_system::EnsureRoot;
+
+use frame_system::{EnsureRoot, RawOrigin};
+
 use pallet_collective::{self, Members};
 use parity_scale_codec::MaxEncodedLen;
 use sp_core::{
@@ -184,8 +190,15 @@ parameter_types! {
 	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
-pub type MaxProviderNameSize = ConstU32<16>;
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
+/// The maximum size of a provider name (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxProviderNameSize;
+impl Get<u32> for MsaMaxProviderNameSize {
+	fn get() -> u32 {
+		16
+	}
+}
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
@@ -222,7 +235,11 @@ impl pallet_msa::Config for Test {
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type MaxProviderNameSize = MaxProviderNameSize;
+	type MaxProviderNameSize = MsaMaxProviderNameSize;
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	type MaxLogoSize = MsaMaxLogoSize;
+	type MaxLocaleCount = MsaMaxLocaleCount;
 	type SchemaValidator = Schemas;
 	type HandleProvider = Handles;
 	type MortalityWindowSize = ConstU32<100>;
@@ -361,11 +378,22 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 
 	let (delegator_signature, add_provider_payload) =
 		create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
-
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
+	let entry = ProviderRegistryEntry {
+		default_name: BoundedVec::try_from(b"Foo".to_vec())
+			.expect("Provider name should fit in bounds"),
+		localized_names: BoundedBTreeMap::new(),
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
+			.expect("Logo CID should fit in bounds"),
+		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+	};
 	// Register provider
-	assert_ok!(Msa::create_provider(
-		RuntimeOrigin::signed(provider_account.into()),
-		Vec::from("Foo")
+	assert_ok!(Msa::create_provider_via_governance_v2(
+		RawOrigin::Root.into(),
+		provider_account.into(),
+		entry.clone()
 	));
 
 	assert_ok!(Msa::grant_delegation(
@@ -381,10 +409,28 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 	let (provider_msa_id, provider_pair) = create_account();
 	let provider_account = provider_pair.public();
+	let cid = "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF".as_bytes().to_vec();
+	let mut entry = ProviderRegistryEntry::default();
+	entry.default_name =
+		BoundedVec::try_from(name.as_bytes().to_vec()).expect("Provider name should fit in bounds");
+	entry.default_logo_250_100_png_cid =
+		BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+	let mut localized_names = BoundedBTreeMap::new();
+	let locale = BoundedVec::try_from(b"en".to_vec()).expect("Should fit locale");
+	localized_names
+		.try_insert(locale.clone(), entry.default_name.clone())
+		.expect("Should insert localized name");
+	entry.localized_names = localized_names;
+	let mut localized_logo_cids = BoundedBTreeMap::new();
+	localized_logo_cids
+		.try_insert(locale, entry.default_logo_250_100_png_cid.clone())
+		.expect("Should insert localized logo cid");
+	entry.localized_logo_250_100_png_cids = localized_logo_cids;
 	// Register provider
-	assert_ok!(Msa::create_provider(
-		RuntimeOrigin::signed(provider_account.into()),
-		Vec::from(name)
+	assert_ok!(Msa::create_provider_via_governance_v2(
+		RawOrigin::Root.into(),
+		provider_account.into(),
+		entry
 	));
 	(provider_msa_id, provider_account)
 }
@@ -518,7 +564,18 @@ pub fn generate_and_sign_add_key_payload(
 /// Helper function to create a recovery provider and approve it
 pub fn create_and_approve_recovery_provider() -> (MessageSourceId, sr25519::Pair) {
 	let (provider_msa_id, provider_key_pair) = create_account();
-	assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("RecProv")));
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
+	let entry = ProviderRegistryEntry {
+		default_name: BoundedVec::try_from(b"RecProv".to_vec())
+			.expect("Provider name should fit in bounds"),
+		localized_names: BoundedBTreeMap::new(),
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
+			.expect("Logo CID should fit in bounds"),
+		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+	};
+	assert_ok!(Msa::upsert_provider_for(provider_msa_id.into(), entry, false));
 	assert_ok!(Msa::approve_recovery_provider(
 		RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
 		provider_key_pair.public().into()
