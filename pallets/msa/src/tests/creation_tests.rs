@@ -1,17 +1,22 @@
+use core::u8;
+
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-use frame_support::{assert_noop, assert_ok, dispatch::GetDispatchInfo};
+use frame_support::{
+	assert_noop, assert_ok, dispatch::GetDispatchInfo, BoundedBTreeMap, BoundedVec,
+};
+use frame_system::RawOrigin;
 
 use sp_weights::Weight;
 
 use crate::{
-	ensure, tests::mock::*, types::AddProvider, CurrentMsaIdentifierMaximum,
-	DelegatorAndProviderToDelegation, DispatchResult, Error, Event, PublicKeyToMsaId,
+	tests::mock::*, types::AddProvider, ArithmeticError, CurrentMsaIdentifierMaximum,
+	DelegatorAndProviderToDelegation, Error, Event, PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
 
 use common_primitives::{
-	msa::{DelegatorId, MessageSourceId, ProviderId},
+	msa::{DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
 	utils::wrap_binary_data,
 };
@@ -22,10 +27,12 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		// arrange
 		let (provider_msa, provider_key_pair) = create_account();
 		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry.clone()
 		));
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
@@ -122,11 +129,12 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
-
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
 		));
 
 		// act
@@ -191,11 +199,12 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
 		));
 
 		// act
@@ -212,24 +221,20 @@ pub fn create_sponsored_account_with_delegation_expired() {
 }
 
 #[test]
-pub fn create_account_with_panic_in_on_success_should_revert_everything() {
+pub fn create_account_with_panic_should_revert_everything() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let msa_id = 1u64;
 		let key = test_public(msa_id as u8);
 		let next_msa_id = Msa::get_next_msa_id().unwrap();
+		PublicKeyCountForMsaId::<Test>::set(next_msa_id, u8::MAX);
 
 		// act
-		assert_noop!(
-			Msa::create_account(key, |new_msa_id| -> DispatchResult {
-				ensure!(new_msa_id != msa_id, Error::<Test>::InvalidSelfRemoval);
-				Ok(())
-			}),
-			Error::<Test>::InvalidSelfRemoval
-		);
+		assert_noop!(Msa::create_account(key.clone(),), ArithmeticError::Overflow);
 
 		// assert
 		assert_eq!(next_msa_id, Msa::get_next_msa_id().unwrap());
+		assert!(PublicKeyToMsaId::<Test>::get(key).is_none());
 	});
 }
 
@@ -317,6 +322,197 @@ fn verify_signature_without_wrapped_bytes() {
 			&signature,
 			&key_pair_delegator.public().into(),
 			&add_provider_payload
+		));
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_cid_logo() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let cid = "invalid-cid".as_bytes().to_vec();
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::InvalidCid
+		);
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_cid_localized_logo() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let mut localized_logo_png = BoundedBTreeMap::new();
+		localized_logo_png
+			.try_insert(
+				BoundedVec::try_from("en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from("invalid-cid".as_bytes().to_vec()).expect("CID too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+
+		let mut entry = ProviderRegistryEntry::default();
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::InvalidCid
+		);
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_logo_locale() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+		let mut localized_logo_png = BoundedBTreeMap::new();
+		localized_logo_png
+			.try_insert(
+				BoundedVec::try_from("&en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from(cid.clone()).expect("CID too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+		let mut localized_names = BoundedBTreeMap::new();
+		localized_names
+			.try_insert(
+				BoundedVec::try_from("en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+		let mut entry = ProviderRegistryEntry::default();
+		entry.default_name =
+			BoundedVec::try_from(b"Foo".to_vec()).expect("Provider name should fit in bounds");
+		entry.localized_names = localized_names;
+		entry.default_logo_250_100_png_cid =
+			BoundedVec::try_from(cid).expect("Logo CID should fit in bounds");
+		entry.localized_logo_250_100_png_cids = localized_logo_png;
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::InvalidBCP47LanguageCode
+		);
+	});
+}
+
+#[test]
+pub fn create_provider_fails_with_invalid_name_locale() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let mut localized_names = BoundedBTreeMap::new();
+		localized_names
+			.try_insert(
+				BoundedVec::try_from("&en".as_bytes().to_vec()).expect("Locale too long"),
+				BoundedVec::try_from(b"Foo".to_vec()).expect("Name too long"),
+			)
+			.expect("Map insertion should not exceed max size");
+		let mut entry = ProviderRegistryEntry::default();
+		entry.localized_names = localized_names;
+		// Fail to register provider with invalid CID
+		assert_noop!(
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::InvalidBCP47LanguageCode
+		);
+	});
+}
+
+#[allow(deprecated)]
+#[test]
+pub fn deprecation_tests_create_provider_to_v2() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry::default();
+		// Register provider v1 (this test should fail when removed)
+		assert_ok!(Msa::create_provider(
+			RuntimeOrigin::signed(provider_account.into()),
+			b"YoFoo".to_vec()
+		));
+		// Register provider v2 should fail
+		assert_noop!(
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::DuplicateProviderRegistryEntry
+		);
+	});
+}
+
+#[allow(deprecated)]
+#[test]
+pub fn deprecation_tests_create_provider_to_v2_governance() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry::default();
+		// Register provider v1 (this test should fail when removed)
+		assert_ok!(Msa::create_provider_via_governance(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider_account.into(),
+			Vec::from("YoFoo")
+		));
+		// Register provider v2 should fail
+		assert_noop!(
+			Msa::create_provider_via_governance_v2(
+				RawOrigin::Root.into(),
+				provider_account.into(),
+				entry
+			),
+			Error::<Test>::DuplicateProviderRegistryEntry
+		);
+	});
+}
+
+#[allow(deprecated)]
+#[test]
+pub fn deprecation_tests_create_provider_to_v2_proposal() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (_, provider_key_pair) = create_account();
+		let provider_account = provider_key_pair.public();
+		_ = Msa::propose_to_be_provider(
+			RuntimeOrigin::signed(provider_key_pair.public().into()),
+			Vec::from("YoFoo"),
+		);
+		let entry = ProviderRegistryEntry::default();
+		// Register provider v2 should fail
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
 		));
 	});
 }

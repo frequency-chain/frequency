@@ -4,12 +4,18 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Msa;
 use crate::{
-	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
+	types::{compute_cid, RecoveryCommitmentPayload},
 	MsaIdToRecoveryCommitment,
 };
-use common_primitives::utils::wrap_binary_data;
+use common_primitives::{
+	msa::ProviderRegistryEntry,
+	utils::{wrap_binary_data, XorRng},
+};
 use frame_benchmarking::{account, v2::*};
-use frame_support::{assert_ok, traits::fungible::Inspect};
+use frame_support::{
+	assert_ok,
+	traits::{fungible::Inspect, Get},
+};
 use frame_system::RawOrigin;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::RuntimeAppPublic;
@@ -84,7 +90,7 @@ fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageS
 	let key_pair = SignerId::generate_pair(None);
 	let account_id = T::AccountId::decode(&mut &key_pair.encode()[..]).unwrap();
 
-	let (msa_id, _) = Msa::<T>::create_account(account_id.clone(), EMPTY_FUNCTION).unwrap();
+	let (msa_id, _) = Msa::<T>::create_account(account_id.clone()).unwrap();
 
 	(account_id, key_pair, msa_id)
 }
@@ -144,8 +150,17 @@ fn prep_recovery_benchmark_storage<T: Config>(
 	use frame_support::BoundedVec;
 	let provider_name =
 		BoundedVec::try_from(b"RecoveryPro".to_vec()).expect("Provider name should fit in bounds");
-	let entry = ProviderRegistryEntry { provider_name };
-	ProviderToRegistryEntry::<T>::insert(ProviderId(provider_msa_id), entry);
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
+	let entry = ProviderRegistryEntry {
+		default_name: provider_name,
+		localized_names: BoundedBTreeMap::new(),
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
+			.expect("Logo CID should fit in bounds"),
+		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+	};
+	ProviderToRegistryEntryV2::<T>::insert(ProviderId(provider_msa_id), entry);
 
 	// Pre-approve as recovery provider directly in storage
 	RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
@@ -181,6 +196,74 @@ fn get_benchmark_recovery_hashes() -> ([u8; 32], [u8; 32]) {
 	(hash_a, hash_b)
 }
 
+// Helper function to create a language code of a given length
+fn make_lang_code(mut i: usize, len: usize) -> Vec<u8> {
+	let mut code = vec![b'a'; len];
+	for j in (0..len).rev() {
+		code[j] = b'a' + (i % 26) as u8;
+		i /= 26;
+	}
+	code
+}
+
+fn generate_provider_registry_entry<T: Config>(
+	names_len: usize,
+	logos_len: usize,
+	provider_name: Vec<u8>,
+	seed: u64,
+	add_to_db: bool,
+) -> ProviderRegistryEntry<
+	T::MaxProviderNameSize,
+	T::MaxLanguageCodeSize,
+	T::MaxLogoCidSize,
+	T::MaxLocaleCount,
+> {
+	let mut rng = XorRng::new(seed);
+	let mut localized_names = BoundedBTreeMap::new();
+	let mut localized_cids = BoundedBTreeMap::new();
+
+	let default_logo_bytes =
+		(0..T::MaxLogoSize::get() as u8).map(|_| rng.gen_u8()).collect::<Vec<_>>();
+	let default_cid: BoundedVec<_, _> =
+		compute_cid(default_logo_bytes.as_slice()).try_into().unwrap();
+
+	if add_to_db {
+		// Insert default logo in approved logos
+		ApprovedLogos::<T>::insert(
+			&default_cid,
+			BoundedVec::try_from(default_logo_bytes.clone()).unwrap(),
+		);
+	}
+
+	// Set up localized names based on parameter n
+	for i in 0..names_len {
+		let lang: BoundedVec<_, _> =
+			make_lang_code(i, T::MaxLanguageCodeSize::get() as usize).try_into().unwrap();
+		let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
+		localized_names.try_insert(lang.clone(), name).unwrap();
+	}
+
+	for i in 0..logos_len {
+		let logo_bytes = (0..T::MaxLogoSize::get() as u8).map(|_| rng.gen_u8()).collect::<Vec<_>>();
+		let bounded_cid = compute_cid(&logo_bytes).try_into().unwrap();
+
+		if add_to_db {
+			// Insert all CIDs in approved logo storage
+			ApprovedLogos::<T>::insert(&bounded_cid, BoundedVec::try_from(logo_bytes).unwrap());
+		}
+
+		let lang = make_lang_code(i, T::MaxLanguageCodeSize::get() as usize).try_into().unwrap();
+		localized_cids.try_insert(lang, bounded_cid).unwrap();
+	}
+
+	ProviderRegistryEntry {
+		default_name: BoundedVec::try_from(provider_name.clone()).unwrap_or_default(),
+		localized_names: localized_names.clone(),
+		default_logo_250_100_png_cid: default_cid.clone(),
+		localized_logo_250_100_png_cids: localized_cids.clone(),
+	}
+}
+
 #[benchmarks(where
 	T: Config + Send + Sync,
 )]
@@ -207,9 +290,17 @@ mod benchmarks {
 
 		let caller: T::AccountId = whitelisted_caller();
 		assert_ok!(Msa::<T>::create(RawOrigin::Signed(caller.clone()).into()));
-		assert_ok!(Msa::<T>::create_provider(
-			RawOrigin::Signed(caller.clone()).into(),
-			Vec::from("Foo")
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::truncate_from(Vec::from("Foo")),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::new(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			caller.clone(),
+			entry
 		));
 
 		let schemas: Vec<SchemaId> = (0..s as u16).collect();
@@ -227,11 +318,10 @@ mod benchmarks {
 	fn revoke_delegation_by_provider() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("account", 1);
-		let (delegator_msa_id, _) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -341,17 +431,18 @@ mod benchmarks {
 		let schemas: Vec<SchemaId> = (0..s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 
-		let (provider_msa_id, _) =
-			Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
-		assert_ok!(Msa::<T>::create_provider(
-			RawOrigin::Signed(provider_caller.clone()).into(),
-			Vec::from("Foo")
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
+			entry
 		));
 
 		let (payload, signature, delegator_key) =
 			create_payload_and_signature::<T>(schemas, provider_msa_id);
-		let (delegator_msa_id, _) =
-			Msa::<T>::create_account(delegator_key.clone(), EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_key.clone()).unwrap();
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_caller), delegator_key, signature, payload);
@@ -368,12 +459,11 @@ mod benchmarks {
 	#[benchmark]
 	fn revoke_delegation_by_delegator() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("account", 0);
-		let (provider_msa_id, _) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("account", 1);
 		let (delegator_msa_id, delegator_public_key) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -403,42 +493,92 @@ mod benchmarks {
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_public_key), provider_name);
 
-		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
+		assert!(ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).is_some());
 		Ok(())
 	}
 
 	#[benchmark]
-	fn create_provider_via_governance() -> Result<(), BenchmarkError> {
+	fn create_provider_via_governance_v2(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
+		let lang_size = T::MaxLanguageCodeSize::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+		let mut localized_names = BoundedBTreeMap::new();
+		let mut localized_cids = BoundedBTreeMap::new();
+		for i in 0..n {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
+			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
+			localized_cids.try_insert(lang, logo).unwrap();
+		}
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(provider_name).unwrap_or_default(),
+			localized_names,
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids,
+		};
 		#[extrinsic_call]
-		_(RawOrigin::Root, provider_public_key, provider_name);
+		_(RawOrigin::Root, provider_public_key, entry);
 
 		assert!(Msa::<T>::is_registered_provider(provider_msa_id));
 		Ok(())
 	}
 
 	#[benchmark]
-	fn propose_to_be_provider() -> Result<(), BenchmarkError> {
+	fn propose_to_be_provider_v2() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
+		let lang_size = T::MaxLanguageCodeSize::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+		let mut localized_names = BoundedBTreeMap::new();
+		let mut localized_cids = BoundedBTreeMap::new();
+		let (m, n) = (T::MaxLocaleCount::get(), T::MaxLocaleCount::get());
+		for i in 0..n {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
+			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
+			localized_cids.try_insert(lang, logo).unwrap();
+		}
 		let account = create_account::<T>("account", 0);
-		let (_, provider_public_key) = Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
+		let (_, provider_public_key) = Msa::<T>::create_account(account).unwrap();
 
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(provider_name).unwrap_or_default(),
+			localized_names,
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids,
+		};
 		#[extrinsic_call]
-		_(RawOrigin::Signed(provider_public_key), provider_name);
+		_(RawOrigin::Signed(provider_public_key), entry);
 
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
 		Ok(())
@@ -526,9 +666,14 @@ mod benchmarks {
 	fn remove_recovery_provider() -> Result<(), BenchmarkError> {
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, _provider_public_key) =
-			Msa::<T>::create_account(account.clone(), EMPTY_FUNCTION).unwrap();
-
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("Foo")));
+			Msa::<T>::create_account(account.clone()).unwrap();
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::truncate_from(Vec::from("Foo")),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::new(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		assert_ok!(Msa::<T>::upsert_provider_for(provider_msa_id, entry, false));
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, ProviderId(provider_msa_id));
@@ -542,11 +687,16 @@ mod benchmarks {
 	fn approve_recovery_provider() -> Result<(), BenchmarkError> {
 		let account = create_account::<T>("account", 0);
 		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(account.clone(), EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(account.clone()).unwrap();
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::truncate_from(Vec::from("Foo")),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::new(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		assert_ok!(Msa::<T>::upsert_provider_for(provider_msa_id, entry, false));
 
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("Foo")));
-
-		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
+		assert!(ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).is_some());
 
 		#[extrinsic_call]
 		_(RawOrigin::Root, provider_public_key);
@@ -560,11 +710,10 @@ mod benchmarks {
 	fn check_free_extrinsic_use_revoke_delegation_by_provider() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("provider", 0);
 		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("delegator", 1);
-		let (delegator_msa_id, _) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -585,12 +734,11 @@ mod benchmarks {
 	#[benchmark]
 	fn check_free_extrinsic_use_revoke_delegation_by_delegator() -> Result<(), BenchmarkError> {
 		let provider_account = create_account::<T>("provider", 0);
-		let (provider_msa_id, _) =
-			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, _) = Msa::<T>::create_account(provider_account).unwrap();
 
 		let delegator_account = create_account::<T>("delegator", 1);
 		let (delegator_msa_id, delegator_public_key) =
-			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+			Msa::<T>::create_account(delegator_account).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(
 			ProviderId(provider_msa_id),
@@ -613,7 +761,7 @@ mod benchmarks {
 		let (original_key, _original_key_pair, msa_id) = create_msa_account_and_keys::<T>();
 		let new_keys = SignerId::generate_pair(None);
 		let new_key: T::AccountId = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
-		assert_ok!(Msa::<T>::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::<T>::add_key(msa_id, &new_key));
 
 		#[block]
 		{
@@ -696,6 +844,330 @@ mod benchmarks {
 		// Verify the recovery was successful
 		assert!(PublicKeyToMsaId::<T>::get(&new_control_key).is_some());
 		assert!(MsaIdToRecoveryCommitment::<T>::get(msa_id).is_none());
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_add_application(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let application_name = (1..T::MaxProviderNameSize::get() as u8).collect::<Vec<_>>();
+
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
+
+		let entry = ProviderRegistryEntry::default();
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
+			entry
+		));
+		let application_payload = generate_provider_registry_entry::<T>(
+			n as usize,
+			m as usize,
+			application_name.clone(),
+			1001111u64,
+			false,
+		);
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(provider_public_key), application_payload);
+
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_application_via_governance(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let s = T::MaxProviderNameSize::get();
+		let lang_size = T::MaxLanguageCodeSize::get();
+
+		let application_name = (1..s as u8).collect::<Vec<_>>();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
+
+		let mut localized_names = BoundedBTreeMap::new();
+		let mut localized_cids = BoundedBTreeMap::new();
+
+		for i in 0..n {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let name = BoundedVec::try_from(application_name.clone()).unwrap_or_default();
+			localized_names.try_insert(lang.clone(), name).unwrap();
+		}
+		for i in 0..m {
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang = BoundedVec::try_from(lang_code).unwrap();
+			let logo = BoundedVec::try_from(cid.clone()).unwrap();
+			localized_cids.try_insert(lang, logo).unwrap();
+		}
+
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (provider_id, provider_public_key) =
+			Msa::<T>::create_account(provider_caller.clone()).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
+			entry
+		));
+		let application_payload = ApplicationContext {
+			default_name: BoundedVec::try_from(application_name).unwrap_or_default(),
+			localized_names,
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid).unwrap(),
+			localized_logo_250_100_png_cids: localized_cids,
+		};
+
+		#[extrinsic_call]
+		_(RawOrigin::Root, provider_public_key, application_payload);
+
+		assert_eq!(NextApplicationIndex::<T>::get(ProviderId(provider_id)), 1);
+		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn upload_logo() -> Result<(), BenchmarkError> {
+		let max_logo_size = T::MaxLogoSize::get();
+		let max_logo_bytes = vec![0u8; max_logo_size as usize];
+		let logo_cid = compute_cid(&max_logo_bytes);
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
+		let entry = ProviderRegistryEntry::default();
+
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
+			entry
+		));
+
+		let input_bounded_cid = BoundedVec::try_from(logo_cid).unwrap();
+		let input_bounded_logo = BoundedVec::try_from(max_logo_bytes).unwrap();
+		ApprovedLogos::<T>::insert(&input_bounded_cid, BoundedVec::new());
+
+		#[extrinsic_call]
+		_(
+			RawOrigin::Signed(provider_public_key),
+			input_bounded_cid.clone(),
+			input_bounded_logo.clone(),
+		);
+
+		assert!(ApprovedLogos::<T>::get(input_bounded_cid.clone()).is_some());
+		let stored_logo_bytes = ApprovedLogos::<T>::get(&input_bounded_cid).unwrap();
+		assert_eq!(stored_logo_bytes, input_bounded_logo);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_update_provider(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let provider_name = (1..T::MaxProviderNameSize::get() as u8).collect::<Vec<_>>();
+
+		let account = create_account::<T>("account", 0);
+		let (_, provider_public_key) = Msa::<T>::create_account(account).unwrap();
+
+		let entry = generate_provider_registry_entry::<T>(
+			n as usize,
+			m as usize,
+			provider_name.clone(),
+			1001111u64,
+			false,
+		);
+
+		// Must be an already registered provider to propose update
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_public_key.clone(),
+			ProviderRegistryEntry::default()
+		));
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(provider_public_key), entry);
+
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn update_application_via_governance(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let application_name = (1..T::MaxProviderNameSize::get() as u8).collect::<Vec<_>>();
+
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (provider_id, provider_public_key) =
+			Msa::<T>::create_account(provider_caller.clone()).unwrap();
+
+		let provider_entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Test Provider".to_vec()).unwrap_or_default(),
+			..Default::default()
+		};
+
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
+			provider_entry
+		));
+
+		// Create initial application with maximum number of localized logos
+		let initial_payload = generate_provider_registry_entry::<T>(
+			T::MaxLocaleCount::get() as usize,
+			T::MaxLocaleCount::get() as usize,
+			b"init".to_vec(),
+			10101111u64,
+			true,
+		);
+
+		// Create an initial application to update with maximum logos for worst-case removal
+		assert_ok!(Msa::<T>::create_application_via_governance(
+			RawOrigin::Root.into(),
+			provider_public_key.clone(),
+			initial_payload.clone()
+		));
+
+		let stored_application =
+			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).unwrap();
+		assert_eq!(
+			stored_application.default_logo_250_100_png_cid,
+			initial_payload.default_logo_250_100_png_cid
+		);
+		assert_eq!(stored_application.localized_names.len() as u32, T::MaxLocaleCount::get());
+		assert_eq!(
+			stored_application.localized_logo_250_100_png_cids.len() as u32,
+			T::MaxLocaleCount::get()
+		);
+
+		// Create new entry for update (could have different number of logos)
+		let application_payload = generate_provider_registry_entry::<T>(
+			n as usize,
+			m as usize,
+			application_name.clone(),
+			1001111u64,
+			true,
+		);
+
+		#[extrinsic_call]
+		_(RawOrigin::Root, provider_public_key, 0u16, application_payload.clone());
+
+		// Verify the update was successful
+		assert!(ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0).is_some());
+		assert_eq!(
+			ProviderToApplicationRegistry::<T>::get(ProviderId(provider_id), 0)
+				.unwrap()
+				.localized_names,
+			application_payload.localized_names
+		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_update_application(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let application_name = (1..T::MaxProviderNameSize::get() as u8).collect::<Vec<_>>();
+
+		let provider_caller: T::AccountId = whitelisted_caller();
+		let (_, provider_public_key) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_caller.clone(),
+			ProviderRegistryEntry::default()
+		));
+
+		// create an initial application to update
+		let initial_payload = ApplicationContext::default();
+		assert_ok!(Msa::<T>::create_application_via_governance(
+			RawOrigin::Root.into(),
+			provider_public_key.clone(),
+			initial_payload
+		));
+
+		let application_payload = generate_provider_registry_entry::<T>(
+			n as usize,
+			m as usize,
+			application_name.clone(),
+			1001111u64,
+			false,
+		);
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(provider_public_key), 0u16, application_payload);
+
+		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn update_provider_via_governance(
+		n: Linear<0, { T::MaxLocaleCount::get() }>,
+		m: Linear<0, { T::MaxLocaleCount::get() }>,
+	) -> Result<(), BenchmarkError> {
+		let account = create_account::<T>("account_updated", 0);
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account).unwrap();
+
+		let provider_name = (1..T::MaxProviderNameSize::get() as u8).collect::<Vec<_>>();
+		let initial_provider_entry = generate_provider_registry_entry::<T>(
+			T::MaxLocaleCount::get() as usize,
+			T::MaxLocaleCount::get() as usize,
+			provider_name.clone(),
+			10101111u64,
+			true,
+		);
+
+		// Register provider with maximum logos to simulate worst-case removal scenario
+		assert_ok!(Msa::<T>::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_public_key.clone(),
+			initial_provider_entry.clone()
+		));
+
+		let stored_provider =
+			ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id)).unwrap();
+		assert_eq!(
+			stored_provider.default_logo_250_100_png_cid,
+			initial_provider_entry.default_logo_250_100_png_cid
+		);
+		assert_eq!(stored_provider.localized_names.len() as u32, T::MaxLocaleCount::get());
+		assert_eq!(
+			stored_provider.localized_logo_250_100_png_cids.len() as u32,
+			T::MaxLocaleCount::get()
+		);
+
+		// Create new entry for update (could have different number of logos)
+		let entry = generate_provider_registry_entry::<T>(
+			n as usize,
+			m as usize,
+			provider_name.clone(),
+			1001111u64,
+			true,
+		);
+
+		#[extrinsic_call]
+		_(RawOrigin::Root, provider_public_key, entry.clone());
+
+		// Verify the update was successful
+		assert!(Msa::<T>::is_registered_provider(provider_msa_id));
+		let provider_entry = ProviderToRegistryEntryV2::<T>::get(ProviderId(provider_msa_id))
+			.expect("Provider must exist");
+		assert_eq!(provider_entry.default_name, entry.default_name);
+		assert_eq!(provider_entry.localized_names, entry.localized_names);
+		assert_eq!(provider_entry.default_logo_250_100_png_cid, entry.default_logo_250_100_png_cid);
+		assert_eq!(
+			provider_entry.localized_logo_250_100_png_cids,
+			entry.localized_logo_250_100_png_cids
+		);
 
 		Ok(())
 	}
