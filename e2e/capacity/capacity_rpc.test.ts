@@ -102,7 +102,7 @@ describe('Capacity RPC', function () {
     const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
     const signedTx = await firstValueFrom(tx.signAsync(capacityProviderKeys));
     const signedHex = signedTx.toHex();
-    // it's important to submit a signed extrinsic to the rpc to get an accurate estimate due to the actual length of extrinisc and etc.
+    // it's important to submit a signed extrinsic to the rpc to get an accurate estimate due to the actual length of extrinsic and etc.
     const feeDetails: FeeDetails = await ExtrinsicHelper.apiPromise.rpc.frequencyTxPayment.computeCapacityFeeDetails(
       signedHex,
       null
