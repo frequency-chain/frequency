@@ -265,7 +265,7 @@ impl<T: Config> Pallet<T> {
 	/// Compute the capacity fee details for a transaction.
 	/// # Arguments
 	/// * `runtime_call` - The runtime call to be dispatched.
-	/// * `overhead_weight` - The overhead weight asociated with capacity transactions.
+	/// * `overhead_weight` - The overhead weight associated with capacity transactions.
 	/// * `len` - The length of the transaction.
 	///
 	/// # Returns
