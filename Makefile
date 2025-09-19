@@ -356,7 +356,7 @@ build-bridging-mainnet:
 	cargo build --features frequency,frequency-bridging
 
 build-bridging-westend:
-	cargo build --features frequency-westend,frequency-bridging --release
+	cargo build --features frequency-westend,frequency-bridging
 
 build-bridging-local:
 	cargo build --features frequency-local,frequency-bridging --release
