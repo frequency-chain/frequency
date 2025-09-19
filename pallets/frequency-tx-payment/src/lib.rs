@@ -265,14 +265,14 @@ impl<T: Config> Pallet<T> {
 	/// Compute the capacity fee details for a transaction.
 	/// # Arguments
 	/// * `runtime_call` - The runtime call to be dispatched.
-	/// * `weight` - The weight of the transaction.
+	/// * `overhead_weight` - The overhead weight asociated with capacity transactions.
 	/// * `len` - The length of the transaction.
 	///
 	/// # Returns
 	/// `FeeDetails` - The fee details for the transaction.
 	pub fn compute_capacity_fee_details(
 		runtime_call: &<T as Config>::RuntimeCall,
-		dispatch_weight: &Weight,
+		overhead_weight: &Weight,
 		len: u32,
 	) -> FeeDetails<BalanceOf<T>> {
 		let calls = T::CapacityCalls::get_inner_calls(runtime_call)
@@ -286,7 +286,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut fees = FeeDetails { inclusion_fee: None, tip: Zero::zero() };
 		if !calls_weight_sum.is_zero() {
-			if let Some(weight) = calls_weight_sum.checked_add(dispatch_weight) {
+			if let Some(weight) = calls_weight_sum.checked_add(overhead_weight) {
 				let weight_fee = Self::weight_to_fee(weight);
 				let len_fee = Self::length_to_fee(len);
 				let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
