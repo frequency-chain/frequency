@@ -6,6 +6,7 @@ use log::info;
 use polkadot_service::TransactionPoolOptions;
 use sc_cli::{SubstrateCli, TransactionPoolType};
 
+#[allow(clippy::result_large_err)]
 pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	let collator_options = cli.run.collator_options();

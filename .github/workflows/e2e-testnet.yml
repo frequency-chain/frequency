@@ -50,7 +50,7 @@ jobs:
             exit 1
           fi
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{github.event.inputs.branch}}
@@ -60,7 +60,7 @@ jobs:
           echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "RECOVERY_SDK_VERSION=$(echo ${{ env.RECOVERY_SDK_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{github.event.inputs.branch}}
@@ -105,7 +105,7 @@ jobs:
           echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "RECOVERY_SDK_VERSION=$(echo ${{ env.RECOVERY_SDK_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"

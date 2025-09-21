@@ -25,7 +25,7 @@ use std::{sync::Arc, task::Poll};
 
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
-#[allow(clippy::expect_used)]
+#[allow(clippy::expect_used, clippy::result_large_err)]
 pub fn start_frequency_dev_sealing_node(
 	config: Configuration,
 	sealing_mode: SealingMode,

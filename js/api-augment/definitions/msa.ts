@@ -46,6 +46,24 @@ export default {
       ],
       type: 'Option<KeyInfoResponse>',
     },
+    setKeysByMsaId: {
+      description: 'Set Keys for an MSA Id',
+      params: [
+        {
+          name: 'msa_id',
+          type: 'MessageSourceId',
+        },
+        {
+          name: 'public_keys',
+          type: 'Vec<AccountId>',
+        },
+        {
+          name: 'signature_hex',
+          type: 'String',
+        },
+      ],
+      type: 'Null',
+    },
     getAllGrantedDelegationsByMsaId: {
       description: 'Get the list of all delegated providers with schema permission grants',
       params: [

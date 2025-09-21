@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Create Release Branch?
@@ -81,7 +81,7 @@ jobs:
       contents: read
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{github.event.inputs.branch}}
 
@@ -114,7 +114,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -122,13 +122,13 @@ jobs:
         run: mkdir -p target/release
 
       - name: Download Benchmark Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: benchmark-binary
           path: target/release
 
       - name: Download WASM Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: wasm-artifacts
           path: target/release/wbuild
@@ -158,7 +158,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -181,7 +181,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -239,7 +239,7 @@ jobs:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set Env Vars
@@ -333,7 +333,7 @@ jobs:
     runs-on: ubicloud-standard-8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Install Rust Toolchain
@@ -398,7 +398,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
@@ -414,7 +414,7 @@ jobs:
               echo "::warning title=Invalid file permissions automatically fixed::$line"
           done
       - name: Upload Docs
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./target/doc
 
@@ -435,11 +435,11 @@ jobs:
           echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -450,14 +450,13 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-${{env.NETWORK}}-amd64-${{github.run_id}}
           path: .
       - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
@@ -483,11 +482,11 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -512,11 +511,11 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -541,11 +540,11 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -587,20 +586,19 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: .
       - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
@@ -640,7 +638,7 @@ jobs:
         run: |
           echo "OUTPUT_FILENAME=metadata-compare.txt" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -657,14 +655,13 @@ jobs:
           out-file-path: ${{env.REF_DOWNLOAD_DIR}}
       - name: Download Test Binary
         id: download-binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-binary-local-amd64-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
       - name: Rename and Move Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
           mkdir -p ${{env.BIN_DIR}}
@@ -787,7 +784,7 @@ jobs:
       contents: write
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -814,7 +811,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@e92187bd633e680ebfdd15961a7c30b2d097e7ad
+        uses: mikepenz/release-changelog-builder-action@c9dc8369bccbc41e0ac887f8fd674f5925d315f7
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -864,14 +861,14 @@ jobs:
         run: echo "version=$(rustc --version | cut -f 2 -d " ")" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: artifacts-*-${{github.run_id}}
           path: /tmp
           merge-multiple: true
       - name: Download api-augment artifacts
         id: download-js
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: js-api-augment-${{github.run_id}}
           path: /tmp/polkadot-api-types-json
@@ -985,7 +982,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
 
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -998,14 +995,14 @@ jobs:
       # Download binaries for each architecture
       - name: Download amd64 Binary
         id: download-amd64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
           path: ./binaries-arm64
@@ -1102,7 +1099,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
 
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -1115,14 +1112,14 @@ jobs:
       # Download binaries for each architecture
       - name: Download amd64 Binary
         id: download-amd64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
           path: ./binaries-arm64
@@ -1226,7 +1223,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1235,7 +1232,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1243,7 +1240,7 @@ jobs:
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -1272,7 +1269,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1281,7 +1278,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1289,7 +1286,7 @@ jobs:
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: js-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
@@ -1318,7 +1315,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1327,7 +1324,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1335,7 +1332,7 @@ jobs:
           cache-dependency-path: js/schemas/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: js-schemas-${{github.run_id}}
           path: js/schemas/dist
@@ -1364,7 +1361,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1373,7 +1370,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1381,7 +1378,7 @@ jobs:
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: js-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist

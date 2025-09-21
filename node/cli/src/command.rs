@@ -311,6 +311,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
+#[allow(clippy::result_large_err)]
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
@@ -458,6 +459,7 @@ pub fn run() -> Result<()> {
 }
 
 // This appears messy but due to layers of Rust complexity, it's necessary.
+#[allow(clippy::result_large_err)]
 pub fn run_chain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	#[allow(unused)]
 	let mut result: sc_service::Result<(), polkadot_cli::Error> = Ok(());

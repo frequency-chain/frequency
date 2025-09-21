@@ -19,6 +19,8 @@ frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 lazy_static = { workspace = true }
+multibase = { workspace = true }
+cid =  { workspace = true }
 
 scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }

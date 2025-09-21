@@ -31,5 +31,8 @@ export default {
     // Part of the auraApi that is missing the type.
     // Unsure why, but can safely be here.
     SpConsensusSlotsSlotDuration: 'u64',
+
+    // Frequency runtime call is needed by PolkadotXcm for bridging.
+    FrequencyRuntimeRuntimeCall: 'Call',
   },
 };
