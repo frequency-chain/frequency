@@ -7,7 +7,7 @@
 //! SKIP-WRITE: `false`, SKIP-READ: `false`, WARMUPS: `10`
 //! STATE-VERSION: `V1`, STATE-CACHE-SIZE: ``
 //! WEIGHT-PATH: ``
-//! METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
+//! METRIC: `Average`, WEIGHT-MUL: `1.3`, WEIGHT-ADD: `0`
 
 // Executed Command:
 //   ./frequency/target/release/frequency
