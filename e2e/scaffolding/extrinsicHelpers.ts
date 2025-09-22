@@ -3,11 +3,18 @@ import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
+import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkadot/types';
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
+import {
+  getBlockNumber,
+  getExistentialDeposit,
+  getFinalizedBlockNumber,
+  getNonce,
+  log,
+  MultiSignatureType,
+} from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
@@ -27,6 +34,7 @@ import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime
 import { hasRelayChain } from './env';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
+import { get } from 'http';
 
 export interface ReleaseSchedule {
   start: number;
@@ -105,6 +113,13 @@ export interface RecoveryCommitmentPayload {
   discriminant: 'RecoveryCommitmentPayload';
   recoveryCommitment: any;
   expiration?: any;
+}
+
+export interface ProviderRegistryEntry {
+  defaultName: string;
+  localizedNames?: Map<string, string>;
+  defaultLogo250100PngCid?: string;
+  localizedLogo250100PngCids?: Map<string, string>;
 }
 
 export function isRpcError<T = string>(e: any): e is RpcErrorInterface<T> {
@@ -241,12 +256,12 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   public async sudoSignAndSend(waitForInBlock = true) {
-    const nonce = await autoNonce.auto(this.keys);
+    const currentNonce = await getNonce(this.keys);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
       this.api.tx.sudo
         .sudo(this.extrinsic())
-        .signAndSend(this.keys, { nonce, era: 0 })
+        .signAndSend(this.keys, { nonce: currentNonce, era: 0 })
         .pipe(
           filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
@@ -591,11 +606,124 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static createProvider(keys: KeyringPair, providerName: string) {
+  public static createProviderViaGovernanceV2(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    appDetails: ProviderRegistryEntry
+  ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.createProvider(providerName),
+      () =>
+        ExtrinsicHelper.api.tx.msa.createProviderViaGovernanceV2(getUnifiedPublicKey(providerKeys), {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ProviderCreated
+    );
+  }
+
+  public static createApplicationViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.createApplicationViaGovernance(getUnifiedPublicKey(providerKeys), {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationCreated
+    );
+  }
+
+  public static createProvider(keys: KeyringPair, provider_name: string) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.createProvider(provider_name),
       keys,
       ExtrinsicHelper.api.events.msa.ProviderCreated
+    );
+  }
+
+  public static updateProviderViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    details: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.updateProviderViaGovernance(getUnifiedPublicKey(providerKeys), {
+          defaultName: details.defaultName,
+          localizedNames: details.localizedNames,
+          defaultLogo250100PngCid: details.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: details.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ProviderUpdated
+    );
+  }
+
+  public static proposeToUpdateProvider(providerKeys: KeyringPair, details: ProviderRegistryEntry) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.proposeToUpdateProvider({
+          defaultName: details.defaultName,
+          localizedNames: details.localizedNames,
+          defaultLogo250100PngCid: details.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: details.localizedLogo250100PngCids,
+        }),
+      providerKeys,
+      ExtrinsicHelper.api.events.council.Proposed
+    );
+  }
+
+  public static updateApplicationViaGovernance(
+    sudoKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    applicationIndex: AnyNumber,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.updateApplicationViaGovernance(getUnifiedPublicKey(providerKeys), applicationIndex, {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      sudoKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationContextUpdated
+    );
+  }
+
+  public static proposeToUpdateApplication(
+    providerKeys: KeyringPair,
+    applicationIndex: AnyNumber,
+    appDetails: ProviderRegistryEntry
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.msa.proposeToUpdateApplication(applicationIndex, {
+          defaultName: appDetails.defaultName,
+          localizedNames: appDetails.localizedNames,
+          defaultLogo250100PngCid: appDetails.defaultLogo250100PngCid,
+          localizedLogo250100PngCids: appDetails.localizedLogo250100PngCids,
+        }),
+      providerKeys,
+      ExtrinsicHelper.api.events.council.Proposed
+    );
+  }
+
+  public static uploadLogo(providerKeys: KeyringPair, logoCid: any, logoBytes: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.uploadLogo(logoCid, logoBytes),
+      providerKeys,
+      ExtrinsicHelper.api.events.msa.ApplicationContextUpdated
     );
   }
 

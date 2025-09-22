@@ -1,3 +1,4 @@
+use core::fmt::Debug;
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -11,6 +12,13 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 pub use crate::schema::SchemaId;
+
+/// ApplicationIndex type
+pub type ApplicationIndex = u16;
+
+/// ApplicationContext is type of ProviderRegistryEntry
+pub type ApplicationContext<NameSize, LangSize, CidSize, MaxLocaleCount> =
+	ProviderRegistryEntry<NameSize, LangSize, CidSize, MaxLocaleCount>;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
@@ -202,14 +210,72 @@ impl From<ProviderId> for MessageSourceId {
 
 /// This is the metadata associated with a provider. As of now it is just a
 /// name, but it will likely be expanded in the future
-#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-#[scale_info(skip_type_params(T))]
-pub struct ProviderRegistryEntry<T>
+/// Generic over size constraints to be used in common types.
+#[derive(
+	MaxEncodedLen, TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
+)]
+#[scale_info(skip_type_params(NameSize, LangSize, CidSize, MaxLocaleCount))]
+#[codec(mel_bound(
+	NameSize: Get<u32> + Debug + PartialEq + Eq,
+	LangSize: Get<u32> + Debug + PartialEq + Eq,
+	CidSize: Get<u32> + Debug + PartialEq + Eq,
+	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
+))]
+pub struct ProviderRegistryEntry<
+	NameSize: Get<u32> + Debug + PartialEq + Eq,
+	LangSize: Get<u32> + Debug + PartialEq + Eq,
+	CidSize: Get<u32> + Debug + PartialEq + Eq,
+	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
+> {
+	/// Default name (display name) of the provider or application.
+	pub default_name: BoundedVec<u8, NameSize>,
+
+	/// Localized names keyed by BCP 47 language code (e.g., "en-US").
+	pub localized_names:
+		BoundedBTreeMap<BoundedVec<u8, LangSize>, BoundedVec<u8, NameSize>, MaxLocaleCount>,
+
+	/// Default logo (PNG 250x100) content-addressed CID (e.g., IPFS hash).
+	pub default_logo_250_100_png_cid: BoundedVec<u8, CidSize>,
+
+	/// Localized logo CIDs keyed by BCP 47 language code.
+	pub localized_logo_250_100_png_cids:
+		BoundedBTreeMap<BoundedVec<u8, LangSize>, BoundedVec<u8, CidSize>, MaxLocaleCount>,
+}
+
+impl<NameSize, LangSize, CidSize, MaxLocaleCount> Default
+	for ProviderRegistryEntry<NameSize, LangSize, CidSize, MaxLocaleCount>
 where
-	T: Get<u32>,
+	NameSize: Get<u32> + Debug + PartialEq + Eq,
+	LangSize: Get<u32> + Debug + PartialEq + Eq,
+	CidSize: Get<u32> + Debug + PartialEq + Eq,
+	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
 {
-	/// The provider's name
-	pub provider_name: BoundedVec<u8, T>,
+	fn default() -> Self {
+		Self {
+			default_name: BoundedVec::default(),
+			localized_names: BoundedBTreeMap::default(),
+			default_logo_250_100_png_cid: BoundedVec::default(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
+		}
+	}
+}
+
+/// RPC Response for getting ProviderApplicationContext
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default)]
+pub struct ProviderApplicationContext {
+	/// The default name associated with this entry
+	pub default_name: Vec<u8>,
+	/// The provider associated with the `key`
+	pub provider_id: ProviderId,
+	/// The default Application/Provider logo
+	pub default_logo_250_100_png_bytes: Option<Vec<u8>>,
+	/// The optional application id
+	pub application_id: Option<ApplicationIndex>,
+	/// The optional localized name
+	pub localized_name: Option<Vec<u8>>,
+	/// The optional localized logo bytes
+	pub localized_logo_250_100_png_bytes: Option<Vec<u8>>,
 }
 
 /// The pointer value for the Signature Registry

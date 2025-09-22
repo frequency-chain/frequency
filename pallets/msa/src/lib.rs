@@ -32,6 +32,8 @@
 )]
 
 extern crate alloc;
+use cid::Cid;
+use core::fmt::Debug;
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
@@ -40,7 +42,7 @@ use frame_support::{
 			fungible::{Inspect as InspectFungible, Mutate},
 			Fortitude, Preservation,
 		},
-		IsSubType,
+		Get, IsSubType,
 	},
 };
 use lazy_static::lazy_static;
@@ -54,6 +56,7 @@ use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmar
 use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	capacity::TargetValidator,
+	cid::compute_cid_v1,
 	handles::HandleProvider,
 	msa::*,
 	node::{EIP712Encode, ProposalProvider},
@@ -61,10 +64,10 @@ use common_primitives::{
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use frame_system::pallet_prelude::*;
+pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_io::hashing::keccak_256;
-#[allow(deprecated)]
 #[allow(unused)]
 use sp_runtime::{
 	traits::{
@@ -73,17 +76,15 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
-
-pub use pallet::*;
 pub use types::{
-	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
-	RecoveryCommitmentPayload,
+	AddKeyData, AddProvider, ApplicationIndex, AuthorizedKeyData, PermittedDelegationSchemas,
+	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
-use crate::types::{PayloadTypeDiscriminator, RecoveryHash};
+use crate::types::{LogoCid, PayloadTypeDiscriminator, RecoveryHash};
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -95,6 +96,10 @@ mod tests;
 pub mod types;
 
 pub mod weights;
+
+/// Migrations
+#[allow(missing_docs)]
+pub mod migration;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -124,7 +129,7 @@ pub mod pallet {
 
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
-		type MaxProviderNameSize: Get<u32>;
+		type MaxProviderNameSize: Get<u32> + Clone + Debug + PartialEq + Eq;
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
@@ -156,9 +161,26 @@ pub mod pallet {
 
 		/// Currency type for managing MSA account balances
 		type Currency: Mutate<Self::AccountId> + InspectFungible<Self::AccountId>;
+
+		/// Maximum language code size for a locale
+		#[pallet::constant]
+		type MaxLanguageCodeSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Maximum logo size for a locale
+		#[pallet::constant]
+		type MaxLogoSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Maximum cid size for a locale
+		#[pallet::constant]
+		type MaxLogoCidSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Total number of locales supported
+		#[pallet::constant]
+		type MaxLocaleCount: Get<u32> + Clone + Debug + PartialEq + Eq;
 	}
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	/// Storage version for the MSA pallet.
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -196,11 +218,16 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
-	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
+	pub type ProviderToRegistryEntryV2<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		ProviderId,
-		ProviderRegistryEntry<T::MaxProviderNameSize>,
+		ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 		OptionQuery,
 	>;
 
@@ -264,6 +291,40 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MsaIdToRecoveryCommitment<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, RecoveryCommitment, OptionQuery>;
+
+	/// Storage type for ApprovedLogos
+	/// - key: Logo Cid
+	/// - value: Logo bytes
+	#[pallet::storage]
+	#[pallet::getter(fn approved_logos)]
+	pub type ApprovedLogos<T: Config> =
+		StorageMap<_, Twox64Concat, LogoCid<T>, BoundedVec<u8, T::MaxLogoSize>, OptionQuery>;
+
+	/// Monotonically increasing index of applications for a given provider.
+	/// Starts at 0 when provider first gets an application approved.
+	#[pallet::storage]
+	#[pallet::getter(fn next_application_index)]
+	pub(super) type NextApplicationIndex<T: Config> =
+		StorageMap<_, Twox64Concat, ProviderId, ApplicationIndex, ValueQuery>;
+
+	/// Mapping of (ProviderId, ApplicationIndex) → Application details.
+	/// This is where the actual application data is stored.
+	#[pallet::storage]
+	#[pallet::getter(fn provider_applications)]
+	pub(super) type ProviderToApplicationRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		ProviderId,
+		Twox64Concat,
+		ApplicationIndex,
+		ApplicationContext<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+		OptionQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -359,6 +420,25 @@ pub mod pallet {
 			msa_id: MessageSourceId,
 			/// The Recovery Commitment that was invalidated
 			recovery_commitment: RecoveryCommitment,
+		},
+		/// Application for provider created
+		ApplicationCreated {
+			/// The MSA id associated with the provider
+			provider_id: ProviderId,
+			/// The application id for the created application
+			application_id: ApplicationIndex,
+		},
+		/// Application updated for provider
+		ApplicationContextUpdated {
+			/// The MSA id associated with the provider
+			provider_id: ProviderId,
+			/// The application id for the updated application
+			application_id: Option<ApplicationIndex>,
+		},
+		/// Provider registry is updated
+		ProviderUpdated {
+			/// The MSA id associated with the provider
+			provider_id: ProviderId,
 		},
 	}
 
@@ -465,6 +545,27 @@ pub mod pallet {
 
 		/// No recovery commitment exists for the given MSA
 		NoRecoveryCommitment,
+
+		/// Invalid cid provided for the provider
+		InvalidCid,
+
+		/// Unsupported CID version
+		UnsupportedCidVersion,
+
+		/// Invalid Language Code provided for the provider
+		InvalidBCP47LanguageCode,
+
+		/// Duplicate application registry entry
+		DuplicateApplicationRegistryEntry,
+
+		/// Logo cid not approved
+		LogoCidNotApproved,
+
+		/// Invalid logo bytes that do not match the approved logo
+		InvalidLogoBytes,
+
+		/// Application not found for given application_id
+		ApplicationNotFound,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -479,8 +580,9 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_block_number: BlockNumberFor<T>) -> Weight {
 			<OffchainIndexEventCount<T>>::set(0u16);
+			let migration_weight = crate::migration::v2::on_initialize_migration::<T>();
 			// allocates 1 read and 1 write for any access of `MSAEventCount` in every block
-			T::DbWeight::get().reads_writes(1u64, 1u64)
+			T::DbWeight::get().reads_writes(1u64, 1u64).saturating_add(migration_weight)
 		}
 
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
@@ -593,13 +695,17 @@ pub mod pallet {
 		/// * [`Error::NoKeyExists`] - origin does not have an MSA
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
-		///
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::create_provider_for(provider_msa_id, provider_name)?;
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
+			Self::ensure_correct_cids(&entry)?;
+			Self::upsert_provider_for(provider_msa_id, entry, false)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -892,8 +998,13 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// - [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::propose_to_be_provider())]
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider_v2())]
+		#[allow(deprecated)]
+		#[deprecated(
+			note = "please use `propose_to_be_provider_v2`, which supports additional provider metadata"
+		)]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
@@ -901,19 +1012,9 @@ pub mod pallet {
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
 				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
-			let proposer = ensure_signed(origin)?;
-			Self::ensure_valid_msa_key(&proposer)?;
+			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
 
-			let proposal: Box<T::Proposal> = Box::new(
-				(Call::<T>::create_provider_via_governance {
-					provider_key: proposer.clone(),
-					provider_name: bounded_name.into(),
-				})
-				.into(),
-			);
-			let threshold = 1;
-			T::ProposalProvider::propose(proposer, threshold, proposal)?;
-			Ok(())
+			Self::propose_to_be_provider_v2(origin, entry)
 		}
 
 		/// Create a provider by means of governance approval
@@ -926,19 +1027,22 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::create_provider_via_governance())]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2(0u32, 0u32))]
+		#[allow(deprecated)]
+		#[deprecated(
+			note = "please use `create_provider_via_governance_v2`, which supports additional provider metadata"
+		)]
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
-			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
-			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::create_provider_for(provider_msa_id, provider_name)?;
-			Self::deposit_event(Event::ProviderCreated {
-				provider_id: ProviderId(provider_msa_id),
-			});
-			Ok(())
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
+			let entry = ProviderRegistryEntry { default_name: bounded_name, ..Default::default() };
+
+			Self::create_provider_via_governance_v2(origin, provider_key, entry)
 		}
 
 		/// A generic endpoint to replay any offchain related event to fix any potential issues
@@ -1209,6 +1313,409 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Propose to be a provider.  Creates a proposal for council approval to create a provider from a MSA
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		#[pallet::call_index(19)]
+		#[pallet::weight(T::WeightInfo::propose_to_be_provider_v2())]
+		pub fn propose_to_be_provider_v2(
+			origin: OriginFor<T>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			Self::ensure_valid_msa_key(&proposer)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_provider_via_governance_v2 {
+					provider_key: proposer.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create a provider by means of governance approval
+		///
+		/// # Events
+		/// * [`Event::ProviderCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(20)]
+		#[pallet::weight(T::WeightInfo::create_provider_via_governance_v2(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		pub fn create_provider_via_governance_v2(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
+			Self::upsert_provider_for(provider_msa_id, payload, false)?;
+			Self::deposit_event(Event::ProviderCreated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Ok(())
+		}
+
+		/// Propose to add application enable provider to add multiple applications on frequency.
+		/// Provider initiates a governance proposal to add the application.
+		///
+		/// # Errors
+		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(21)]
+		#[pallet::weight(T::WeightInfo::propose_to_add_application(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		pub fn propose_to_add_application(
+			origin: OriginFor<T>,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_application_via_governance {
+					provider_key: proposer.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create application via governance approval
+		///
+		/// # Events
+		/// * [`Event::ApplicationCreated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::DuplicateApplicationRegistryEntry`] - an ApplicationRegistryEntry associated with the given MSA id already exists.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(22)]
+		#[pallet::weight(T::WeightInfo::create_application_via_governance(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		pub fn create_application_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			Self::ensure_correct_cids(&payload)?;
+			let application_id =
+				Self::create_application_for(ProviderId(provider_msa_id), payload)?;
+			Self::deposit_event(Event::ApplicationCreated {
+				provider_id: ProviderId(provider_msa_id),
+				application_id,
+			});
+			Ok(())
+		}
+
+		/// Upload logo bytes for a approved image in `ApprovedLogos`
+		///
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ProviderNotRegistered`] - If the provider is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid and not in approved logos.
+		/// * [`Error::LogoCidNotApproved`] - If the logo CID is not in the approved logos list.
+		///
+		#[pallet::call_index(23)]
+		#[pallet::weight(T::WeightInfo::upload_logo())]
+		pub fn upload_logo(
+			origin: OriginFor<T>,
+			logo_cid: BoundedVec<u8, T::MaxLogoCidSize>,
+			logo_bytes: BoundedVec<u8, T::MaxLogoSize>,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			ensure!(ApprovedLogos::<T>::contains_key(&logo_cid), Error::<T>::LogoCidNotApproved);
+
+			let input_cid_binary = Self::validate_cid(&logo_cid)?;
+			let computed_cid_binary =
+				compute_cid_v1(logo_bytes.as_slice()).ok_or(Error::<T>::InvalidLogoBytes)?;
+			ensure!(input_cid_binary == computed_cid_binary, Error::<T>::InvalidLogoBytes);
+			ApprovedLogos::<T>::insert(&logo_cid, logo_bytes);
+
+			Self::deposit_event(Event::ApplicationContextUpdated {
+				provider_id: ProviderId(provider_msa_id),
+				application_id: None,
+			});
+			Ok(())
+		}
+
+		/// Update a provider by means of governance approval
+		///
+		/// # Events
+		/// * [`Event::ProviderUpdated`]
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - account does not have an MSA
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(24)]
+		#[pallet::weight(T::WeightInfo::update_provider_via_governance(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		#[allow(clippy::useless_conversion)]
+		pub fn update_provider_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResultWithPostInfo {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
+			let base_weight = T::WeightInfo::update_provider_via_governance(
+				payload.localized_names.len() as u32,
+				payload.localized_logo_250_100_png_cids.len() as u32,
+			);
+			let total_logos_removed = Self::upsert_provider_for(provider_msa_id, payload, true)?;
+			Self::deposit_event(Event::ProviderUpdated {
+				provider_id: ProviderId(provider_msa_id),
+			});
+			Self::refund_logo_removal_weight_by_count(total_logos_removed, base_weight)
+		}
+
+		/// Propose to update provider registry via governance
+		///
+		/// # Arguments
+		/// * `origin` - The origin of the call
+		/// * `provider_key` - The key of the provider to update
+		/// * `payload` - The new provider data
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ProviderNotRegistered`] - If the provider is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(25)]
+		#[pallet::weight(T::WeightInfo::propose_to_update_provider(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		pub fn propose_to_update_provider(
+			origin: OriginFor<T>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::update_provider_via_governance {
+					provider_key: proposer.clone(),
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Update application via governance for given existing `ApplicationIndex`
+		///
+		/// # Arguments
+		/// * `origin` - The origin of the call
+		/// * `provider_key` - The key of the provider to update
+		/// * `application_index` - The index of the application to update
+		/// * `payload` - The new application data
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		#[pallet::call_index(26)]
+		#[pallet::weight(T::WeightInfo::update_application_via_governance(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		#[allow(clippy::useless_conversion)]
+		pub fn update_application_via_governance(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+			application_index: ApplicationIndex,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResultWithPostInfo {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			Self::ensure_correct_cids(&payload)?;
+			let base_weight = T::WeightInfo::update_application_via_governance(
+				payload.localized_names.len() as u32,
+				payload.localized_logo_250_100_png_cids.len() as u32,
+			);
+			let total_logos_removed = Self::upsert_application_for(
+				ProviderId(provider_msa_id),
+				application_index,
+				payload,
+			)?;
+			Self::deposit_event(Event::ApplicationContextUpdated {
+				provider_id: ProviderId(provider_msa_id),
+				application_id: Some(application_index),
+			});
+			Self::refund_logo_removal_weight_by_count(total_logos_removed, base_weight)
+		}
+
+		/// Propose to update application via governance for a given `ApplicationIndex`
+		///
+		/// # Arguments
+		/// * `origin` - The origin of the call
+		/// * `application_index` - The index of the application to update
+		/// * `payload` - The new application data
+		///
+		/// # Errors
+		/// * [`Error::NoKeyExists`] - If there is not MSA for `origin`.
+		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
+		/// * [`Error::InvalidCid`] - If the provided CID is invalid.
+		/// * [`Error::InvalidBCP47LanguageCode`] - If the provided BCP 47 language code is invalid.
+		/// * [`Error::ApplicationNotFound`] - If the application is not registered.
+		#[pallet::call_index(27)]
+		#[pallet::weight(T::WeightInfo::propose_to_update_application(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		pub fn propose_to_update_application(
+			origin: OriginFor<T>,
+			application_index: ApplicationIndex,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&proposer)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			ensure!(
+				ProviderToApplicationRegistry::<T>::contains_key(
+					ProviderId(provider_msa_id),
+					application_index
+				),
+				Error::<T>::ApplicationNotFound
+			);
+			Self::ensure_correct_cids(&payload)?;
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::update_application_via_governance {
+					provider_key: proposer.clone(),
+					application_index,
+					payload,
+				})
+				.into(),
+			);
+			let threshold = 1;
+			T::ProposalProvider::propose(proposer, threshold, proposal)?;
+			Ok(())
+		}
+
+		/// Create application allows creating an application registry without governance
+		/// This call is blocked in release mode
+		#[pallet::call_index(28)]
+		#[pallet::weight(T::WeightInfo::create_application_via_governance(
+			payload.localized_names.len() as u32,
+			payload.localized_logo_250_100_png_cids.len() as u32,
+		))]
+		pub fn create_application(
+			origin: OriginFor<T>,
+			payload: ApplicationContext<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
+			let provider_account = ensure_signed(origin)?;
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_account)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+			Self::ensure_correct_cids(&payload)?;
+			let application_id =
+				Self::create_application_for(ProviderId(provider_msa_id), payload)?;
+			Self::deposit_event(Event::ApplicationCreated {
+				provider_id: ProviderId(provider_msa_id),
+				application_id,
+			});
+			Ok(())
+		}
 	}
 }
 
@@ -1363,13 +1870,24 @@ impl<T: Config> Pallet<T> {
 	/// Create Register Provider
 	pub fn create_registered_provider(
 		provider_id: ProviderId,
-		name: BoundedVec<u8, T::MaxProviderNameSize>,
+		payload: ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 	) -> DispatchResult {
-		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
-			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
-			*maybe_metadata = Some(ProviderRegistryEntry { provider_name: name });
-			Ok(())
-		})
+		ProviderToRegistryEntryV2::<T>::try_mutate(
+			provider_id,
+			|maybe_metadata| -> DispatchResult {
+				ensure!(
+					maybe_metadata.take().is_none(),
+					Error::<T>::DuplicateProviderRegistryEntry
+				);
+				*maybe_metadata = Some(payload);
+				Ok(())
+			},
+		)
 	}
 
 	/// Adds a list of schema permissions to a delegation relationship.
@@ -1457,9 +1975,9 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntry`] contains the MSA id
+	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntryV2`] contains the MSA id
 	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
-		ProviderToRegistryEntry::<T>::contains_key(ProviderId(msa_id))
+		ProviderToRegistryEntryV2::<T>::contains_key(ProviderId(msa_id))
 	}
 
 	/// Checks that a provider and delegator keys are valid
@@ -1602,28 +2120,100 @@ impl<T: Config> Pallet<T> {
 	/// only piece of metadata we are recording is provider name.
 	///
 	/// # Errors
-	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///
-	pub fn create_provider_for(
+	pub fn upsert_provider_for(
 		provider_msa_id: MessageSourceId,
-		provider_name: Vec<u8>,
-	) -> DispatchResult {
-		let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-			provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
-		ProviderToRegistryEntry::<T>::try_mutate(
+		payload: ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+		is_update: bool,
+	) -> Result<u32, DispatchError> {
+		let mut total_logos_removed = 0;
+		ProviderToRegistryEntryV2::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
-				ensure!(
-					maybe_metadata.take().is_none(),
-					Error::<T>::DuplicateProviderRegistryEntry
-				);
-				*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+				if !is_update {
+					ensure!(
+						maybe_metadata.take().is_none(),
+						Error::<T>::DuplicateProviderRegistryEntry
+					);
+				} else {
+					total_logos_removed = Self::remove_logo_storage(maybe_metadata.as_ref())?;
+				}
+				Self::update_logo_storage(&payload)?;
+
+				*maybe_metadata = Some(payload);
 				Ok(())
 			},
-		)?;
-		Ok(())
+		)
+		.map(|_| total_logos_removed)
+	}
+
+	/// Adds an association between Provider MSA id and ProviderToApplicationRegistryEntry
+	///
+	/// # Errors
+	/// * [`Error::DuplicateApplicationRegistryEntry`] - a ProviderToApplicationRegistryEntry associated with the given Provider MSA id already exists.
+	pub fn create_application_for(
+		provider_msa_id: ProviderId,
+		payload: ApplicationContext<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> Result<ApplicationIndex, DispatchError> {
+		Self::update_logo_storage(&payload)?;
+		let next_application_index = NextApplicationIndex::<T>::get(provider_msa_id);
+		ensure!(
+			!ProviderToApplicationRegistry::<T>::contains_key(
+				provider_msa_id,
+				next_application_index
+			),
+			Error::<T>::DuplicateApplicationRegistryEntry
+		);
+		ProviderToApplicationRegistry::<T>::insert(
+			provider_msa_id,
+			next_application_index,
+			payload,
+		);
+		NextApplicationIndex::<T>::insert(provider_msa_id, next_application_index + 1);
+		Ok(next_application_index)
+	}
+
+	/// Updates an existing application from `ProviderToApplicationRegistry`
+	///
+	/// # Errors
+	/// * [`Error::ApplicationNotFound`]
+	pub fn upsert_application_for(
+		provider_msa_id: ProviderId,
+		application_index: ApplicationIndex,
+		payload: ApplicationContext<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> Result<u32, DispatchError> {
+		ensure!(
+			ProviderToApplicationRegistry::<T>::contains_key(provider_msa_id, application_index),
+			Error::<T>::ApplicationNotFound
+		);
+		let mut total_logos_removed = 0;
+		ProviderToApplicationRegistry::<T>::try_mutate(
+			provider_msa_id,
+			application_index,
+			|maybe_metadata| -> DispatchResult {
+				total_logos_removed = Self::remove_logo_storage(maybe_metadata.as_ref())?;
+				Self::update_logo_storage(&payload)?;
+				*maybe_metadata = Some(payload);
+				Ok(())
+			},
+		)
+		.map(|_| total_logos_removed)
 	}
 
 	/// Mutates the delegation relationship storage item only when the supplied function returns an 'Ok()' result.
@@ -1966,6 +2556,201 @@ impl<T: Config> Pallet<T> {
 		let mortality_size = T::MortalityWindowSize::get();
 		current_block + BlockNumberFor::<T>::from(mortality_size)
 	}
+
+	/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)
+	///
+	/// # Errors
+	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+	/// * [`Error::InvalidCid`] - Unable to parse provided CID
+	///
+	fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
+		// Decode SCALE encoded CID into string slice
+		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
+		// starts_with handles Unicode multibyte characters safely
+		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);
+
+		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
+		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
+
+		Ok(cid_b)
+	}
+
+	/// Insert default logo and localized logos into storage `ApprovedLogos`
+	fn update_logo_storage(
+		payload: &ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		// store default logo CID if any
+		if !payload.default_logo_250_100_png_cid.is_empty() {
+			ApprovedLogos::<T>::insert(
+				payload.default_logo_250_100_png_cid.clone(),
+				BoundedVec::new(),
+			);
+		}
+
+		// store localized logos CIDs if any
+		for (_, localized_cid) in &payload.localized_logo_250_100_png_cids {
+			if !localized_cid.is_empty() {
+				ApprovedLogos::<T>::insert(localized_cid, BoundedVec::new());
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Remove default logo and localized logos from storage `ApprovedLogos`
+	fn remove_logo_storage(
+		existing_payload: Option<
+			&ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		>,
+	) -> Result<u32, DispatchError> {
+		let mut total_logo_removed = 0;
+		if let Some(payload) = existing_payload {
+			// remove default logo CID if any
+			if !payload.default_logo_250_100_png_cid.is_empty() {
+				total_logo_removed += 1;
+				ApprovedLogos::<T>::remove(&payload.default_logo_250_100_png_cid);
+			}
+			// remove localized logos CIDs if any
+			for (_, localized_cid) in &payload.localized_logo_250_100_png_cids {
+				if !localized_cid.is_empty() {
+					total_logo_removed += 1;
+					ApprovedLogos::<T>::remove(localized_cid);
+				}
+			}
+		}
+		Ok(total_logo_removed)
+	}
+
+	/// Checks if cid for logo and localized logos is valid
+	fn ensure_correct_cids(
+		payload: &ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		// Validate default logo CID only if non-empty
+		if !payload.default_logo_250_100_png_cid.is_empty() {
+			Self::validate_cid(&payload.default_logo_250_100_png_cid)?;
+		}
+
+		// Validate each localized logo CID only if non-empty
+		for (lang_code, localized_cid) in &payload.localized_logo_250_100_png_cids {
+			// First validate the language code
+			let code_str = core::str::from_utf8(lang_code)
+				.map_err(|_| Error::<T>::InvalidBCP47LanguageCode)?;
+
+			if !Self::is_valid_bcp47(code_str) {
+				return Err(Error::<T>::InvalidBCP47LanguageCode.into());
+			}
+
+			// Then validate the CID if it's not empty
+			if !localized_cid.is_empty() {
+				Self::validate_cid(localized_cid)?;
+			}
+		}
+
+		// Validate each localized name
+		for (lang_code, _) in &payload.localized_names {
+			// First validate the language code
+			let code_str = core::str::from_utf8(lang_code)
+				.map_err(|_| Error::<T>::InvalidBCP47LanguageCode)?;
+			if !Self::is_valid_bcp47(code_str) {
+				return Err(Error::<T>::InvalidBCP47LanguageCode.into());
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Checks if the provided BCP-47 language code is valid.
+	fn is_valid_bcp47(code: &str) -> bool {
+		// Must not be empty
+		if code.is_empty() {
+			return false;
+		}
+		// No leading, trailing, or consecutive dashes
+		if code.starts_with('-') || code.ends_with('-') || code.contains("--") {
+			return false;
+		}
+		for part in code.split('-') {
+			let len = part.len();
+			if len < 2 || !part.chars().all(|c| c.is_ascii_alphanumeric()) {
+				return false;
+			}
+		}
+		true
+	}
+
+	/// Retrieves the provider or application context including logos and localized name if any
+	pub fn get_provider_application_context(
+		provider_id: ProviderId,
+		application_id: Option<ApplicationIndex>,
+		locale: Option<Vec<u8>>,
+	) -> Option<ProviderApplicationContext> {
+		let bounded_locale = locale.and_then(|loc| BoundedVec::try_from(loc).ok());
+		let provider_or_application_registry = match application_id {
+			Some(app_id) => ProviderToApplicationRegistry::<T>::get(provider_id, app_id)?,
+			None => ProviderToRegistryEntryV2::<T>::get(provider_id)?,
+		};
+		let default_name = provider_or_application_registry.default_name.to_vec();
+		let default_logo_cid = provider_or_application_registry.default_logo_250_100_png_cid;
+		// Default logo bytes
+		let default_logo_250_100_png_bytes: Option<Vec<u8>> =
+			ApprovedLogos::<T>::get(default_logo_cid).map(|bv| bv.to_vec());
+		let mut localized_name: Option<Vec<u8>> = None;
+		// Localized logo bytes if any
+		let localized_logo_250_100_png_bytes: Option<Vec<u8>> = bounded_locale.and_then(|locale| {
+			// Localized name if any
+			localized_name = provider_or_application_registry
+				.localized_names
+				.get(&locale)
+				.map(|bv| bv.to_vec());
+
+			provider_or_application_registry
+				.localized_logo_250_100_png_cids
+				.get(&locale)
+				.and_then(|cid| ApprovedLogos::<T>::get(cid).map(|bv| bv.to_vec()))
+		});
+
+		Some(ProviderApplicationContext {
+			default_name,
+			provider_id,
+			application_id,
+			default_logo_250_100_png_bytes,
+			localized_logo_250_100_png_bytes,
+			localized_name,
+		})
+	}
+
+	/// Refund weights for logos not removed from worst case scenario
+	fn refund_logo_removal_weight_by_count(
+		total_logos_removed: u32,
+		base_weight: Weight,
+	) -> DispatchResultWithPostInfo {
+		// Weight adjustment: refund weight for logos that were NOT removed
+		let max_logos_benchmark_assumed = T::MaxLocaleCount::get();
+		let removal_over_charged_by =
+			max_logos_benchmark_assumed.saturating_sub(total_logos_removed);
+		let weight_per_logo_removal = T::DbWeight::get().writes(1);
+		let weight_to_refund =
+			weight_per_logo_removal.saturating_mul(removal_over_charged_by as u64);
+		let actual_weight_used = base_weight.saturating_sub(weight_to_refund);
+		Ok(PostDispatchInfo { actual_weight: Some(actual_weight_used), pays_fee: Pays::Yes })
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -1992,7 +2777,13 @@ impl<T: Config> RegisterProviderBenchmarkHelper for Pallet<T> {
 	/// Create a registered provider for benchmarks
 	fn create(provider_id: MessageSourceId, name: Vec<u8>) -> DispatchResult {
 		let name = BoundedVec::<u8, T::MaxProviderNameSize>::try_from(name).expect("error");
-		Self::create_registered_provider(provider_id.into(), name)?;
+		let payload = ProviderRegistryEntry {
+			default_name: name,
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::new(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		Self::create_registered_provider(provider_id.into(), payload)?;
 
 		Ok(())
 	}

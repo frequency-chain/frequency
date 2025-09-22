@@ -20,6 +20,7 @@ import {
   createKeys,
   getEthereumKeyPairFromUnifiedAddress,
   generateAddKeyPayload,
+  generateValidProviderPayloadWithName,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
