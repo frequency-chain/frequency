@@ -7,9 +7,7 @@ use sp_weights::Weight;
 
 use pretty_assertions::assert_eq;
 
-use crate::{
-	tests::mock::*, Error, Event, ProviderToApplicationRegistry, ProviderToRegistryEntryV2,
-};
+use crate::{tests::mock::*, Error, Event, ProviderToApplicationRegistry, ProviderToRegistryEntry};
 
 #[test]
 fn update_provider_via_governance_happy_path() {
@@ -17,7 +15,7 @@ fn update_provider_via_governance_happy_path() {
 		let (provider_msa_id, key_pair) = create_provider_with_name("OriginalProvider");
 		let provider_account = key_pair;
 		let old_provider_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(old_provider_entry.default_name, b"OriginalProvider".to_vec());
 		assert_eq!(old_provider_entry.localized_names.len(), 1);
 		assert_eq!(old_provider_entry.default_logo_250_100_png_cid.is_empty(), false);
@@ -53,13 +51,13 @@ fn update_provider_via_governance_happy_path() {
 			println!("Actual weight consumed: {:?}", actual_weight);
 		}
 		let stored_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_entry.default_name, b"UpdatedProvider".to_vec());
 		System::assert_last_event(
 			Event::ProviderUpdated { provider_id: ProviderId(provider_msa_id) }.into(),
 		);
 		let updated_provider_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(updated_provider_entry.default_name, b"UpdatedProvider".to_vec());
 		assert_eq!(updated_provider_entry.localized_names.len(), 0);
 		assert_eq!(
@@ -81,13 +79,13 @@ fn update_provider_via_governance_happy_path() {
 			second_update_entry.clone()
 		));
 		let final_stored_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(final_stored_entry.default_name, b"SecondUpdate".to_vec());
 		System::assert_last_event(
 			Event::ProviderUpdated { provider_id: ProviderId(provider_msa_id) }.into(),
 		);
 		let final_provider_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(final_provider_entry.default_name, b"SecondUpdate".to_vec());
 		assert_eq!(final_provider_entry.localized_names.len(), 0);
 		assert_eq!(
@@ -123,7 +121,7 @@ fn update_provider_via_governance_fails_for_invalid_cid() {
 		);
 
 		// Verify the provider was not updated
-		let stored_entry = ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id));
+		let stored_entry = ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id));
 		assert!(stored_entry.is_some());
 		let entry = stored_entry.unwrap();
 		assert_eq!(entry.default_name, b"TestProvider".to_vec());
@@ -160,7 +158,7 @@ fn update_provider_via_governance_fails_for_invalid_lang_code() {
 		);
 
 		// Verify the provider was not updated
-		let stored_entry = ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id));
+		let stored_entry = ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id));
 		assert!(stored_entry.is_some());
 		let entry = stored_entry.unwrap();
 		assert_eq!(entry.default_name, b"TestProvider".to_vec());
@@ -254,7 +252,7 @@ fn propose_to_update_provider_happy_path() {
 
 		// Verify the provider was updated after proposal executed
 		let stored_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_entry.default_name, b"ProposedProvider".to_vec());
 	})
 }
@@ -694,7 +692,7 @@ fn update_provider_with_localized_names_and_logos() {
 
 		// Ensure provider entry updated
 		let stored_entry =
-			ProviderToRegistryEntryV2::<Test>::get(ProviderId(provider_msa_id)).unwrap();
+			ProviderToRegistryEntry::<Test>::get(ProviderId(provider_msa_id)).unwrap();
 		assert_eq!(stored_entry.default_name, b"UpdatedProvider".to_vec());
 	})
 }

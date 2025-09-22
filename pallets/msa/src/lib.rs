@@ -218,7 +218,7 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
-	pub type ProviderToRegistryEntryV2<T: Config> = StorageMap<
+	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		ProviderId,
@@ -1881,17 +1881,11 @@ impl<T: Config> Pallet<T> {
 			T::MaxLocaleCount,
 		>,
 	) -> DispatchResult {
-		ProviderToRegistryEntryV2::<T>::try_mutate(
-			provider_id,
-			|maybe_metadata| -> DispatchResult {
-				ensure!(
-					maybe_metadata.take().is_none(),
-					Error::<T>::DuplicateProviderRegistryEntry
-				);
-				*maybe_metadata = Some(payload);
-				Ok(())
-			},
-		)
+		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
+			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
+			*maybe_metadata = Some(payload);
+			Ok(())
+		})
 	}
 
 	/// Adds a list of schema permissions to a delegation relationship.
@@ -1979,9 +1973,9 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntryV2`] contains the MSA id
+	/// Returns if provider is registered by checking if the [`ProviderToRegistryEntry`] contains the MSA id
 	pub fn is_registered_provider(msa_id: MessageSourceId) -> bool {
-		ProviderToRegistryEntryV2::<T>::contains_key(ProviderId(msa_id))
+		ProviderToRegistryEntry::<T>::contains_key(ProviderId(msa_id))
 	}
 
 	/// Checks that a provider and delegator keys are valid
@@ -2137,7 +2131,7 @@ impl<T: Config> Pallet<T> {
 		is_update: bool,
 	) -> Result<u32, DispatchError> {
 		let mut total_logos_removed = 0;
-		ProviderToRegistryEntryV2::<T>::try_mutate(
+		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
 				if !is_update {
@@ -2708,7 +2702,7 @@ impl<T: Config> Pallet<T> {
 		let bounded_locale = locale.and_then(|loc| BoundedVec::try_from(loc).ok());
 		let provider_or_application_registry = match application_id {
 			Some(app_id) => ProviderToApplicationRegistry::<T>::get(provider_id, app_id)?,
-			None => ProviderToRegistryEntryV2::<T>::get(provider_id)?,
+			None => ProviderToRegistryEntry::<T>::get(provider_id)?,
 		};
 		let default_name = provider_or_application_registry.default_name.to_vec();
 		let default_logo_cid = provider_or_application_registry.default_logo_250_100_png_cid;

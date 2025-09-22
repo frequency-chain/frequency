@@ -15,7 +15,7 @@ use crate::{
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas},
 	AddKeyData, ArithmeticError, AuthorizedKeyData, Config, DelegatorAndProviderToDelegation,
-	Error, Event, ProviderToRegistryEntryV2, PublicKeyCountForMsaId, PublicKeyToMsaId,
+	Error, Event, ProviderToRegistryEntry, PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
 use common_primitives::signatures::AccountAddressMapper;
 
@@ -638,7 +638,7 @@ pub fn is_registered_provider_is_true() {
 	new_test_ext().execute_with(|| {
 		let provider = ProviderId(1);
 		let provider_meta = ProviderRegistryEntry::default();
-		ProviderToRegistryEntryV2::<Test>::insert(provider, provider_meta);
+		ProviderToRegistryEntry::<Test>::insert(provider, provider_meta);
 
 		assert!(Msa::is_registered_provider(provider.into()));
 	});

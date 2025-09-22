@@ -88,8 +88,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:1)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::CurrentMsaIdentifierMaximum` (r:1 w:1)
 	/// Proof: `Msa::CurrentMsaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:1)
@@ -172,8 +172,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:1)
 	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
 	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:0)
@@ -205,8 +205,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:1)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:1)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	fn create_provider() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `67`
@@ -218,8 +218,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:1)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:1)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:0 w:1)
 	/// Proof: `Msa::ApprovedLogos` (`max_values`: None, `max_size`: Some(131150), added: 133625, mode: `MaxEncodedLen`)
 	/// The range of component `n` is `[0, 10]`.
@@ -307,8 +307,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::RecoveryProviders` (r:1 w:1)
 	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
 	fn approve_recovery_provider() -> Weight {
@@ -356,8 +356,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Handles::MSAIdToDisplayName` (r:1 w:0)
 	/// Proof: `Handles::MSAIdToDisplayName` (`max_values`: None, `max_size`: Some(59), added: 2534, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:0)
@@ -413,8 +413,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Council::ProposalOf` (r:1 w:1)
 	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Council::Proposals` (r:1 w:1)
@@ -440,8 +440,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::NextApplicationIndex` (r:1 w:1)
 	/// Proof: `Msa::NextApplicationIndex` (`max_values`: None, `max_size`: Some(18), added: 2493, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ProviderToApplicationRegistry` (r:1 w:1)
@@ -465,8 +465,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:1 w:1)
 	/// Proof: `Msa::ApprovedLogos` (`max_values`: None, `max_size`: Some(131150), added: 133625, mode: `MaxEncodedLen`)
 	fn upload_logo() -> Weight {
@@ -480,8 +480,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Council::ProposalOf` (r:1 w:1)
 	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Council::Proposals` (r:1 w:1)
@@ -507,8 +507,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ProviderToApplicationRegistry` (r:1 w:1)
 	/// Proof: `Msa::ProviderToApplicationRegistry` (`max_values`: None, `max_size`: Some(3772), added: 6247, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:0 w:1)
@@ -530,8 +530,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ProviderToApplicationRegistry` (r:1 w:0)
 	/// Proof: `Msa::ProviderToApplicationRegistry` (`max_values`: None, `max_size`: Some(3772), added: 6247, mode: `MaxEncodedLen`)
 	/// Storage: `Council::ProposalOf` (r:1 w:1)
@@ -559,8 +559,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:1)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:1)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:0 w:1)
 	/// Proof: `Msa::ApprovedLogos` (`max_values`: None, `max_size`: Some(131150), added: 133625, mode: `MaxEncodedLen`)
 	/// The range of component `n` is `[0, 10]`.
@@ -603,8 +603,8 @@ impl WeightInfo for () {
 	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:1)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::CurrentMsaIdentifierMaximum` (r:1 w:1)
 	/// Proof: `Msa::CurrentMsaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(8), added: 503, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:1)
@@ -687,8 +687,8 @@ impl WeightInfo for () {
 	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:1)
 	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
 	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:0)
@@ -720,8 +720,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:1)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:1)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	fn create_provider() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `67`
@@ -733,8 +733,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:1)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:1)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:0 w:1)
 	/// Proof: `Msa::ApprovedLogos` (`max_values`: None, `max_size`: Some(131150), added: 133625, mode: `MaxEncodedLen`)
 	/// The range of component `n` is `[0, 10]`.
@@ -822,8 +822,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::RecoveryProviders` (r:1 w:1)
 	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
 	fn approve_recovery_provider() -> Weight {
@@ -871,8 +871,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Handles::MSAIdToDisplayName` (r:1 w:0)
 	/// Proof: `Handles::MSAIdToDisplayName` (`max_values`: None, `max_size`: Some(59), added: 2534, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:0)
@@ -928,8 +928,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Council::ProposalOf` (r:1 w:1)
 	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Council::Proposals` (r:1 w:1)
@@ -955,8 +955,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::NextApplicationIndex` (r:1 w:1)
 	/// Proof: `Msa::NextApplicationIndex` (`max_values`: None, `max_size`: Some(18), added: 2493, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ProviderToApplicationRegistry` (r:1 w:1)
@@ -980,8 +980,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:1 w:1)
 	/// Proof: `Msa::ApprovedLogos` (`max_values`: None, `max_size`: Some(131150), added: 133625, mode: `MaxEncodedLen`)
 	fn upload_logo() -> Weight {
@@ -995,8 +995,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Council::ProposalOf` (r:1 w:1)
 	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Council::Proposals` (r:1 w:1)
@@ -1022,8 +1022,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ProviderToApplicationRegistry` (r:1 w:1)
 	/// Proof: `Msa::ProviderToApplicationRegistry` (`max_values`: None, `max_size`: Some(3772), added: 6247, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:0 w:1)
@@ -1045,8 +1045,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:0)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ProviderToApplicationRegistry` (r:1 w:0)
 	/// Proof: `Msa::ProviderToApplicationRegistry` (`max_values`: None, `max_size`: Some(3772), added: 6247, mode: `MaxEncodedLen`)
 	/// Storage: `Council::ProposalOf` (r:1 w:1)
@@ -1074,8 +1074,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
 	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
-	/// Storage: `Msa::ProviderToRegistryEntryV2` (r:1 w:1)
-	/// Proof: `Msa::ProviderToRegistryEntryV2` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:1)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(3762), added: 6237, mode: `MaxEncodedLen`)
 	/// Storage: `Msa::ApprovedLogos` (r:0 w:1)
 	/// Proof: `Msa::ApprovedLogos` (`max_values`: None, `max_size`: Some(131150), added: 133625, mode: `MaxEncodedLen`)
 	/// The range of component `n` is `[0, 10]`.

@@ -1,7 +1,7 @@
 use crate::{
 	migration::{v1, v2::*},
 	tests::mock::*,
-	Config, Pallet, ProviderToRegistryEntryV2,
+	Config, Pallet, ProviderToRegistryEntry,
 };
 use common_primitives::msa::ProviderId;
 use frame_support::{pallet_prelude::*, BoundedVec};
@@ -49,7 +49,7 @@ fn migrate_provider_entries_batch_single_item() {
 		assert!(!weight.is_zero());
 
 		// Check new storage
-		let new_entry = ProviderToRegistryEntryV2::<Test>::get(provider_id).unwrap();
+		let new_entry = ProviderToRegistryEntry::<Test>::get(provider_id).unwrap();
 		assert_eq!(new_entry.default_name, old_entry.provider_name);
 		assert!(new_entry.default_logo_250_100_png_cid.is_empty());
 		assert!(new_entry.localized_names.is_empty());
@@ -86,7 +86,7 @@ fn migrate_provider_entries_batch_multiple_items() {
 		// Verify all migrated
 		for i in 1..=5 {
 			let provider_id = ProviderId(i);
-			let new_entry = ProviderToRegistryEntryV2::<Test>::get(provider_id).unwrap();
+			let new_entry = ProviderToRegistryEntry::<Test>::get(provider_id).unwrap();
 			let name: BoundedVec<u8, <Test as Config>::MaxProviderNameSize> =
 				BoundedVec::try_from(format!("Provider{}", i).as_bytes().to_vec()).unwrap();
 			assert_eq!(new_entry.default_name, name);
@@ -169,7 +169,7 @@ fn on_initialize_migration_progresses_batches() {
 
 		// Step 7: All old entries migrated
 		for i in 1..=total_entries {
-			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
+			assert!(ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_some());
 			assert!(v1::ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_none());
 		}
 	});

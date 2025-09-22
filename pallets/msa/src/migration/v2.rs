@@ -1,4 +1,4 @@
-use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2};
+use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry};
 pub use alloc::vec;
 use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
 use frame_support::{pallet_prelude::*, storage_alias, weights::Weight};
@@ -43,7 +43,7 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 			localized_names: BoundedBTreeMap::default(),
 		};
 		// Insert into new storage
-		ProviderToRegistryEntryV2::<T>::insert(provider_id, migrated_provider_entry);
+		ProviderToRegistryEntry::<T>::insert(provider_id, migrated_provider_entry);
 		reads += 1;
 		writes += 1;
 		bytes += old_entry.encoded_size() as u64;
