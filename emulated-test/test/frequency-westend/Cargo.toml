@@ -5,7 +5,7 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "frequency-westend-integration-tests"
 publish = false
-version = "0.0.0"
+version = "1.17.5-rc4+polkadotstable2509-rc1"
 
 [dependencies]
 parity-scale-codec = { workspace = true }
