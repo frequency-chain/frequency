@@ -32,7 +32,7 @@ pub mod constants {
 		/// the runtime.
 		pub const RocksDbWeight: RuntimeDbWeight = RuntimeDbWeight {
 			// Time to read one storage item.
-			// Calculated by multiplying the *Average* of all values with `1.0` and adding `0`.
+			// Calculated by multiplying the *Average* of all values with `1.3` and adding `0`.
 			//
 			// Stats nanoseconds:
 			//   Min, Max: 1_281, 317_244_464
@@ -47,7 +47,7 @@ pub mod constants {
 			read: 652_801 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			// Time to write one storage item.
-			// Calculated by multiplying the *Average* of all values with `1.0` and adding `0`.
+			// Calculated by multiplying the *Average* of all values with `1.3` and adding `0`.
 			//
 			// Stats nanoseconds:
 			//   Min, Max: 6_945, 27_330_702
