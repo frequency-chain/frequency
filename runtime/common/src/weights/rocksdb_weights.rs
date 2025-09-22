@@ -18,6 +18,7 @@
 //   --base-path=/data
 //   --include-child-trees
 //   --warmups=10
+//   --mul=1.3
 //   --log=debug
 
 /// Storage DB weights for the `Frequency` runtime and `RocksDb`.
@@ -43,7 +44,7 @@ pub mod constants {
 			//   99th: 3_413_854
 			//   95th: 2_326_237
 			//   75th: 579_306
-			read: 502_155 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			read: 652_801 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			// Time to write one storage item.
 			// Calculated by multiplying the *Average* of all values with `1.0` and adding `0`.
@@ -58,7 +59,7 @@ pub mod constants {
 			//   99th: 167_407
 			//   95th: 146_669
 			//   75th: 121_699
-			write: 94_298 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			write: 122_587 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 
