@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 use crate::service::ParachainClient;
-use common_primitives::{node::Block, offchain::OcwCustomExt};
+use common_primitives::node::Block;
+// use common_primitives::offchain::OcwCustomExt;
 use sc_client_api::Backend;
 use sc_offchain::NetworkProvider;
 use sc_service::{config::RpcEndpoint, TFullBackend, TaskManager};
@@ -58,7 +59,8 @@ pub fn start_offchain_workers(
 		transaction_pool,
 		network_provider,
 		enable_http_requests: true,
-		custom_extensions: move |_hash| vec![Box::new(OcwCustomExt(rpc_address.clone())) as Box<_>],
+		custom_extensions: move |_hash| vec![],
+		// custom_extensions: move |_hash| vec![Box::new(OcwCustomExt(rpc_address.clone())) as Box<_>],
 	})
 	.expect("Could not create Offchain Worker");
 
