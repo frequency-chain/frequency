@@ -255,8 +255,8 @@ describe('Capacity Staking Tests', function () {
 
   describe('when staking and targeting an InvalidTarget', function () {
     it('fails to stake', async function () {
-      const stakeAmount = 10n * CENTS;
-      const [notProviderMsaId, stakeKeys] = await createMsa(fundingSource, 10n * CENTS);
+      const stakeAmount = 20n * CENTS;
+      const [notProviderMsaId, stakeKeys] = await createMsa(fundingSource, 20n * CENTS);
 
       const failStakeObj = ExtrinsicHelper.stake(stakeKeys, notProviderMsaId, stakeAmount);
       await assert.rejects(failStakeObj.signAndSend(), { name: 'InvalidTarget' });
@@ -277,7 +277,7 @@ describe('Capacity Staking Tests', function () {
   describe('when attempting to stake a zero amount', function () {
     it('fails to stake and errors ZeroAmountNotAllowed', async function () {
       const stakingKeys = createKeys('stakingKeys');
-      const providerId = await createMsaAndProvider(fundingSource, stakingKeys, 'stakingKeys', 10n * CENTS);
+      const providerId = await createMsaAndProvider(fundingSource, stakingKeys, 'stakingKeys', 20n * CENTS);
 
       const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 0);
       await assert.rejects(failStakeObj.signAndSend(), { name: 'ZeroAmountNotAllowed' });
@@ -320,8 +320,8 @@ describe('Capacity Staking Tests', function () {
     }
 
     before(async function () {
-      vesterKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
-      await assertSpendable(vesterKeys, 49n * BigInt(CENTS)); // less ED
+      vesterKeys = await createAndFundKeypair(fundingSource, 100_000_000n);
+      await assertSpendable(vesterKeys, 99n * BigInt(CENTS)); // less ED
       await assertFrozen(vesterKeys, 0n);
       providerKeys = await createAndFundKeypair(fundingSource, 10n * CENTS);
       providerId = await createMsaAndProvider(fundingSource, providerKeys, 'Provider Whale', 10n * DOLLARS);
@@ -342,7 +342,7 @@ describe('Capacity Staking Tests', function () {
 
       const spendable = await getSpendableBalance(vesterKeys);
       // after txn fees
-      assert(spendable > 47n * CENTS, `Expected spendable > 47 CENTS, got ${spendable}`);
+      assert(spendable > 92n * CENTS, `Expected spendable > 92 CENTS, got ${spendable}`);
     });
   });
 });

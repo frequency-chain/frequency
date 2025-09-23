@@ -30,8 +30,8 @@ describe('Create Provider Application', function () {
     if (isTestnet()) this.skip();
     sudoKeys = getSudo().keys;
     fundingSource = await getFundingSource(import.meta.url);
-    keys = await createAndFundKeypair(fundingSource, 5n * DOLLARS);
-    nonProviderKeys = await createAndFundKeypair(fundingSource, 5n * DOLLARS);
+    keys = await createAndFundKeypair(fundingSource, 20n * DOLLARS);
+    nonProviderKeys = await createAndFundKeypair(fundingSource, 20n * DOLLARS);
     let createMsaOp = ExtrinsicHelper.createMsa(keys);
     await createMsaOp.fundAndSend(fundingSource);
     createMsaOp = ExtrinsicHelper.createMsa(nonProviderKeys);

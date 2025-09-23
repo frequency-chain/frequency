@@ -154,13 +154,13 @@ describe('MSAs Holding Tokens', function () {
 
     before(async function () {
       // Setup an MSA with tokens
-      msaKeys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
+      msaKeys = await createAndFundKeypair(fundingSource, 10n * CENTS, undefined, undefined, 'ethereum');
       let { target } = await ExtrinsicHelper.createMsa(msaKeys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
 
       // Setup another MSA control key
-      otherMsaKeys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
+      otherMsaKeys = await createAndFundKeypair(fundingSource, 10n * CENTS, undefined, undefined, 'ethereum');
       ({ target } = await ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend());
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
 
