@@ -2,7 +2,7 @@ import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { u64, u16 } from '@polkadot/types';
 import assert from 'assert';
-import { AddProviderPayload, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import {
   createKeys,
   createMsaAndProvider,
@@ -10,12 +10,15 @@ import {
   signPayloadSr25519,
   DOLLARS,
   getOrCreateGraphChangeSchema,
+  stakeToProvider,
 } from '../scaffolding/helpers';
 import { FeeDetails } from '@polkadot/types/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
+import { firstValueFrom, tap } from 'rxjs';
 
-const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
+const FUNDS_AMOUNT: bigint = 200n * DOLLARS;
+const STAKED_AMOUNT: bigint = 50n * DOLLARS;
 let fundingSource: KeyringPair;
 
 describe('Capacity RPC', function () {
@@ -37,6 +40,7 @@ describe('Capacity RPC', function () {
       'CapacityProvider',
       FUNDS_AMOUNT
     );
+    await stakeToProvider(fundingSource, capacityProviderKeys, capacityProvider, STAKED_AMOUNT);
     defaultPayload = {
       authorizedMsaId: capacityProvider,
       schemaIds: [schemaId],
@@ -96,19 +100,31 @@ describe('Capacity RPC', function () {
       addProviderPayload
     );
     const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
+    const signedTx = await firstValueFrom(tx.signAsync(capacityProviderKeys));
+    const signedHex = signedTx.toHex();
+    // it's important to submit a signed extrinsic to the rpc to get an accurate estimate due to the actual length of extrinsic and etc.
     const feeDetails: FeeDetails = await ExtrinsicHelper.apiPromise.rpc.frequencyTxPayment.computeCapacityFeeDetails(
-      tx.toHex(),
+      signedHex,
       null
     );
     assert.notEqual(feeDetails, undefined, 'should have returned a feeDetails');
     assert.notEqual(feeDetails.inclusionFee, undefined, 'should have returned a partialFee');
     assert(feeDetails.inclusionFee.isSome, 'should have returned a partialFee');
     const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
+    const estimatedCapacity = BigInt(baseFee + lenFee + adjustedWeightFee);
+
+    const extrinsic = new Extrinsic(() => insideTx, capacityProviderKeys, ExtrinsicHelper.api.events.msa.MsaCreated);
+    const { eventMap } = await extrinsic.payWithCapacity();
+    const callCapacityCost = (eventMap['capacity.CapacityWithdrawn'].data as any).amount.toBigInt();
 
     // payWithCapacity costs will fluctuate, so just checking that they are valid positive numbers
     assert(baseFee > 1, 'The base fee appears to be wrong.');
     assert(lenFee > 1, 'The len fee appears to be wrong.');
     assert(adjustedWeightFee > 1, 'The adjusted weight fee appears to be wrong');
+    assert(
+      estimatedCapacity - callCapacityCost < 20_000,
+      'The estimated capacity and the actual capacity are not within threshold'
+    );
   });
 
   it('Returns nothing when requesting capacity cost of a non-capacity transaction', async function () {
