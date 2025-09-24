@@ -697,10 +697,6 @@ pub mod pallet {
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
-		#[allow(deprecated)]
-		#[deprecated(
-			note = "please use `create_provider_via_governance_v2`, `propose_to_be_provider_v2`which supports additional provider metadata"
-		)]
 		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
