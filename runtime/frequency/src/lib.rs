@@ -640,7 +640,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 178,
+	spec_version: 179,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -654,7 +654,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 178,
+	spec_version: 179,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1950,16 +1950,16 @@ sp_api::impl_runtime_apis! {
 
 			// if the call is wrapped in a batch, we need to get the weight of the outer call
 			// and use that to compute the fee with the inner call's stable weight(s)
-			let dispatch_weight = match &uxt.function {
-				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
-				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
-					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).call_weight
-				},
+			let capacity_overhead_weight = match &uxt.function {
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) =>
+					<() as pallet_frequency_tx_payment::WeightInfo>::pay_with_capacity(),
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { calls, .. }) =>
+					<() as pallet_frequency_tx_payment::WeightInfo>::pay_with_capacity_batch_all(calls.len() as u32),
 				_ => {
 					Weight::zero()
 				}
 			};
-			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &dispatch_weight, len)
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &capacity_overhead_weight, len)
 		}
 	}
 
