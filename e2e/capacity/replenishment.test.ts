@@ -40,7 +40,7 @@ describe('Capacity Replenishment Testing: ', function () {
   describe('Capacity is replenished', function () {
     it('after new epoch', async function () {
       const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
-      const totalStaked = 3n * DOLLARS;
+      const totalStaked = 4n * DOLLARS;
       const expectedCapacity = totalStaked / getTokenPerCapacity();
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider('ReplFirst', totalStaked);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
@@ -86,7 +86,7 @@ describe('Capacity Replenishment Testing: ', function () {
   describe('Capacity is not replenished', function () {
     it('if out of capacity and last_replenished_at is <= current epoch', async function () {
       const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
-      const [stakeKeys, stakeProviderId] = await createAndStakeProvider('NoSend', 150n * CENTS);
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider('NoSend', 300n * CENTS);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 

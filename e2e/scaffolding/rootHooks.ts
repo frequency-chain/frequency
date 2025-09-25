@@ -26,7 +26,7 @@ export const mochaHooks = {
     try {
       // Any key created using helpers `createKeys` is kept in the module
       // then any value remaining is drained here at the end
-      await drainFundedKeys(getRootFundingSource().keys);
+      await drainFundedKeys(getRootFundingSource().keys, testSuite);
       console.log('ENDING ROOT hook shutdown', testSuite);
     } catch (e) {
       console.error('Failed to run afterAll root hook: ', testSuite, `${e}`);

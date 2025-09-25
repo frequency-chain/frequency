@@ -18,7 +18,7 @@ import {
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
-const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
+const FUNDS_AMOUNT: bigint = 100n * DOLLARS;
 let fundingSource: KeyringPair;
 
 describe('Capacity Transactions Batch', function () {
