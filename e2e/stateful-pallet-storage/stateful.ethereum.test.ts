@@ -21,6 +21,7 @@ import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
 let fundingSource: KeyringPair;
+const FUNDS_AMOUNT = 5n * DOLLARS;
 
 describe('📗 Stateful Pallet Storage Ethereum', function () {
   let itemizedSchemaId: SchemaId;
@@ -46,8 +47,8 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       // Create a schema for Paginated PayloadLocation
       paginatedSchemaId,
     ] = await Promise.all([
-      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
-      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
+      createProviderKeysAndId(fundingSource, FUNDS_AMOUNT),
+      createProviderKeysAndId(fundingSource, FUNDS_AMOUNT),
       ExtrinsicHelper.getOrCreateSchemaV3(
         fundingSource,
         AVRO_CHAT_MESSAGE,

@@ -15,6 +15,8 @@ import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } 
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 let fundingSource: KeyringPair;
 
+const FUNDS_AMOUNT = 800_000_000n;
+
 describe('Passkey Pallet Ethereum Tests', function () {
   before(async function () {
     fundingSource = await getFundingSource(import.meta.url);
@@ -26,8 +28,8 @@ describe('Passkey Pallet Ethereum Tests', function () {
     let receiverKeys: KeyringPair;
 
     before(async function () {
-      fundedSr25519Keys = await createAndFundKeypair(fundingSource, 400_000_000n);
-      fundedEthereumKeys = await createAndFundKeypair(fundingSource, 400_000_000n, 'passkey-1', undefined, 'ethereum');
+      fundedSr25519Keys = await createAndFundKeypair(fundingSource, FUNDS_AMOUNT);
+      fundedEthereumKeys = await createAndFundKeypair(fundingSource, FUNDS_AMOUNT, 'passkey-1', undefined, 'ethereum');
       receiverKeys = await createAndFundKeypair(fundingSource);
     });
 

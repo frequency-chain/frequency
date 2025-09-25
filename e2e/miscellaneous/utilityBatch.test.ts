@@ -7,6 +7,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 let fundingSource: KeyringPair;
+const FUNDS_AMOUNT = 10n * DOLLARS;
 
 describe('Utility Batch Filtering', function () {
   let sender: KeyringPair;
@@ -17,8 +18,8 @@ describe('Utility Batch Filtering', function () {
   });
 
   beforeEach(async function () {
-    sender = await createAndFundKeypair(fundingSource, 5n * DOLLARS, 'utility-sender');
-    recipient = await createAndFundKeypair(fundingSource, 5n * DOLLARS, 'utility-recipient');
+    sender = await createAndFundKeypair(fundingSource, FUNDS_AMOUNT, 'utility-sender');
+    recipient = await createAndFundKeypair(fundingSource, FUNDS_AMOUNT, 'utility-recipient');
   });
 
   it('should successfully execute ✅ batch with allowed calls', async function () {

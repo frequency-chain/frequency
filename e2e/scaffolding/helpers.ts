@@ -285,10 +285,10 @@ export async function generatePaginatedDeleteSignaturePayloadV2(
 const createdKeys = new Map<string, KeyringPair>();
 const ethereumKeys = new Map<string, Keypair>();
 
-export async function drainFundedKeys(dest: KeyringPair) {
+export async function drainFundedKeys(dest: KeyringPair, names: string) {
   // Make sure we are finalized before trying to drain
   await ExtrinsicHelper.waitForFinalization();
-  return drainKeys([...createdKeys.values()], dest);
+  return drainKeys([...createdKeys.values()], dest, names);
 }
 
 export function createKeys(name: string = 'first pair', keyType: KeypairType = 'sr25519'): KeyringPair {
@@ -323,7 +323,7 @@ function canDrainAccount(info: FrameSystemAccountInfo): boolean {
   );
 }
 
-export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair) {
+export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair, names: string) {
   try {
     await Promise.all(
       keyPairs.map(async (keypair) => {
@@ -333,7 +333,7 @@ export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair) {
       })
     );
   } catch (e) {
-    console.log('Error draining accounts: ', e);
+    console.log(`Error draining accounts for ${names}`, e);
   }
 }
 
