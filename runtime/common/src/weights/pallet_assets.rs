@@ -480,6 +480,36 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+/// Storage: `Assets::Asset` (r:1 w:0)
+	/// Proof: `Assets::Asset` (`max_values`: None, `max_size`: Some(210), added: 2685, mode: `MaxEncodedLen`)
+	fn total_issuance() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `418`
+		//  Estimated: `3675`
+		// Minimum execution time: 8_792_000 picoseconds.
+		Weight::from_parts(9_095_000, 3675)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
+	/// Storage: `Assets::Account` (r:1 w:0)
+	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(134), added: 2609, mode: `MaxEncodedLen`)
+	fn balance() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `255`
+		//  Estimated: `3599`
+		// Minimum execution time: 8_924_000 picoseconds.
+		Weight::from_parts(9_407_000, 3599)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
+	/// Storage: `Assets::Approvals` (r:1 w:0)
+	/// Proof: `Assets::Approvals` (`max_values`: None, `max_size`: Some(148), added: 2623, mode: `MaxEncodedLen`)
+	fn allowance() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `350`
+		//  Estimated: `3613`
+		// Minimum execution time: 11_348_000 picoseconds.
+		Weight::from_parts(11_882_000, 3613)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
 }
 
 
