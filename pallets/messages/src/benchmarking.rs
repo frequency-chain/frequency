@@ -1,27 +1,26 @@
 #![allow(clippy::expect_used)]
 
 use super::*;
-#[allow(unused)]
 use crate::Pallet as MessagesPallet;
 use common_primitives::{
 	msa::{DelegatorId, ProviderId},
 	schema::*,
 };
 use frame_benchmarking::v2::*;
-use frame_support::{assert_ok, pallet_prelude::DispatchResult};
+use frame_support::{
+	assert_ok, migrations::SteppedMigration, pallet_prelude::DispatchResult, weights::WeightMeter,
+};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::traits::One;
 extern crate alloc;
 use alloc::vec;
 
-const SCHEMA_SIZE: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
 const MAX_MESSAGES_IN_BLOCK: u32 = 500;
-const ON_CHAIN_SCHEMA_ID: u16 = 16001;
-// this value should be the same as the one used in mocks tests
+// Any IPFS schema ID from the [pallet genesis file](../../../resources/genesis-schemas.json) will work
 const IPFS_SCHEMA_ID: u16 = 20;
 
-fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
+fn onchain_message<T: Config>(intent_id: IntentId, schema_id: SchemaId) -> DispatchResult {
 	let message_source_id = DelegatorId(1);
 	let provider_id = ProviderId(1);
 	let payload = Vec::from(
@@ -33,7 +32,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		provider_id.into(),
 		Some(message_source_id.into()),
 		bounded_payload,
-		schema_id, // intent_id
+		intent_id,
 		schema_id,
 		BlockNumberFor::<T>::one(),
 	)?;
@@ -41,7 +40,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 }
 
 /// Helper function to call MessagesPallet::<T>::add_ipfs_message
-fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
+fn ipfs_message<T: Config>(intent_id: IntentId, schema_id: SchemaId) -> DispatchResult {
 	let payload =
 		Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());
 	let provider_id = ProviderId(1);
@@ -52,7 +51,7 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		provider_id.into(),
 		None,
 		bounded_payload,
-		schema_id, // intent_id
+		intent_id,
 		schema_id,
 		BlockNumberFor::<T>::one(),
 	)?;
@@ -60,28 +59,10 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	Ok(())
 }
 
-fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
-	let intent_id = T::SchemaBenchmarkHelper::create_intent(
-		b"benchmark.intent".to_vec(),
-		location,
-		Vec::default(),
-	)?;
-	let _ = T::SchemaBenchmarkHelper::create_schema(
-		intent_id,
-		Vec::from(r#"{"Name": "Bond", "Code": "007"}"#.as_bytes()),
-		ModelType::AvroBinary,
-		location,
-	)?;
-	Ok(())
-}
-
-fn set_storage_v3_block<T: Config>(block_number: BlockNumberFor<T>) {
-	StorageV3BlockNumber::<T>::put(block_number);
-}
-
 #[benchmarks]
 mod benchmarks {
 	use super::*;
+	use frame_support::{pallet_prelude::StorageVersion, traits::GetStorageVersion};
 
 	#[benchmark]
 	fn add_onchain_message(
@@ -89,15 +70,20 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
-		let schema_id = ON_CHAIN_SCHEMA_ID;
-		let intent_id = ON_CHAIN_SCHEMA_ID as IntentId;
-		
-		set_storage_v3_block::<T>(BlockNumberFor::<T>::one());
 
-		// schema ids start from 1, and we need to add that many to make sure our desired id exists
-		for _ in 0..=SCHEMA_SIZE {
-			assert_ok!(create_intent_and_schema::<T>(PayloadLocation::OnChain));
-		}
+		// The schemas pallet genesis does not contain an OnChain intent/schema, so we create one here
+		let intent_id = T::SchemaBenchmarkHelper::create_intent(
+			b"benchmark.onchain-intent".to_vec(),
+			PayloadLocation::OnChain,
+			Vec::default(),
+		)?;
+
+		let schema_id = T::SchemaBenchmarkHelper::create_schema(
+			intent_id,
+			Vec::from(r#"{"Name": "Bond", "Code": "007"}"#.as_bytes()),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain,
+		)?;
 
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
@@ -108,7 +94,7 @@ mod benchmarks {
 
 		let payload = vec![1; n as usize];
 		for _ in 1..MAX_MESSAGES_IN_BLOCK {
-			assert_ok!(onchain_message::<T>(schema_id));
+			assert_ok!(onchain_message::<T>(intent_id, schema_id));
 		}
 
 		#[extrinsic_call]
@@ -136,15 +122,9 @@ mod benchmarks {
 		let schema_id = IPFS_SCHEMA_ID;
 		let intent_id = IPFS_SCHEMA_ID as IntentId;
 
-		set_storage_v3_block::<T>(BlockNumberFor::<T>::one());
-
-		// schema ids start from 1, and we need to add that many to make sure our desired id exists
-		for _ in 0..=SCHEMA_SIZE {
-			assert_ok!(create_intent_and_schema::<T>(PayloadLocation::IPFS));
-		}
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
 		for _ in 1..MAX_MESSAGES_IN_BLOCK {
-			assert_ok!(ipfs_message::<T>(schema_id));
+			assert_ok!(ipfs_message::<T>(intent_id, schema_id));
 		}
 
 		#[extrinsic_call]
@@ -160,6 +140,59 @@ mod benchmarks {
 			MAX_MESSAGES_IN_BLOCK as usize
 		);
 		Ok(())
+	}
+
+	/// Benchmark a single step of the `v3::MigrateV2ToV3` migration. Here we benchmark the cost
+	/// to migrate a _single record_. This weight is then used in the migration itself for self-metering.
+	#[benchmark]
+	fn v2_to_v3_step() {
+		let payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
+			vec![1; 3072].try_into().expect("Unable to create BoundedVec payload");
+		let old_message = migration::v2::Message {
+			payload: payload.clone(),
+			provider_msa_id: 1u64,
+			msa_id: Some(1u64),
+		};
+		migration::v2::MessagesV2::<T>::insert(
+			(BlockNumberFor::<T>::default(), 0u16, 0u16),
+			old_message,
+		);
+		let mut meter = WeightMeter::new();
+
+		#[block]
+		{
+			migration::v3::MigrateV2ToV3::<T, weights::SubstrateWeight<T>>::step(None, &mut meter)
+				.expect("migration call failed");
+		}
+
+		// Check that the new storage is decodable:
+		let new_message =
+			crate::MessagesV3::<T>::try_get((BlockNumberFor::<T>::default(), 0u16, 0u16));
+		assert!(new_message.is_ok());
+		let new_message = new_message.expect("Unable to fetch migrated message");
+		assert_eq!(Some(1u64), new_message.msa_id);
+		assert_eq!(1u64, new_message.provider_msa_id);
+		assert_eq!(payload, new_message.payload);
+		assert_eq!(new_message.schema_id, 0u16);
+	}
+
+	/// Benchmark a single step of the `v3::FinalizeV3Migration` migration. Here we benchmark the cost
+	/// to migrate a _single record_. This weight is then used in the migration itself for self-metering.
+	#[benchmark]
+	fn v2_to_v3_final_step() {
+		let mut meter = WeightMeter::new();
+
+		#[block]
+		{
+			migration::v3::FinalizeV3Migration::<T, weights::SubstrateWeight<T>>::step(
+				None, &mut meter,
+			)
+			.expect("final storage version migration failed");
+		}
+
+		// Check that the storage version was correctly set
+		let new_version = Pallet::<T>::on_chain_storage_version();
+		assert_eq!(new_version, StorageVersion::new(3));
 	}
 
 	impl_benchmark_test_suite!(

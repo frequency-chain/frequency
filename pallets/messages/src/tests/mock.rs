@@ -27,6 +27,8 @@ pub const INVALID_SCHEMA_ID: SchemaId = 65534;
 // this value should be the same as the one used in benchmarking
 pub const IPFS_SCHEMA_ID: SchemaId = 20;
 
+pub const ON_CHAIN_SCHEMA_ID: SchemaId = 16001;
+
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
 pub const DUMMY_CID_BASE32: &[u8; 59] =
@@ -81,14 +83,7 @@ pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
 parameter_types! {
-	// Max payload size was picked specifically to be large enough to accommodate
-	// a CIDv1 using SHA2-256, but too small to accommodate CIDv1 w/SHA2-512.
-	// This is purely so that we can test the error condition. Real world configuration
-	// should have this set large enough to accommodate the largest possible CID.
-	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
-	// is not too big.
-	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
-
+	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3;
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {

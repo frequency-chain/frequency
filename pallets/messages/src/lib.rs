@@ -29,11 +29,16 @@ pub mod weights;
 
 mod types;
 
+/// Storage migrations
+pub mod migration;
+
 use core::{convert::TryInto, fmt::Debug};
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 
 extern crate alloc;
+extern crate core;
+
 use alloc::vec::Vec;
 use common_primitives::{
 	messages::*,
@@ -104,20 +109,7 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, MessageIndex, ValueQuery>;
 
-	/// Storage for messages in STORAGE_VERSION(2) and lower
-	#[pallet::storage]
-	pub(super) type MessagesV2<T: Config> = StorageNMap<
-		_,
-		(
-			storage::Key<Twox64Concat, BlockNumberFor<T>>,
-			storage::Key<Twox64Concat, SchemaId>,
-			storage::Key<Twox64Concat, MessageIndex>,
-		),
-		Message<T::MessagesMaxPayloadSizeBytes>,
-		OptionQuery,
-	>;
-
-	/// Storage for messages in STORAGE_VERSION(3) and higher
+	/// Storage for messages
 	#[pallet::storage]
 	pub(super) type MessagesV3<T: Config> = StorageNMap<
 		_,
@@ -126,14 +118,9 @@ pub mod pallet {
 			storage::Key<Twox64Concat, IntentId>,
 			storage::Key<Twox64Concat, MessageIndex>,
 		),
-		MessageV3<T::MessagesMaxPayloadSizeBytes>,
+		Message<T::MessagesMaxPayloadSizeBytes>,
 		OptionQuery,
 	>;
-
-	/// The block number at which the STORAGE_VERSION(3) migration was completed
-	#[pallet::storage]
-	pub(super) type StorageV3BlockNumber<T: Config> =
-		StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -193,7 +180,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Adds a message for a resource hosted on IPFS. The input consists of
-		/// both a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
+		/// a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
 		/// as well as a 32-bit content length. The stored payload will contain the
 		/// CID encoded as binary, as well as the 32-bit message content length.
 		/// The actual message content will be on IPFS.
@@ -202,13 +189,13 @@ pub mod pallet {
 		/// * [`Event::MessagesInBlock`] - Messages Stored in the block
 		///
 		/// # Errors
-		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
-		/// * [`Error::InvalidSchemaId`] - Schema not found
-		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
-		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
-		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
-		/// * [`Error::InvalidCid`] - Unable to parse provided CID
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large.
+		/// * [`Error::InvalidSchemaId`] - Schema not found.
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location.
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA.
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full.
+		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0).
+		/// * [`Error::InvalidCid`] - Unable to parse provided CID.
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::add_ipfs_message())]
@@ -256,12 +243,12 @@ pub mod pallet {
 		/// * [`Event::MessagesInBlock`] - In the next block
 		///
 		/// # Errors
-		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
-		/// * [`Error::InvalidSchemaId`] - Schema not found
-		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
-		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA
-		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large.
+		/// * [`Error::InvalidSchemaId`] - Schema not found.
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location.
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA.
+		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA.
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full.
 		///
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32))]
@@ -337,7 +324,7 @@ impl<T: Config> Pallet<T> {
 	) -> Result<bool, DispatchError> {
 		let index = BlockMessageIndex::<T>::get();
 		let first = index == 0;
-		let msg = MessageV3 {
+		let msg = Message {
 			schema_id,
 			payload, // size is checked on top of extrinsic
 			provider_msa_id,
@@ -377,25 +364,11 @@ impl<T: Config> Pallet<T> {
 			PayloadLocation::Itemized | PayloadLocation::Paginated => Vec::new(),
 			_ => {
 				let mut messages: Vec<MessageResponseV2> =
-					if StorageV3BlockNumber::<T>::get().gt(&block_number) {
-						// Get message from pre-V3 storage. Pre-V3 intent ids equal schema ids.
-						MessagesV2::<T>::iter_prefix((block_number, intent_id as SchemaId))
-							.filter_map(|(index, msg)| {
-								msg.map_to_response((
-									block_number_value,
-									intent_id as SchemaId,
-									payload_location,
-									index,
-								))
-							})
-							.collect()
-					} else {
-						MessagesV3::<T>::iter_prefix((block_number, intent_id))
-							.filter_map(|(index, msg)| {
-								msg.map_to_response((block_number_value, payload_location, index))
-							})
-							.collect()
-					};
+					MessagesV3::<T>::iter_prefix((block_number, intent_id))
+						.filter_map(|(index, msg)| {
+							msg.map_to_response((block_number_value, payload_location, index))
+						})
+						.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
 				messages
 			},

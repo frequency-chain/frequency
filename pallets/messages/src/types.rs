@@ -35,25 +35,6 @@ where
 	pub provider_msa_id: MessageSourceId,
 	///  Message source account id (the original source).
 	pub msa_id: Option<MessageSourceId>,
-}
-
-/// A single message type definition.
-#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxDataSize))]
-#[codec(mel_bound(MaxDataSize: MaxEncodedLen))]
-pub struct MessageV3<MaxDataSize>
-where
-	MaxDataSize: Get<u32> + Debug,
-{
-	///  Data structured by the associated schema's model.
-	pub payload: BoundedVec<u8, MaxDataSize>,
-	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
-	/// indicating that the original source MSA is acting as its own provider. An id differing from that
-	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
-	/// its behalf.
-	pub provider_msa_id: MessageSourceId,
-	///  Message source account id (the original source).
-	pub msa_id: Option<MessageSourceId>,
 	///  The SchemaId of the schema that defines the format of the payload
 	pub schema_id: SchemaId,
 }
@@ -144,7 +125,7 @@ impl<MaxDataSize: Get<u32> + Debug>
 }
 
 impl<MaxDataSize: Get<u32> + Debug>
-	MapToResponse<(BlockNumber, PayloadLocation, u16), MessageResponseV2> for MessageV3<MaxDataSize>
+	MapToResponse<(BlockNumber, PayloadLocation, u16), MessageResponseV2> for Message<MaxDataSize>
 {
 	/// Helper function to handle response type [`MessageResponseV2`] depending on the Payload Location (on chain or IPFS)
 	fn map_to_response(

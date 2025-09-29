@@ -1,71 +1,20 @@
-use crate::{tests::mock::*, BlockMessageIndex, Error, Event as MessageEvent, MapToResponse, Message, MessageV3, MessagesV2};
-use common_primitives::{messages::MessageResponse, schema::*};
+extern crate alloc;
+use crate::{
+	pallet::{Config, MessagesV3},
+	tests::mock::*,
+	BlockMessageIndex, Error, Event as MessageEvent, MapToResponse, Message,
+};
+use alloc::vec::Vec;
+use common_primitives::{messages::MessageResponseV2, schema::*};
 use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
 use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
-use rand::Rng;
-use serde::Serialize;
 use sp_core::ConstU32;
-extern crate alloc;
-use alloc::vec::Vec;
-use common_primitives::messages::MessageResponseV2;
-use crate::pallet::{MessagesV3, StorageV3BlockNumber};
-
-#[derive(Serialize)]
-#[allow(non_snake_case)]
-struct Payload {
-	// Normally would be u64, but we keep it to u8 in order to keep payload size down in tests.
-	fromId: u8,
-	content: String,
-}
 
 pub const DUMMY_CID_SHA512: &str = "bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzneanqwb5arcnvuvfwo2d4qgzyx5hymvto4";
-
-/// Populate mocked Messages storage with message data.
-///
-/// # Arguments
-/// * `schema_id` - Registered schema id to which stored messages should adhere
-/// * `message_per_block` - A signed transaction origin from the provider
-/// * `payload_location` - Determines how a message payload is encoded. PayloadLocation::IPFS
-/// 		will encode (mock CID, IPFS_PAYLOAD_LENGTH) on the message payload.
-fn populate_messages_v2(
-	schema_id: SchemaId,
-	message_per_block: Vec<u32>,
-	payload_location: PayloadLocation,
-	cid_in: Option<&[u8]>,
-) {
-	let cid = match cid_in {
-		Some(val) => val,
-		None => &DUMMY_CID_BASE32[..],
-	};
-
-	let payload = match payload_location {
-		// Just stick Itemized & Paginated here for coverage; we don't use them for Messages
-		PayloadLocation::OnChain | PayloadLocation::Itemized | PayloadLocation::Paginated =>
-			generate_payload(1, None),
-		PayloadLocation::IPFS =>
-			(multibase::decode(core::str::from_utf8(cid).unwrap()).unwrap().1, IPFS_PAYLOAD_LENGTH)
-				.encode(),
-	};
-
-	let mut counter = 0;
-	for (idx, count) in message_per_block.iter().enumerate() {
-		for _ in 0..*count {
-			MessagesV2::<Test>::set(
-				(idx as u32, schema_id, counter),
-				Some(Message {
-					msa_id: Some(DUMMY_MSA_ID),
-					payload: payload.clone().try_into().unwrap(),
-					provider_msa_id: 1,
-				}),
-			);
-			counter += 1;
-		}
-	}
-}
 
 /// Populate mocked Messages storage with message data.
 ///
@@ -80,15 +29,12 @@ fn populate_messages_v3(
 	payload_location: PayloadLocation,
 	cid_in: Option<&[u8]>,
 ) {
-	let cid = match cid_in {
-		Some(val) => val,
-		None => &DUMMY_CID_BASE32[..],
-	};
+	let cid = cid_in.unwrap_or_else(|| &DUMMY_CID_BASE32[..]);
 
 	let payload = match payload_location {
 		// Just stick Itemized & Paginated here for coverage; we don't use them for Messages
 		PayloadLocation::OnChain | PayloadLocation::Itemized | PayloadLocation::Paginated =>
-			generate_payload(1, None),
+			generate_payload(1),
 		PayloadLocation::IPFS =>
 			(multibase::decode(core::str::from_utf8(cid).unwrap()).unwrap().1, IPFS_PAYLOAD_LENGTH)
 				.encode(),
@@ -99,7 +45,7 @@ fn populate_messages_v3(
 		for _ in 0..*count {
 			MessagesV3::<Test>::set(
 				(idx as u32, intent_id, counter),
-				Some(MessageV3 {
+				Some(Message {
 					schema_id: intent_id as SchemaId,
 					msa_id: Some(DUMMY_MSA_ID),
 					payload: payload.clone().try_into().unwrap(),
@@ -114,28 +60,9 @@ fn populate_messages_v3(
 /// Helper function to generate message payloads
 ///
 /// # Arguments
-/// * `num_items` - Number of message to include in payload
-/// * `content_len` - Length of content string to generate
-fn generate_payload(num_items: u8, content_len: Option<u8>) -> Vec<u8> {
-	let mut result_str = String::new();
-	let size = content_len.unwrap_or(3);
-	let mut rng = rand::rng();
-
-	for _ in 0..num_items {
-		let payload = serde_json::to_string(&Payload {
-			fromId: rng.random(),
-			content: (0..size).map(|_| "X").collect::<String>(),
-		})
-		.unwrap();
-
-		result_str.push_str(payload.as_str());
-	}
-
-	result_str.as_bytes().to_vec()
-}
-
-fn set_v3_block(block_number: u32) {
-	StorageV3BlockNumber::<Test>::set(block_number);
+/// * `content_len` - Length of payload
+fn generate_payload(content_len: u32) -> Vec<u8> {
+	vec![1u8; content_len as usize].to_vec()
 }
 
 #[test]
@@ -146,9 +73,9 @@ fn add_message_should_store_message_in_storage() {
 		let caller_2 = 2;
 		let schema_id_1: SchemaId = 1;
 		let schema_id_2: SchemaId = 2;
-		let message_payload_1 = generate_payload(1, None);
-		let message_payload_2 = generate_payload(1, None);
-		let message_payload_3 = generate_payload(1, None);
+		let message_payload_1 = generate_payload(1);
+		let message_payload_2 = generate_payload(1);
+		let message_payload_3 = generate_payload(1);
 
 		// act
 		assert_ok!(MessagesPallet::add_onchain_message(
@@ -179,7 +106,7 @@ fn add_message_should_store_message_in_storage() {
 
 		assert_eq!(
 			msg1,
-			Some(MessageV3 {
+			Some(Message {
 				schema_id: schema_id_1,
 				msa_id: Some(get_msa_from_account(caller_1)),
 				payload: message_payload_1.try_into().unwrap(),
@@ -189,7 +116,7 @@ fn add_message_should_store_message_in_storage() {
 
 		assert_eq!(
 			msg2,
-			Some(MessageV3 {
+			Some(Message {
 				schema_id: schema_id_2,
 				msa_id: Some(get_msa_from_account(caller_2)),
 				payload: message_payload_2.try_into().unwrap(),
@@ -199,7 +126,7 @@ fn add_message_should_store_message_in_storage() {
 
 		assert_eq!(
 			msg3,
-			Some(MessageV3 {
+			Some(Message {
 				schema_id: schema_id_2,
 				msa_id: Some(get_msa_from_account(caller_2)),
 				payload: message_payload_3.try_into().unwrap(),
@@ -225,15 +152,15 @@ fn add_message_with_too_large_message_should_panic() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 5;
-		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = generate_payload(3, None);
+		let message_payload_1 =
+			generate_payload(<Test as Config>::MessagesMaxPayloadSizeBytes::get() + 1);
 
 		// act
 		assert_noop!(
 			MessagesPallet::add_onchain_message(
 				RuntimeOrigin::signed(caller_1),
 				None,
-				schema_id_1,
+				ON_CHAIN_SCHEMA_ID,
 				message_payload_1
 			),
 			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
@@ -247,7 +174,7 @@ fn add_message_with_invalid_msa_account_errors() {
 		// arrange
 		let caller_1 = 1000;
 		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = generate_payload(2, None);
+		let message_payload_1 = generate_payload(2);
 
 		// act
 		assert_noop!(
@@ -294,7 +221,6 @@ fn get_messages_by_intent_with_ipfs_payload_location_should_return_offchain_payl
 		populate_messages_v3(intent_id, vec![1], PayloadLocation::IPFS, None);
 
 		// Run to the block +
-		set_v3_block(current_block);
 		run_to_block(current_block + 1);
 
 		let list =
@@ -340,7 +266,7 @@ fn retrieved_ipfs_message_cid_should_always_be_in_base32() {
 }
 
 #[test]
-fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
+fn decode_message_with_invalid_payload_should_yield_empty_cid() {
 	new_test_ext().execute_with(|| {
 		let bad_message: Message<MessagesMaxPayloadSizeBytes> = Message {
 			payload: BoundedVec::try_from(
@@ -349,8 +275,10 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
 			.unwrap(),
 			msa_id: Some(0),
 			provider_msa_id: 1,
+			schema_id: 1,
 		};
-		let mapped_response = bad_message.map_to_response((0, PayloadLocation::IPFS, 0)).unwrap();
+		let mapped_response: MessageResponseV2 =
+			bad_message.map_to_response((0, PayloadLocation::IPFS, 0)).unwrap();
 		assert_eq!(
 			mapped_response.cid,
 			Some(multibase::encode(Base::Base32Lower, Vec::new()).as_bytes().to_vec())
@@ -365,7 +293,7 @@ fn add_message_via_non_delegate_should_fail() {
 		let message_producer = 1;
 		let message_provider = 2000;
 		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = generate_payload(1, None);
+		let message_payload_1 = generate_payload(1);
 		// act
 		assert_err!(
 			MessagesPallet::add_onchain_message(
@@ -378,18 +306,18 @@ fn add_message_via_non_delegate_should_fail() {
 		);
 
 		// assert
-		let msg = MessagesV2::<Test>::get((1, schema_id_1, 0));
+		let msg = MessagesV3::<Test>::get((1, schema_id_1, 0));
 		assert_eq!(msg, None);
 	});
 }
 
 #[test]
-fn add_message_with_invalid_schema_id_should_error() {
+fn add_onchain_message_with_invalid_schema_id_should_error() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = INVALID_SCHEMA_ID;
-		let message_payload_1 = generate_payload(2, None);
+		let message_payload_1 = generate_payload(2);
 
 		// act
 		assert_err!(
@@ -439,7 +367,7 @@ fn valid_payload_location_ipfs() {
 }
 
 #[test]
-fn invalid_payload_location_ipfs() {
+fn add_ipfs_message_with_invalid_payload_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
 		let schema_id_1: SchemaId = 1;
@@ -457,10 +385,10 @@ fn invalid_payload_location_ipfs() {
 }
 
 #[test]
-fn invalid_payload_location_onchain() {
+fn add_onchain_message_with_invalid_payload_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5;
-		let payload = generate_payload(1, None);
+		let payload = generate_payload(1);
 
 		assert_noop!(
 			MessagesPallet::add_onchain_message(
@@ -472,24 +400,6 @@ fn invalid_payload_location_onchain() {
 			Error::<Test>::InvalidPayloadLocation
 		);
 	});
-}
-
-#[test]
-fn add_ipfs_message_with_large_payload_errors() {
-	new_test_ext().execute_with(|| {
-		let caller_1 = 5u64;
-
-		assert_noop!(
-			MessagesPallet::add_ipfs_message(
-				RuntimeOrigin::signed(caller_1),
-				IPFS_SCHEMA_ID,
-				// We've deliberately mocked MaxMessagePayloadSizeBytes to be too small to contain a  CIDv1 with a SHA2-512 hash.
-				DUMMY_CID_SHA512.as_bytes().to_vec(),
-				15
-			),
-			Error::<Test>::ExceedsMaxMessagePayloadSizeBytes
-		);
-	})
 }
 
 #[test]
@@ -535,8 +445,8 @@ fn on_initialize_should_clean_up_temporary_storage() {
 		let caller_2 = 2;
 		let schema_id_1: SchemaId = 1;
 		let schema_id_2: SchemaId = 2;
-		let message_payload_1 = generate_payload(1, None);
-		let message_payload_2 = generate_payload(1, None);
+		let message_payload_1 = generate_payload(1);
+		let message_payload_2 = generate_payload(1);
 		assert_ok!(MessagesPallet::add_onchain_message(
 			RuntimeOrigin::signed(caller_1),
 			None,
@@ -637,7 +547,7 @@ fn validate_cid_not_correct_format_errors() {
 }
 
 #[test]
-fn validate_cid_unwrap_panics() {
+fn validate_cid_unwrap_errors() {
 	new_test_ext().execute_with(|| {
 		// This should not panic, but should return an error.
 		let bad_cid = vec![102, 70, 70, 70, 70, 70, 70, 70, 70, 48, 48, 48, 54, 53, 53, 48, 48];
@@ -650,8 +560,13 @@ fn validate_cid_unwrap_panics() {
 fn map_to_response_on_chain() {
 	let payload_vec = b"123456789012345678901234567890".to_vec();
 	let payload_bounded = BoundedVec::<u8, ConstU32<100>>::try_from(payload_vec.clone()).unwrap();
-	let msg = Message { payload: payload_bounded, provider_msa_id: DUMMY_MSA_ID, msa_id: None };
-	let expected = MessageResponse {
+	let msg = Message {
+		payload: payload_bounded,
+		provider_msa_id: DUMMY_MSA_ID,
+		msa_id: None,
+		schema_id: 1,
+	};
+	let expected = MessageResponseV2 {
 		provider_msa_id: DUMMY_MSA_ID,
 		index: 1u16,
 		block_number: 42,
@@ -659,8 +574,9 @@ fn map_to_response_on_chain() {
 		payload: Some(payload_vec),
 		cid: None,
 		payload_length: None,
+		schema_id: 1,
 	};
-	assert_eq!(msg.map_to_response((42, PayloadLocation::OnChain, 1)).unwrap(), expected);
+	assert_eq!(msg.map_to_response((42, 1, PayloadLocation::OnChain, 1)).unwrap(), expected);
 }
 
 #[test]
@@ -668,8 +584,8 @@ fn map_to_response_ipfs() {
 	let cid = DUMMY_CID_SHA512;
 	let payload_tuple: crate::OffchainPayloadType = (multibase::decode(cid).unwrap().1, 10);
 	let payload = BoundedVec::<u8, ConstU32<500>>::try_from(payload_tuple.encode()).unwrap();
-	let msg = Message { payload, provider_msa_id: 10u64, msa_id: None };
-	let expected = MessageResponse {
+	let msg = Message { payload, provider_msa_id: 10u64, msa_id: None, schema_id: 1 };
+	let expected = MessageResponseV2 {
 		provider_msa_id: DUMMY_MSA_ID,
 		index: 1u16,
 		block_number: 42,
@@ -677,6 +593,7 @@ fn map_to_response_ipfs() {
 		payload: None,
 		cid: Some(cid.as_bytes().to_vec()),
 		payload_length: Some(10),
+		schema_id: 1,
 	};
-	assert_eq!(msg.map_to_response((42, PayloadLocation::IPFS, 1)).unwrap(), expected);
+	assert_eq!(msg.map_to_response((42, 1, PayloadLocation::IPFS, 1)).unwrap(), expected);
 }

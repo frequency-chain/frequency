@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
+log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }

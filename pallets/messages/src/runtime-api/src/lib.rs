@@ -41,7 +41,7 @@ sp_api::decl_runtime_apis! {
 
 		/// Retrieve the messages for a particular intent and block range (paginated)
 		#[api_version(2)]
-		fn get_messages_by_intent_id(intent_id: IntentId, pagination: BlockPaginationRequest) -> Result<BlockPaginationResponse<MessageResponseV2>, String>;
+		fn get_messages_by_intent_id(intent_id: IntentId, pagination: BlockPaginationRequest) -> BlockPaginationResponse<MessageResponseV2>;
 
 		/// Retrieve a schema by id
 		// TODO: Remove once all RPC nodes have been updated to call the schemas pallet runtime for this
