@@ -257,11 +257,12 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 
   public async sudoSignAndSend(waitForInBlock = true) {
     const currentNonce = await getNonce(this.keys);
+    const nonce = await autoNonce.auto(this.keys, currentNonce);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
       this.api.tx.sudo
         .sudo(this.extrinsic())
-        .signAndSend(this.keys, { nonce: currentNonce, era: 0 })
+        .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
           filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
