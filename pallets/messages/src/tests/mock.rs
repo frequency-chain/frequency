@@ -1,5 +1,3 @@
-use frame_support::derive_impl;
-use frame_support::pallet_prelude::Weight;
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
@@ -8,6 +6,7 @@ use common_primitives::{
 	},
 	schema::*,
 };
+use frame_support::{derive_impl, pallet_prelude::Weight};
 
 use frame_support::{
 	dispatch::DispatchResult,
@@ -91,14 +90,8 @@ frame_support::parameter_types! {
 impl pallet_migrations::Config for Test {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Migrations = (
-		crate::migration::v3::MigrateV2ToV3<
-			Test,
-			crate::SubstrateWeight<Test>,
-		>,
-		crate::migration::v3::FinalizeV3Migration<
-			Test,
-			crate::SubstrateWeight<Test>,
-		>,
+		crate::migration::v3::MigrateV2ToV3<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v3::FinalizeV3Migration<Test, crate::SubstrateWeight<Test>>,
 	);
 	#[cfg(feature = "runtime-benchmarks")]
 	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
