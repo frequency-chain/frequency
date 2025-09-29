@@ -7789,6 +7789,7 @@ dependencies = [
  "frame-system",
  "log",
  "multibase",
+ "pallet-migrations",
  "parity-scale-codec",
  "pretty_assertions",
  "rand 0.9.1",

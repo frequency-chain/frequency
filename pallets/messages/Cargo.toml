@@ -32,6 +32,7 @@ multibase = { version = "0.9", default-features = false }
 common-runtime = { path = '../../runtime/common', default-features = false }
 # Testing dependencies
 rand = { workspace = true }
+pallet-migrations = { workspace = true }
 pretty_assertions = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

@@ -1,3 +1,5 @@
+use frame_support::derive_impl;
+use frame_support::pallet_prelude::Weight;
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
@@ -9,6 +11,7 @@ use common_primitives::{
 
 use frame_support::{
 	dispatch::DispatchResult,
+	migrations::MultiStepMigrator,
 	parameter_types,
 	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
@@ -43,6 +46,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		MessagesPallet: pallet_messages::{Pallet, Call, Storage, Event<T>},
+		Migrator: pallet_migrations,
 	}
 );
 
@@ -72,11 +76,33 @@ impl system::Config for Test {
 	type OnSetCode = ();
 	type MaxConsumers = ConstU32<16>;
 	type SingleBlockMigrations = ();
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = Migrator;
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
 	type ExtensionsWeightInfo = ();
+}
+
+frame_support::parameter_types! {
+	pub storage MigratorServiceWeight: Weight = Weight::from_parts(100, 100); // do not use in prod
+}
+
+#[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
+impl pallet_migrations::Config for Test {
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		crate::migration::v3::MigrateV2ToV3<
+			Test,
+			crate::SubstrateWeight<Test>,
+		>,
+		crate::migration::v3::FinalizeV3Migration<
+			Test,
+			crate::SubstrateWeight<Test>,
+		>,
+	);
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type MaxServiceWeight = MigratorServiceWeight;
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -271,6 +297,17 @@ pub fn run_to_block(n: u32) {
 		System::on_initialize(System::block_number());
 		MessagesPallet::on_initialize(System::block_number());
 	}
+}
+
+#[allow(dead_code)]
+pub fn run_to_block_with_migrations(n: u32) {
+	System::run_to_block_with::<AllPalletsWithSystem>(
+		n,
+		frame_system::RunToBlockHooks::default().after_initialize(|_| {
+			// Done by Executive:
+			<Test as frame_system::Config>::MultiBlockMigrator::step();
+		}),
+	);
 }
 
 pub fn get_msa_from_account(account_id: u64) -> u64 {

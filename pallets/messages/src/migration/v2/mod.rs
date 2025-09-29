@@ -21,7 +21,7 @@ pub(crate) type MessagesV2<T: Config> = StorageNMap<
 >;
 
 /// A single message type definition for V2 storage
-#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(Clone, Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxDataSize))]
 #[codec(mel_bound(MaxDataSize: MaxEncodedLen))]
 pub struct Message<MaxDataSize>
