@@ -15,6 +15,8 @@ use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::ConstU32;
 
 pub const DUMMY_CID_SHA512: &str = "bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzneanqwb5arcnvuvfwo2d4qgzyx5hymvto4";
+pub const DUMMY_CID_SHA256: &str = "bagaaierasords4njcts6vs7qvdjfcvgnume4hqohf65zsfguprqphs3icwea";
+pub const DUMMY_CID_BLAKE3: &str = "bafkr4ihn4xalcdzoyslzy2nvf5q6il7vwqjvdhhatpqpctijrxh6l5xzru";
 
 /// Populate mocked Messages storage with message data.
 ///
@@ -403,6 +405,52 @@ fn add_onchain_message_with_invalid_payload_location_should_fail() {
 }
 
 #[test]
+fn add_ipfs_message_with_unsupported_cid_hash_should_fail() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+
+		assert_noop!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				IPFS_SCHEMA_ID,
+				DUMMY_CID_SHA512.as_bytes().to_vec(),
+				15
+			),
+			Error::<Test>::InvalidCid
+		);
+	})
+}
+
+#[test]
+fn add_ipfs_message_with_sha2_256_cid_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+
+		assert_ok!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				IPFS_SCHEMA_ID,
+				DUMMY_CID_SHA256.as_bytes().to_vec(),
+				15
+			));
+	})
+}
+
+#[test]
+fn add_ipfs_message_with_blake3_cid_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let caller_1 = 5u64;
+
+		assert_ok!(
+			MessagesPallet::add_ipfs_message(
+				RuntimeOrigin::signed(caller_1),
+				IPFS_SCHEMA_ID,
+				DUMMY_CID_BLAKE3.as_bytes().to_vec(),
+				15
+			));
+	})
+}
+#[test]
 fn add_ipfs_message_cid_v0_errors() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5u64;
@@ -514,14 +562,31 @@ fn validate_cid_invalid_cid_errors() {
 }
 
 #[test]
-fn validate_cid_valid_cid_succeeds() {
+fn validate_cid_valid_cid_sha2_256_succeeds() {
 	new_test_ext().execute_with(|| {
-		let bad_cid = DUMMY_CID_BASE32.to_vec();
+		let cid = DUMMY_CID_BASE32.to_vec();
 
-		assert_ok!(MessagesPallet::validate_cid(&bad_cid));
+		assert_ok!(MessagesPallet::validate_cid(&cid));
 	})
 }
 
+#[test]
+fn validate_cid_valid_cid_blake3_succeeds() {
+	new_test_ext().execute_with(|| {
+		let cid = DUMMY_CID_BLAKE3.as_bytes().to_vec();
+
+		assert_ok!(MessagesPallet::validate_cid(&cid));
+	})
+}
+
+#[test]
+fn validate_cid_invalid_hash_function_errors() {
+	new_test_ext().execute_with(|| {
+		let bad_cid = DUMMY_CID_SHA512.as_bytes().to_vec();
+
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
+	})
+}
 #[test]
 fn validate_cid_not_utf8_aligned_errors() {
 	new_test_ext().execute_with(|| {

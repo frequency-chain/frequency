@@ -46,7 +46,6 @@ fn lazy_migration_works() {
 		let mut v2_expected: u16 = 500;
 		let mut v3_expected: u16 = 0;
 		for block in 2..=(BLOCKS_PER_RUN + 2) {
-			println!("Block: {}", block);
 			run_to_block_with_migrations(block as u32);
 
 			v2_expected = v2_expected.saturating_sub(ITEMS_PER_BLOCK);

@@ -390,7 +390,8 @@ impl<T: Config> Pallet<T> {
 
 		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
 		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
-		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
+		let cid = Cid::read_bytes(&cid_b[..]).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!([SHA2_256, BLAKE3].contains(&cid.hash().code()), Error::<T>::InvalidCid);
 
 		Ok(cid_b)
 	}

@@ -13,6 +13,11 @@ extern crate alloc;
 use alloc::vec::Vec;
 use common_primitives::messages::MessageResponseV2;
 
+/// Multihash hash function code for SHA2-256
+pub const SHA2_256: u64 = 0x12;
+/// Multihash hash function code for Blake3
+pub const BLAKE3: u64 = 0x1e;
+
 /// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
 pub type OffchainPayloadType = (Vec<u8>, u32);
 /// Index of message in the block
