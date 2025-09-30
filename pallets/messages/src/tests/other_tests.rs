@@ -426,13 +426,12 @@ fn add_ipfs_message_with_sha2_256_cid_should_succeed() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5u64;
 
-		assert_ok!(
-			MessagesPallet::add_ipfs_message(
-				RuntimeOrigin::signed(caller_1),
-				IPFS_SCHEMA_ID,
-				DUMMY_CID_SHA256.as_bytes().to_vec(),
-				15
-			));
+		assert_ok!(MessagesPallet::add_ipfs_message(
+			RuntimeOrigin::signed(caller_1),
+			IPFS_SCHEMA_ID,
+			DUMMY_CID_SHA256.as_bytes().to_vec(),
+			15
+		));
 	})
 }
 
@@ -441,13 +440,12 @@ fn add_ipfs_message_with_blake3_cid_should_succeed() {
 	new_test_ext().execute_with(|| {
 		let caller_1 = 5u64;
 
-		assert_ok!(
-			MessagesPallet::add_ipfs_message(
-				RuntimeOrigin::signed(caller_1),
-				IPFS_SCHEMA_ID,
-				DUMMY_CID_BLAKE3.as_bytes().to_vec(),
-				15
-			));
+		assert_ok!(MessagesPallet::add_ipfs_message(
+			RuntimeOrigin::signed(caller_1),
+			IPFS_SCHEMA_ID,
+			DUMMY_CID_BLAKE3.as_bytes().to_vec(),
+			15
+		));
 	})
 }
 #[test]
