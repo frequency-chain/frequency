@@ -17,6 +17,8 @@ pub struct MigrationStatus {
 	pub migrated_count: u32,
 	/// Whether migration is complete
 	pub completed: bool,
+	/// Last key processed
+	pub last_key: Option<ProviderId>,
 }
 
 /// Storage for tracking migration progress
@@ -25,18 +27,35 @@ pub type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatu
 
 /// Core migration function that can be called from both contexts
 #[allow(deprecated)]
-pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, u32) {
+pub fn migrate_provider_entries_batch<T: Config>(
+	batch_size: usize,
+	start_after: Option<ProviderId>,
+) -> (Weight, u32, Option<ProviderId>) {
 	let mut reads = 0u64;
 	let mut writes = 0u64;
 	let mut bytes = 0u64;
 	let mut migrated_count = 0u32;
+	let mut last_key = None;
+
+	let iter = match start_after {
+		Some(key) => {
+			let raw_key = ProviderToRegistryEntry::<T>::hashed_key_for(&key);
+			ProviderToRegistryEntry::<T>::iter_from(raw_key)
+		},
+		None => ProviderToRegistryEntry::<T>::iter(),
+	};
 
 	let entries: vec::Vec<(
 		ProviderId,
 		v1::ProviderRegistryEntry<<T as Config>::MaxProviderNameSize>,
-	)> = ProviderToRegistryEntry::<T>::iter().take(batch_size).collect();
+	)> = iter.take(batch_size).collect();
 
 	for (provider_id, old_entry) in entries {
+		// Skip if already migrated
+		if ProviderToRegistryEntryV2::<T>::contains_key(&provider_id) {
+			reads += 1;
+			continue;
+		}
 		// Build new registry entry with old provider name
 		let migrated_provider_entry = ProviderRegistryEntry {
 			default_name: old_entry.provider_name.clone(),
@@ -50,10 +69,11 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 		writes += 1;
 		bytes += old_entry.encoded_size() as u64;
 		migrated_count += 1;
+		last_key = Some(provider_id);
 	}
 
 	let weight = T::DbWeight::get().reads_writes(reads, writes).add_proof_size(bytes);
-	(weight, migrated_count)
+	(weight, migrated_count, last_key)
 }
 
 /// Hook-based multi-block migration for Frequency Provider Migration
@@ -76,12 +96,15 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 
 	// Initialize migration if not started
 	if !migration_status.completed {
-		let (batch_weight, migrated_in_this_block) =
-			migrate_provider_entries_batch::<T>(MAX_ITEMS_PER_BLOCK as usize);
+		let (batch_weight, migrated_in_this_block, last_key) = migrate_provider_entries_batch::<T>(
+			MAX_ITEMS_PER_BLOCK as usize,
+			migration_status.last_key,
+		);
 
 		let mut updated_status = migration_status;
 		updated_status.migrated_count += migrated_in_this_block;
 		updated_status.completed = migrated_in_this_block == 0;
+		updated_status.last_key = last_key;
 		reads += 1;
 		// Check if migration is complete
 		if updated_status.completed {
