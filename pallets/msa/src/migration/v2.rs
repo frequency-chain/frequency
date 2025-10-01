@@ -1,11 +1,12 @@
-use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry, ProviderToRegistryEntryV2};
+#[allow(deprecated)]
+use crate::ProviderToRegistryEntry;
+use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2};
 pub use alloc::vec;
 use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
 use frame_support::{pallet_prelude::*, storage_alias, weights::Weight};
 pub use frame_system::pallet_prelude::BlockNumberFor;
 #[cfg(feature = "try-runtime")]
 pub use sp_runtime::TryRuntimeError;
-
 const LOG_TARGET: &str = "runtime::provider";
 pub const MAX_ITEMS_PER_BLOCK: u32 = 50; // Conservative batch size for Paseo
 
