@@ -1,4 +1,4 @@
-use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntryV2};
+use crate::{migration::v1, Config, Pallet, ProviderToRegistryEntry, ProviderToRegistryEntryV2};
 pub use alloc::vec;
 use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
 use frame_support::{pallet_prelude::*, storage_alias, weights::Weight};
@@ -23,6 +23,7 @@ pub struct MigrationStatus {
 pub type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatus, ValueQuery>;
 
 /// Core migration function that can be called from both contexts
+#[allow(deprecated)]
 pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, u32) {
 	let mut reads = 0u64;
 	let mut writes = 0u64;
@@ -32,7 +33,7 @@ pub fn migrate_provider_entries_batch<T: Config>(batch_size: usize) -> (Weight, 
 	let entries: vec::Vec<(
 		ProviderId,
 		v1::ProviderRegistryEntry<<T as Config>::MaxProviderNameSize>,
-	)> = v1::ProviderToRegistryEntry::<T>::drain().take(batch_size).collect();
+	)> = ProviderToRegistryEntry::<T>::iter().take(batch_size).collect();
 
 	for (provider_id, old_entry) in entries {
 		// Build new registry entry with old provider name

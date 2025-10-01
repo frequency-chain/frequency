@@ -1,7 +1,7 @@
 use crate::{
 	migration::{v1, v2::*},
 	tests::mock::*,
-	Config, Pallet, ProviderToRegistryEntryV2,
+	Config, Pallet, ProviderToRegistryEntry, ProviderToRegistryEntryV2,
 };
 use common_primitives::msa::ProviderId;
 use frame_support::{pallet_prelude::*, BoundedVec};
@@ -40,7 +40,7 @@ fn migrate_provider_entries_batch_single_item() {
 			provider_name: BoundedVec::try_from(b"TestProvider".to_vec()).unwrap(),
 		};
 
-		v1::ProviderToRegistryEntry::<Test>::insert(provider_id, old_entry.clone());
+		ProviderToRegistryEntry::<Test>::insert(provider_id, old_entry.clone());
 
 		// Migrate batch
 		let (weight, count) = migrate_provider_entries_batch::<Test>(10);
@@ -56,7 +56,7 @@ fn migrate_provider_entries_batch_single_item() {
 		assert!(new_entry.localized_logo_250_100_png_cids.is_empty());
 
 		// Check old storage is removed
-		assert!(v1::ProviderToRegistryEntry::<Test>::get(provider_id).is_none());
+		assert!(ProviderToRegistryEntry::<Test>::get(provider_id).is_some());
 	});
 }
 
@@ -70,7 +70,7 @@ fn migrate_provider_entries_batch_multiple_items() {
 			let old_entry = v1::ProviderRegistryEntry {
 				provider_name: BoundedVec::try_from(name.as_bytes().to_vec()).unwrap(),
 			};
-			v1::ProviderToRegistryEntry::<Test>::insert(provider_id, old_entry);
+			ProviderToRegistryEntry::<Test>::insert(provider_id, old_entry);
 		}
 
 		// Migrate first batch (size 3)
@@ -114,7 +114,7 @@ fn batch_migration_respects_boundaries() {
 				provider_name: BoundedVec::try_from(format!("Provider{}", i).as_bytes().to_vec())
 					.unwrap(),
 			};
-			v1::ProviderToRegistryEntry::<Test>::insert(ProviderId(i), old_entry);
+			ProviderToRegistryEntry::<Test>::insert(ProviderId(i), old_entry);
 		}
 
 		// First batch should migrate exactly 50 items
@@ -139,7 +139,7 @@ fn on_initialize_migration_progresses_batches() {
 				provider_name: BoundedVec::try_from(format!("Provider{}", i).as_bytes().to_vec())
 					.unwrap(),
 			};
-			v1::ProviderToRegistryEntry::<Test>::insert(ProviderId(i.into()), old_entry);
+			ProviderToRegistryEntry::<Test>::insert(ProviderId(i.into()), old_entry);
 		}
 
 		// Step 2: Call on_initialize_migration for first block that prepares status
@@ -170,7 +170,7 @@ fn on_initialize_migration_progresses_batches() {
 		// Step 7: All old entries migrated
 		for i in 1..=total_entries {
 			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
-			assert!(v1::ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_none());
+			assert!(ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_some());
 		}
 	});
 }
