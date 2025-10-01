@@ -62,7 +62,7 @@ pub fn migrate_provider_entries_batch<T: Config>(
 		};
 		// Insert into new storage
 		ProviderToRegistryEntryV2::<T>::insert(provider_id, migrated_provider_entry);
-		reads += 1;
+		reads += 2;
 		writes += 1;
 		bytes += old_entry.encoded_size() as u64;
 		migrated_count += 1;
