@@ -18,7 +18,7 @@ pub struct MigrationStatus {
 	/// Whether migration is complete
 	pub completed: bool,
 	/// Last key processed
-	pub last_raw_key: Option<Vec<u8>>,
+	pub last_raw_key: Option<vec::Vec<u8>>,
 }
 
 /// Storage for tracking migration progress
@@ -29,8 +29,8 @@ pub type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatu
 #[allow(deprecated)]
 pub fn migrate_provider_entries_batch<T: Config>(
 	batch_size: usize,
-	start_after_raw_key: Option<Vec<u8>>,
-) -> (Weight, u32, Option<Vec<u8>>) {
+	start_after_raw_key: Option<vec::Vec<u8>>,
+) -> (Weight, u32, Option<vec::Vec<u8>>) {
 	let mut reads = 0u64;
 	let mut writes = 0u64;
 	let mut bytes = 0u64;
