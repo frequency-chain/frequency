@@ -38,10 +38,7 @@ pub fn migrate_provider_entries_batch<T: Config>(
 	let mut last_key = None;
 
 	let iter = match start_after {
-		Some(key) => {
-			let raw_key = ProviderToRegistryEntry::<T>::hashed_key_for(&key);
-			ProviderToRegistryEntry::<T>::iter_from(raw_key)
-		},
+		Some(key) => ProviderToRegistryEntry::<T>::iter_from_key(key),
 		None => ProviderToRegistryEntry::<T>::iter(),
 	};
 
@@ -52,7 +49,7 @@ pub fn migrate_provider_entries_batch<T: Config>(
 
 	for (provider_id, old_entry) in entries {
 		// Skip if already migrated
-		if ProviderToRegistryEntryV2::<T>::contains_key(&provider_id) {
+		if ProviderToRegistryEntryV2::<T>::contains_key(provider_id) {
 			reads += 1;
 			continue;
 		}
