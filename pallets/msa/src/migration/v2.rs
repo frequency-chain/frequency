@@ -18,7 +18,7 @@ pub struct MigrationStatus {
 	/// Whether migration is complete
 	pub completed: bool,
 	/// Last key processed
-	pub last_key: Option<ProviderId>,
+	pub last_raw_key: Option<Vec<u8>>,
 }
 
 /// Storage for tracking migration progress
@@ -29,16 +29,16 @@ pub type MigrationProgressV2<T: Config> = StorageValue<Pallet<T>, MigrationStatu
 #[allow(deprecated)]
 pub fn migrate_provider_entries_batch<T: Config>(
 	batch_size: usize,
-	start_after: Option<ProviderId>,
-) -> (Weight, u32, Option<ProviderId>) {
+	start_after_raw_key: Option<Vec<u8>>,
+) -> (Weight, u32, Option<Vec<u8>>) {
 	let mut reads = 0u64;
 	let mut writes = 0u64;
 	let mut bytes = 0u64;
 	let mut migrated_count = 0u32;
-	let mut last_key = None;
+	let mut last_raw_key = None;
 
-	let iter = match start_after {
-		Some(key) => ProviderToRegistryEntry::<T>::iter_from_key(key),
+	let iter = match start_after_raw_key {
+		Some(raw_key) => ProviderToRegistryEntry::<T>::iter_from(raw_key),
 		None => ProviderToRegistryEntry::<T>::iter(),
 	};
 
@@ -66,11 +66,11 @@ pub fn migrate_provider_entries_batch<T: Config>(
 		writes += 1;
 		bytes += old_entry.encoded_size() as u64;
 		migrated_count += 1;
-		last_key = Some(provider_id);
+		last_raw_key = Some(ProviderToRegistryEntry::<T>::hashed_key_for(provider_id));
 	}
 
 	let weight = T::DbWeight::get().reads_writes(reads, writes).add_proof_size(bytes);
-	(weight, migrated_count, last_key)
+	(weight, migrated_count, last_raw_key)
 }
 
 /// Hook-based multi-block migration for Frequency Provider Migration
@@ -95,13 +95,13 @@ pub fn on_initialize_migration<T: Config>() -> Weight {
 	if !migration_status.completed {
 		let (batch_weight, migrated_in_this_block, last_key) = migrate_provider_entries_batch::<T>(
 			MAX_ITEMS_PER_BLOCK as usize,
-			migration_status.last_key,
+			migration_status.last_raw_key.clone(),
 		);
 
 		let mut updated_status = migration_status;
 		updated_status.migrated_count += migrated_in_this_block;
 		updated_status.completed = migrated_in_this_block == 0;
-		updated_status.last_key = last_key;
+		updated_status.last_raw_key = last_key;
 		reads += 1;
 		// Check if migration is complete
 		if updated_status.completed {
