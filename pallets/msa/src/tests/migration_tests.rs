@@ -175,6 +175,26 @@ fn on_initialize_migration_progresses_batches() {
 		for i in 1..=total_entries {
 			assert!(ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into())).is_some());
 			assert!(ProviderToRegistryEntry::<Test>::get(ProviderId(i.into())).is_some());
+			// both have same provider name
+			let name: BoundedVec<u8, <Test as Config>::MaxProviderNameSize> =
+				BoundedVec::try_from(format!("Provider{}", i).as_bytes().to_vec()).unwrap();
+			assert_eq!(
+				ProviderToRegistryEntryV2::<Test>::get(ProviderId(i.into()))
+					.unwrap()
+					.default_name,
+				name
+			);
+			assert_eq!(
+				ProviderToRegistryEntry::<Test>::get(ProviderId(i.into()))
+					.unwrap()
+					.provider_name,
+				name
+			);
 		}
+		// Both have same count
+		assert_eq!(
+			ProviderToRegistryEntryV2::<Test>::iter().count(),
+			ProviderToRegistryEntry::<Test>::iter().count()
+		);
 	});
 }
