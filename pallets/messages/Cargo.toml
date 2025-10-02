@@ -25,17 +25,14 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-cid = { version = "0.11", default-features = false }
-multibase = { version = "0.9", default-features = false }
+multibase = { workspace = true }
 
 [dev-dependencies]
 common-runtime = { path = '../../runtime/common', default-features = false }
 # Testing dependencies
-rand = { workspace = true }
 pallet-migrations = { workspace = true }
 pretty_assertions = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
 
 [features]
 default = ['std']

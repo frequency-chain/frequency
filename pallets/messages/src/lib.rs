@@ -41,6 +41,7 @@ extern crate core;
 
 use alloc::vec::Vec;
 use common_primitives::{
+	cid::*,
 	messages::*,
 	msa::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
@@ -57,7 +58,6 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
-use cid::Cid;
 use common_primitives::node::BlockNumber;
 use frame_system::pallet_prelude::*;
 
@@ -382,17 +382,9 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
 	pub fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
-		// Decode SCALE encoded CID into string slice
-		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
-		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
-		// starts_with handles Unicode multibyte characters safely
-		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);
-
-		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
-		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
-		let cid = Cid::read_bytes(&cid_b[..]).map_err(|_| Error::<T>::InvalidCid)?;
-		ensure!([SHA2_256, BLAKE3].contains(&cid.hash().code()), Error::<T>::InvalidCid);
-
-		Ok(cid_b)
+		Ok(validate_cid(in_cid).map_err(|e| match e {
+			CidError::UnsupportedCidVersion => Error::<T>::UnsupportedCidVersion,
+			_ => Error::<T>::InvalidCid,
+		})?)
 	}
 }
