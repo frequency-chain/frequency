@@ -29,11 +29,12 @@ fn time_release_from_chain_spec_works() {
 			ReleaseSchedules::<Test>::get(CHARLIE),
 			vec![
 				ReleaseSchedule { start: 2u32, period: 3u32, period_count: 1u32, per_period: 5u64 }, // unlocks 5 at block 5
-				ReleaseSchedule { // unlocks 5, 8, 11, 14
+				ReleaseSchedule {
+					// unlocks 5, 8, 11, 14
 					start: 2u32 + 3u32, // starts at 5
-					period: 3u32, // every 3 blocks ....
+					period: 3u32,       // every 3 blocks ....
 					period_count: 3u32, // repeats 3 times
-					per_period: 5u64, // ... we add 5 tokens
+					per_period: 5u64,   // ... we add 5 tokens
 				}
 			]
 		);
@@ -53,7 +54,7 @@ fn time_release_from_chain_spec_works() {
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(CHARLIE)));
 		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 15), WithdrawConsequence::Success);
 		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 16), WithdrawConsequence::Frozen);
-		
+
 		MockBlockNumberProvider::set(8);
 		// 10 tokens will be released after 8 blocks
 		// 20 = 20(free) - 10(ExistentialDeposit) + 10(cancelled ED because frozen > 10)
@@ -62,7 +63,7 @@ fn time_release_from_chain_spec_works() {
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(CHARLIE)));
 		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 20), WithdrawConsequence::Success);
 		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 21), WithdrawConsequence::Frozen);
-		
+
 		MockBlockNumberProvider::set(11);
 		// 15 tokens will be released after 11 blocks
 		// balance = 5(frozen) + 0(free)
