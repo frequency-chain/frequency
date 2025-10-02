@@ -39,6 +39,7 @@ pallet-democracy = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
+pallet-migrations = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -142,6 +143,7 @@ std = [
   "pallet-passkey/std",
   "pallet-messages-runtime-api/std",
   "pallet-messages/std",
+  "pallet-migrations/std",
   "pallet-msa-runtime-api/std",
   "pallet-msa/std",
   "pallet-multisig/std",
@@ -212,6 +214,7 @@ runtime-benchmarks = [
   "pallet-handles/runtime-benchmarks",
   "pallet-passkey/runtime-benchmarks",
   "pallet-messages/runtime-benchmarks",
+  "pallet-migrations/runtime-benchmarks",
   "pallet-msa/runtime-benchmarks",
   "pallet-multisig/runtime-benchmarks",
   "pallet-preimage/runtime-benchmarks",
@@ -254,6 +257,7 @@ try-runtime = [
   "pallet-handles/try-runtime",
   "pallet-passkey/try-runtime",
   "pallet-messages/try-runtime",
+  "pallet-migrations/try-runtime",
   "pallet-msa/try-runtime",
   "pallet-multisig/try-runtime",
   "pallet-preimage/try-runtime",

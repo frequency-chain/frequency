@@ -142,7 +142,7 @@ use frame_system::{
 };
 
 use alloc::{boxed::Box, vec, vec::Vec};
-
+use core::ops::ControlFlow;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::Perbill;
 
@@ -159,7 +159,11 @@ pub use pallet_time_release::types::{ScheduleName, SchedulerProviderTrait};
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use common_primitives::{capacity::UnclaimedRewardInfo, schema::*};
+use common_primitives::{
+	capacity::UnclaimedRewardInfo,
+	messages::{BlockPaginationRequest, BlockPaginationResponse, MessageResponseV2},
+	schema::*,
+};
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
@@ -781,7 +785,7 @@ impl frame_system::Config for Runtime {
 	///  A new way of configuring migrations that run in a single block.
 	type SingleBlockMigrations = ();
 	/// The migrator that is used to run Multi-Block-Migrations.
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = MultiBlockMigrations;
 	/// A callback that executes in *every block* directly before all inherents were applied.
 	type PreInherents = ();
 	/// A callback that executes in *every block* directly after all inherents were applied.
@@ -1643,6 +1647,34 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub MbmServiceWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_migrations::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		pallet_messages::migration::MigrateV2ToV3<
+			Runtime,
+			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_messages::migration::FinalizeV3Migration<
+			Runtime,
+			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+	);
+	// Benchmarks need mocked migrations to guarantee that they succeed.
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type CursorMaxLen = ConstU32<65_536>;
+	type IdentifierMaxLen = ConstU32<256>;
+	type MigrationStatusHandler = ();
+	type FailedMigrationHandler = frame_support::migrations::FreezeChainOnFailedMigration;
+	type MaxServiceWeight = MbmServiceWeight;
+	type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -1696,6 +1728,9 @@ construct_runtime!(
 		// Substrate weights
 		WeightReclaim: cumulus_pallet_weight_reclaim::{Pallet, Storage} = 50,
 
+		// Multi-block migrations
+		MultiBlockMigrations: pallet_migrations::{Pallet, Event<T>} = 51,
+
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
@@ -1746,6 +1781,7 @@ mod benches {
 		[pallet_transaction_payment, TransactionPayment]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_message_queue, MessageQueue]
+		[pallet_migrations, MultiBlockMigrations]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1972,14 +2008,72 @@ sp_api::impl_runtime_apis! {
 	}
 
 	// Frequency runtime APIs
+	#[api_version(2)]
 	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) ->
 			Vec<MessageResponse> {
-			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
+			match Schemas::get_schema_by_id(schema_id) {
+				Some(SchemaResponseV2 { intent_id, .. }) => Messages::get_messages_by_intent_and_block(
+					intent_id,
+					schema_payload_location,
+					block_number,
+				).into_iter().map(|r| r.into()).collect(),
+				_ => vec![],
+			}
 		}
 
-		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
-			Schemas::get_schema_by_id(schema_id)
+		/// Retrieve the messages for a particular intent and block range (paginated)
+		fn get_messages_by_intent_id(intent_id: IntentId, pagination: BlockPaginationRequest) -> BlockPaginationResponse<MessageResponseV2> {
+			let mut response = BlockPaginationResponse::new();
+
+			// Request Validation
+			if !pagination.validate() {
+				return response
+			}
+
+			// Schema Fetch and Check
+			let intent = match Schemas::get_intent_by_id(intent_id, false) {
+				Some(intent) => intent,
+				None => return response,
+			};
+
+			let mut from_index: u32 = pagination.from_index;
+
+			(pagination.from_block..pagination.to_block).try_for_each(|block_number| {
+				let list: Vec<MessageResponseV2> = Messages::get_messages_by_intent_and_block(
+					intent_id,
+					intent.payload_location,
+					block_number,
+				);
+
+				// Max messages in a block are constrained to MessageIndex (u16) by the storage,
+				// so this is a safe type coercion. Just to be safe, we'll trap in in debug builds
+				let list_size: u32 = list.len() as u32;
+				debug_assert!(list_size <= u16::MAX.into(), "unexpected number of messages in block");
+
+				let iter = list.into_iter().skip((from_index as usize).saturating_sub(1));
+				// all subsequent blocks in this call should start at index 0
+				from_index = 0;
+				iter.enumerate().try_for_each(|(i, m)| {
+					response.content.push(m);
+
+					if response.check_end_condition_and_set_next_pagination(
+						block_number,
+						i as u32,
+						list_size,
+						&pagination,
+					) {
+						return ControlFlow::Break(())
+					}
+
+					ControlFlow::Continue(())
+				})
+			});
+			response
+		}
+
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Schemas::get_schema_by_id(schema_id).map(|r| r.into())
 		}
 	}
 

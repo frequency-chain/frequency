@@ -29,13 +29,19 @@ pub mod weights;
 
 mod types;
 
+/// Storage migrations
+pub mod migration;
+
 use core::{convert::TryInto, fmt::Debug};
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 
 extern crate alloc;
+extern crate core;
+
 use alloc::vec::Vec;
 use common_primitives::{
+	cid::*,
 	messages::*,
 	msa::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
@@ -52,7 +58,7 @@ pub use pallet::*;
 pub use types::*;
 pub use weights::*;
 
-use cid::Cid;
+use common_primitives::node::BlockNumber;
 use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
@@ -61,7 +67,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 
 	/// The current storage version.
-	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -103,12 +109,13 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, MessageIndex, ValueQuery>;
 
+	/// Storage for messages
 	#[pallet::storage]
-	pub(super) type MessagesV2<T: Config> = StorageNMap<
+	pub(super) type MessagesV3<T: Config> = StorageNMap<
 		_,
 		(
 			storage::Key<Twox64Concat, BlockNumberFor<T>>,
-			storage::Key<Twox64Concat, SchemaId>,
+			storage::Key<Twox64Concat, IntentId>,
 			storage::Key<Twox64Concat, MessageIndex>,
 		),
 		Message<T::MessagesMaxPayloadSizeBytes>,
@@ -173,7 +180,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Adds a message for a resource hosted on IPFS. The input consists of
-		/// both a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
+		/// a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
 		/// as well as a 32-bit content length. The stored payload will contain the
 		/// CID encoded as binary, as well as the 32-bit message content length.
 		/// The actual message content will be on IPFS.
@@ -182,13 +189,13 @@ pub mod pallet {
 		/// * [`Event::MessagesInBlock`] - Messages Stored in the block
 		///
 		/// # Errors
-		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
-		/// * [`Error::InvalidSchemaId`] - Schema not found
-		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
-		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
-		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
-		/// * [`Error::InvalidCid`] - Unable to parse provided CID
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large.
+		/// * [`Error::InvalidSchemaId`] - Schema not found.
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location.
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA.
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full.
+		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0).
+		/// * [`Error::InvalidCid`] - Unable to parse provided CID.
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::add_ipfs_message())]
@@ -218,6 +225,7 @@ pub mod pallet {
 					provider_msa_id,
 					None,
 					bounded_payload,
+					schema.intent_id,
 					schema_id,
 					current_block,
 				)? {
@@ -235,12 +243,12 @@ pub mod pallet {
 		/// * [`Event::MessagesInBlock`] - In the next block
 		///
 		/// # Errors
-		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
-		/// * [`Error::InvalidSchemaId`] - Schema not found
-		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
-		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA
-		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
+		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large.
+		/// * [`Error::InvalidSchemaId`] - Schema not found.
+		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location.
+		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA.
+		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA.
+		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full.
 		///
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::add_onchain_message(payload.len() as u32))]
@@ -285,6 +293,7 @@ pub mod pallet {
 					provider_msa_id,
 					Some(maybe_delegator.into()),
 					bounded_payload,
+					schema.intent_id,
 					schema_id,
 					current_block,
 				)? {
@@ -309,18 +318,20 @@ impl<T: Config> Pallet<T> {
 		provider_msa_id: MessageSourceId,
 		msa_id: Option<MessageSourceId>,
 		payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes>,
+		intent_id: IntentId,
 		schema_id: SchemaId,
 		current_block: BlockNumberFor<T>,
 	) -> Result<bool, DispatchError> {
 		let index = BlockMessageIndex::<T>::get();
 		let first = index == 0;
 		let msg = Message {
+			schema_id,
 			payload, // size is checked on top of extrinsic
 			provider_msa_id,
 			msa_id,
 		};
 
-		<MessagesV2<T>>::insert((current_block, schema_id, index), msg);
+		<MessagesV3<T>>::insert((current_block, intent_id, index), msg);
 		BlockMessageIndex::<T>::set(index.saturating_add(1));
 		Ok(first)
 	}
@@ -336,27 +347,28 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
 	}
 
-	/// Gets a messages for a given schema-id and block-number.
+	/// Gets messages for a given IntentId and block number.
 	///
-	/// Payload location is included to map to correct response (To avoid fetching the schema in this method)
+	/// Payload location is included to map to correct response (To avoid fetching the Intent in this method)
 	///
-	/// Result is a vector of [`MessageResponse`].
+	/// Result is a vector of [`MessageResponseV2`].
 	///
-	pub fn get_messages_by_schema_and_block(
-		schema_id: SchemaId,
-		schema_payload_location: PayloadLocation,
+	pub fn get_messages_by_intent_and_block(
+		intent_id: IntentId,
+		payload_location: PayloadLocation,
 		block_number: BlockNumberFor<T>,
-	) -> Vec<MessageResponse> {
-		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
+	) -> Vec<MessageResponseV2> {
+		let block_number_value: BlockNumber = block_number.try_into().unwrap_or_default();
 
-		match schema_payload_location {
+		match payload_location {
 			PayloadLocation::Itemized | PayloadLocation::Paginated => Vec::new(),
 			_ => {
-				let mut messages: Vec<_> = <MessagesV2<T>>::iter_prefix((block_number, schema_id))
-					.map(|(index, msg)| {
-						msg.map_to_response(block_number_value, schema_payload_location, index)
-					})
-					.collect();
+				let mut messages: Vec<MessageResponseV2> =
+					MessagesV3::<T>::iter_prefix((block_number, intent_id))
+						.filter_map(|(index, msg)| {
+							msg.map_to_response((block_number_value, payload_location, index))
+						})
+						.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
 				messages
 			},
@@ -370,16 +382,9 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
 	pub fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
-		// Decode SCALE encoded CID into string slice
-		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
-		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
-		// starts_with handles Unicode multibyte characters safely
-		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);
-
-		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
-		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
-		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
-
-		Ok(cid_b)
+		Ok(validate_cid(in_cid).map_err(|e| match e {
+			CidError::UnsupportedCidVersion => Error::<T>::UnsupportedCidVersion,
+			_ => Error::<T>::InvalidCid,
+		})?)
 	}
 }

@@ -35,6 +35,8 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn add_onchain_message(n: u32, ) -> Weight;
 	fn add_ipfs_message() -> Weight;
+	fn v2_to_v3_step() -> Weight;
+	fn v2_to_v3_final_step() -> Weight;
 }
 
 /// Weights for `pallet_messages` using the Substrate node and recommended hardware.
@@ -75,6 +77,29 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f963740dfb0edb77dddcbb1e5542cf4d2` (r:2 w:1)
+	/// Proof: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f963740dfb0edb77dddcbb1e5542cf4d2` (r:2 w:1)
+	/// Storage: `Messages::MessagesV3` (r:0 w:1)
+	/// Proof: `Messages::MessagesV3` (`max_values`: None, `max_size`: Some(3125), added: 5600, mode: `MaxEncodedLen`)
+	fn v2_to_v3_step() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `3113`
+		//  Estimated: `9548`
+		// Minimum execution time: 13_000_000 picoseconds.
+		Weight::from_parts(14_000_000, 9548)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f4e7b9012096b41c4eb3aaf947f6ea429` (r:0 w:1)
+	/// Proof: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f4e7b9012096b41c4eb3aaf947f6ea429` (r:0 w:1)
+	fn v2_to_v3_final_step() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 1_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -112,6 +137,29 @@ impl WeightInfo for () {
 		// Minimum execution time: 31_646_000 picoseconds.
 		Weight::from_parts(32_704_000, 4008)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f963740dfb0edb77dddcbb1e5542cf4d2` (r:2 w:1)
+	/// Proof: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f963740dfb0edb77dddcbb1e5542cf4d2` (r:2 w:1)
+	/// Storage: `Messages::MessagesV3` (r:0 w:1)
+	/// Proof: `Messages::MessagesV3` (`max_values`: None, `max_size`: Some(3125), added: 5600, mode: `MaxEncodedLen`)
+	fn v2_to_v3_step() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `3113`
+		//  Estimated: `9548`
+		// Minimum execution time: 13_000_000 picoseconds.
+		Weight::from_parts(14_000_000, 9548)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f4e7b9012096b41c4eb3aaf947f6ea429` (r:0 w:1)
+	/// Proof: UNKNOWN KEY `0x9ea3e2d10fdb9a071f2f534d51b0961f4e7b9012096b41c4eb3aaf947f6ea429` (r:0 w:1)
+	fn v2_to_v3_final_step() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 1_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

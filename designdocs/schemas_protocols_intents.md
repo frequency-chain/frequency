@@ -175,7 +175,7 @@ it's difficult or impossible to bifurcate the storage in the same way as the `me
 requiring a complete storage migration, new pages/items that are written can include a _storage version magic number_ in
 either the page or the item header. For `Paginated` storage, this value would precede the `PageNonce`; for `Itemized`
 storage the value would precede `payload_len`. The 'magic number' would be designed to be the same byte length as the
-value currently a byte offset zero within the page/item, and to be a value such that conflict with a valid `nonce` or
+value currently at byte offset zero within the page/item, and to be a value such that conflict with a valid `nonce` or
 `payload_len` would be highly unlikely, if not impossible.
 
 New structures would be defined, ie `PageV2` and `ItemizedItemV2`, and decoding values read from storage would need to
