@@ -198,3 +198,43 @@ fn on_initialize_migration_progresses_batches() {
 		);
 	});
 }
+
+#[test]
+fn iter_from_excludes_starting_key() {
+	new_test_ext().execute_with(|| {
+		// Insert 5 providers
+		for i in 1..=5 {
+			let provider_id = ProviderId(i);
+			let old_entry = v1::ProviderRegistryEntry {
+				provider_name: BoundedVec::try_from(format!("Provider{}", i).as_bytes().to_vec())
+					.unwrap(),
+			};
+			ProviderToRegistryEntry::<Test>::insert(provider_id, old_entry);
+		}
+
+		// First iteration: get all keys
+		let all_keys: Vec<ProviderId> =
+			ProviderToRegistryEntry::<Test>::iter().map(|(id, _)| id).collect();
+
+		assert_eq!(all_keys.len(), 5);
+
+		// Pick the third key in iteration order
+		let third_key = all_keys[2];
+		let third_raw_key = ProviderToRegistryEntry::<Test>::hashed_key_for(third_key);
+
+		// Iterate from that key
+		let keys_after_third: Vec<ProviderId> =
+			ProviderToRegistryEntry::<Test>::iter_from(third_raw_key)
+				.map(|(id, _)| id)
+				.collect();
+
+		// Should have 2 keys remaining (the 4th and 5th in iteration order)
+		assert_eq!(keys_after_third.len(), 2);
+
+		// The third key should NOT be in the results
+		assert!(!keys_after_third.contains(&third_key));
+
+		// Should be the last two keys from original iteration
+		assert_eq!(keys_after_third, vec![all_keys[3], all_keys[4]]);
+	});
+}
