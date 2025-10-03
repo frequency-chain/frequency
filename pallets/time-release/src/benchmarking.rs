@@ -11,6 +11,7 @@ extern crate alloc;
 use alloc::vec;
 
 pub const DOLLARS: u32 = 10u32.saturating_pow(8u32);
+pub const EXISTENTIAL_DEPOSIT: u32 = 10; // Matches the value in mock.rs
 
 pub use crate::types::ReleaseSchedule;
 pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
@@ -51,11 +52,15 @@ mod benchmarks {
 
 		let to: T::AccountId = account("to", 1, SEED);
 		let to_lookup = lookup_of_account::<T>(to.clone());
+		set_balance::<T>(&to, EXISTENTIAL_DEPOSIT.into());
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(from), to_lookup, schedule.clone());
 
-		assert_eq!(T::Currency::total_balance(&to), schedule.total_amount().unwrap());
+		assert_eq!(
+			T::Currency::total_balance(&to),
+			schedule.total_amount().unwrap() + EXISTENTIAL_DEPOSIT.into()
+		);
 		Ok(())
 	}
 
@@ -136,6 +141,7 @@ mod benchmarks {
 
 		let to: T::AccountId = whitelisted_caller();
 		let to_lookup = lookup_of_account::<T>(to.clone());
+		set_balance::<T>(&to, EXISTENTIAL_DEPOSIT.into());
 
 		for _ in 0..i {
 			schedule.start = i.into();
@@ -152,7 +158,7 @@ mod benchmarks {
 
 		assert_eq!(
 			T::Currency::balance(&to),
-			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i),
+			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i) + EXISTENTIAL_DEPOSIT.into(),
 		);
 		Ok(())
 	}
@@ -169,7 +175,10 @@ mod benchmarks {
 		};
 
 		let to: T::AccountId = account("to", 0, SEED);
-		set_balance::<T>(&to, schedule.total_amount().unwrap() * BalanceOf::<T>::from(i));
+		set_balance::<T>(
+			&to,
+			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i) + EXISTENTIAL_DEPOSIT.into(),
+		);
 		let to_lookup = lookup_of_account::<T>(to.clone());
 
 		let mut schedules = vec![];
@@ -183,7 +192,7 @@ mod benchmarks {
 
 		assert_eq!(
 			T::Currency::balance(&to),
-			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i)
+			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i) + EXISTENTIAL_DEPOSIT.into()
 		);
 		Ok(())
 	}
