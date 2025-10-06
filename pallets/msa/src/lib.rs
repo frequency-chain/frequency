@@ -217,6 +217,21 @@ pub mod pallet {
 	/// Provider registration information
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
+	#[deprecated(
+		note = "Use ProviderToRegistryEntryV2 instead, this will removed from frequency version 1.17.6"
+	)]
+	#[pallet::storage]
+	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		ProviderId,
+		crate::migration::v1::ProviderRegistryEntry<T::MaxProviderNameSize>,
+		OptionQuery,
+	>;
+
+	/// Provider registration information
+	/// - Key: Provider MSA Id
+	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
 	pub type ProviderToRegistryEntryV2<T: Config> = StorageMap<
 		_,
