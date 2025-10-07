@@ -11,7 +11,7 @@ extern crate alloc;
 use alloc::vec;
 
 pub const DOLLARS: u32 = 10u32.saturating_pow(8u32);
-pub const EXISTENTIAL_DEPOSIT: u32 = 10; // Matches the value in mock.rs
+pub const EXISTENTIAL_DEPOSIT: u32 = 10u32.saturating_pow(6u32);
 
 pub use crate::types::ReleaseSchedule;
 pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
