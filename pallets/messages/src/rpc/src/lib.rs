@@ -93,7 +93,8 @@ where
 		let at = self.client.info().best_hash;
 
 		// Schema Fetch and Check
-		let schema: SchemaResponseV2 = match api.get_schema_by_id(at, schema_id) {
+		#[allow(deprecated)]
+		let schema: SchemaResponse = match api.get_schema_by_id(at, schema_id) {
 			Ok(Some(s)) => s,
 			_ => fail!(MessageRpcError::InvalidSchemaId),
 		};
@@ -104,6 +105,7 @@ where
 		let mut from_index = pagination.from_index;
 
 		'loops: for block_number in from..to {
+			#[allow(deprecated)]
 			let list: Vec<MessageResponse> = api
 				.get_messages_by_schema_and_block(
 					at,

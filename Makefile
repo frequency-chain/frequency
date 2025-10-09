@@ -419,6 +419,7 @@ LOCAL_URI=ws://localhost:9944
 WASM_PATH=./target/release/wbuild/frequency-runtime/frequency_runtime.wasm
 # Without the state from this minimal set of pallets, try-runtime panics when trying to validate multi-block migrations
 MINIMAL_PALLETS=ParachainSystem ParachainInfo System Timestamp Aura Authorship
+TRY_RUNTIME_BUILD_TYPE=release
 
 .PHONY: check-onfinality-api-key
 check-onfinality-api-key:
@@ -440,25 +441,30 @@ try-runtime-%-mainnet: URI := $(MAINNET_URI)
 try-runtime-%-mainnet: CHAIN := mainnet
 try-runtime-%-local: URI := $(LOCAL_URI)
 try-runtime-%-local: CHAIN := local
+try-runtime-%-local: WASM_PATH=./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm
+
 
 build-runtime-paseo-testnet: FEATURES := frequency-testnet
 build-runtime-bridging-testnet: FEATURES := frequency-testnet,frequency-bridging
 build-runtime-mainnet: FEATURES := frequency
 build-runtime-westend-testnet: FEATURES := frequency-westend,frequency-bridging
-build-runtime-local: FEATURES := frequency-no-relay,frequency-bridging
+build-runtime-local: FEATURES := frequency-no-relay
+build-runtime-local: TRY_RUNTIME_BUILD_TYPE := dev
 
 .PHONY: build-runtime-paseo-testnet build-runtime-westend-testnet build-runtime-mainnet build-runtime-local
+build-runtime-local \
 build-runtime-paseo-testnet \
 build-runtime-westend-testnet \
 build-runtime-mainnet:
-	cargo build --package frequency-runtime --release --features $(FEATURES),try-runtime --locked
+	cargo build --package frequency-runtime --profile ${TRY_RUNTIME_BUILD_TYPE} --features $(FEATURES),try-runtime --locked
 
 #
 # The 'try-runtime' targets can optionally be constrained to fetch state for only specific pallets. This is useful to
 # avoid unnecessarily fetching large state trees for pallets not under test. The list of pallets is:
 # Msa Messages StatefulStorage Capacity FrequencyTxPayment Handles Passkey Schemas
 
-.PHONY: try-runtime-create-snapshot-paseo-testnet try-runtime-create-snapshot-westend-testnet try-runtime-create-snapshot-mainnet
+.PHONY: try-runtime-create-snapshot-paseo-testnet try-runtime-create-snapshot-westend-testnet try-runtime-create-snapshot-mainnet try-runtime-create-snapshot-local
+try-runtime-create-snapshot-local \
 try-runtime-create-snapshot-paseo-testnet \
 try-runtime-create-snapshot-westend-testnet \
 try-runtime-create-snapshot-mainnet: check-try-runtime-installed check-onfinality-api-key
@@ -470,7 +476,8 @@ try-runtime-upgrade-paseo-testnet \
 try-runtime-upgrade-mainnet: try-runtime-upgrade-%: check-try-runtime-installed build-runtime-%
 	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 live --uri $(URI)
 
-.PHONY: try-runtime-use-snapshot-paseo-testnet try-runtime-use-snapshot-mainnet
+.PHONY: try-runtime-use-snapshot-paseo-testnet try-runtime-use-snapshot-mainnet try-runtime-use-snapshot-local
+try-runtime-use-snapshot-local \
 try-runtime-use-snapshot-paseo-testnet \
 try-runtime-use-snapshot-mainnet: try-runtime-use-snapshot-%: check-try-runtime-installed build-runtime-%
 	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
@@ -483,11 +490,11 @@ try-runtime-check-migrations-westend-testnet: try-runtime-check-migrations-%: ch
 
 .PHONY: try-runtime-check-migrations-local
 try-runtime-check-migrations-local: check-try-runtime-installed build-runtime-local
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri $(URI) $(PALLET_FLAGS)
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PALLET_FLAGS)
 
 .PHONY: try-runtime-check-migrations-none-local
 try-runtime-check-migrations-none-local: check-try-runtime-installed build-runtime-local
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri $(URI) $(PALLET_FLAGS)
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check live --uri $(URI) $(PALLET_FLAGS)
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes

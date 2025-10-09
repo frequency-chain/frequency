@@ -6,9 +6,11 @@ use common_primitives::{
 	},
 	schema::*,
 };
+use frame_support::{derive_impl, pallet_prelude::Weight};
 
 use frame_support::{
 	dispatch::DispatchResult,
+	migrations::MultiStepMigrator,
 	parameter_types,
 	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
@@ -27,11 +29,15 @@ pub const INVALID_SCHEMA_ID: SchemaId = 65534;
 // this value should be the same as the one used in benchmarking
 pub const IPFS_SCHEMA_ID: SchemaId = 20;
 
+pub const ON_CHAIN_SCHEMA_ID: SchemaId = 16001;
+
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
 pub const DUMMY_CID_BASE32: &[u8; 59] =
 	b"bafkreieb2x7yyuhy6hmct4j7tkmgnthrfpqyo4mt5nscx7pvc6oiweiwjq";
 pub const DUMMY_CID_BASE64: &[u8; 49] = b"mAVUSIIHV/4xQ+PHYKfE/mphmzPEr4Ydxk+tkK/31F5yLERZM";
+
+pub const DUMMY_MSA_ID: u64 = 10;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -39,6 +45,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		MessagesPallet: pallet_messages::{Pallet, Call, Storage, Event<T>},
+		Migrator: pallet_migrations,
 	}
 );
 
@@ -68,25 +75,34 @@ impl system::Config for Test {
 	type OnSetCode = ();
 	type MaxConsumers = ConstU32<16>;
 	type SingleBlockMigrations = ();
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = Migrator;
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
 	type ExtensionsWeightInfo = ();
 }
 
+frame_support::parameter_types! {
+	pub storage MigratorServiceWeight: Weight = Weight::from_parts(100, 100); // do not use in prod
+}
+
+#[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
+impl pallet_migrations::Config for Test {
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		crate::migration::v3::MigrateV2ToV3<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v3::FinalizeV3Migration<Test, crate::SubstrateWeight<Test>>,
+	);
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type MaxServiceWeight = MigratorServiceWeight;
+}
+
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
 parameter_types! {
-	// Max payload size was picked specifically to be large enough to accommodate
-	// a CIDv1 using SHA2-256, but too small to accommodate CIDv1 w/SHA2-512.
-	// This is purely so that we can test the error condition. Real world configuration
-	// should have this set large enough to accommodate the largest possible CID.
-	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
-	// is not too big.
-	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
-
+	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3;
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -274,6 +290,17 @@ pub fn run_to_block(n: u32) {
 		System::on_initialize(System::block_number());
 		MessagesPallet::on_initialize(System::block_number());
 	}
+}
+
+#[allow(dead_code)]
+pub fn run_to_block_with_migrations(n: u32) {
+	System::run_to_block_with::<AllPalletsWithSystem>(
+		n,
+		frame_system::RunToBlockHooks::default().after_initialize(|_| {
+			// Done by Executive:
+			<Test as frame_system::Config>::MultiBlockMigrator::step();
+		}),
+	);
 }
 
 pub fn get_msa_from_account(account_id: u64) -> u64 {
