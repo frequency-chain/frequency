@@ -1,15 +1,17 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { base64UrlToUint8Array, MultiSignatureType } from './helpers';
-import { secp256r1 } from '@noble/curves/p256';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { u8aWrapBytes } from '@polkadot/util';
 import { ExtrinsicHelper } from './extrinsicHelpers';
-import { sha256 } from '@noble/hashes/sha256';
+import { p256 } from '@noble/curves/nist';
+import { sha256 } from '@noble/hashes/sha2';
+
+const secp256r1 = p256;
 
 export function createPassKeyAndSignAccount(accountPKey: Uint8Array) {
-  const passKeyPrivateKey = secp256r1.utils.randomPrivateKey();
+  const passKeyPrivateKey = secp256r1.utils.randomSecretKey();
   const passKeyPublicKey = secp256r1.getPublicKey(passKeyPrivateKey, true);
-  const passkeySignature = secp256r1.sign(u8aWrapBytes(accountPKey), passKeyPrivateKey).toDERRawBytes();
+  const passkeySignature = secp256r1.sign(u8aWrapBytes(accountPKey), passKeyPrivateKey);
   return { passKeyPrivateKey, passKeyPublicKey, passkeySignature };
 }
 
@@ -73,7 +75,7 @@ export async function createPasskeyPayload(
     .replace(challengeReplacer, calculatedChallengeBase64url);
   // prepare signing payload which is [authenticator || sha256(client_data_json)]
   const passkeySha256 = sha256(new Uint8Array([...authenticatorData, ...sha256(Buffer.from(clientDataJSON))]));
-  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey).toDERRawBytes();
+  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey);
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passKeyPublicKey),
     verifiablePasskeySignature: {
@@ -117,7 +119,7 @@ export async function createPasskeyPayloadV2(
     .replace(challengeReplacer, calculatedChallengeBase64url);
   // prepare signing payload which is [authenticator || sha256(client_data_json)]
   const passkeySha256 = sha256(new Uint8Array([...authenticatorData, ...sha256(Buffer.from(clientDataJSON))]));
-  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey).toDERRawBytes();
+  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey);
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passKeyPublicKey),
     verifiablePasskeySignature: {
