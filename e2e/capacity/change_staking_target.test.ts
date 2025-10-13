@@ -10,7 +10,7 @@ import {
   DOLLARS,
   createProviderKeysAndId,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 
 let fundingSource: KeyringPair;
 

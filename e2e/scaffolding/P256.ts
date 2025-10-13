@@ -1,10 +1,10 @@
-import { SubmittableExtrinsic } from '@polkadot/api/types';
-import { base64UrlToUint8Array, MultiSignatureType } from './helpers';
-import { ISubmittableResult } from '@polkadot/types/types';
+import type { SubmittableExtrinsic } from '@polkadot/api/types';
+import { base64UrlToUint8Array, type MultiSignatureType } from './helpers';
+import type { ISubmittableResult } from '@polkadot/types/types';
 import { u8aWrapBytes } from '@polkadot/util';
 import { ExtrinsicHelper } from './extrinsicHelpers';
-import { p256 } from '@noble/curves/nist';
-import { sha256 } from '@noble/hashes/sha2';
+import { p256 } from '@noble/curves/nist.js';
+import { sha256 } from '@noble/hashes/sha2.js';
 
 const secp256r1 = p256;
 

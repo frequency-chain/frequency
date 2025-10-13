@@ -2,7 +2,7 @@
 
 import '@frequency-chain/api-augment';
 import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import assert from 'assert';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { isTestnet } from '../scaffolding/env';

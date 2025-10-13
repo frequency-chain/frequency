@@ -1,5 +1,5 @@
 import '@frequency-chain/api-augment';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u64 } from '@polkadot/types';
 import assert from 'assert';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';

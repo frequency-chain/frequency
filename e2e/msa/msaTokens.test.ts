@@ -1,8 +1,8 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { AuthorizedKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, type AuthorizedKeyData } from '../scaffolding/extrinsicHelpers';
 import {
-  EcdsaSignature,
+  type EcdsaSignature,
   createAuthorizedKeyData,
   ethereumAddressToKeyringPair,
   getUnifiedAddress,
@@ -10,9 +10,9 @@ import {
   sign,
 } from '@frequency-chain/ethereum-utils';
 import { getFundingSource } from '../scaffolding/funding';
-import { H160 } from '@polkadot/types/interfaces';
+import type { H160 } from '@polkadot/types/interfaces';
 import { bnToU8a, hexToU8a, stringToU8a, u8aToHex } from '@polkadot/util';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { keccak256AsU8a } from '@polkadot/util-crypto';
 import {
   CENTS,

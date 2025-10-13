@@ -1,11 +1,11 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
-import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkadot/types';
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
-import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
+import type { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import {
   getBlockNumber,
@@ -13,11 +13,11 @@ import {
   getFinalizedBlockNumber,
   getNonce,
   log,
-  MultiSignatureType,
+  type MultiSignatureType,
 } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
-import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
+import type { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
 import { IsEvent } from '@polkadot/types/metadata/decorate/types';
 import {
   HandleResponse,
