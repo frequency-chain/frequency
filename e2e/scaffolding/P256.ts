@@ -11,7 +11,10 @@ const secp256r1 = p256;
 export function createPassKeyAndSignAccount(accountPKey: Uint8Array) {
   const passKeyPrivateKey = secp256r1.utils.randomSecretKey();
   const passKeyPublicKey = secp256r1.getPublicKey(passKeyPrivateKey, true);
-  const passkeySignature = secp256r1.sign(u8aWrapBytes(accountPKey), passKeyPrivateKey);
+  const passkeySignature = secp256r1.sign(u8aWrapBytes(accountPKey), passKeyPrivateKey, {
+    format: 'der',
+    prehash: false,
+  });
   return { passKeyPrivateKey, passKeyPublicKey, passkeySignature };
 }
 
@@ -75,7 +78,7 @@ export async function createPasskeyPayload(
     .replace(challengeReplacer, calculatedChallengeBase64url);
   // prepare signing payload which is [authenticator || sha256(client_data_json)]
   const passkeySha256 = sha256(new Uint8Array([...authenticatorData, ...sha256(Buffer.from(clientDataJSON))]));
-  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey);
+  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey, { format: 'der', prehash: false });
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passKeyPublicKey),
     verifiablePasskeySignature: {
@@ -119,7 +122,7 @@ export async function createPasskeyPayloadV2(
     .replace(challengeReplacer, calculatedChallengeBase64url);
   // prepare signing payload which is [authenticator || sha256(client_data_json)]
   const passkeySha256 = sha256(new Uint8Array([...authenticatorData, ...sha256(Buffer.from(clientDataJSON))]));
-  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey);
+  const passKeySignature = secp256r1.sign(passkeySha256, passKeyPrivateKey, { format: 'der', prehash: false });
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passKeyPublicKey),
     verifiablePasskeySignature: {
