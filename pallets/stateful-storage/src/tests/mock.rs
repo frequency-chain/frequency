@@ -112,13 +112,13 @@ impl MsaLookup for MsaInfoHandler {
 		if *key == test_public(INVALID_MSA_ID) ||
 			*key == get_invalid_msa_signature_account().public().into()
 		{
-			return None
+			return None;
 		}
 
 		if *key == get_signature_benchmarks_public_account().into() ||
 			*key == get_signature_account().1.public().into()
 		{
-			return Some(constants::SIGNATURE_MSA_ID)
+			return Some(constants::SIGNATURE_MSA_ID);
 		}
 
 		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
@@ -132,13 +132,13 @@ impl MsaValidator for MsaInfoHandler {
 		if *key == test_public(INVALID_MSA_ID) ||
 			*key == get_invalid_msa_signature_account().public().into()
 		{
-			return Err(DispatchError::Other("some error"))
+			return Err(DispatchError::Other("some error"));
 		}
 
 		if *key == get_signature_benchmarks_public_account().into() ||
 			*key == get_signature_account().1.public().into()
 		{
-			return Ok(constants::SIGNATURE_MSA_ID)
+			return Ok(constants::SIGNATURE_MSA_ID);
 		}
 
 		Ok(MessageSourceId::decode(&mut key.as_slice()).unwrap())
@@ -155,7 +155,7 @@ impl ProviderLookup for DelegationInfoHandler {
 		provider: ProviderId,
 	) -> Option<Delegation<SchemaId, Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
 		if provider == ProviderId(2000) {
-			return None
+			return None;
 		};
 		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
 	}
@@ -174,7 +174,7 @@ impl DelegationValidator for DelegationInfoHandler {
 		DispatchError,
 	> {
 		if provider == ProviderId(2000) {
-			return Err(DispatchError::Other("some delegation error"))
+			return Err(DispatchError::Other("some delegation error"));
 		};
 
 		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
@@ -191,7 +191,7 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 			schema_id == constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA ||
 			schema_id == constants::UNDELEGATED_ITEMIZED_SCHEMA
 		{
-			return Err(DispatchError::Other("no schema grant or delegation"))
+			return Err(DispatchError::Other("no schema grant or delegation"));
 		}
 
 		match DelegationInfoHandler::get_delegation_of(delegator, provider) {

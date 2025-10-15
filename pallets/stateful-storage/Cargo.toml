@@ -28,6 +28,8 @@ sp-runtime = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../../runtime/common", default-features = false }
+pallet-msa = { path = "../msa", default-features = true }
+hex = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }

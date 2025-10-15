@@ -22,7 +22,7 @@ pub trait MultipartKeyStorageHasher: StorageHasher {
 		let hash_len: usize = (Self::HashSize::get() * num_key_parts).into();
 		if x.len() < hash_len {
 			log::error!("Invalid reverse: hash length too short");
-			return &[]
+			return &[];
 		}
 		&x[hash_len..]
 	}
@@ -72,7 +72,7 @@ pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 		prefix_len: u8,
 	) -> Result<Self, parity_scale_codec::Error> {
 		if prefix_len > Self::Arity::get() {
-			return Err("Prefix longer than total key length".into())
+			return Err("Prefix longer than total key length".into());
 		}
 
 		let mut key_material = H::reverse(hash, Self::Arity::get() - prefix_len);
@@ -321,6 +321,18 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		}
 	}
 
+	/// Read a child trie using a raw key
+	pub fn try_read_raw<V: Decode + Sized>(
+		child_info: &ChildInfo,
+		key: &[u8],
+	) -> Result<Option<V>, ()> {
+		let value = child::get_raw(child_info, key);
+		match value {
+			None => Ok(None),
+			Some(v) => Ok(Decode::decode(&mut &v[..]).map(Some).map_err(|_| ())?),
+		}
+	}
+
 	/// Prefix Iterator for a child tree
 	///
 	/// Allows getting all the keys having the same prefix
@@ -364,6 +376,11 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		child::put_raw(child_trie_info, &keys.hash(), new_value.encode().as_ref());
 	}
 
+	/// Writes directly into child tree node using pre-hashed keys
+	pub fn write_raw<V: Encode + Sized>(child_trie_info: &ChildInfo, key: &[u8], new_value: V) {
+		child::put_raw(child_trie_info, key, new_value.encode().as_ref());
+	}
+
 	/// Kills a child tree node
 	pub fn kill<K: MultipartKey<H>>(
 		msa_id: &MessageSourceId,
@@ -375,8 +392,9 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		child::kill(child_trie_info, &keys.hash());
 	}
 
-	/// These hashes should be consistent across the chain so we are hardcoding them
-	fn get_child_tree_for_storage(
+	/// Get the child trie at the given root
+	// These hashes should be consistent across the chain so we are hardcoding them
+	pub fn get_child_tree_for_storage(
 		msa_id: MessageSourceId,
 		pallet_name: &[u8],
 		storage_name: &[u8],
@@ -389,6 +407,17 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 			twox_64(storage_name).as_ref(),
 		]
 		.concat();
+		let child = child::ChildInfo::new_default(&hashed_keys);
+		log::error!(
+			"hashed tree prefix (MSA: {:?}):\
+		 	hashed tree prefix: {:?}\
+		 	storage key: {:?} \
+		 	prefixed storage key: {:?}",
+			msa_id,
+			hex::encode(hashed_keys.clone()),
+			hex::encode(child.storage_key()),
+			hex::encode(child.prefixed_storage_key().into_inner())
+		);
 		child::ChildInfo::new_default(&hashed_keys)
 	}
 

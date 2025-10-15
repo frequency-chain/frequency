@@ -5,7 +5,7 @@ use frame_support::{pallet_prelude::*, storage_alias};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::codec::{Decode, Encode};
 
-/// Storage for messages in v2 and lower
+/// Storage for messages in v1 and lower
 /// - Key: (block_number, schema_id, message_index)
 /// - Value: Message
 #[storage_alias]

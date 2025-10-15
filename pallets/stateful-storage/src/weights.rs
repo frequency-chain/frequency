@@ -41,6 +41,8 @@ pub trait WeightInfo {
 	fn apply_item_actions_with_signature_v2_delete(n: u32, ) -> Weight;
 	fn upsert_page_with_signature_v2(s: u32, ) -> Weight;
 	fn delete_page_with_signature_v2() -> Weight;
+	fn paginated_v1_to_v2() -> Weight;
+	fn v1_to_v2_final_step() -> Weight;
 }
 
 /// Weights for `pallet_stateful_storage` using the Substrate node and recommended hardware.
@@ -188,6 +190,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+
+	fn paginated_v1_to_v2() -> Weight {
+		Weight::from(0)
+	}
+
+	fn v1_to_v2_final_step() -> Weight {
+		Weight::from(0)
+	}
 }
 
 // For backwards compatibility and tests.
@@ -333,6 +343,14 @@ impl WeightInfo for () {
 		Weight::from_parts(122_767_000, 7166)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	fn paginated_v1_to_v2() -> Weight {
+		Weight::zero()
+	}
+
+	fn v1_to_v2_final_step() -> Weight {
+		Weight::zero()
 	}
 }
 

@@ -36,6 +36,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
+/// Migration module
+pub mod migration;
 mod stateful_child_tree;
 pub mod types;
 pub mod weights;
@@ -174,6 +176,9 @@ pub mod pallet {
 
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
+
+		/// Page was written with an unsupported page storage version
+		UnsupportedPageVersion,
 	}
 
 	#[pallet::event]
@@ -695,6 +700,9 @@ impl<T: Config> Pallet<T> {
 		let prev_content_hash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
+		let actions: Vec<ItemActionV2<T::MaxItemizedBlobSizeBytes>> =
+			actions.into_iter().map(|a| (schema_id, a).into()).collect();
+
 		let mut updated_page =
 			ItemizedOperations::<T>::apply_item_actions(&existing_page, &actions[..]).map_err(
 				|e| match e {
@@ -765,6 +773,8 @@ impl<T: Config> Pallet<T> {
 		let prev_content_hash: PageHash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
+		new_page.page_version = PageVersion::V2;
+		new_page.schema_id = Some(schema_id);
 		new_page.nonce = existing_page.nonce.wrapping_add(1);
 
 		StatefulChildTree::<T::KeyHasher>::write(
@@ -825,13 +835,19 @@ impl<T: Config> Pallet<T> {
 		page_id: PageId,
 	) -> Result<Option<PaginatedPage<T>>, DispatchError> {
 		let keys: PaginatedKey = (schema_id, page_id);
-		Ok(StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
 			PAGINATED_STORAGE_PREFIX,
 			&keys,
 		)
-		.map_err(|_| Error::<T>::CorruptedState)?)
+		.map_err(|_| Error::<T>::CorruptedState)?;
+		if let Some(Page { page_version, .. }) = &page {
+			if *page_version != PageVersion::V2 {
+				return Err(Error::<T>::UnsupportedPageVersion.into());
+			}
+		};
+		Ok(page)
 	}
 
 	/// Gets an itemized storage for desired parameters
@@ -840,12 +856,18 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 	) -> Result<Option<ItemizedPage<T>>, DispatchError> {
 		let keys: ItemizedKey = (schema_id,);
-		Ok(StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
 			ITEMIZED_STORAGE_PREFIX,
 			&keys,
 		)
-		.map_err(|_| Error::<T>::CorruptedState)?)
+		.map_err(|_| Error::<T>::CorruptedState)?;
+		if let Some(Page { page_version, .. }) = &page {
+			if *page_version != PageVersion::V2 {
+				return Err(Error::<T>::UnsupportedPageVersion.into());
+			}
+		};
+		Ok(page)
 	}
 }
