@@ -4,15 +4,15 @@ import {
   createKeys,
   generateAddKeyPayload,
   signPayload,
-  MultiSignatureType,
+  type MultiSignatureType,
   DOLLARS,
   createAndFundKeypairs,
   getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
-import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { ExtrinsicHelper, type AddKeyData } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
-import { Codec } from '@polkadot/types/types';
+import type { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { createAddKeyData, getUnifiedAddress, getUnifiedPublicKey, sign } from '@frequency-chain/ethereum-utils';
 import { u8aToHex } from '@polkadot/util';

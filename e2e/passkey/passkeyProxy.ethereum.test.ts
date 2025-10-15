@@ -2,12 +2,12 @@ import '@frequency-chain/api-augment';
 import assert from 'assert';
 import {
   createAndFundKeypair,
-  EcdsaSignature,
+  type EcdsaSignature,
   getBlockNumber,
   getNonce,
-  Sr25519Signature,
+  type Sr25519Signature,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey, getUnifiedAddress } from '@frequency-chain/ethereum-utils';

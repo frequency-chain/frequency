@@ -9,12 +9,12 @@ import {
   generateAuthorizedKeyPayload,
   signPayloadSr25519,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { ethereumAddressToKeyringPair, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
-import { H160 } from '@polkadot/types/interfaces';
+import type { H160 } from '@polkadot/types/interfaces';
 
 let fundingSource: KeyringPair;
 

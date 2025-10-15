@@ -6,7 +6,7 @@ import {
   generateValidProviderPayloadWithName,
   computeCid,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
