@@ -55,3 +55,20 @@ RUN case "${TARGETARCH}" in \
   rustup +"${RUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu" target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu wasm32v1-none && \
   rustup +"${RUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu" component add clippy rust-docs rustfmt rustc-dev rustc rust-src && \
   rustup +${RUST_VERSION} show
+
+# Install compilers required by Polkadot SDK stable2509+ for pallet-revive
+# Both solc (Ethereum Solidity) and resolc (Revive/PolkaVM) are needed
+# as pallet-revive-fixtures compiles contracts for both EVM and PVM
+RUN mkdir -p /home/runner/.local/bin && \
+  case "${TARGETARCH}" in \
+    amd64) \
+      curl -L https://github.com/ethereum/solidity/releases/download/v0.8.28/solc-static-linux -o /home/runner/.local/bin/solc && \
+      curl -L https://github.com/paritytech/revive/releases/download/v0.4.1/resolc-x86_64-unknown-linux-musl -o /home/runner/.local/bin/resolc ;; \
+    arm64) \
+      curl -L https://github.com/ethereum/solidity/releases/download/v0.8.28/solc-static-linux -o /home/runner/.local/bin/solc && \
+      curl -L https://github.com/paritytech/revive/releases/download/v0.4.1/resolc-aarch64-unknown-linux-musl -o /home/runner/.local/bin/resolc ;; \
+    *) echo "Unsupported architecture for solc/resolc: ${TARGETARCH}" && exit 1 ;; \
+  esac && \
+  chmod +x /home/runner/.local/bin/solc /home/runner/.local/bin/resolc
+
+ENV PATH="/home/runner/.local/bin:${PATH}"
