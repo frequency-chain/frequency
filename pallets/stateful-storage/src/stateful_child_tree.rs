@@ -22,7 +22,7 @@ pub trait MultipartKeyStorageHasher: StorageHasher {
 		let hash_len: usize = (Self::HashSize::get() * num_key_parts).into();
 		if x.len() < hash_len {
 			log::error!("Invalid reverse: hash length too short");
-			return &[];
+			return &[]
 		}
 		&x[hash_len..]
 	}
@@ -72,7 +72,7 @@ pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 		prefix_len: u8,
 	) -> Result<Self, parity_scale_codec::Error> {
 		if prefix_len > Self::Arity::get() {
-			return Err("Prefix longer than total key length".into());
+			return Err("Prefix longer than total key length".into())
 		}
 
 		let mut key_material = H::reverse(hash, Self::Arity::get() - prefix_len);
@@ -407,17 +407,6 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 			twox_64(storage_name).as_ref(),
 		]
 		.concat();
-		let child = child::ChildInfo::new_default(&hashed_keys);
-		log::error!(
-			"hashed tree prefix (MSA: {:?}):\
-		 	hashed tree prefix: {:?}\
-		 	storage key: {:?} \
-		 	prefixed storage key: {:?}",
-			msa_id,
-			hex::encode(hashed_keys.clone()),
-			hex::encode(child.storage_key()),
-			hex::encode(child.prefixed_storage_key().into_inner())
-		);
 		child::ChildInfo::new_default(&hashed_keys)
 	}
 

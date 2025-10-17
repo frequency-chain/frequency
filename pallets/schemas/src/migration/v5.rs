@@ -90,17 +90,18 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 				|schema_id, old_schema_name, version_id: SchemaVersionId| {
 					reads += 1;
 					old_names += 1;
-					let max_index = version_id.ids.len() - 1;
+					let max_version = version_id.ids.len();
 					for (index, id) in version_id.ids.iter().enumerate() {
+						let version = index + 1;
 						let mut name = old_schema_name.clone();
 						// Let the latest schema version be the original name, and postfix previous versions
 						// with "-<version>"
-						if index < max_index {
-							let index_str = Vec::<u8>::from(format!("-{}", index + 1).as_bytes());
-							match append_or_overlay(&mut name, &index_str, &schema_id) {
+						if version < max_version {
+							let version_str = Vec::<u8>::from(format!("-{}", version).as_bytes());
+							match append_or_overlay(&mut name, &version_str, &schema_id) {
 								Ok(_) => (),
 								Err(e) => {
-									log::error!(target: LOG_TARGET, "{:?} unable to append id {:?} to name: {:?}", e, index_str, name);
+									log::error!(target: LOG_TARGET, "{:?} unable to append id {:?} to name: {:?}", e, version_str, name);
 									return Some(version_id)
 								},
 							};

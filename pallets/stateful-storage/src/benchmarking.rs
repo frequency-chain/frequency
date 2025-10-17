@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 use super::*;
-use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
+use crate::{types::ItemAction, Pallet as StatefulStoragePallet, StatefulChildTree};
 use common_primitives::{
 	schema::{ModelType, PayloadLocation},
 	stateful_storage::{PageHash, PageId},
@@ -12,10 +12,10 @@ use frame_system::RawOrigin;
 use parity_scale_codec::{Decode, Encode};
 use sp_core::{bounded::BoundedVec, crypto::KeyTypeId};
 use sp_runtime::RuntimeAppPublic;
-use stateful_child_tree::StatefulChildTree;
 use test_common::constants;
 extern crate alloc;
 use alloc::vec;
+use common_primitives::schema::IntentId;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
@@ -45,7 +45,7 @@ fn itemized_actions_populate<T: Config>(
 	actions.try_into().expect("Invalid actions")
 }
 
-fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
+fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> Result<(), DispatchError> {
 	let intent_id = T::SchemaBenchmarkHelper::create_intent(
 		b"benchmark.test".to_vec(),
 		location,
@@ -74,12 +74,27 @@ fn get_itemized_page<T: Config>(
 	.unwrap_or(None)
 }
 
-fn get_paginated_page<T: Config>(
+fn get_paginated_page_v1<T: Config>(
 	msa_id: MessageSourceId,
 	schema_id: SchemaId,
 	page_id: PageId,
+) -> Option<migration::v1::PaginatedPage<T>> {
+	let key: migration::v1::PaginatedKey = (schema_id, page_id);
+	StatefulChildTree::<T::KeyHasher>::try_read::<_, migration::v1::PaginatedPage<T>>(
+		&msa_id,
+		PALLET_STORAGE_PREFIX,
+		PAGINATED_STORAGE_PREFIX,
+		&key,
+	)
+	.unwrap_or(None)
+}
+
+fn get_paginated_page<T: Config>(
+	msa_id: MessageSourceId,
+	intent_id: IntentId,
+	page_id: PageId,
 ) -> Option<PaginatedPage<T>> {
-	let key: PaginatedKey = (schema_id, page_id);
+	let key: PaginatedKey = (intent_id, page_id);
 	StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
 		&msa_id,
 		PALLET_STORAGE_PREFIX,
@@ -147,8 +162,8 @@ mod benchmarks {
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = n;
 		// removed 2 bytes are for ItemHeader size which is currently 2 bytes per item
-		let num_of_existing_items =
-			T::MaxItemizedPageSizeBytes::get() / (T::MaxItemizedBlobSizeBytes::get() + 2);
+		let max_items = T::MaxItemizedPageSizeBytes::get() /
+			(T::MaxItemizedBlobSizeBytes::get() + ItemHeader::max_encoded_len() as u32);
 		let key = (schema_id,);
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
@@ -160,7 +175,7 @@ mod benchmarks {
 			[schema_id].to_vec()
 		));
 
-		for _ in 0..num_of_existing_items {
+		for _ in 0..max_items {
 			let actions =
 				itemized_actions_populate::<T>(1, T::MaxItemizedBlobSizeBytes::get() as usize, 0);
 			let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
@@ -269,9 +284,16 @@ mod benchmarks {
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
 		let schema_id = constants::PAGINATED_SCHEMA;
+		let intent_id = schema_id as IntentId;
 		let page_id: PageId = 1;
 		let caller: T::AccountId = whitelisted_caller();
-		let payload = vec![0u8; T::MaxPaginatedPageSizeBytes::get() as usize];
+		let payload = BoundedVec::<u8, T::MaxPaginatedPageSizeBytes>::try_from(vec![
+			0u8;
+			T::MaxPaginatedPageSizeBytes::get()
+				as usize
+		])
+		.expect("failed to convert payload");
+		let page = PaginatedPage::<T>::from(payload);
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
@@ -279,17 +301,12 @@ mod benchmarks {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
-			[schema_id].to_vec()
+			[intent_id].to_vec()
 		));
 
-		let key = (schema_id, page_id);
-		StatefulChildTree::<T::KeyHasher>::write(
-			&delegator_msa_id,
-			PALLET_STORAGE_PREFIX,
-			PAGINATED_STORAGE_PREFIX,
-			&key,
-			payload.clone(),
-		);
+		Pallet::<T>::update_paginated(delegator_msa_id, schema_id, page_id, 0, page)
+			.expect("failed to write page");
+		let key = (intent_id, page_id);
 		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
 			&delegator_msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -303,7 +320,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller), delegator_msa_id, schema_id, page_id, content_hash);
 
-		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, intent_id, page_id);
 		assert!(page_result.is_none());
 		Ok(())
 	}
@@ -376,8 +393,8 @@ mod benchmarks {
 		let schema_id = constants::ITEMIZED_SCHEMA;
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = n;
-		let num_of_existing_items =
-			T::MaxItemizedPageSizeBytes::get() / (T::MaxItemizedBlobSizeBytes::get() + 2);
+		let num_of_existing_items = T::MaxItemizedPageSizeBytes::get() /
+			(T::MaxItemizedBlobSizeBytes::get() + ItemHeader::max_encoded_len() as u32);
 		let key = (schema_id,);
 		let expiration = BlockNumberFor::<T>::from(10u32);
 
@@ -523,7 +540,13 @@ mod benchmarks {
 		let schema_id = constants::PAGINATED_SCHEMA;
 		let page_id: PageId = 1;
 		let caller: T::AccountId = whitelisted_caller();
-		let payload = vec![0u8; T::MaxPaginatedPageSizeBytes::get() as usize];
+		let payload = BoundedVec::<u8, T::MaxPaginatedPageSizeBytes>::try_from(vec![
+			0u8;
+			T::MaxPaginatedPageSizeBytes::get()
+				as usize
+		])
+		.expect("failed to convert payload");
+		let page = PaginatedPage::<T>::from(payload);
 		let expiration = BlockNumberFor::<T>::from(10u32);
 
 		let delegator_account_public = SignerId::generate_pair(Some(
@@ -538,13 +561,8 @@ mod benchmarks {
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
 		let key = (schema_id, page_id);
-		StatefulChildTree::<T::KeyHasher>::write(
-			&delegator_msa_id,
-			PALLET_STORAGE_PREFIX,
-			PAGINATED_STORAGE_PREFIX,
-			&key,
-			payload.clone(),
-		);
+		Pallet::<T>::update_paginated(delegator_msa_id, schema_id, page_id, 0, page)
+			.expect("failed to write page");
 		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
 			&delegator_msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -574,6 +592,63 @@ mod benchmarks {
 
 		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn paginated_v1_to_v2() -> Result<(), BenchmarkError> {
+		// Setup
+		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
+		let schema_id: SchemaId = 1;
+		let page_id: PageId = 1;
+
+		// Create a paginated page
+		let mut page: migration::v1::PaginatedPage<T> =
+			migration::v1::PaginatedPage::<T>::default();
+		let payload: BoundedVec<u8, T::MaxPaginatedPageSizeBytes> =
+			vec![1; T::MaxPaginatedPageSizeBytes::get() as usize]
+				.try_into()
+				.expect("Unable to create BoundedVec payload");
+		page.data = payload;
+		page.nonce = 1;
+		let keys: migration::v1::PaginatedKey = (schema_id, page_id);
+		StatefulChildTree::<T::KeyHasher>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+			&page,
+		);
+		let created_page = get_paginated_page_v1::<T>(msa_id, schema_id, page_id);
+		assert!(created_page.is_some());
+
+		let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+		);
+		let mut cursor = migration::v2::ChildCursor::<migration::v2::PaginatedKeyLength> {
+			id: msa_id,
+			last_key: BoundedVec::default(),
+		};
+
+		// Execute
+		#[block]
+		{
+			migration::v2::process_single_page::<
+				T,
+				weights::SubstrateWeight<T>,
+				migration::v2::PaginatedKeyLength,
+			>(&child, &mut cursor)
+			.expect("failed to migrate paginated page");
+		}
+
+		let updated_page = get_paginated_page::<T>(msa_id, schema_id, page_id);
+		assert!(updated_page.is_some());
+		let updated_page = updated_page.unwrap();
+		assert_eq!(updated_page.page_version, PageVersion::V2);
+		assert_eq!(updated_page.schema_id, Some(schema_id));
+
 		Ok(())
 	}
 

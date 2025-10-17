@@ -1,6 +1,6 @@
 use crate::{
 	migration::v1,
-	stateful_child_tree::StatefulChildTree,
+	stateful_child_tree::{MultipartKey, StatefulChildTree},
 	types::{PAGINATED_STORAGE_PREFIX, PALLET_STORAGE_PREFIX},
 	weights, Config, Pallet,
 };
@@ -8,8 +8,9 @@ use common_primitives::msa::MessageSourceId;
 use core::marker::PhantomData;
 use frame_support::{
 	migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
-	pallet_prelude::{Get, RuntimeDebug, StorageVersion},
+	pallet_prelude::{ConstU32, Get, RuntimeDebug, StorageVersion},
 	weights::WeightMeter,
+	BoundedVec,
 };
 use pallet_msa::{Config as MsaConfig, CurrentMsaIdentifierMaximum};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -19,45 +20,46 @@ use sp_runtime::TryRuntimeError;
 
 const LOG_TARGET: &str = "pallet::stateful-storage::migration::v2";
 
-const PAGINATED_KEY_LENGTH: usize = 72;
-const ITEMIZED_KEY_LENGTH: usize = 36;
+/// The length of a PaginatedKey (twox_128, twox_128, u16, u16)
+pub type PaginatedKeyLength = ConstU32<72>;
+/// The length of an ItemizedKey (twox_128, u16)
+pub type ItemizedKeyLength = ConstU32<36>;
 
+/// Type to encapsulate a child key of a certain size, or no key.
+/// Necessary because we need MaxEncodedLen, which Vec<u8> doesn't give us.
 /// Cursor struct for tracking migration progress
 #[derive(Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, RuntimeDebug)]
-pub struct ChildCursor<const N: usize> {
+pub struct ChildCursor<N: Get<u32>> {
 	/// Current MSA ID data being migrated
 	pub id: MessageSourceId,
 	/// Last inner key processed; None means start from first key
-	pub last_key: Option<[u8; N]>,
+	pub last_key: BoundedVec<u8, N>,
 }
 
-impl<const N: usize> Default for ChildCursor<N> {
+impl<N: Get<u32>> Default for ChildCursor<N> {
 	fn default() -> Self {
-		Self { id: 1, last_key: None }
+		Self { id: 1, last_key: BoundedVec::<u8, N>::default() }
 	}
 }
 
-fn next_key<const N: usize>(
+fn next_key<N: Get<u32>>(
 	child: &ChildInfo,
-	after: &Option<[u8; N]>,
-) -> Result<Option<[u8; N]>, SteppedMigrationError> {
-	let start: &[u8] = match after {
-		Some(k) => k,
-		None => &[],
-	};
-	match sp_io::default_child_storage::next_key(child.storage_key(), start) {
-		Some(k) => Ok(Some(<[u8; N]>::try_from(k).map_err(|_| SteppedMigrationError::Failed)?)),
+	after: &BoundedVec<u8, N>,
+) -> Result<Option<BoundedVec<u8, N>>, SteppedMigrationError> {
+	match sp_io::default_child_storage::next_key(child.storage_key(), after.as_slice()) {
+		Some(k) => Ok(Some(k.try_into().map_err(|_| SteppedMigrationError::Failed)?)),
 		None => Ok(None),
 	}
 }
 
-fn process_single_page<T: Config, W: weights::WeightInfo, const N: usize>(
+/// Migrates a single PaginatedPage
+pub fn process_single_page<T: Config, W: weights::WeightInfo, N: Get<u32>>(
 	child: &ChildInfo,
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
-	let Some(k) = next_key(&child, &cur.last_key)? else {
+	let Some(k) = next_key(&child, &cur.last_key).unwrap_or(None) else {
 		// Finished this child → next id
-		cur.last_key = None;
+		cur.last_key = BoundedVec::default();
 		cur.id += 1;
 		return Ok(false);
 	};
@@ -67,12 +69,15 @@ fn process_single_page<T: Config, W: weights::WeightInfo, const N: usize>(
 			.map_err(|_| SteppedMigrationError::Failed)?
 	{
 		let (schema_id, _page_index) =
-			v1::PaginatedKey::decode(&mut &k[..]).map_err(|_| SteppedMigrationError::Failed)?;
-		let new_page: crate::PaginatedPage<T> = ((Some(schema_id), old)).into();
+			<v1::PaginatedKey as MultipartKey<T::KeyHasher>>::decode(&mut &k[..])
+				.map_err(|_| SteppedMigrationError::Failed)?;
+		let page_parts = (Some(schema_id), old);
+		let new_page: crate::PaginatedPage<T> = page_parts.into();
+
 		StatefulChildTree::<T::KeyHasher>::write_raw(&child, &k, new_page);
 	}
 
-	cur.last_key = Some(k);
+	cur.last_key = k;
 	Ok(true)
 }
 
@@ -85,7 +90,7 @@ pub struct MigratePaginatedV1ToV2<T: Config + MsaConfig, W: weights::WeightInfo>
 impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 	for MigratePaginatedV1ToV2<T, W>
 {
-	type Cursor = ChildCursor<{ PAGINATED_KEY_LENGTH }>;
+	type Cursor = ChildCursor<PaginatedKeyLength>;
 	// Without the explicit length here the construction of the ID would not be infallible.
 	type Identifier = MigrationId<31>;
 
@@ -131,7 +136,7 @@ impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 				if meter.try_consume(single_loop_weight).is_err() {
 					return Ok(Some(cur));
 				}
-				if !process_single_page::<T, W, { PAGINATED_KEY_LENGTH }>(&child, &mut cur)? {
+				if !process_single_page::<T, W, PaginatedKeyLength>(&child, &mut cur)? {
 					break 'inner;
 				}
 			}
@@ -193,13 +198,13 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for FinalizeV2Migration
 		_cursor: Option<Self::Cursor>,
 		meter: &mut WeightMeter,
 	) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
-		let required = W::v1_to_v2_final_step();
+		// let required = W::v1_to_v2_final_step();
 		// If there is not enough weight for a single step, return an error. This case can be
 		// problematic if it is the first migration that ran in this block. But there is nothing
 		// that we can do about it here.
-		if meter.try_consume(required).is_err() {
-			return Err(SteppedMigrationError::InsufficientWeight { required });
-		}
+		// if meter.try_consume(required).is_err() {
+		// 	return Err(SteppedMigrationError::InsufficientWeight { required });
+		// }
 		StorageVersion::new(2).put::<Pallet<T>>();
 
 		log::info!(target: LOG_TARGET, "Finalized messages pallet migration: storage version set to 3");

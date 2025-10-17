@@ -179,7 +179,7 @@ fn upsert_existing_page_with_bad_state_hash_errors() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
 		let page_id = 1;
-		let page = generate_page::<PaginatedPageSize>(None, Some(100));
+		let page = generate_page::<PaginatedPageSize>(Some(schema_id), None, Some(100));
 
 		let key = (schema_id, page_id);
 		<StatefulChildTree>::write(

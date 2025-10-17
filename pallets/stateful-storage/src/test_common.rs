@@ -1,22 +1,9 @@
 use common_primitives::{msa::MessageSourceId, schema::SchemaId};
 
-///
-/// Constants used both in benchmarks and tests
-///
-#[allow(unused)]
-pub mod constants {
-	use super::*;
-	/// itemized schema id
-	pub const ITEMIZED_SCHEMA: SchemaId = 100;
-	/// paginated schema id
-	pub const PAGINATED_SCHEMA: SchemaId = 101;
-	/// Is used in benchmarks and mocks to sign and verify a payload
-	pub const BENCHMARK_SIGNATURE_ACCOUNT_SEED: &str =
-		"replace rhythm attend tank sister accuse ancient piece tornado benefit rubber horror";
-	/// Account mentioned above maps to the following msa id
-	pub const SIGNATURE_MSA_ID: MessageSourceId = 105;
-
-	// additional unit test schemas
+/// Constants used for tests only
+#[cfg(test)]
+mod test_constants {
+	use common_primitives::msa::SchemaId;
 
 	/// Itemized
 	pub const UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 102;
@@ -29,11 +16,33 @@ pub mod constants {
 	pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 108;
 }
 
+///
+/// Constants used both in benchmarks and tests
+///
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub mod constants {
+	use super::*;
+	/// itemized schema id
+	pub const ITEMIZED_SCHEMA: SchemaId = 100;
+	/// paginated schema id
+	pub const PAGINATED_SCHEMA: SchemaId = 101;
+	/// Is used in benchmarks and mocks to sign and verify a payload
+	pub const BENCHMARK_SIGNATURE_ACCOUNT_SEED: &str =
+		"replace rhythm attend tank sister accuse ancient piece tornado benefit rubber horror";
+	/// Account mentioned above maps to the following msa id
+	pub const SIGNATURE_MSA_ID: MessageSourceId = 105;
+	// additional unit test schemas
+	#[cfg(test)]
+	pub use test_constants::*;
+}
+
 #[cfg(test)]
 pub mod test_utility {
-	use crate::{pallet, tests::mock::Test, Config, ItemHeader, ItemizedPage, Page};
+	use crate::{
+		pallet, tests::mock::Test, types::PageVersion, Config, ItemHeader, ItemizedPage, Page,
+	};
 	use common_primitives::{
-		schema::{ModelType, PayloadLocation},
+		schema::{ModelType, PayloadLocation, SchemaId},
 		stateful_storage::PageNonce,
 	};
 	use frame_support::BoundedVec;
@@ -56,13 +65,29 @@ pub mod test_utility {
 			.unwrap()
 	}
 
-	pub fn generate_page<T: Get<u32>>(in_nonce: Option<PageNonce>, id: Option<u8>) -> Page<T> {
+	pub fn generate_page<T: Get<u32>>(
+		schema_id: Option<SchemaId>,
+		in_nonce: Option<PageNonce>,
+		id: Option<u8>,
+	) -> Page<T> {
 		let nonce = in_nonce.unwrap_or_default();
-		Page::<T> { nonce, data: generate_payload_bytes(id) }
+		Page::<T> {
+			page_version: PageVersion::default(),
+			schema_id,
+			nonce,
+			data: generate_payload_bytes(id),
+		}
 	}
 
 	pub fn add_itemized_payload_to_buffer<T: Config>(buffer: &mut Vec<u8>, payload: &[u8]) {
-		buffer.extend_from_slice(&ItemHeader { payload_len: payload.len() as u16 }.encode()[..]);
+		buffer.extend_from_slice(
+			&ItemHeader {
+				item_version: Default::default(),
+				schema_id: 0,
+				payload_len: payload.len() as u16,
+			}
+			.encode()[..],
+		);
 		buffer.extend_from_slice(payload);
 	}
 
@@ -76,7 +101,7 @@ pub mod test_utility {
 			add_itemized_payload_to_buffer::<T>(&mut buffer, p.as_slice());
 		}
 		let data = BoundedVec::<u8, T::MaxItemizedPageSizeBytes>::try_from(buffer).unwrap();
-		ItemizedPage::<T> { nonce, data }
+		ItemizedPage::<T> { page_version: Default::default(), schema_id: None, nonce, data }
 	}
 	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, MaxEncodedLen)]
 	/// A structure defining a Schema

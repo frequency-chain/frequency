@@ -95,7 +95,7 @@ pub enum ItemActionV2<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq>
 
 impl<DataSize> Into<ItemActionV2<DataSize>> for (SchemaId, ItemAction<DataSize>)
 where
-	DataSize: Get<u32> + std::clone::Clone + std::fmt::Debug + std::cmp::PartialEq,
+	DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq,
 {
 	fn into(self) -> ItemActionV2<DataSize> {
 		match self.1 {
@@ -108,7 +108,7 @@ where
 /// Item storage versions
 #[derive(Encode, Decode, Default, PartialEq, MaxEncodedLen, Debug)]
 #[repr(u8)]
-pub enum StoredItemHeader {
+pub enum ItemVersion {
 	/// V1 variant can be removed after migration is complete
 	#[codec(index = 1)]
 	V1,
@@ -124,7 +124,7 @@ pub enum StoredItemHeader {
 #[derive(Encode, Decode, PartialEq, MaxEncodedLen, Debug)]
 pub struct ItemHeader {
 	/// The storage version this item was written with
-	pub header_version: StoredItemHeader,
+	pub item_version: ItemVersion,
 	/// The SchemaId used to serialize this item
 	pub schema_id: SchemaId,
 	/// The length of this item, not including the size of this header.
@@ -545,6 +545,7 @@ impl<PageDataSize: Get<u32>> PartialEq for Page<PageDataSize> {
 
 /// Deserializing a Page from a BoundedVec is used for the input payload--
 /// so there is no schema_id and no nonce to be read, just the raw data.
+/// The rest of the metadata gets filled in before the new/updated page is written.
 impl<PageDataSize: Get<u32>> From<BoundedVec<u8, PageDataSize>> for Page<PageDataSize> {
 	fn from(bounded: BoundedVec<u8, PageDataSize>) -> Self {
 		Self {
@@ -599,7 +600,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 				},
 				ItemActionV2::Add { schema_id, data } => {
 					let header = ItemHeader {
-						header_version: StoredItemHeader::default(),
+						item_version: ItemVersion::default(),
 						schema_id: *schema_id,
 						payload_len: data
 							.len()
@@ -629,17 +630,19 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
+		let page_size = self.data.len();
+
 		while offset < self.data.len() {
 			ensure!(
-				offset + ItemHeader::max_encoded_len() <= self.data.len(),
-				PageError::ErrorParsing("wrong header size")
+				offset + ItemHeader::max_encoded_len() <= page_size,
+				PageError::ErrorParsing("incomplete item header")
 			);
 			let header = <ItemHeader>::decode(&mut &self.data[offset..])
-				.map_err(|_| PageError::ErrorParsing("decoding header"))?;
+				.map_err(|_| PageError::ErrorParsing("decoding item header"))?;
 			let item_total_length = ItemHeader::max_encoded_len() + header.payload_len as usize;
 			ensure!(
-				offset + item_total_length <= self.data.len(),
-				PageError::ErrorParsing("wrong payload size")
+				offset + item_total_length <= page_size,
+				PageError::ErrorParsing("item payload exceeds page data")
 			);
 
 			items.insert(

@@ -2011,6 +2011,11 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
 		Ok(())
 	}
+
+	fn create_msa(keys: T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		let (msa_id, _) = Self::create_account(keys, EMPTY_FUNCTION)?;
+		Ok(msa_id)
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]

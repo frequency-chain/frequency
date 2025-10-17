@@ -120,7 +120,7 @@ fn apply_item_actions_with_corrupted_state_should_fail() {
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let page: ItemizedPage<Test> = generate_page(None, None);
+		let page: ItemizedPage<Test> = generate_page(None, None, None);
 		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let key = (schema_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write(
@@ -396,8 +396,13 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
+		let actions1_v2: Vec<ItemActionV2<MaxItemizedBlobSizeBytes>> = actions1
+			.iter()
+			.cloned()
+			.map(|a| -> ItemActionV2<MaxItemizedBlobSizeBytes> { (schema_id, a).into() })
+			.collect();
 		let mut new_page =
-			ItemizedOperations::<Test>::apply_item_actions(&page, &actions1).unwrap();
+			ItemizedOperations::<Test>::apply_item_actions(&page, &actions1_v2).unwrap();
 		new_page.nonce = 1;
 		let key = (schema_id,);
 		<StatefulChildTree>::write(
@@ -792,7 +797,7 @@ fn apply_item_actions_with_signature_v2_having_corrupted_state_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
-		let page: ItemizedPage<Test> = generate_page(None, None);
+		let page: ItemizedPage<Test> = generate_page(None, None, None);
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let key = (schema_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write(
@@ -845,9 +850,11 @@ fn apply_item_actions_with_signature_v2_having_page_with_stale_hash_should_fail(
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
+		let actions_v2: Vec<ItemActionV2<MaxItemizedBlobSizeBytes>> =
+			actions.iter().cloned().map(|a| (schema_id, a).into()).collect();
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions).unwrap();
+		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions_v2).unwrap();
 		let key = (schema_id,);
 		<StatefulChildTree>::write(
 			&msa_id,
