@@ -31,6 +31,7 @@
     "@polkadot/api": "16.4.9",
     "@polkadot/types": "16.4.9",
     "@polkadot/util": "13.5.7",
+    "async-mutex": "^0.5.0",
     "ethers": "6.15.0",
     "helia": "6.0.5",
     "multiformats": "13.4.1",
