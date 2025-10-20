@@ -34,7 +34,6 @@ import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime
 import { hasRelayChain } from './env';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
-import { Mutex } from 'async-mutex';
 
 export interface ReleaseSchedule {
   start: number;
@@ -256,19 +255,18 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   public async sudoSignAndSend(waitForInBlock = true) {
-    return await ExtrinsicHelper.mutex.runExclusive(async () => {
-      const nonce = await autoNonce.auto(this.keys, 'auto');
-      // Era is 0 for tests due to issues with BirthBlock
-      return await firstValueFrom(
-        this.api.tx.sudo
-          .sudo(this.extrinsic())
-          .signAndSend(this.keys, { nonce, era: 0 })
-          .pipe(
-            filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
-            this.parseResult(this.event)
-          )
-      );
-    });
+    const currentNonce = await getNonce(this.keys);
+    const nonce = await autoNonce.auto(this.keys, currentNonce);
+    // Era is 0 for tests due to issues with BirthBlock
+    return await firstValueFrom(
+      this.api.tx.sudo
+        .sudo(this.extrinsic())
+        .signAndSend(this.keys, { nonce, era: 0 })
+        .pipe(
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
+          this.parseResult(this.event)
+        )
+    );
   }
 
   public async payWithCapacity(inputNonce?: AutoNonce, waitForInBlock = true) {
@@ -413,7 +411,6 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 export class ExtrinsicHelper {
   public static api: ApiRx;
   public static apiPromise: ApiPromise;
-  public static mutex: Mutex = new Mutex();
 
   public static async initialize(providerUrl: string | string[]) {
     ExtrinsicHelper.api = await connect(providerUrl);
