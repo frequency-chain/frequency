@@ -11,5 +11,6 @@
     "./msa/provider_governance.test.ts",
     "./msa/update_provider_application.test.ts"
   ],
-  "timeout": 50000
+  "timeout": 50000,
+  "jobs": 1
 }
