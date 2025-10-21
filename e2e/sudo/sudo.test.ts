@@ -117,147 +117,147 @@ describe('Sudo required', function () {
       const schema_settings = schema_response_value.settings;
       assert.notEqual(schema_settings.length, 0);
     });
+  });
 
-    describe('📗 Stateful Pallet Storage AppendOnly Schemas', function () {
-      // This requires schema creation abilities
+  describe('📗 Stateful Pallet Storage AppendOnly Schemas', function () {
+    // This requires schema creation abilities
 
-      let itemizedSchemaId: SchemaId;
-      let msa_id: MessageSourceId;
-      let providerId: MessageSourceId;
-      let providerKeys: KeyringPair;
+    let itemizedSchemaId: SchemaId;
+    let msa_id: MessageSourceId;
+    let providerId: MessageSourceId;
+    let providerKeys: KeyringPair;
 
-      before(async function () {
-        // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
-        assert.notEqual(providerId, undefined, 'setup should populate providerId');
-        assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
+    before(async function () {
+      // Create a provider for the MSA, the provider will be used to grant delegation
+      [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+      assert.notEqual(providerId, undefined, 'setup should populate providerId');
+      assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
-        // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
-          sudoKey,
-          AVRO_CHAT_MESSAGE,
-          'AvroBinary',
-          'Itemized',
-          'AppendOnly',
-          schemaName
+      // Create a schema for Itemized PayloadLocation
+      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
+        sudoKey,
+        AVRO_CHAT_MESSAGE,
+        'AvroBinary',
+        'Itemized',
+        'AppendOnly',
+        schemaName
+      );
+      const { target: event } = await createSchema.sudoSignAndSend();
+      itemizedSchemaId = event!.data.schemaId;
+
+      // Create a MSA for the delegator and delegate to the provider for the itemized schema
+      [, msa_id] = await createDelegatorAndDelegation(fundingSource, itemizedSchemaId, providerId, providerKeys);
+      assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
+    });
+
+    describe('Itemized With AppendOnly Storage Tests', function () {
+      it('should not be able to call delete action', async function () {
+        // Add and update actions
+        const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
+
+        const add_action = {
+          Add: payload_1,
+        };
+
+        const payload_2 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World Again From Frequency');
+
+        const update_action = {
+          Add: payload_2,
+        };
+
+        const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1);
+
+        const delete_action = {
+          Delete: idx_1,
+        };
+        const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+
+        const add_actions = [add_action, update_action, delete_action];
+
+        const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
+          providerKeys,
+          itemizedSchemaId,
+          msa_id,
+          add_actions,
+          target_hash
         );
-        const { target: event } = await createSchema.sudoSignAndSend();
-        itemizedSchemaId = event!.data.schemaId;
-
-        // Create a MSA for the delegator and delegate to the provider for the itemized schema
-        [, msa_id] = await createDelegatorAndDelegation(fundingSource, itemizedSchemaId, providerId, providerKeys);
-        assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
-      });
-
-      describe('Itemized With AppendOnly Storage Tests', function () {
-        it('should not be able to call delete action', async function () {
-          // Add and update actions
-          const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
-
-          const add_action = {
-            Add: payload_1,
-          };
-
-          const payload_2 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World Again From Frequency');
-
-          const update_action = {
-            Add: payload_2,
-          };
-
-          const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1);
-
-          const delete_action = {
-            Delete: idx_1,
-          };
-          const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
-
-          const add_actions = [add_action, update_action, delete_action];
-
-          const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
-            providerKeys,
-            itemizedSchemaId,
-            msa_id,
-            add_actions,
-            target_hash
-          );
-          await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
-            name: 'UnsupportedOperationForSchema',
-            section: 'statefulStorage',
-          });
+        await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
+          name: 'UnsupportedOperationForSchema',
+          section: 'statefulStorage',
         });
       });
+    });
+  });
 
-      describe('Capacity staking is affected by a hold being slashed', function () {
-        it('stake succeeds when overlapping tokens are on hold due to a proposal', async function () {
-          const accountBalance: bigint = 122n * DOLLARS;
-          const stakeBalance: bigint = 100n * DOLLARS;
-          const spendBalance: bigint = 20n * DOLLARS;
-          const proposalBond: bigint = 100n * DOLLARS;
+  describe('Capacity staking is affected by a hold being slashed', function () {
+    it('stake succeeds when overlapping tokens are on hold due to a proposal', async function () {
+      const accountBalance: bigint = 122n * DOLLARS;
+      const stakeBalance: bigint = 100n * DOLLARS;
+      const spendBalance: bigint = 20n * DOLLARS;
+      const proposalBond: bigint = 100n * DOLLARS;
 
-          // Setup some keys and a provider for capacity staking
-          const stakeKeys: KeyringPair = createKeys('StakeKeys');
-          const stakeProviderId: u64 = await createMsaAndProvider(
-            fundingSource,
-            stakeKeys,
-            'StakeProvider',
-            accountBalance
-          );
+      // Setup some keys and a provider for capacity staking
+      const stakeKeys: KeyringPair = createKeys('StakeKeys');
+      const stakeProviderId: u64 = await createMsaAndProvider(
+        fundingSource,
+        stakeKeys,
+        'StakeProvider',
+        accountBalance
+      );
 
-          // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-          const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
-          const { target: proposalEvent } = await proposalExt.signAndSend();
-          assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
+      // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
+      const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
+      const { target: proposalEvent } = await proposalExt.signAndSend();
+      assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
 
-          // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
-          let stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
-          assert.equal(
-            stakedAcctInfo.data.reserved,
-            proposalBond,
-            `expected ${proposalBond} reserved balance, got ${stakedAcctInfo.data.reserved}`
-          );
+      // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
+      let stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
+      assert.equal(
+        stakedAcctInfo.data.reserved,
+        proposalBond,
+        `expected ${proposalBond} reserved balance, got ${stakedAcctInfo.data.reserved}`
+      );
 
-          // Create a stake that will result in overlapping tokens being frozen
-          // stake will allow only the balance not on hold to be staked
-          await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
+      // Create a stake that will result in overlapping tokens being frozen
+      // stake will allow only the balance not on hold to be staked
+      await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
-          // Slash the provider
-          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data['proposalIndex']);
-          const { target: slashEvent } = await slashExt.sudoSignAndSend();
-          assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
+      // Slash the provider
+      const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data['proposalIndex']);
+      const { target: slashEvent } = await slashExt.sudoSignAndSend();
+      assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
-          // Confirm that the tokens were slashed from the stakeKeys account using the query API
-          stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
-          assert.equal(
-            stakedAcctInfo.data.reserved,
-            0n,
-            `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
-          );
-        });
+      // Confirm that the tokens were slashed from the stakeKeys account using the query API
+      stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
+      assert.equal(
+        stakedAcctInfo.data.reserved,
+        0n,
+        `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
+      );
+    });
 
-        it('proposal fails when there is Capacity staking', async function () {
-          const accountBalance: bigint = 122n * DOLLARS;
-          const stakeBalance: bigint = 100n * DOLLARS;
-          const spendBalance: bigint = 20n * DOLLARS;
+    it('proposal fails when there is Capacity staking', async function () {
+      const accountBalance: bigint = 122n * DOLLARS;
+      const stakeBalance: bigint = 100n * DOLLARS;
+      const spendBalance: bigint = 20n * DOLLARS;
 
-          // Setup some keys and a provider for capacity staking
-          const stakeKeys: KeyringPair = createKeys('StakeKeys');
-          const stakeProviderId: u64 = await createMsaAndProvider(
-            fundingSource,
-            stakeKeys,
-            'StakeProvider',
-            accountBalance
-          );
+      // Setup some keys and a provider for capacity staking
+      const stakeKeys: KeyringPair = createKeys('StakeKeys');
+      const stakeProviderId: u64 = await createMsaAndProvider(
+        fundingSource,
+        stakeKeys,
+        'StakeProvider',
+        accountBalance
+      );
 
-          // Create a stake that will result in overlapping tokens being frozen
-          await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
+      // Create a stake that will result in overlapping tokens being frozen
+      await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
-          // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-          // The proposal should fail because the stakeKeys account doesn't have enough
-          // transferable to cover the deposit.
-          const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
-          await assert.rejects(proposalExt.signAndSend());
-        });
-      });
+      // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
+      // The proposal should fail because the stakeKeys account doesn't have enough
+      // transferable to cover the deposit.
+      const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
+      await assert.rejects(proposalExt.signAndSend());
     });
   });
 });
