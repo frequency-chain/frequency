@@ -6,5 +6,11 @@
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
   "import": "tsx/esm",
   "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
+  "ignore": [
+    "./sudo/sudo.test.ts",
+    "./msa/provider_applications.test.ts",
+    "./msa/provider_governance.test.ts",
+    "./msa/update_provider_application.test.ts"
+  ],
   "timeout": 50000
 }

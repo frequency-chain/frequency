@@ -6,7 +6,7 @@
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
   "import": "tsx/esm",
   "spec": [
-    "./sudo/**/*.test.ts",
+    "./sudo/sudo.test.ts",
     "./msa/provider_applications.test.ts",
     "./msa/provider_governance.test.ts",
     "./msa/update_provider_application.test.ts"

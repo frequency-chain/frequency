@@ -6,9 +6,9 @@
   "scripts": {
     "clean": "rm -Rf dist",
     "build": "tsc -p ./tsconfig.json",
-    "test": "npm run test:parallel && npm run test:sudo",
-    "test:sudo": "mocha --config .mocharc.sudo.json",
-    "test:parallel": "mocha --ignore './sudo/**/*.test.ts' --ignore './msa/provider_applications.test.ts' --ignore './msa/provider_governance.test.ts' --ignore './msa/update_provider_application.test.ts'",
+    "test": "npm run test:sudo && npm run test:parallel",
+    "test:sudo": "mocha --config .mocharc.sudo.json --parallel=false",
+    "test:parallel": "mocha --config .mocharc.json --parallel=true",
     "test:serial": "mocha --parallel=false",
     "test:relay-single": "mocha --config .relay-chain.mocharc.json --bail",
     "test:relay-funding": "mocha --config .relay-chain-all.mocharc.json --dry-run",
