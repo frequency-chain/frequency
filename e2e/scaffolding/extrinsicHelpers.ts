@@ -254,7 +254,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
-  public async sudoSignAndSend(waitForInBlock = true) {
+  public async sudoSignAndSend(waitForInBlock = false) {
     const currentNonce = await getNonce(this.keys);
     const nonce = await autoNonce.auto(this.keys, currentNonce);
     // Era is 0 for tests due to issues with BirthBlock
