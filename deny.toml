@@ -102,7 +102,6 @@ allow = [
   "MPL-2.0",
   "ISC",
   "GPL-3.0-only",
-  "GPL-3.0",
   "GPL-3.0-or-later WITH Classpath-exception-2.0",
   "OpenSSL",
   "Zlib",

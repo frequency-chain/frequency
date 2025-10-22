@@ -35,30 +35,29 @@ pub mod constants {
 			//
 			// Stats nanoseconds:
 			//   Min, Max: 1_676, 3_967_371
-			//   Average:  36_369
-			//   Median:   36_876
-			//   Std-Dev:  10368.83
+			//   Average:  68_610
+			//   Median:   55_534
+			//   Std-Dev:  104861.07
 			//
 			// Percentiles nanoseconds:
-			//   99th: 60_542
-			//   95th: 52_621
-			//   75th: 43_407
-			read: 47_280 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			//   99th: 743_669
+			//   95th: 82_813
+			//   75th: 62_747
+			read: 89_193 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			// Time to write one storage item.
 			// Calculated by multiplying the *Average* of all values with `1.3` and adding `0`.
 			//
 			// Stats nanoseconds:
-			//   Min, Max: 4_954, 87_545_132
-			//   Average:  57_212
-			//   Median:   62_141
-			//   Std-Dev:  60272.19
+			//   Min, Max: 6_945, 27_330_702
+			//   Average:  94_298
+			//   Median:   104_840
+			//   Std-Dev:  89548.06
 			//
-			// Percentiles nanoseconds:
-			//   99th: 101_820
-			//   95th: 90_948
-			//   75th: 75_800
-			write: 74_376 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			//   99th: 167_407
+			//   95th: 146_669
+			//   75th: 121_699
+			write: 122_587 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 
