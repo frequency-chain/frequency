@@ -825,8 +825,8 @@ export async function computeCid(bytes: Uint8Array): Promise<string> {
   return cid.toString(base58btc);
 }
 
-export async function addProxy(real: KeyringPair, proxy: KeyringPair, proxyType: any) {
-  const proxyAddCall = ExtrinsicHelper.api.tx.proxy.addProxy(getUnifiedAddress(proxy), proxyType, 0);
+export async function addProxy(real: KeyringPair, proxy: string, proxyType: any) {
+  const proxyAddCall = ExtrinsicHelper.api.tx.proxy.addProxy(proxy, proxyType, 0);
   const proxyAddTx = new Extrinsic(() => proxyAddCall, real, ExtrinsicHelper.api.events.proxy.ProxyAdded);
   await assert.doesNotReject(proxyAddTx.signAndSend());
 }

@@ -12,8 +12,14 @@ import {
   stakeToProvider,
   addProxy,
   getBlockNumber,
+  getFreeBalance,
 } from '../scaffolding/helpers';
-import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { createKeyMulti, encodeMultiAddress, sortAddresses } from '@polkadot/util-crypto';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
+import { hexAddPrefix } from '@polkadot/util';
+import { PalletCapacityStakingDetails } from "@polkadot/types/lookup";
+import { firstValueFrom } from 'rxjs';
 let fundingSource: KeyringPair;
 const tokenMinStake: bigint = 1n * CENTS;
 
@@ -60,19 +66,118 @@ describe('Capacity: provider_boost extrinsic', function () {
     const alice = await createAndFundKeypair(fundingSource, 1000n * DOLLARS, 'alice');
     const bob = await createAndFundKeypair(fundingSource, 2000n * DOLLARS, 'bob');
 
-    await addProxy(bob, alice, 'Staking');
+    await addProxy(bob, getUnifiedAddress(alice), 'Staking');
     const innerBoost = ExtrinsicHelper.api.tx.capacity.providerBoost(1, 2n * DOLLARS);
     const expectedEvent = ExtrinsicHelper.api.events.capacity.ProviderBoosted;
     await ExtrinsicHelper.proxySignAndSend(innerBoost, alice, bob, expectedEvent);
     const block = await getBlockNumber();
     await ExtrinsicHelper.runToBlock(block + 41);
 
+    const bobBalance = await getFreeBalance(bob);
+
     const innerClaim = ExtrinsicHelper.api.tx.capacity.claimStakingRewards();
     const expectedClaimEvent = ExtrinsicHelper.api.events.capacity.ProviderBoostRewardClaimed;
     await ExtrinsicHelper.proxySignAndSend(innerClaim, alice, bob, expectedClaimEvent);
 
-    const innerUnstake = ExtrinsicHelper.api.tx.capacity.unstake(1, 2n * DOLLARS);
+    // assert that bob got the balance
+    const bobNewBalance = await getFreeBalance(bob);
+    assert(bobNewBalance > bobBalance);
+    const boostAmount = 2n*DOLLARS;
+
+
+    const innerUnstake = ExtrinsicHelper.api.tx.capacity.unstake(1, boostAmount);
     const expectedUnstakeEvent = ExtrinsicHelper.api.events.capacity.UnStaked;
     await ExtrinsicHelper.proxySignAndSend(innerUnstake, alice, bob, expectedUnstakeEvent);
+  });
+
+  it('multisig call as a proxy works for capacity staking ops', async function () {
+    // Input the addresses that will make up the multisig account.
+    const alice = await createAndFundKeypair(fundingSource, 2000n * DOLLARS, 'alice');
+    const bob = await createAndFundKeypair(fundingSource, 2000n * DOLLARS, 'bob');
+    const charlie = await createAndFundKeypair(fundingSource, 2000n * DOLLARS, 'charlie');
+    const fergie = await createAndFundKeypair(fundingSource, 2000n * DOLLARS, 'fergie');
+
+    const stakeKeys = createKeys('booster');
+    const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
+
+
+    const owners = [
+      getUnifiedAddress(alice),
+      getUnifiedAddress(bob),
+      getUnifiedAddress(charlie),
+    ];
+
+
+    // The number of accounts that must approve. Must be greater than 0 and less than
+    // or equal to the total number of addresses.
+    const threshold = 2;
+
+
+    // Convert byte array to SS58 encoding.
+    const ss58MultiAddress = encodeMultiAddress(owners, threshold);
+
+    await addProxy(fergie, ss58MultiAddress, 'Any');
+    const api = ExtrinsicHelper.api;
+
+    // 2) Build inner call: Fergie -> transfer to Bob
+    const boostAmount = 2n * DOLLARS;
+    const inner = api.tx.capacity.providerBoost(provider, boostAmount);
+
+    // 3) Wrap with proxy: multisig will act as Fergie
+    const proxyCall = api.tx.proxy.proxy(
+      getUnifiedAddress(fergie), // real
+      null,           // forceProxyType = None (use Any granted above)
+      inner
+    );
+
+    // Helpers
+    // the weight for this is pretty high
+    const weight = api.createType('Weight', { refTime: 1_584_641_224, proofSize: 27000 });
+    const sort = (all: string[], who: string) => sortAddresses(all.filter(a => a !== who));
+
+    // 4) First approval by Alice (creates the multisig record)
+    const othersForAlice = sort(owners, owners[0]);
+    let timepoint: any | null = null;
+
+
+    // const multiSigExtAlice = new Extrinsic(
+    //   () => api.tx.multisig.asMulti(threshold, othersForAlice, timepoint, proxyCall.method, weight),
+    //   alice,
+    //   api.events.multisig.MultisigExecuted,
+    //   );
+   //
+   // await assert.doesNotReject(multiSigExtAlice.signAndSend());
+
+    const txHash = await firstValueFrom(api.tx.multisig
+      .asMulti(threshold, othersForAlice, null, proxyCall.method, weight)
+      .signAndSend(alice, ({ status, events }) => {
+        if (status.isInBlock || status.isFinalized) {
+          return;
+        }
+      }));
+    console.log(txHash.toHuman());
+
+    const proxyCallHash = proxyCall.method.hash;
+
+    const infoOpt = await ExtrinsicHelper.apiPromise.query.multisig.multisigs(ss58MultiAddress, proxyCallHash);
+    assert(infoOpt.isSome);
+    timepoint = infoOpt.unwrap().when; // { height, index }
+
+
+    // 5) Second approval by Charlie (executes the call)
+    const othersForCharlie = sort(owners, owners[2]);
+
+    const multiSigExtCharlie = new Extrinsic(
+      () => api.tx.multisig.asMulti(threshold, othersForCharlie, timepoint, proxyCall.method, weight),
+      charlie,
+      api.events.multisig.MultisigExecuted,
+    );
+    await assert.doesNotReject(multiSigExtCharlie.signAndSend());
+
+    // check that Fergie has a staking account with the expected amount in it.
+    const ledgerResp = await ExtrinsicHelper.apiPromise.query.capacity.stakingAccountLedger(getUnifiedAddress(fergie));
+    assert(ledgerResp.isSome);
+    const ledger: PalletCapacityStakingDetails= ledgerResp.unwrap();
+    assert(ledger.active.eq(boostAmount));
   });
 });
