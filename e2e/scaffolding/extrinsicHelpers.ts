@@ -11,6 +11,7 @@ import {
   getBlockNumber,
   getExistentialDeposit,
   getFinalizedBlockNumber,
+  getNonce,
   log,
   type MultiSignatureType,
 } from './helpers';
@@ -254,7 +255,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   public async sudoSignAndSend(waitForInBlock = false) {
-    const nonce = await autoNonce.auto(this.keys);
+    const nonce = await getNonce(this.keys);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
       this.api.tx.sudo
