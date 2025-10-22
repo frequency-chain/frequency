@@ -57,56 +57,6 @@ describe('Create Provider Application', function () {
     assert.notEqual(applicationId.toBigInt(), undefined, 'applicationId should be defined');
   });
 
-  it('should fail to create a provider application for non provider', async function () {
-    if (isTestnet()) this.skip();
-    const applicationEntry = generateValidProviderPayloadWithName('MyAppSomething');
-    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(
-      sudoKeys,
-      nonProviderKeys,
-      applicationEntry
-    );
-    await assert.rejects(createProviderOp.sudoSignAndSend(), {
-      name: 'ProviderNotRegistered',
-    });
-  });
-
-  it('should fail to create a provider application for long name', async function () {
-    if (isTestnet()) this.skip();
-    const longName = 'a'.repeat(257); // 256 characters long limit
-    const providerEntry = generateValidProviderPayloadWithName(longName);
-    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, providerEntry);
-    await assert.rejects(createProviderOp.sudoSignAndSend(), {
-      name: 'RpcError',
-    });
-  });
-
-  it('should fail with invalid logo CID', async function () {
-    if (isTestnet()) this.skip();
-    const applicationEntry = {
-      defaultName: 'InvalidLogoProvider',
-      defaultLogo250100PngCid: 'invalid-cid',
-    };
-    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    await assert.rejects(createProviderOp.sudoSignAndSend(), {
-      name: 'InvalidCid',
-    });
-  });
-
-  it('should fail to create provider application with wrong language code', async function () {
-    if (isTestnet()) this.skip();
-    const applicationEntry = {
-      defaultName: 'InvalidLanguageProvider',
-      localizedNames: new Map([
-        ['-xx', 'InvalidLanguageProvider'], // Invalid language code
-        ['es&', 'ProveedorIdiomaInvalido'],
-      ]),
-    };
-    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    await assert.rejects(createProviderOp.sudoSignAndSend(), {
-      name: 'InvalidBCP47LanguageCode',
-    });
-  });
-
   it('should successfully create a provider application and upload logo', async function () {
     if (isTestnet()) this.skip();
     // Create fake logo bytes, 130 bytes long
@@ -157,38 +107,6 @@ describe('Create Provider Application', function () {
     );
     const defaultName = new TextDecoder().decode(resultingApplicationContext.defaultName.toU8a(true));
     assert.equal(defaultName, 'lOgoProvider', 'default name should match');
-  });
-
-  it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {
-    if (isTestnet()) this.skip();
-    // Create fake logo bytes, 130 bytes long
-    const applicationEntry = generateValidProviderPayloadWithName('lOgoProvider');
-    const logoBytesDifferent = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_applications.test.ts')));
-    const logoCidStr = await computeCid(logoBytesDifferent);
-    const buf = Array.from(logoBytesDifferent);
-    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
-    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
-    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
-    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
-    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'LogoCidNotApproved' });
-  });
-
-  it('should fail with InvalidLogoBytes error when uploading logo as Uint8Array', async function () {
-    if (isTestnet()) this.skip();
-    // Create fake logo bytes, 130 bytes long
-    const logoBytes = new Uint8Array(11);
-    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
-    const applicationEntry = generateValidProviderPayloadWithName('lOgoProviderInvalid');
-    const logoCidStr = await computeCid(logoBytes);
-    applicationEntry.defaultLogo250100PngCid = logoCidStr;
-    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
-    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
-    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
-
-    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, logoBytes); // this should fail because logoBytes is not a valid input
-    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
-    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'InvalidLogoBytes' });
   });
 
   it('should successfully create application with locale and retrieve', async function () {
@@ -242,5 +160,87 @@ describe('Create Provider Application', function () {
     );
     const defaultName = new TextDecoder().decode(resultingApplicationContext.defaultName.toU8a(true));
     assert.equal(defaultName, 'lOgoProvider', 'default name should match');
+  });
+
+  it('should fail to create a provider application for non provider', async function () {
+    if (isTestnet()) this.skip();
+    const applicationEntry = generateValidProviderPayloadWithName('MyAppSomething');
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(
+      sudoKeys,
+      nonProviderKeys,
+      applicationEntry
+    );
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+      name: 'ProviderNotRegistered',
+    });
+  });
+
+  it('should fail to create a provider application for long name', async function () {
+    if (isTestnet()) this.skip();
+    const longName = 'a'.repeat(257); // 256 characters long limit
+    const providerEntry = generateValidProviderPayloadWithName(longName);
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, providerEntry);
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+      name: 'RpcError',
+    });
+  });
+
+  it('should fail with invalid logo CID', async function () {
+    if (isTestnet()) this.skip();
+    const applicationEntry = {
+      defaultName: 'InvalidLogoProvider',
+      defaultLogo250100PngCid: 'invalid-cid',
+    };
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+      name: 'InvalidCid',
+    });
+  });
+
+  it('should fail to create provider application with wrong language code', async function () {
+    if (isTestnet()) this.skip();
+    const applicationEntry = {
+      defaultName: 'InvalidLanguageProvider',
+      localizedNames: new Map([
+        ['-xx', 'InvalidLanguageProvider'], // Invalid language code
+        ['es&', 'ProveedorIdiomaInvalido'],
+      ]),
+    };
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+      name: 'InvalidBCP47LanguageCode',
+    });
+  });
+
+  it('should fail with InvalidLogoBytes error when uploading logo as Uint8Array', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const logoBytes = new Uint8Array(11);
+    for (let i = 0; i < logoBytes.length; i++) logoBytes[i] = i % 256;
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProviderInvalid');
+    const logoCidStr = await computeCid(logoBytes);
+    applicationEntry.defaultLogo250100PngCid = logoCidStr;
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, logoBytes); // this should fail because logoBytes is not a valid input
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'InvalidLogoBytes' });
+  });
+
+  it('should fail with LogoCidNotApproved error when uploading logo with unapproved CID', async function () {
+    if (isTestnet()) this.skip();
+    // Create fake logo bytes, 130 bytes long
+    const applicationEntry = generateValidProviderPayloadWithName('lOgoProviderFakeCid');
+    const logoBytesDifferent = new Uint8Array(fs.readFileSync(path.join(__dirname, 'provider_governance.test.ts')));
+    const logoCidStr = await computeCid(logoBytesDifferent);
+    const buf = Array.from(logoBytesDifferent);
+    const createProviderOp = ExtrinsicHelper.createApplicationViaGovernance(sudoKeys, keys, applicationEntry);
+    const { target: applicationEvent } = await createProviderOp.sudoSignAndSend();
+    assert.notEqual(applicationEvent, undefined, 'setup should return a ProviderApplicationCreated event');
+    const encodedBytes = new Bytes(ExtrinsicHelper.api.registry, buf);
+    const uploadLogoOp = ExtrinsicHelper.uploadLogo(keys, logoCidStr, encodedBytes);
+    await assert.rejects(uploadLogoOp.signAndSend(), { name: 'LogoCidNotApproved' });
   });
 });
