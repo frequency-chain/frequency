@@ -12,7 +12,7 @@ use utils::*;
 
 /// PageId is the unique identifier for a Page in Stateful Storage
 pub type PageId = u16;
-/// PageHash is the type/size of hash of the page content.
+/// PageHash is the type/size of the hashed page content.
 pub type PageHash = u32;
 /// PageNonce is the type/size of a nonce value embedded into a Page
 pub type PageNonce = u16;
@@ -31,7 +31,7 @@ pub struct PaginatedStorageResponse {
 	pub content_hash: PageHash,
 	/// Nonce of the page
 	pub nonce: PageNonce,
-	/// Serialized data in a the schemas.
+	/// Serialized data in the schema.
 	#[cfg_attr(feature = "std", serde(with = "as_hex", default))]
 	pub payload: Vec<u8>,
 }

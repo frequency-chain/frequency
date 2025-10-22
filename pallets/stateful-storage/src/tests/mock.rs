@@ -84,7 +84,8 @@ pub type StatefulMortalityWindowSize = ConstU32<10>;
 
 // Needs parameter_types! for the impls below
 parameter_types! {
-	pub const MaxItemizedPageSizeBytes: u32 = 1024;
+	// num pages * (page data size + page header size)
+	pub const MaxItemizedPageSizeBytes: u32 = 1 * (1024 + 5);
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
 	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxPaginatedPageId: u16 = 32;

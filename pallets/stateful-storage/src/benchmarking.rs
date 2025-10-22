@@ -74,6 +74,20 @@ fn get_itemized_page<T: Config>(
 	.unwrap_or(None)
 }
 
+fn get_itemized_page_v1<T: Config>(
+	msa_id: MessageSourceId,
+	schema_id: SchemaId,
+) -> Option<migration::v1::ItemizedPage<T>> {
+	let key: ItemizedKey = (schema_id,);
+	StatefulChildTree::<T::KeyHasher>::try_read::<_, migration::v1::ItemizedPage<T>>(
+		&msa_id,
+		PALLET_STORAGE_PREFIX,
+		ITEMIZED_STORAGE_PREFIX,
+		&key,
+	)
+		.unwrap_or(None)
+}
+
 fn get_paginated_page_v1<T: Config>(
 	msa_id: MessageSourceId,
 	schema_id: SchemaId,
@@ -635,9 +649,8 @@ mod benchmarks {
 		// Execute
 		#[block]
 		{
-			migration::v2::process_single_page::<
+			migration::v2::process_paginated_page::<
 				T,
-				weights::SubstrateWeight<T>,
 				migration::v2::PaginatedKeyLength,
 			>(&child, &mut cursor)
 			.expect("failed to migrate paginated page");
@@ -648,6 +661,85 @@ mod benchmarks {
 		let updated_page = updated_page.unwrap();
 		assert_eq!(updated_page.page_version, PageVersion::V2);
 		assert_eq!(updated_page.schema_id, Some(schema_id));
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn itemized_v1_to_v2() -> Result<(), BenchmarkError> {
+		// Setup
+		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
+		let schema_id: SchemaId = 1;
+
+		// Construct a page that represents the worst case across Testnet + Mainnet.
+		// Current page size limit there is (10 * (1024 + 2))= 10260
+		// The most full Itemized page is < 2% of the max page size, ~200 bytes
+		// The largest single item is 33 bytes.
+		// This likely represnts much more fullness in the test case (~20% vs ~2%), but as long as
+		// we are under 25% fullness we are guaranteed to be able to migrate all pages
+
+		// Compute item size for 10 items totalling 20% fullness
+		// (page_size / 10 / 5 ) = 1026 / 10 / 6 = 18
+		let max_items = 10;
+		let str: &[u8; 18] = b"This is a payload."; // length 18
+
+		// Create a paginated page
+		let mut page: migration::v1::ItemizedPage<T> =
+			migration::v1::ItemizedPage::<T>::default();
+		let payload = BoundedVec::<u8, T::MaxItemizedBlobSizeBytes>::try_from(str.to_vec()).expect("Unable to create BoundedVec payload");
+		let add_actions: Vec<migration::v1::ItemAction<T::MaxItemizedBlobSizeBytes>> = vec![0; max_items as usize].iter().map(|_| migration::v1::ItemAction::Add { data: payload.clone() }).collect();
+		let page = migration::v1::ItemizedOperations::<T>::apply_item_actions(&mut page, &add_actions).expect("failed to apply item actions");
+		let keys: migration::v1::ItemizedKey = (schema_id,);
+		StatefulChildTree::<T::KeyHasher>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+			&keys,
+			&page,
+		);
+		let created_page = get_itemized_page_v1::<T>(msa_id, schema_id);
+		assert!(created_page.is_some());
+		let created_page = created_page.unwrap();
+		let orig_parsed_page = migration::v1::ItemizedOperations::<T>::try_parse(&created_page).expect("unable to parse newly-written page");
+		assert_eq!(orig_parsed_page.items.len(), max_items as usize);
+
+		let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+		);
+		let mut cursor = migration::v2::ChildCursor::<migration::v2::ItemizedKeyLength> {
+			id: msa_id,
+			last_key: BoundedVec::default(),
+		};
+
+		// Execute
+		#[block]
+		{
+			migration::v2::process_itemized_page::<
+				T,
+				migration::v2::ItemizedKeyLength,
+			>(&child, &mut cursor)
+				.expect("failed to migrate itemized page");
+		}
+
+		let updated_page = get_itemized_page::<T>(msa_id, schema_id);
+		assert!(updated_page.is_some());
+		let updated_page = updated_page.unwrap();
+		assert_eq!(updated_page.page_version, PageVersion::V2);
+		assert_eq!(updated_page.schema_id, None);
+		assert_eq!(updated_page.nonce, created_page.nonce + 1);
+		let updated_page = crate::ItemizedOperations::<T>::try_parse(&updated_page, false);
+		assert!(updated_page.is_ok());
+		let updated_page = updated_page.unwrap();
+		assert_eq!(updated_page.items.len(), max_items as usize);
+		updated_page.items.iter().for_each(|(i, item)| {
+			let orig_page = orig_parsed_page.items.get(i);
+			assert!(orig_page.is_some());
+			let orig_page = orig_page.unwrap();
+			assert_eq!(*item, orig_page.data.as_slice());
+			assert_eq!(*item, str);
+		});
 
 		Ok(())
 	}

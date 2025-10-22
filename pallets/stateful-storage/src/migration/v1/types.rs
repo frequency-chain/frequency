@@ -43,7 +43,7 @@ pub trait ItemizedOperations<T: Config> {
 	) -> Result<ItemizedPage<T>, PageError>;
 
 	/// Parses all the items inside an ItemPage
-	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError>;
+	fn try_parse(&self) -> Result<ParsedItemPage<T>, PageError>;
 }
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(
@@ -109,13 +109,23 @@ impl<PageDataSize: Get<u32>> Into<PageV2<PageDataSize>> for (Option<SchemaId>, P
 	}
 }
 
+/// An internal struct that represents a single Item (with header)
+/// in Itemized storage
+#[derive(Debug, Encode, PartialEq)]
+pub struct ParsedItem<T: Config> {
+	/// Header
+	pub header: ItemHeader,
+	/// Item payload
+	pub data: BoundedVec<u8, T::MaxItemizedBlobSizeBytes>,
+}
+
 /// An internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
-pub struct ParsedItemPage<'a> {
+pub struct ParsedItemPage<T: Config> {
 	/// Page current size
 	pub page_size: usize,
 	/// A map of item index to a slice of blob (including a header is optional)
-	pub items: BTreeMap<u16, &'a [u8]>,
+	pub items: BTreeMap<u16, ParsedItem<T>>,
 }
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
@@ -181,7 +191,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 		&self,
 		actions: &[ItemAction<T::MaxItemizedBlobSizeBytes>],
 	) -> Result<Self, PageError> {
-		let mut parsed = ItemizedOperations::<T>::try_parse(self, true)?;
+		let mut parsed = ItemizedOperations::<T>::try_parse(self)?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
 		let mut add_buffer = Vec::new();
@@ -209,19 +219,21 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 		}
 
 		// since BTreeMap is sorted by key, all items will be kept in their existing order
-		for (_, slice) in parsed.items.iter() {
-			updated_page_buffer.extend_from_slice(slice);
+		for (_, item) in parsed.items.iter() {
+			updated_page_buffer.extend_from_slice(item.encode().as_slice());
 		}
 		updated_page_buffer.append(&mut add_buffer);
 
 		Ok(ItemizedPage::<T>::from(
-			BoundedVec::try_from(updated_page_buffer).map_err(|_| PageError::PageSizeOverflow)?,
+			BoundedVec::try_from(updated_page_buffer.clone()).map_err(|_| {
+				PageError::PageSizeOverflow
+			})?,
 		))
 	}
 
 	/// Parses all the items inside an ItemPage
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
-	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
+	fn try_parse(&self) -> Result<ParsedItemPage<T>, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut offset = 0;
@@ -238,14 +250,14 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 				PageError::ErrorParsing("wrong payload size")
 			);
 
+			let item_data_start = offset + ItemHeader::max_encoded_len();
+			let item_data_end = item_data_start + header.payload_len as usize;
+			let data: BoundedVec<u8, T::MaxItemizedBlobSizeBytes> = BoundedVec::try_from(self.data[item_data_start..item_data_end].to_vec()).map_err(|_| PageError::ErrorParsing("decoding item"))?;
+			let item = ParsedItem { header, data };
+
 			items.insert(
 				count,
-				match include_header {
-					true => &self.data[offset..(offset + item_total_length)],
-					false =>
-						&self.data
-							[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
-				},
+				item,
 			);
 			offset += item_total_length;
 			count = count.checked_add(1).ok_or(PageError::ArithmeticOverflow)?;
