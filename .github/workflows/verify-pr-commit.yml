@@ -29,6 +29,7 @@ jobs:
       build-binary: ${{steps.filter.outputs.build-binary}}
       cargo-lock: ${{steps.filter.outputs.cargo-lock}}
       run-e2e: ${{steps.filter.outputs.run-e2e}}
+      run-xcm-tests: ${{steps.filter.outputs.run-xcm-tests}}
       ci-docker-image: ${{steps.filter.outputs.ci-docker-image}}
     steps:
       - name: Check Out Repo
@@ -61,6 +62,10 @@ jobs:
               - '**/*.rs'
               - '**/Cargo.toml'
               - 'e2e/**/*.{ts,json}'
+            run-xcm-tests:
+              - 'runtime/frequency/src/xcm/**/*.rs'
+              - 'e2e/xcm/**/*.{ts,yml,yaml,json}'
+              - 'e2e/xcm/configs/**'
 
   clear-metadata-labels:
     name: Clear Metadata Labels
@@ -924,6 +929,62 @@ jobs:
       - name: Stop Local Node
         if: always()
         run: pkill ${{env.FREQUENCY_PROCESS_NAME}}
+
+  run-xcm-tests:
+    if: needs.changes.outputs.run-xcm-tests == 'true'
+    needs: [changes, build-binaries, verify-js-api-augment]
+    name: Run XCM Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set Env Vars
+        run: |
+          echo "BIN_FILENAME=frequency.testnet.amd64.frequency-testnet.pr" >> $GITHUB_ENV
+          echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
+      - name: Download Binaries
+        id: download-binaries
+        uses: actions/download-artifact@v5
+        with:
+          pattern: artifacts-binary-testnet-amd64-pr-${{github.run_id}}
+          path: ${{env.BIN_DIR_DEBUG}}
+      - name: Download api-augment tarball
+        uses: actions/download-artifact@v5
+        with:
+          name: artifacts-api-augment-${{github.run_id}}
+          path: js/api-augment/dist
+      - name: Set Binaries Permissions
+        working-directory: ${{env.BIN_DIR_DEBUG}}
+        run: |
+          chmod 755 $BIN_FILENAME
+      - name: Set up NodeJs
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: e2e/package.json
+      - name: Install Built api-augment
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+        working-directory: e2e
+      - name: Install NPM Modules
+        run: npm ci
+        working-directory: e2e
+      - name: Create XCM test environment
+        working-directory: e2e/xcm
+        run: |
+          cp .env.example .env
+          mkdir -p db wasm
+      - name: Run XCM Tests
+        working-directory: e2e
+        env:
+          CHAIN_ENVIRONMENT: testnet
+          FREQUENCY_ENDPOINT: ws://127.0.0.1:9944
+          POLKADOT_BLOCK_NUMBER: 27409884
+          STATEMINT_BLOCK_NUMBER: 9525342
+          FREQUENCY_BLOCK_NUMBER: 9117938
+        run: npm run test:xcm
 
   verify-genesis-state:
     needs: build-binaries
