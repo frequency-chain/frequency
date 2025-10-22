@@ -18,7 +18,7 @@ env:
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
-  NODE_VERSION: 22.17
+  NODE_VERSION: 22.x
 
 jobs:
   changes:

@@ -1,8 +1,8 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { createAndFundKeypair, getBlockNumber, calculateReleaseSchedule } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
-import { ExtrinsicHelper, ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { ExtrinsicHelper, type ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 
 const DOLLARS: number = 100000000; // 100_000_000

@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { merkleizeMetadata } from '@polkadot-api/merkleize-metadata';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import {

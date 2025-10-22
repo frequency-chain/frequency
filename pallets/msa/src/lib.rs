@@ -217,6 +217,21 @@ pub mod pallet {
 	/// Provider registration information
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
+	#[deprecated(
+		note = "Use ProviderToRegistryEntryV2 instead, this will removed from frequency version 1.17.6"
+	)]
+	#[pallet::storage]
+	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		ProviderId,
+		crate::migration::v1::ProviderRegistryEntry<T::MaxProviderNameSize>,
+		OptionQuery,
+	>;
+
+	/// Provider registration information
+	/// - Key: Provider MSA Id
+	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
 	pub type ProviderToRegistryEntryV2<T: Config> = StorageMap<
 		_,
@@ -580,8 +595,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_block_number: BlockNumberFor<T>) -> Weight {
 			<OffchainIndexEventCount<T>>::set(0u16);
-			let migration_weight = crate::migration::v2::on_initialize_migration::<T>();
-			// allocates 1 read and 1 write for any access of `MSAEventCount` in every block
+			let migration_weight = crate::migration::v2::on_initialize_migration::<T>(); // allocates 1 read and 1 write for any access of `MSAEventCount` in every block
 			T::DbWeight::get().reads_writes(1u64, 1u64).saturating_add(migration_weight)
 		}
 
