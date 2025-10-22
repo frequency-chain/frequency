@@ -379,7 +379,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 						pallet_capacity::Call::stake { .. } |
 							pallet_capacity::Call::claim_staking_rewards { .. } |
 							pallet_capacity::Call::provider_boost { .. } |
-							palelt_capacity::Call::unstake { .. }
+							pallet_capacity::Call::unstake { .. }
 					) | RuntimeCall::CollatorSelection(
 						pallet_collator_selection::Call::set_candidacy_bond { .. }
 					)

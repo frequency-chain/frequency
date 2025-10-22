@@ -1146,4 +1146,16 @@ export class ExtrinsicHelper {
     }
     return 0n;
   }
+
+  // Execute a call via proxy.  The proxy 'proxy' must already have been added for 'real'
+  public static async proxySignAndSend(
+    inner: SubmittableExtrinsic<any>,
+    proxy: KeyringPair,
+    real: KeyringPair,
+    expectedEvent: AugmentedEvent<any>
+  ) {
+    const proxyCall = ExtrinsicHelper.api.tx.proxy.proxy(getUnifiedAddress(real), null, inner);
+    const proxyTx = new Extrinsic(() => proxyCall, proxy, expectedEvent);
+    await assert.doesNotReject(proxyTx.signAndSend());
+  }
 }
