@@ -1148,6 +1148,7 @@ export class ExtrinsicHelper {
   }
 
   // Execute a call via proxy.  The proxy 'proxy' must already have been added for 'real'
+  // Note even if the extrinsic fails, the proxy may have executed successfully, so be sure to check state as well.
   public static async proxySignAndSend(
     inner: SubmittableExtrinsic<any>,
     proxy: KeyringPair,
