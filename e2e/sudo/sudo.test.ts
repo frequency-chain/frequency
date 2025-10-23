@@ -235,6 +235,5 @@ describe('Sudo required', function () {
         `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
       );
     });
-
   });
 });
