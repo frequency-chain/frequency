@@ -36,10 +36,10 @@ describe('Create Provider', function () {
     const f = ExtrinsicHelper.createMsa(failureKeys);
     await f.fundAndSend(fundingSource);
     const longName = 'a'.repeat(257); // 256 characters long limit
-    const createProviderOp = ExtrinsicHelper.createProviderViaGovernanceV2(sudoKeys, failureKeys, {
+    const createProviderOp = ExtrinsicHelper.createProviderViaGovernanceV2(keys, failureKeys, {
       defaultName: longName,
     });
-    await assert.rejects(createProviderOp.sudoSignAndSend(), {
+    await assert.rejects(createProviderOp.signAndSend(), {
       name: 'RpcError',
     });
   });
