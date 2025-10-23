@@ -137,7 +137,7 @@ describe('Capacity: provider_boost extrinsic', function () {
     await addProxy(fergie, ss58MultiAddress, 'Any');
     const api = ExtrinsicHelper.api;
 
-    // 2) Build inner call: Fergie -> transfer to Bob
+    // 2) Build inner call: Fergie boosts 'Provider1'
     const boostAmount = 2n * DOLLARS;
     const inner = api.tx.capacity.providerBoost(provider, boostAmount);
 
@@ -157,24 +157,12 @@ describe('Capacity: provider_boost extrinsic', function () {
     const othersForAlice = sort(owners, owners[0]);
     let timepoint: any | null = null;
 
-    // const multiSigExtAlice = new Extrinsic(
-    //   () => api.tx.multisig.asMulti(threshold, othersForAlice, timepoint, proxyCall.method, weight),
-    //   alice,
-    //   api.events.multisig.MultisigExecuted,
-    //   );
-    //
-    // await assert.doesNotReject(multiSigExtAlice.signAndSend());
-
-    const txHash = await firstValueFrom(
-      api.tx.multisig
-        .asMulti(threshold, othersForAlice, null, proxyCall.method, weight)
-        .signAndSend(alice, ({ status, events }) => {
-          if (status.isInBlock || status.isFinalized) {
-            return;
-          }
-        })
+    const multiSigExtAlice = new Extrinsic(
+      () => api.tx.multisig.asMulti(threshold, othersForAlice, timepoint, proxyCall.method, weight),
+      alice,
+      api.events.multisig.MultisigExecuted
     );
-    console.log(txHash.toHuman());
+    await assert.doesNotReject(multiSigExtAlice.signAndSend());
 
     const proxyCallHash = proxyCall.method.hash;
 
