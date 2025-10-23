@@ -219,7 +219,7 @@ describe('Sudo required', function () {
       );
 
       // Create a stake that will result in overlapping tokens being frozen
-      // stake will allow only the balance not on hold to be staked
+      // stake will allow the frozen balance to overlap with the reserved balance from the proposal bond
       await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
       // Slash the provider
@@ -236,28 +236,5 @@ describe('Sudo required', function () {
       );
     });
 
-    it('proposal fails when there is Capacity staking', async function () {
-      const accountBalance: bigint = 122n * DOLLARS;
-      const stakeBalance: bigint = 100n * DOLLARS;
-      const spendBalance: bigint = 20n * DOLLARS;
-
-      // Setup some keys and a provider for capacity staking
-      const stakeKeys: KeyringPair = createKeys('StakeKeys');
-      const stakeProviderId: u64 = await createMsaAndProvider(
-        fundingSource,
-        stakeKeys,
-        'StakeProvider',
-        accountBalance
-      );
-
-      // Create a stake that will result in overlapping tokens being frozen
-      await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
-
-      // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-      // The proposal should fail because the stakeKeys account doesn't have enough
-      // transferable to cover the deposit.
-      const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
-      await assert.rejects(proposalExt.signAndSend());
-    });
   });
 });
