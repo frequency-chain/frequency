@@ -1,8 +1,8 @@
 import { Keyring } from '@polkadot/api';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
 import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
-import { Codec } from '@polkadot/types/types';
+import type { Codec } from '@polkadot/types/types';
 import { hexToU8a, u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import {

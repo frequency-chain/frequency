@@ -13,7 +13,7 @@ permissions:
   packages: read
 
 env:
-  NODE_VERSION: 22.17
+  NODE_VERSION: 22.x
 
 jobs:
   publish-js-api-augment-rc:

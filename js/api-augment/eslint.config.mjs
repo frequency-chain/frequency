@@ -3,7 +3,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import mochaPlugin from 'eslint-plugin-mocha';
-import globals from 'globals';
 
 export default tseslint.config(
   eslint.configs.recommended,

@@ -11,7 +11,7 @@ import {
   getNextRewardEraBlock,
 } from '../scaffolding/helpers';
 import { isTestnet } from '../scaffolding/env';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 let fundingSource: KeyringPair;

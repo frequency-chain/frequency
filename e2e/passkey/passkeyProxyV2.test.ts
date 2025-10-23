@@ -1,14 +1,14 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getBlockNumber, getNonce, Sr25519Signature } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import { createAndFundKeypair, getBlockNumber, getNonce, type Sr25519Signature } from '../scaffolding/helpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { createPassKeyAndSignAccount, createPassKeyCallV2, createPasskeyPayloadV2 } from '../scaffolding/P256';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
-import { AccountId32 } from '@polkadot/types/interfaces';
-import { ISubmittableResult } from '@polkadot/types/types';
+import type { AccountId32 } from '@polkadot/types/interfaces';
+import type { ISubmittableResult } from '@polkadot/types/types';
 let fundingSource: KeyringPair;
 
 describe('Passkey Pallet Proxy V2 Tests', function () {

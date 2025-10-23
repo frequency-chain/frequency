@@ -7,8 +7,8 @@ import {
   getIntermediaryHashes,
 } from '@frequency-chain/recovery-sdk';
 import assert from 'assert';
-import { KeyringPair } from '@polkadot/keyring/types';
-import { ExtrinsicHelper, RecoveryCommitmentPayload, AddKeyData } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { ExtrinsicHelper, type AddKeyData, type RecoveryCommitmentPayload } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import {
   createAndFundKeypairs,

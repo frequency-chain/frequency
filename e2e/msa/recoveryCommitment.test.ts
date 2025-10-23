@@ -2,21 +2,26 @@ import '@frequency-chain/api-augment';
 import '@frequency-chain/recovery-sdk';
 import { ContactType, generateRecoverySecret, getRecoveryCommitment } from '@frequency-chain/recovery-sdk';
 import assert from 'assert';
-import { KeyringPair } from '@polkadot/keyring/types';
-import { ExtrinsicHelper, RecoveryCommitmentPayload } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { ExtrinsicHelper, type RecoveryCommitmentPayload } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import {
   createAndFundKeypairs,
   signPayloadSr25519,
-  Sr25519Signature,
+  type Sr25519Signature,
   DOLLARS,
   generateRecoveryCommitmentPayload,
   assertEvent,
   createKeys,
   getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
-import { Codec } from '@polkadot/types/types';
-import { createRecoveryCommitmentPayload, getUnifiedAddress, HexString, sign } from '@frequency-chain/ethereum-utils';
+import type { Codec } from '@polkadot/types/types';
+import {
+  createRecoveryCommitmentPayload,
+  getUnifiedAddress,
+  type HexString,
+  sign,
+} from '@frequency-chain/ethereum-utils';
 import { u8aToHex } from '@polkadot/util';
 
 let fundingSource: KeyringPair;

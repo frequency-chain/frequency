@@ -5,9 +5,9 @@ import {
   getBlockNumber,
   getNextEpochBlock,
   getNonce,
-  Sr25519Signature,
+  type Sr25519Signature,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';

@@ -1,8 +1,8 @@
 import assert from 'assert';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { DOLLARS, createAndFundKeypair } from '../scaffolding/helpers';
-import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
+import type { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
