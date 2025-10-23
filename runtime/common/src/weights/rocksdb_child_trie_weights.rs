@@ -1,22 +1,21 @@
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2024-08-22 (Y/M/D)
-//! HOSTNAME: `ip-10-173-4-131`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 48.0.0
+//! DATE: 2025-10-22 (Y/M/D)
+//! HOSTNAME: `ip-10-173-4-131`, CPU: `Intel(R) Xeon(R) Platinum 8488C`
 //!
 //! DATABASE: `RocksDb`, RUNTIME: `Frequency`
-//! BLOCK-NUM: `BlockId::Number(4413540)`
+//! BLOCK-NUM: `BlockId::Number(9443452)`
 //! SKIP-WRITE: `false`, SKIP-READ: `false`, WARMUPS: `2`
 //! STATE-VERSION: `V1`, STATE-CACHE-SIZE: ``
 //! WEIGHT-PATH: ``
 //! METRIC: `Average`, WEIGHT-MUL: `1.3`, WEIGHT-ADD: `0`
 
 // Executed Command:
-//   ./target/release/frequency
+//   ./frequency/target/release/frequency
 //   benchmark
 //   storage
 //   --state-version=1
 //   --chain=frequency
 //   --base-path=/data
-//   --include-child-trees
 //   --warmups=2
 //   --mul=1.3
 
@@ -34,31 +33,31 @@ pub mod constants {
 			// Calculated by multiplying the *Average* of all values with `1.3` and adding `0`.
 			//
 			// Stats nanoseconds:
-			//   Min, Max: 1_676, 3_967_371
-			//   Average:  36_369
-			//   Median:   36_876
-			//   Std-Dev:  10368.83
+			//   Min, Max: 61_748, 44_331_136
+			//   Average:  2_370_750
+			//   Median:   2_255_865
+			//   Std-Dev:  1148296.92
 			//
 			// Percentiles nanoseconds:
-			//   99th: 60_542
-			//   95th: 52_621
-			//   75th: 43_407
-			read: 652_801 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			//   99th: 5_622_557
+			//   95th: 4_546_929
+			//   75th: 3_024_267
+			read: 3_081_975 * constants::WEIGHT_REF_TIME_PER_NANOS,
 
 			// Time to write one storage item.
 			// Calculated by multiplying the *Average* of all values with `1.3` and adding `0`.
 			//
 			// Stats nanoseconds:
-			//   Min, Max: 4_954, 87_545_132
-			//   Average:  57_212
-			//   Median:   62_141
-			//   Std-Dev:  60272.19
+			//   Min, Max: 6_606, 21_531_239
+			//   Average:  31_890
+			//   Median:   29_097
+			//   Std-Dev:  93545.35
 			//
 			// Percentiles nanoseconds:
-			//   99th: 101_820
-			//   95th: 90_948
-			//   75th: 75_800
-			write: 122_587 * constants::WEIGHT_REF_TIME_PER_NANOS,
+			//   99th: 64_921
+			//   95th: 50_484
+			//   75th: 35_177
+			write: 41_457 * constants::WEIGHT_REF_TIME_PER_NANOS,
 		};
 	}
 
