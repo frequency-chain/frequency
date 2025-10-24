@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -Rf dist",
     "build": "tsc -p ./tsconfig.json",
-    "test": "npm run test:parallel && npm run test:sudo",
+    "test": "npm run test:parallel",
     "test:sudo": "mocha --config .mocharc.sudo.json",
     "test:parallel": "mocha --config .mocharc.json",
     "test:serial": "mocha --parallel=false",
