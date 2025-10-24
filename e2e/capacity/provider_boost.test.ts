@@ -11,16 +11,12 @@ import {
   boostProvider,
   stakeToProvider,
   addProxy,
-  getBlockNumber,
   getFreeBalance,
   getNextRewardEraBlock,
 } from '../scaffolding/helpers';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { createKeyMulti, encodeMultiAddress, sortAddresses } from '@polkadot/util-crypto';
+import { encodeMultiAddress, sortAddresses } from '@polkadot/util-crypto';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
-import { hexAddPrefix } from '@polkadot/util';
-import { PalletCapacityStakingDetails } from '@polkadot/types/lookup';
-import { firstValueFrom } from 'rxjs';
 let fundingSource: KeyringPair;
 const tokenMinStake: bigint = 1n * CENTS;
 
@@ -183,7 +179,7 @@ describe('Capacity: provider_boost extrinsic', function () {
     // check that Fergie has a staking account with the expected amount in it.
     const ledgerResp = await ExtrinsicHelper.apiPromise.query.capacity.stakingAccountLedger(getUnifiedAddress(fergie));
     assert(ledgerResp.isSome);
-    const ledger: PalletCapacityStakingDetails = ledgerResp.unwrap();
+    const ledger = ledgerResp.unwrap();
     assert(ledger.active.eq(boostAmount));
   });
 });
