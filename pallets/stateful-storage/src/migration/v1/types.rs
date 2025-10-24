@@ -225,9 +225,8 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 		updated_page_buffer.append(&mut add_buffer);
 
 		Ok(ItemizedPage::<T>::from(
-			BoundedVec::try_from(updated_page_buffer.clone()).map_err(|_| {
-				PageError::PageSizeOverflow
-			})?,
+			BoundedVec::try_from(updated_page_buffer.clone())
+				.map_err(|_| PageError::PageSizeOverflow)?,
 		))
 	}
 
@@ -252,13 +251,12 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 
 			let item_data_start = offset + ItemHeader::max_encoded_len();
 			let item_data_end = item_data_start + header.payload_len as usize;
-			let data: BoundedVec<u8, T::MaxItemizedBlobSizeBytes> = BoundedVec::try_from(self.data[item_data_start..item_data_end].to_vec()).map_err(|_| PageError::ErrorParsing("decoding item"))?;
+			let data: BoundedVec<u8, T::MaxItemizedBlobSizeBytes> =
+				BoundedVec::try_from(self.data[item_data_start..item_data_end].to_vec())
+					.map_err(|_| PageError::ErrorParsing("decoding item"))?;
 			let item = ParsedItem { header, data };
 
-			items.insert(
-				count,
-				item,
-			);
+			items.insert(count, item);
 			offset += item_total_length;
 			count = count.checked_add(1).ok_or(PageError::ArithmeticOverflow)?;
 		}

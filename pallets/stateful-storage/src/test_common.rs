@@ -72,7 +72,7 @@ pub mod test_utility {
 	) -> Page<T> {
 		let nonce = in_nonce.unwrap_or_default();
 		Page::<T> {
-			page_version: PageVersion::default(),
+			page_version: PageVersion::V2,
 			schema_id,
 			nonce,
 			data: generate_payload_bytes(id),
@@ -81,12 +81,7 @@ pub mod test_utility {
 
 	pub fn add_itemized_payload_to_buffer<T: Config>(buffer: &mut Vec<u8>, payload: &[u8]) {
 		buffer.extend_from_slice(
-			&ItemHeader {
-				item_version: Default::default(),
-				schema_id: 0,
-				payload_len: payload.len() as u16,
-			}
-			.encode()[..],
+			&ItemHeader::V2 { schema_id: 0, payload_len: payload.len() as u16 }.encode()[..],
 		);
 		buffer.extend_from_slice(payload);
 	}

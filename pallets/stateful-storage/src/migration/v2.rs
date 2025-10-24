@@ -1,25 +1,23 @@
 use crate::{
-	migration::v1,
+	migration::{v1, v1::ItemizedOperations},
 	stateful_child_tree::{MultipartKey, StatefulChildTree},
-	types::{PAGINATED_STORAGE_PREFIX, PALLET_STORAGE_PREFIX},
-	weights, Config, Pallet,
+	types::{ItemHeader, ITEMIZED_STORAGE_PREFIX, PAGINATED_STORAGE_PREFIX, PALLET_STORAGE_PREFIX},
+	weights, Config, Event, Pallet,
 };
-use common_primitives::msa::MessageSourceId;
+use alloc::vec::Vec;
+use common_primitives::{msa::MessageSourceId, schema::PayloadLocation};
 use core::marker::PhantomData;
 use frame_support::{
 	migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
-	pallet_prelude::{ConstU32, Get, RuntimeDebug, StorageVersion},
+	pallet_prelude::{ConstU32, Get, GetStorageVersion, RuntimeDebug, StorageVersion},
 	weights::WeightMeter,
 	BoundedVec,
 };
-use alloc::vec::Vec;
 use pallet_msa::{Config as MsaConfig, CurrentMsaIdentifierMaximum};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::storage::ChildInfo;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
-use crate::migration::v1::ItemizedOperations;
-use crate::types::{ItemHeader, ItemVersion, ITEMIZED_STORAGE_PREFIX};
 
 const LOG_TARGET: &str = "pallet::stateful-storage::migration::v2";
 
@@ -37,11 +35,13 @@ pub struct ChildCursor<N: Get<u32>> {
 	pub id: MessageSourceId,
 	/// Last inner key processed; None means start from first key
 	pub last_key: BoundedVec<u8, N>,
+	/// Cumulative count of migrated pages
+	pub cumulative_pages: u64,
 }
 
 impl<N: Get<u32>> Default for ChildCursor<N> {
 	fn default() -> Self {
-		Self { id: 1, last_key: BoundedVec::<u8, N>::default() }
+		Self { id: 1, last_key: BoundedVec::<u8, N>::default(), cumulative_pages: u64::default() }
 	}
 }
 
@@ -82,11 +82,22 @@ pub fn process_paginated_page<T: Config, N: Get<u32>>(
 	}
 
 	cur.last_key = k;
+	cur.cumulative_pages += 1;
+
+	if cur.cumulative_pages % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+		Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
+			last_trie: (cur.id, PayloadLocation::Paginated),
+			total_page_count: cur.cumulative_pages,
+		});
+	}
 	Ok(true)
 }
 
 /// Migrates a single ItemizedPage
-pub fn process_itemized_page<T: Config, N: Get<u32>>(child: &ChildInfo, cur: &mut ChildCursor<N>) -> Result<bool, SteppedMigrationError> {
+pub fn process_itemized_page<T: Config, N: Get<u32>>(
+	child: &ChildInfo,
+	cur: &mut ChildCursor<N>,
+) -> Result<bool, SteppedMigrationError> {
 	let Some(k) = next_key(&child, &cur.last_key).unwrap_or(None) else {
 		// Finished this child → next id
 		cur.last_key = BoundedVec::default();
@@ -96,34 +107,32 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(child: &ChildInfo, cur: &mu
 
 	if let Some(old) =
 		StatefulChildTree::<T::KeyHasher>::try_read_raw::<v1::ItemizedPage<T>>(&child, &k)
-			.map_err(|_| SteppedMigrationError::Failed).expect("failed to read raw itemized page")
+			.map_err(|_| SteppedMigrationError::Failed)
+			.expect("failed to read raw itemized page")
 	{
-		let (schema_id,) =
-			<v1::ItemizedKey as MultipartKey<T::KeyHasher>>::decode(&mut &k[..])
-				.map_err(|_| SteppedMigrationError::Failed).expect("failed to decode itemized key");
+		let (schema_id,) = <v1::ItemizedKey as MultipartKey<T::KeyHasher>>::decode(&mut &k[..])
+			.map_err(|_| SteppedMigrationError::Failed)
+			.expect("failed to decode itemized key");
 
 		// Parse old page into old items
-		let parsed_page = ItemizedOperations::<T>::try_parse(&old).map_err(|_| SteppedMigrationError::Failed)?;
-		let min_expected_size = parsed_page.items.len() * (crate::types::ItemHeader::max_encoded_len() - v1::ItemHeader::max_encoded_len()) + parsed_page.page_size;
+		let parsed_page =
+			ItemizedOperations::<T>::try_parse(&old).map_err(|_| SteppedMigrationError::Failed)?;
+		let min_expected_size = parsed_page.items.len() *
+			(crate::types::ItemHeader::max_encoded_len() - v1::ItemHeader::max_encoded_len()) +
+			parsed_page.page_size;
 
 		// Migrate each old item to the new format and add to a new page buffer
 		let mut updated_page_buffer = Vec::with_capacity(min_expected_size);
 		parsed_page.items.into_iter().for_each(|(_item_index, parsed_item)| {
-			let header = ItemHeader {
-				item_version: ItemVersion::V2,
-				schema_id,
-				payload_len: parsed_item.header.payload_len,
-			};
+			let header = ItemHeader::V2 { schema_id, payload_len: parsed_item.header.payload_len };
 			let mut encoded_item = header.encode();
 			encoded_item.extend_from_slice(&parsed_item.data);
 			updated_page_buffer.extend_from_slice(&encoded_item);
 		});
 
-		let bounded_page_buffer: BoundedVec<u8, T::MaxItemizedPageSizeBytes> = updated_page_buffer.try_into().map_err(|_| {
-			SteppedMigrationError::Failed
-		})?;
+		let bounded_page_buffer: BoundedVec<u8, T::MaxItemizedPageSizeBytes> =
+			updated_page_buffer.try_into().map_err(|_| SteppedMigrationError::Failed)?;
 		let mut new_page: crate::ItemizedPage<T> = bounded_page_buffer.clone().into();
-		new_page.page_version = crate::types::PageVersion::V2;
 		new_page.schema_id = None;
 		new_page.nonce = old.nonce.wrapping_add(1);
 
@@ -131,6 +140,14 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(child: &ChildInfo, cur: &mu
 	}
 
 	cur.last_key = k;
+	cur.cumulative_pages += 1;
+
+	if cur.cumulative_pages % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+		Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
+			last_trie: (cur.id, PayloadLocation::Itemized),
+			total_page_count: cur.cumulative_pages,
+		});
+	}
 	Ok(true)
 }
 
@@ -165,20 +182,25 @@ impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 		cursor: Option<Self::Cursor>,
 		meter: &mut WeightMeter,
 	) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
-		meter.try_consume(T::DbWeight::get().reads(1)).map_err(|_| {
+		meter.try_consume(T::DbWeight::get().reads(2)).map_err(|_| {
 			SteppedMigrationError::InsufficientWeight { required: T::DbWeight::get().reads(1) }
 		})?;
+		if StorageVersion::new(2) <= Pallet::<T>::on_chain_storage_version() {
+			log::info!(target: LOG_TARGET, "Skipping migrating paginated storage: storage version already set to 2");
+			return Ok(None);
+		}
 		let max_id = CurrentMsaIdentifierMaximum::<T>::get();
-		let mut cur = cursor.unwrap_or_default();
+		let mut cur = cursor.unwrap_or_else(|| {
+			log::info!(target: LOG_TARGET, "Starting migrating paginated storage, max MSA: {}", max_id);
+			Self::Cursor::default()
+		});
 		let required = W::paginated_v1_to_v2();
 
 		if meter.remaining().any_lt(required) {
-			return Err(SteppedMigrationError::InsufficientWeight {
-				required,
-			});
+			return Err(SteppedMigrationError::InsufficientWeight { required });
 		}
 
-		while cur.id < max_id {
+		while cur.id <= max_id {
 			let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
 				cur.id,
 				PALLET_STORAGE_PREFIX,
@@ -195,37 +217,9 @@ impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 			}
 		}
 
+		v1::DonePaginated::<T>::put(true);
+		log::info!(target: LOG_TARGET, "Finished migrating paginated storage");
 		Ok(None) // done
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, frame_support::sp_runtime::TryRuntimeError> {
-		// Return the state of the storage before the migration.
-		let s = crate::Pallet::<T>::on_chain_storage_version();
-		if let StorageVersion(version) = s {
-			if version != 1 {
-				return Err(frame_support::sp_runtime::TryRuntimeError::Other(
-					"Migration failed: the storage version is not 1",
-				));
-			}
-		}
-		Ok(s.encode())
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(prev: Vec<u8>) -> Result<(), frame_support::sp_runtime::TryRuntimeError> {
-		// Check the storage version has not been bumped yet
-		let old_version =
-			StorageVersion::decode(&mut &prev[..]).map_err(|_| TryRuntimeError::Corruption)?;
-		if let StorageVersion(version) =
-			crate::Pallet::<T>::on_chain_storage_version() != old_version
-		{
-			return Err(frame_support::sp_runtime::TryRuntimeError::Other(
-				"Migration failed: the storage version has been prematurely bumped",
-			));
-		}
-
-		Ok(())
 	}
 }
 
@@ -236,7 +230,7 @@ pub struct MigrateItemizedV1ToV2<T: Config + MsaConfig, W: weights::WeightInfo>(
 	PhantomData<(T, W)>,
 );
 impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
-for MigrateItemizedV1ToV2<T, W>
+	for MigrateItemizedV1ToV2<T, W>
 {
 	type Cursor = ChildCursor<ItemizedKeyLength>;
 	// Without the explicit length here the construction of the ID would not be infallible.
@@ -260,20 +254,25 @@ for MigrateItemizedV1ToV2<T, W>
 		cursor: Option<Self::Cursor>,
 		meter: &mut WeightMeter,
 	) -> Result<Option<Self::Cursor>, SteppedMigrationError> {
-		meter.try_consume(T::DbWeight::get().reads(1)).map_err(|_| {
+		meter.try_consume(T::DbWeight::get().reads(2)).map_err(|_| {
 			SteppedMigrationError::InsufficientWeight { required: T::DbWeight::get().reads(1) }
 		})?;
+		if StorageVersion::new(2) <= Pallet::<T>::on_chain_storage_version() {
+			log::info!(target: LOG_TARGET, "Skipping migrating itemized storage: storage version already set to 2");
+			return Ok(None);
+		}
 		let max_id = CurrentMsaIdentifierMaximum::<T>::get();
-		let mut cur = cursor.unwrap_or_default();
+		let mut cur = cursor.unwrap_or_else(|| {
+			log::info!(target: LOG_TARGET, "Starting migrating itemized storage, max MSA: {}", max_id);
+			Self::Cursor::default()
+		});
 		let required = W::itemized_v1_to_v2();
 
 		if meter.remaining().any_lt(required) {
-			return Err(SteppedMigrationError::InsufficientWeight {
-				required,
-			});
+			return Err(SteppedMigrationError::InsufficientWeight { required });
 		}
 
-		while cur.id < max_id {
+		while cur.id <= max_id {
 			let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
 				cur.id,
 				PALLET_STORAGE_PREFIX,
@@ -290,37 +289,9 @@ for MigrateItemizedV1ToV2<T, W>
 			}
 		}
 
+		v1::DoneItemized::<T>::put(true);
+		log::info!(target: LOG_TARGET, "Finished migrating itemized storage");
 		Ok(None) // done
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, frame_support::sp_runtime::TryRuntimeError> {
-		// Return the state of the storage before the migration.
-		let s = crate::Pallet::<T>::on_chain_storage_version();
-		if let StorageVersion(version) = s {
-			if version != 1 {
-				return Err(frame_support::sp_runtime::TryRuntimeError::Other(
-					"Migration failed: the storage version is not 1",
-				));
-			}
-		}
-		Ok(s.encode())
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(prev: Vec<u8>) -> Result<(), frame_support::sp_runtime::TryRuntimeError> {
-		// Check the storage version has not been bumped yet
-		let old_version =
-			StorageVersion::decode(&mut &prev[..]).map_err(|_| TryRuntimeError::Corruption)?;
-		if let StorageVersion(version) =
-			crate::Pallet::<T>::on_chain_storage_version() != old_version
-		{
-			return Err(frame_support::sp_runtime::TryRuntimeError::Other(
-				"Migration failed: the storage version has been prematurely bumped",
-			));
-		}
-
-		Ok(())
 	}
 }
 
@@ -349,31 +320,49 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for FinalizeV2Migration
 		// If there is not enough weight for a single step, return an error. This case can be
 		// problematic if it is the first migration that ran in this block. But there is nothing
 		// that we can do about it here.
-		let required = T::DbWeight::get().writes(1);
+		let required = T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1));
 		if meter.try_consume(required).is_err() {
 			return Err(SteppedMigrationError::InsufficientWeight { required });
 		}
+		if StorageVersion::new(2) <= Pallet::<T>::on_chain_storage_version() {
+			log::info!(target: LOG_TARGET, "Skipping finalization of stateful-storage pallet migration: storage version already set to 2 or higher");
+			return Ok(None);
+		}
 		StorageVersion::new(2).put::<Pallet<T>>();
 
-		log::info!(target: LOG_TARGET, "Finalized messages pallet migration: storage version set to 3");
+		log::info!(target: LOG_TARGET, "Finalized stateful-storage pallet migration: storage version set to 2");
 		Ok(None)
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, frame_support::sp_runtime::TryRuntimeError> {
-		// Return the storage version before the migration
-		Ok(StorageVersion::get::<Pallet<T>>().encode())
+		// pre-upgrade hook is really meant for single-block migrations, as the hook is called for
+		// every block. For MBMs, just return empty until the SteppedMigration is complete
+		if v1::DonePaginated::<T>::exists() && v1::DoneItemized::<T>::exists() {
+			// Return the storage version before the migration
+			Ok(Pallet::<T>::on_chain_storage_version().encode())
+		} else {
+			Ok(Vec::new())
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(prev: Vec<u8>) -> Result<(), frame_support::sp_runtime::TryRuntimeError> {
-		// Check the state of the storage after the migration.
-		let prev_version = <StorageVersion>::decode(&mut &prev[..])
-			.expect("Failed to decode the previous storage state");
-
-		// Check the len of prev and post are the same.
-		if StorageVersion::get::<Pallet<T>>() <= prev_version {
-			return TryRuntimeError::Other("Migration failed: current storage version is not greater than the previous storage version");
+		// post-upgrade hook is really meant for single-block migrations, as the hook is called
+		// after every block. For MBMs, we'll set the pre-upgrade to generate an empty Vec<_>,
+		// so here we check for that and only perform our validation if the input is non-empty.
+		if !prev.is_empty() {
+			// Check the len of prev and post are the same.
+			let cur_version = StorageVersion::get::<Pallet<T>>();
+			let target_version = StorageVersion::new(2);
+			if cur_version < target_version {
+				return Err(TryRuntimeError::Other(
+					"Migration failed: current storage version is not 2 or higher",
+				));
+			} else {
+				v1::DonePaginated::<T>::kill();
+				v1::DoneItemized::<T>::kill();
+			}
 		}
 
 		Ok(())

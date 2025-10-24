@@ -85,7 +85,7 @@ fn get_itemized_page_v1<T: Config>(
 		ITEMIZED_STORAGE_PREFIX,
 		&key,
 	)
-		.unwrap_or(None)
+	.unwrap_or(None)
 }
 
 fn get_paginated_page_v1<T: Config>(
@@ -644,15 +644,16 @@ mod benchmarks {
 		let mut cursor = migration::v2::ChildCursor::<migration::v2::PaginatedKeyLength> {
 			id: msa_id,
 			last_key: BoundedVec::default(),
+			cumulative_pages: 0,
 		};
 
 		// Execute
 		#[block]
 		{
-			migration::v2::process_paginated_page::<
-				T,
-				migration::v2::PaginatedKeyLength,
-			>(&child, &mut cursor)
+			migration::v2::process_paginated_page::<T, migration::v2::PaginatedKeyLength>(
+				&child,
+				&mut cursor,
+			)
 			.expect("failed to migrate paginated page");
 		}
 
@@ -684,11 +685,17 @@ mod benchmarks {
 		let str: &[u8; 18] = b"This is a payload."; // length 18
 
 		// Create a paginated page
-		let mut page: migration::v1::ItemizedPage<T> =
-			migration::v1::ItemizedPage::<T>::default();
-		let payload = BoundedVec::<u8, T::MaxItemizedBlobSizeBytes>::try_from(str.to_vec()).expect("Unable to create BoundedVec payload");
-		let add_actions: Vec<migration::v1::ItemAction<T::MaxItemizedBlobSizeBytes>> = vec![0; max_items as usize].iter().map(|_| migration::v1::ItemAction::Add { data: payload.clone() }).collect();
-		let page = migration::v1::ItemizedOperations::<T>::apply_item_actions(&mut page, &add_actions).expect("failed to apply item actions");
+		let mut page: migration::v1::ItemizedPage<T> = migration::v1::ItemizedPage::<T>::default();
+		let payload = BoundedVec::<u8, T::MaxItemizedBlobSizeBytes>::try_from(str.to_vec())
+			.expect("Unable to create BoundedVec payload");
+		let add_actions: Vec<migration::v1::ItemAction<T::MaxItemizedBlobSizeBytes>> =
+			vec![0; max_items as usize]
+				.iter()
+				.map(|_| migration::v1::ItemAction::Add { data: payload.clone() })
+				.collect();
+		let page =
+			migration::v1::ItemizedOperations::<T>::apply_item_actions(&mut page, &add_actions)
+				.expect("failed to apply item actions");
 		let keys: migration::v1::ItemizedKey = (schema_id,);
 		StatefulChildTree::<T::KeyHasher>::write(
 			&msa_id,
@@ -700,7 +707,8 @@ mod benchmarks {
 		let created_page = get_itemized_page_v1::<T>(msa_id, schema_id);
 		assert!(created_page.is_some());
 		let created_page = created_page.unwrap();
-		let orig_parsed_page = migration::v1::ItemizedOperations::<T>::try_parse(&created_page).expect("unable to parse newly-written page");
+		let orig_parsed_page = migration::v1::ItemizedOperations::<T>::try_parse(&created_page)
+			.expect("unable to parse newly-written page");
 		assert_eq!(orig_parsed_page.items.len(), max_items as usize);
 
 		let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
@@ -711,16 +719,17 @@ mod benchmarks {
 		let mut cursor = migration::v2::ChildCursor::<migration::v2::ItemizedKeyLength> {
 			id: msa_id,
 			last_key: BoundedVec::default(),
+			cumulative_pages: 0,
 		};
 
 		// Execute
 		#[block]
 		{
-			migration::v2::process_itemized_page::<
-				T,
-				migration::v2::ItemizedKeyLength,
-			>(&child, &mut cursor)
-				.expect("failed to migrate itemized page");
+			migration::v2::process_itemized_page::<T, migration::v2::ItemizedKeyLength>(
+				&child,
+				&mut cursor,
+			)
+			.expect("failed to migrate itemized page");
 		}
 
 		let updated_page = get_itemized_page::<T>(msa_id, schema_id);

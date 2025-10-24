@@ -90,6 +90,12 @@ pub mod pallet {
 		#[pallet::constant]
 		type MessagesMaxPayloadSizeBytes: Get<u32> + Clone + Debug + MaxEncodedLen;
 
+		/// How often to emit status events during a storage migration.
+		/// Try to make this larger than the number of message migrations that will fit
+		/// in a block by weight, as multiple of these events in a block is not really useful
+		/// or desireable.
+		type MigrateEmitEvery: Get<u32> + Clone + Debug;
+
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
@@ -165,6 +171,15 @@ pub mod pallet {
 		},
 		/// Messages stored in the current block
 		MessagesInBlock,
+		/// Event emitted during storage migration to track progress
+		MessagesMigrated {
+			/// The storage version being migrated from
+			from_version: u16,
+			/// The storage version being migrated to
+			to_version: u16,
+			/// Total number of messages migrated in the current migration
+			cumulative_total_migrated: u64,
+		},
 	}
 
 	#[pallet::hooks]

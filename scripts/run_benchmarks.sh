@@ -276,7 +276,7 @@ fi
 if [[ ${skip_tests} == false ]]
 then
     echo "Running tests..."
-    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace -- benchmarking::benchmarks"
+    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace --all-targets -- benchmarking::benchmarks"
     echo ${CMD}
     ${CMD} || exit_err
 fi

@@ -1537,6 +1537,7 @@ impl pallet_messages::Config for Runtime {
 	type SchemaProvider = Schemas;
 	// The maximum message payload in bytes
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+	type MigrateEmitEvery = MessagesMigrateEmitEvery;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1576,6 +1577,7 @@ impl pallet_stateful_storage::Config for Runtime {
 	type MsaBenchmarkHelper = Msa;
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = Schemas;
+	type MigrateEmitEvery = StatefulMigrateEmitEvery;
 }
 
 impl pallet_handles::Config for Runtime {
@@ -1662,6 +1664,18 @@ impl pallet_migrations::Config for Runtime {
 		pallet_messages::migration::FinalizeV3Migration<
 			Runtime,
 			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::MigratePaginatedV1ToV2<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::MigrateItemizedV1ToV2<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::FinalizeV2Migration<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
 		>,
 	);
 	// Benchmarks need mocked migrations to guarantee that they succeed.

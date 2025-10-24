@@ -389,6 +389,7 @@ impl pallet_stateful_storage::Config for Test {
 	type ConvertIntoAccountId32 = ConvertInto;
 	/// The number of blocks per virtual bucket
 	type MortalityWindowSize = StatefulMortalityWindowSize;
+	type MigrateEmitEvery = ConstU32<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

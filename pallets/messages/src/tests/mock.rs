@@ -103,6 +103,7 @@ pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 // Needs parameter_types! for the impls below
 parameter_types! {
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3;
+	pub const MessagesMigrateEmitEvery: u32 = 100;
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -271,6 +272,7 @@ impl pallet_messages::Config for Test {
 	type MsaBenchmarkHelper = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
+	type MigrateEmitEvery = ConstU32<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

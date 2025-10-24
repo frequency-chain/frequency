@@ -122,13 +122,37 @@ pub enum ItemVersion {
 /// This header is used to specify the byte size of an item stored inside the buffer
 /// All items will require this header to be inserted before the item data
 #[derive(Encode, Decode, PartialEq, MaxEncodedLen, Debug)]
-pub struct ItemHeader {
-	/// The storage version this item was written with
-	pub item_version: ItemVersion,
-	/// The SchemaId used to serialize this item
-	pub schema_id: SchemaId,
-	/// The length of this item, not including the size of this header.
-	pub payload_len: u16,
+pub enum ItemHeader {
+	/// Version 1 - was never used on-chain; for information only
+	V1 {
+		/// The length of this item, not including the size of this header.
+		payload_len: u16,
+	},
+	/// Version 2 item header
+	V2 {
+		/// The SchemaId used to serialize this item
+		schema_id: SchemaId,
+		/// The length of this item, not including the size of this header.
+		payload_len: u16,
+	},
+}
+
+impl ItemHeader {
+	/// Getter for schema_id across variants
+	pub fn schema_id(&self) -> Option<SchemaId> {
+		match self {
+			ItemHeader::V1 { .. } => None,
+			ItemHeader::V2 { schema_id, .. } => Some(*schema_id),
+		}
+	}
+
+	/// Getter for payload_len across variants
+	pub fn payload_len(&self) -> u16 {
+		match self {
+			ItemHeader::V1 { payload_len } => *payload_len,
+			ItemHeader::V2 { payload_len, .. } => *payload_len,
+		}
+	}
 }
 
 /// Errors dedicated to parsing or modifying pages
@@ -599,8 +623,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 					parsed.items.remove(index);
 				},
 				ItemActionV2::Add { schema_id, data } => {
-					let header = ItemHeader {
-						item_version: ItemVersion::default(),
+					let header = ItemHeader::V2 {
 						schema_id: *schema_id,
 						payload_len: data
 							.len()
@@ -639,7 +662,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 			);
 			let header = <ItemHeader>::decode(&mut &self.data[offset..])
 				.map_err(|_| PageError::ErrorParsing("decoding item header"))?;
-			let item_total_length = ItemHeader::max_encoded_len() + header.payload_len as usize;
+			let item_total_length = ItemHeader::max_encoded_len() + header.payload_len() as usize;
 			ensure!(
 				offset + item_total_length <= page_size,
 				PageError::ErrorParsing("item payload exceeds page data")

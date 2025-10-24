@@ -387,6 +387,9 @@ test-cli-opt:
 test-migrations:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check,try-runtime
 
+test-benchmarks:
+	cargo test --profile=bench-dev --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace --all-targets -- benchmarking::benchmarks
+
 e2e-tests:
 	./scripts/run_e2e_tests.sh
 
@@ -483,7 +486,7 @@ try-runtime-upgrade-mainnet: try-runtime-upgrade-%: check-try-runtime-installed 
 try-runtime-use-snapshot-local \
 try-runtime-use-snapshot-paseo-testnet \
 try-runtime-use-snapshot-mainnet: try-runtime-use-snapshot-%: check-try-runtime-installed build-runtime-%
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --disable-spec-version-check snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
 
 .PHONY: try-runtime-check-migrations-paseo-testnet try-runtime-check-migrations-bridging-testnet try-runtime-check-migrations-westend-testnet
 try-runtime-check-migrations-paseo-testnet \

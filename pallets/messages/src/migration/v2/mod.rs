@@ -5,20 +5,34 @@ use frame_support::{pallet_prelude::*, storage_alias};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::codec::{Decode, Encode};
 
-/// Storage for messages in v1 and lower
+// Type aliases for readability
+#[allow(type_alias_bounds)]
+pub(crate) type K1Type<T: Config> = BlockNumberFor<T>;
+#[allow(type_alias_bounds)]
+pub(crate) type K2Type = SchemaId;
+#[allow(type_alias_bounds)]
+pub(crate) type K3Type = MessageIndex;
+
+/// Storage for messages in v2 and lower
 /// - Key: (block_number, schema_id, message_index)
 /// - Value: Message
 #[storage_alias]
 pub(crate) type MessagesV2<T: Config> = StorageNMap<
 	Pallet<T>,
 	(
-		storage::Key<Twox64Concat, BlockNumberFor<T>>,
-		storage::Key<Twox64Concat, SchemaId>,
-		storage::Key<Twox64Concat, MessageIndex>,
+		storage::Key<Twox64Concat, K1Type<T>>,
+		storage::Key<Twox64Concat, K2Type>,
+		storage::Key<Twox64Concat, K3Type>,
 	),
 	Message<<T as Config>::MessagesMaxPayloadSizeBytes>,
 	OptionQuery,
 >;
+
+/// Ephemeral storage key for tracking the completion status of the migration
+/// in order to perform the final step and for try-runtime. MUST be killed at
+/// the end of the migration!
+#[storage_alias]
+pub(crate) type DoneV3Migration<T: Config> = StorageValue<Pallet<T>, bool, ValueQuery>;
 
 /// A single message type definition for V2 storage
 #[derive(Clone, Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]

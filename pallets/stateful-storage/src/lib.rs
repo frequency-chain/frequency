@@ -43,6 +43,8 @@ pub mod types;
 pub mod weights;
 
 extern crate alloc;
+extern crate core;
+
 use alloc::vec::Vec;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
@@ -68,6 +70,7 @@ pub use weights::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use core::fmt::Debug;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -124,6 +127,12 @@ pub mod pallet {
 		/// to make sure a signed payload would not be replayable.
 		#[pallet::constant]
 		type MortalityWindowSize: Get<u32>;
+
+		/// How often to emit status events during a storage migration.
+		/// Try to make this larger than the number of message migrations that will fit
+		/// in a block by weight, as multiple of these events in a block is not really useful
+		/// or desireable.
+		type MigrateEmitEvery: Get<u32> + Clone + Debug;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -230,6 +239,14 @@ pub mod pallet {
 			page_id: PageId,
 			/// previous content hash before removal
 			prev_content_hash: PageHash,
+		},
+
+		/// An event to track storage migrations
+		StatefulPagesMigrated {
+			/// Last child trie prefix processed
+			last_trie: (u64, PayloadLocation),
+			/// Total number of pages migrated
+			total_page_count: u64,
 		},
 	}
 

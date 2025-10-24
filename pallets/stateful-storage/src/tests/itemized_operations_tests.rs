@@ -40,12 +40,7 @@ fn parsing_itemized_page_with_item_payload_size_too_big_should_fail() {
 	let payload = generate_payload_bytes::<ItemizedPageSize>(Some(1));
 	let mut buffer: Vec<u8> = vec![];
 	buffer.extend_from_slice(
-		&ItemHeader {
-			item_version: ItemVersion::V2,
-			schema_id: 0,
-			payload_len: (payload.len() + 1) as u16,
-		}
-		.encode()[..],
+		&ItemHeader::V2 { schema_id: 0, payload_len: (payload.len() + 1) as u16 }.encode()[..],
 	);
 	buffer.extend_from_slice(&payload);
 	let page: ItemizedPage<Test> = ItemizedPage::<Test> {
@@ -68,12 +63,7 @@ fn parsing_itemized_page_with_incomplete_trailing_item_header_should_fail() {
 	let payload = generate_payload_bytes::<ItemizedPageSize>(Some(1));
 	let mut buffer: Vec<u8> = vec![];
 	buffer.extend_from_slice(
-		&ItemHeader {
-			item_version: ItemVersion::V2,
-			schema_id: 0,
-			payload_len: payload.len() as u16,
-		}
-		.encode()[..],
+		&ItemHeader::V2 { schema_id: 0, payload_len: payload.len() as u16 }.encode()[..],
 	);
 	buffer.extend_from_slice(&payload);
 	// Make page buffer extend past the last item
