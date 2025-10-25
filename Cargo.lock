@@ -8341,7 +8341,6 @@ dependencies = [
  "lazy_static",
  "log",
  "pallet-migrations",
- "pallet-msa",
  "parity-scale-codec",
  "pretty_assertions",
  "scale-info",

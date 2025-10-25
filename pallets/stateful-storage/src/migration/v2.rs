@@ -1,11 +1,14 @@
 use crate::{
-	migration::{v1, v1::ItemizedOperations},
+	migration::v1,
 	stateful_child_tree::{MultipartKey, StatefulChildTree},
 	types::{ItemHeader, ITEMIZED_STORAGE_PREFIX, PAGINATED_STORAGE_PREFIX, PALLET_STORAGE_PREFIX},
 	weights, Config, Event, Pallet,
 };
 use alloc::vec::Vec;
-use common_primitives::{msa::MessageSourceId, schema::PayloadLocation};
+use common_primitives::{
+	msa::{MessageSourceId, MsaLookup},
+	schema::PayloadLocation,
+};
 use core::marker::PhantomData;
 use frame_support::{
 	migrations::{MigrationId, SteppedMigration, SteppedMigrationError},
@@ -13,7 +16,6 @@ use frame_support::{
 	weights::WeightMeter,
 	BoundedVec,
 };
-use pallet_msa::{Config as MsaConfig, CurrentMsaIdentifierMaximum};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::storage::ChildInfo;
 #[cfg(feature = "try-runtime")]
@@ -115,8 +117,8 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 			.expect("failed to decode itemized key");
 
 		// Parse old page into old items
-		let parsed_page =
-			ItemizedOperations::<T>::try_parse(&old).map_err(|_| SteppedMigrationError::Failed)?;
+		let parsed_page = v1::ItemizedOperations::<T>::try_parse(&old)
+			.map_err(|_| SteppedMigrationError::Failed)?;
 		let min_expected_size = parsed_page.items.len() *
 			(crate::types::ItemHeader::max_encoded_len() - v1::ItemHeader::max_encoded_len()) +
 			parsed_page.page_size;
@@ -154,12 +156,8 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 /// The `step` function will be called once per block. It is very important that this function
 /// *never* panics and never uses more weight than it got in its meter. The migrations should also
 /// try to make maximal progress per step, so that the total time it takes to migrate stays low.
-pub struct MigratePaginatedV1ToV2<T: Config + MsaConfig, W: weights::WeightInfo>(
-	PhantomData<(T, W)>,
-);
-impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
-	for MigratePaginatedV1ToV2<T, W>
-{
+pub struct MigratePaginatedV1ToV2<T: Config, W: weights::WeightInfo>(PhantomData<(T, W)>);
+impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1ToV2<T, W> {
 	type Cursor = ChildCursor<PaginatedKeyLength>;
 	// Without the explicit length here the construction of the ID would not be infallible.
 	type Identifier = MigrationId<50>;
@@ -189,7 +187,7 @@ impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 			log::info!(target: LOG_TARGET, "Skipping migrating paginated storage: storage version already set to 2");
 			return Ok(None);
 		}
-		let max_id = CurrentMsaIdentifierMaximum::<T>::get();
+		let max_id = <T::MsaInfoProvider>::get_max_msa_id();
 		let mut cur = cursor.unwrap_or_else(|| {
 			log::info!(target: LOG_TARGET, "Starting migrating paginated storage, max MSA: {}", max_id);
 			Self::Cursor::default()
@@ -226,12 +224,8 @@ impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 /// The `step` function will be called once per block. It is very important that this function
 /// *never* panics and never uses more weight than it got in its meter. The migrations should also
 /// try to make maximal progress per step, so that the total time it takes to migrate stays low.
-pub struct MigrateItemizedV1ToV2<T: Config + MsaConfig, W: weights::WeightInfo>(
-	PhantomData<(T, W)>,
-);
-impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
-	for MigrateItemizedV1ToV2<T, W>
-{
+pub struct MigrateItemizedV1ToV2<T: Config, W: weights::WeightInfo>(PhantomData<(T, W)>);
+impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1ToV2<T, W> {
 	type Cursor = ChildCursor<ItemizedKeyLength>;
 	// Without the explicit length here the construction of the ID would not be infallible.
 	type Identifier = MigrationId<49>;
@@ -261,7 +255,7 @@ impl<T: Config + MsaConfig, W: weights::WeightInfo> SteppedMigration
 			log::info!(target: LOG_TARGET, "Skipping migrating itemized storage: storage version already set to 2");
 			return Ok(None);
 		}
-		let max_id = CurrentMsaIdentifierMaximum::<T>::get();
+		let max_id = <T::MsaInfoProvider>::get_max_msa_id();
 		let mut cur = cursor.unwrap_or_else(|| {
 			log::info!(target: LOG_TARGET, "Starting migrating itemized storage, max MSA: {}", max_id);
 			Self::Cursor::default()

@@ -15,7 +15,7 @@ extern crate alloc;
 use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 use core::{
 	cmp::*,
-	fmt::Debug,
+	fmt::{Debug, Formatter},
 	hash::{Hash, Hasher},
 };
 use twox_hash::XxHash64;
@@ -86,7 +86,7 @@ pub enum PageError {
 }
 
 /// A generic page of data which supports both Itemized and Paginated
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Debug, Default)]
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Default)]
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
@@ -96,6 +96,12 @@ pub struct Page<PageDataSize: Get<u32>> {
 	/// - Itemized is limited by [`Config::MaxItemizedPageSizeBytes`]
 	/// - Paginated is limited by [`Config::MaxPaginatedPageSizeBytes`]
 	pub data: BoundedVec<u8, PageDataSize>,
+}
+
+impl<PageDataSize: Get<u32>> Debug for Page<PageDataSize> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		write!(f, "Page<Size> {{ nonce: {}, data: {} bytes }}", self.nonce, self.data.len())
+	}
 }
 
 impl<PageDataSize: Get<u32>> Into<PageV2<PageDataSize>> for (Option<SchemaId>, Page<PageDataSize>) {

@@ -10,14 +10,14 @@ use common_primitives::{
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use lazy_static::lazy_static;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeAll, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 extern crate alloc;
 use alloc::{boxed::Box, collections::btree_map::BTreeMap, vec::Vec};
 use core::{
 	cmp::*,
-	fmt::Debug,
+	fmt::{Debug, Formatter},
 	hash::{Hash, Hasher},
 };
 use sp_core::U256;
@@ -504,7 +504,7 @@ pub enum PageVersion {
 }
 
 /// A generic page of data which supports both Itemized and Paginated
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Debug, Default)]
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, Default)]
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
@@ -519,6 +519,19 @@ pub struct Page<PageDataSize: Get<u32>> {
 	/// - Itemized is limited by [`Config::MaxItemizedPageSizeBytes`]
 	/// - Paginated is limited by [`Config::MaxPaginatedPageSizeBytes`]
 	pub data: BoundedVec<u8, PageDataSize>,
+}
+
+impl<PageDataSize: Get<u32>> Debug for Page<PageDataSize> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		write!(
+			f,
+			"Page<Size> {{ page_version: {:?}, schema_id: {:?}, nonce: {}, data: {} bytes }}",
+			self.page_version,
+			self.schema_id,
+			self.nonce,
+			self.data.len()
+		)
+	}
 }
 
 /// An internal struct which contains the parsed items in a page

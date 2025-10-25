@@ -43,7 +43,6 @@ pub mod types;
 pub mod weights;
 
 extern crate alloc;
-extern crate core;
 
 use alloc::vec::Vec;
 

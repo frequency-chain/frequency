@@ -28,14 +28,13 @@ sp-runtime = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../../runtime/common", default-features = false }
-pallet-msa = { path = "../msa", default-features = false }
-pallet-migrations = { workspace = true }
 hex = { workspace = true, default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 env_logger = { workspace = true }
 pretty_assertions = { workspace = true }
 sp-keystore = { workspace = true }
+pallet-migrations = { workspace = true }
 
 [features]
 default = ['std']
@@ -45,7 +44,6 @@ runtime-benchmarks = [
   "frame-system/runtime-benchmarks",
   "common-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
-  "pallet-msa/runtime-benchmarks",
 ]
 std = [
   'parity-scale-codec/std',
@@ -58,7 +56,6 @@ std = [
   'frame-benchmarking/std',
   'common-primitives/std',
   "common-runtime/std",
-  "pallet-msa/std",
 ]
 try-runtime = ['frame-support/try-runtime']
 test = []

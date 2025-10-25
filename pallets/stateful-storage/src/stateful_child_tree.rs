@@ -6,7 +6,7 @@ use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},
 	Blake2_128, Blake2_256, Hashable, StorageHasher, Twox128, Twox256,
 };
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeAll, Encode};
 use sp_core::{ConstU8, Get};
 use sp_io::hashing::twox_64;
 extern crate alloc;
@@ -307,7 +307,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 	///
 	/// The read is performed from the `msa_id` only. The `key` is not required. If the
 	/// data doesn't store under the given `key` `None` is returned.
-	pub fn try_read<K: MultipartKey<H>, V: Decode + Sized>(
+	pub fn try_read<K: MultipartKey<H>, V: DecodeAll + Sized>(
 		msa_id: &MessageSourceId,
 		pallet_name: &[u8],
 		storage_name: &[u8],
@@ -317,7 +317,7 @@ impl<H: MultipartKeyStorageHasher> StatefulChildTree<H> {
 		let value = child::get_raw(&child, &keys.hash());
 		match value {
 			None => Ok(None),
-			Some(v) => Ok(Decode::decode(&mut &v[..]).map(Some).map_err(|_| ())?),
+			Some(v) => Ok(DecodeAll::decode_all(&mut &v[..]).map(Some).map_err(|_| ())?),
 		}
 	}
 

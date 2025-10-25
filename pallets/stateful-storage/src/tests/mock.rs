@@ -18,7 +18,10 @@ use common_primitives::{
 };
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 use frame_support::{
+	derive_impl,
 	dispatch::DispatchResult,
+	migrations::MultiStepMigrator,
+	pallet_prelude::Weight,
 	parameter_types,
 	traits::{ConstU16, ConstU32},
 	Twox128,
@@ -35,6 +38,7 @@ type Block = frame_system::mocking::MockBlockU32<Test>;
 pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
 pub const INVALID_MSA_ID: MessageSourceId = 100_000_000;
 pub const TEST_ACCOUNT_SEED: [u8; 32] = [0; 32];
+pub const MAX_MSA_ID: MessageSourceId = 10;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -42,6 +46,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		StatefulStoragePallet: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>},
+		Migrator: pallet_migrations,
 	}
 );
 
@@ -71,11 +76,28 @@ impl system::Config for Test {
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type SingleBlockMigrations = ();
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = Migrator;
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
 	type ExtensionsWeightInfo = ();
+}
+
+frame_support::parameter_types! {
+	pub storage MigratorServiceWeight: Weight = Weight::from_parts(100, 100); // do not use in prod
+}
+
+#[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
+impl pallet_migrations::Config for Test {
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		crate::migration::v2::MigratePaginatedV1ToV2<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v2::MigrateItemizedV1ToV2<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v2::FinalizeV2Migration<Test, crate::SubstrateWeight<Test>>,
+	);
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type MaxServiceWeight = MigratorServiceWeight;
 }
 
 pub type MaxItemizedActionsCount = ConstU32<6>;
@@ -123,6 +145,10 @@ impl MsaLookup for MsaInfoHandler {
 		}
 
 		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
+	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		MAX_MSA_ID
 	}
 }
 
@@ -430,4 +456,15 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
+}
+
+#[allow(dead_code)]
+pub fn run_to_block_with_migrations(n: u32) {
+	System::run_to_block_with::<AllPalletsWithSystem>(
+		n,
+		frame_system::RunToBlockHooks::default().after_initialize(|_| {
+			// Done by Executive:
+			<Test as frame_system::Config>::MultiBlockMigrator::step();
+		}),
+	);
 }

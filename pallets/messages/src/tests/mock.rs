@@ -149,6 +149,10 @@ impl MsaLookup for MsaInfoHandler {
 		}
 		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		MessageSourceId::MAX
+	}
 }
 
 impl MsaValidator for MsaInfoHandler {

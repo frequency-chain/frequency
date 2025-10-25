@@ -2035,6 +2035,10 @@ impl<T: Config> MsaLookup for Pallet<T> {
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		CurrentMsaIdentifierMaximum::<T>::get()
+	}
 }
 
 impl<T: Config> MsaValidator for Pallet<T> {

@@ -236,6 +236,9 @@ pub trait MsaLookup {
 
 	/// Gets the MSA Id associated with this `AccountId` if any
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
+
+	/// Gets the max MSA ID from the pallet
+	fn get_max_msa_id() -> MessageSourceId;
 }
 
 /// A behavior that allows for validating an MSA
