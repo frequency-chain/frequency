@@ -18,6 +18,7 @@ import {
   AddProviderPayload,
   AuthorizedKeyData,
   EventMap,
+  Extrinsic,
   ExtrinsicHelper,
   ItemizedSignaturePayloadV2,
   PaginatedDeleteSignaturePayloadV2,
@@ -822,4 +823,10 @@ export async function computeCid(bytes: Uint8Array): Promise<string> {
 
   // Return base58btc-encoded string
   return cid.toString(base58btc);
+}
+
+export async function addProxy(real: KeyringPair, proxy: string, proxyType: any) {
+  const proxyAddCall = ExtrinsicHelper.api.tx.proxy.addProxy(proxy, proxyType, 0);
+  const proxyAddTx = new Extrinsic(() => proxyAddCall, real, ExtrinsicHelper.api.events.proxy.ProxyAdded);
+  await assert.doesNotReject(proxyAddTx.signAndSend());
 }

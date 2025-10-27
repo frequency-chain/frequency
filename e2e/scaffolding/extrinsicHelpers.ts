@@ -34,7 +34,6 @@ import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime
 import { hasRelayChain } from './env';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
-import { get } from 'http';
 
 export interface ReleaseSchedule {
   start: number;
@@ -255,9 +254,8 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
-  public async sudoSignAndSend(waitForInBlock = true) {
-    const currentNonce = await getNonce(this.keys);
-    const nonce = await autoNonce.auto(this.keys, currentNonce);
+  public async sudoSignAndSend(waitForInBlock = false) {
+    const nonce = await getNonce(this.keys);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
       this.api.tx.sudo
@@ -1145,5 +1143,18 @@ export class ExtrinsicHelper {
       return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
     }
     return 0n;
+  }
+
+  // Execute a call via proxy.  The proxy 'proxy' must already have been added for 'real'
+  // Note even if the extrinsic fails, the proxy may have executed successfully, so be sure to check state as well.
+  public static async proxySignAndSend(
+    inner: SubmittableExtrinsic<any>,
+    proxy: KeyringPair,
+    real: KeyringPair,
+    expectedEvent: AugmentedEvent<any>
+  ) {
+    const proxyCall = ExtrinsicHelper.api.tx.proxy.proxy(getUnifiedAddress(real), null, inner);
+    const proxyTx = new Extrinsic(() => proxyCall, proxy, expectedEvent);
+    await assert.doesNotReject(proxyTx.signAndSend());
   }
 }
