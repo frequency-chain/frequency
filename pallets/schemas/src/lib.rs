@@ -859,6 +859,12 @@ pub mod pallet {
 			<CurrentSchemaIdentifierMaximum<T>>::set(n);
 		}
 
+		/// Set the schema count to something in particular.
+		#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+		pub fn set_intent_count(n: IntentId) {
+			<CurrentIntentIdentifierMaximum<T>>::set(n);
+		}
+
 		/// Lowest-level insertion function for a [`SchemaInfo`] and [`SchemaPayload`] into storage,
 		/// using an already-allocated [`SchemaId`]
 		pub fn store_schema_info_and_payload(
@@ -1386,10 +1392,18 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 		schema_ids.iter().all(|id| id <= &latest_issue_schema_id)
 	}
 
+	fn are_all_intent_ids_valid(intent_ids: &[IntentId]) -> bool {
+		let latest_issue_intent_id = CurrentIntentIdentifierMaximum::<T>::get();
+		intent_ids.iter().all(|id| id <= &latest_issue_intent_id)
+	}
+
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 	fn set_schema_count(n: SchemaId) {
 		Self::set_schema_count(n);
 	}
+
+	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+	fn set_intent_count(n: IntentId) { Self::set_intent_count(n); }
 }
 
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {

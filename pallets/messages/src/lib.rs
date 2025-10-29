@@ -44,7 +44,7 @@ use common_primitives::{
 	cid::*,
 	messages::*,
 	msa::{
-		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
+		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, GrantValidator,
 	},
 	schema::*,
 };
@@ -81,7 +81,7 @@ pub mod pallet {
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: SchemaGrantValidator<BlockNumberFor<Self>>;
+		type SchemaGrantValidator: GrantValidator<BlockNumberFor<Self>>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -292,7 +292,7 @@ pub mod pallet {
 				let maybe_delegator = match on_behalf_of {
 					Some(delegator_msa_id) => {
 						let delegator_id = DelegatorId(delegator_msa_id);
-						T::SchemaGrantValidator::ensure_valid_schema_grant(
+						T::SchemaGrantValidator::ensure_valid_grant(
 							provider_id,
 							delegator_id,
 							schema_id,

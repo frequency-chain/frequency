@@ -279,10 +279,17 @@ pub trait SchemaProvider<SchemaId> {
 pub trait SchemaValidator<SchemaId> {
 	/// Checks that a collection of SchemaIds is all valid
 	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool;
+	
+	/// Checks that all IntentIds in a collection are valid.
+	fn are_all_intent_ids_valid(intent_ids: &[IntentId]) -> bool;
 
 	/// Set the schema counter for testing purposes.
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 	fn set_schema_count(n: SchemaId);
+
+	/// Set the Intent counter for testing purposes.
+	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
+	fn set_intent_count(n: IntentId);
 }
 
 impl IntentSettings {

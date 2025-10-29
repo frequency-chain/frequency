@@ -28,7 +28,7 @@ fn parsing_a_well_formed_item_page_should_work() {
 	let items = parsed.unwrap().items;
 	for index in 0..payloads.len() {
 		assert_eq!(
-			items.get(&(index as u16)).unwrap()[ItemHeader::max_encoded_len()..],
+			items.get(&(index as u16)).unwrap().payload[ItemHeader::max_encoded_len()..],
 			payloads[index][..]
 		);
 	}

@@ -41,6 +41,7 @@ pub trait WeightInfo {
 	fn apply_item_actions_with_signature_v2_delete(n: u32, ) -> Weight;
 	fn upsert_page_with_signature_v2(s: u32, ) -> Weight;
 	fn delete_page_with_signature_v2() -> Weight;
+	fn delete_page_with_signature_v3() -> Weight;
 	fn paginated_v1_to_v2() -> Weight;
 	fn itemized_v1_to_v2() -> Weight;
 }
@@ -188,6 +189,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+
+	fn delete_page_with_signature_v3() -> Weight {
+		Weight::zero()
+	}
+
 	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Storage: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb1f1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
@@ -358,6 +364,11 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+
+	fn delete_page_with_signature_v3() -> Weight {
+		Weight::zero()
+	}
+
 	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Storage: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb1f1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)

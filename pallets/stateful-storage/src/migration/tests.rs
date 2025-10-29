@@ -1,7 +1,5 @@
 use crate::{
-	migration,
-	migration::{v1, v2},
-	pallet,
+	migration::v1,
 	stateful_child_tree::StatefulChildTree,
 	test_common::constants::{UNDELEGATED_ITEMIZED_SCHEMA, UNDELEGATED_PAGINATED_SCHEMA},
 	tests::mock::{
@@ -9,15 +7,14 @@ use crate::{
 		System, Test as T,
 	},
 	types::{PageError, ITEMIZED_STORAGE_PREFIX, PAGINATED_STORAGE_PREFIX, PALLET_STORAGE_PREFIX},
-	weights, Config, Error,
+	weights, Config,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
-	assert_err, assert_ok, pallet_prelude::StorageVersion, traits::OnRuntimeUpgrade, BoundedVec,
+	assert_err, pallet_prelude::StorageVersion, traits::OnRuntimeUpgrade, BoundedVec,
 };
-use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_migrations::WeightInfo as _;
-use parity_scale_codec::{Decode, DecodeAll, Encode};
+use parity_scale_codec::Decode;
 
 fn check_paginated_pages<OkPageType: Decode, ErrPageType: Decode>(msa_ids: &Vec<MessageSourceId>) {
 	for msa_id in msa_ids {
@@ -98,14 +95,14 @@ fn lazy_migration_works() {
 
 		// Insert some Itemized pages into storage.
 		let str: &[u8; 18] = b"This is a payload."; // length 18
-		let mut page: migration::v1::ItemizedPage<T> = migration::v1::ItemizedPage::<T>::default();
+		let mut page: v1::ItemizedPage<T> = v1::ItemizedPage::<T>::default();
 		let payload =
 			BoundedVec::<u8, <T as Config>::MaxItemizedBlobSizeBytes>::try_from(str.to_vec())
 				.expect("Unable to create BoundedVec payload");
-		let add_actions: Vec<migration::v1::ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>> =
+		let add_actions: Vec<v1::ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>> =
 			vec![0; 10usize]
 				.iter()
-				.map(|_| migration::v1::ItemAction::Add { data: payload.clone() })
+				.map(|_| v1::ItemAction::Add { data: payload.clone() })
 				.collect();
 		let page = v1::ItemizedOperations::<T>::apply_item_actions(&mut page, &add_actions)
 			.expect("failed to apply item actions");
@@ -149,7 +146,6 @@ fn lazy_migration_works() {
 		System::set_block_number(1);
 		AllPalletsWithSystem::on_runtime_upgrade(); // onboard MBMs
 
-		let mut v3_expected: u16 = 0;
 		for block in 2..=(MAX_BLOCKS + 2) {
 			run_to_block_with_migrations(block as u32);
 			if StorageVersion::new(2) == StorageVersion::get::<crate::Pallet<T>>() {

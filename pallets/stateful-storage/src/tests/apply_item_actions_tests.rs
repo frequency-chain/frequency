@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use crate::{
 	stateful_child_tree::StatefulChildTree,
 	test_common::{constants::*, test_utility::*},
@@ -83,7 +84,7 @@ fn apply_item_actions_with_invalid_schema_location_should_fail() {
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			Error::<Test>::IntentPayloadLocationMismatch
 		)
 	});
 }
@@ -119,10 +120,11 @@ fn apply_item_actions_with_corrupted_state_should_fail() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let page: ItemizedPage<Test> = generate_page(None, None, None);
 		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
-		let key = (schema_id,);
+		let key = (intent_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -185,7 +187,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		// arrange
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
-		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let prev_content_hash: PageHash = 0;
 		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
@@ -194,7 +196,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
-			schema_id,
+			intent_id,
 			prev_content_hash,
 			BoundedVec::try_from(actions).unwrap(),
 		));
@@ -205,7 +207,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 				&msa_id,
 				PALLET_STORAGE_PREFIX,
 				ITEMIZED_STORAGE_PREFIX,
-				&(schema_id,),
+				&(intent_id,),
 			)
 			.unwrap();
 		assert!(updated_page.is_some());
@@ -215,7 +217,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageUpdated {
 				msa_id,
-				schema_id,
+				intent_id,
 				prev_content_hash,
 				curr_content_hash,
 			}
@@ -231,12 +233,13 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let nonce = 10;
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let page = create_itemized_page_from::<Test>(Some(nonce), &[payload.try_into().unwrap()]);
 		let prev_content_hash = page.get_hash();
-		let key = (schema_id,);
+		let key = (intent_id,);
 
 		// act
 		<StatefulChildTree>::write(
@@ -260,7 +263,7 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 				&msa_id,
 				PALLET_STORAGE_PREFIX,
 				ITEMIZED_STORAGE_PREFIX,
-				&(schema_id,),
+				&key,
 			)
 			.unwrap();
 		assert!(updated_page.is_some());
@@ -270,7 +273,7 @@ fn apply_item_actions_existing_page_with_valid_input_should_update_storage() {
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageUpdated {
 				msa_id,
-				schema_id,
+				intent_id: ITEMIZED_INTENT,
 				prev_content_hash,
 				curr_content_hash,
 			}
@@ -286,10 +289,11 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let actions2 = vec![ItemAction::Delete { index: 0 }];
-		let keys = (schema_id,);
+		let keys = (intent_id,);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1.clone()),
 			msa_id,
@@ -331,7 +335,7 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageDeleted {
 				msa_id,
-				schema_id,
+				intent_id: ITEMIZED_INTENT,
 				prev_content_hash: content_hash,
 			}
 			.into(),
@@ -391,6 +395,7 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 
@@ -404,7 +409,7 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 		let mut new_page =
 			ItemizedOperations::<Test>::apply_item_actions(&page, &actions1_v2).unwrap();
 		new_page.nonce = 1;
-		let key = (schema_id,);
+		let key = (intent_id,);
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -434,10 +439,11 @@ fn apply_delete_item_on_append_only_fails() {
 		let caller_1 = test_public(1);
 		let msa_id = 1;
 		let schema_id = ITEMIZED_APPEND_ONLY_SCHEMA;
+		let intent_id = ITEMIZED_APPEND_ONLY_INTENT;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let actions2 = vec![ItemAction::Delete { index: 0 }];
-		let keys = (schema_id,);
+		let keys = (intent_id,);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1.clone()),
 			msa_id,
@@ -579,6 +585,7 @@ fn apply_item_actions_with_signature_v2_having_correct_input_should_work() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let prev_content_hash = PageHash::default();
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
@@ -606,7 +613,7 @@ fn apply_item_actions_with_signature_v2_having_correct_input_should_work() {
 				&msa_id,
 				PALLET_STORAGE_PREFIX,
 				ITEMIZED_STORAGE_PREFIX,
-				&(schema_id,),
+				&(intent_id,),
 			)
 			.unwrap();
 		assert!(updated_page.is_some());
@@ -614,7 +621,7 @@ fn apply_item_actions_with_signature_v2_having_correct_input_should_work() {
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageUpdated {
 				msa_id,
-				schema_id,
+				intent_id: ITEMIZED_INTENT,
 				prev_content_hash,
 				curr_content_hash,
 			}
@@ -727,10 +734,11 @@ fn apply_item_actions_with_signature_v2_having_valid_input_and_empty_items_shoul
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		let actions2 = vec![ItemAction::Delete { index: 0 }];
-		let keys = (schema_id,);
+		let keys = (intent_id,);
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1.clone()),
 			msa_id,
@@ -780,7 +788,7 @@ fn apply_item_actions_with_signature_v2_having_valid_input_and_empty_items_shoul
 		System::assert_last_event(
 			StatefulEvent::ItemizedPageDeleted {
 				msa_id,
-				schema_id,
+				intent_id: ITEMIZED_INTENT,
 				prev_content_hash: content_hash,
 			}
 			.into(),
@@ -796,10 +804,11 @@ fn apply_item_actions_with_signature_v2_having_corrupted_state_should_fail() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let page: ItemizedPage<Test> = generate_page(None, None, None);
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
-		let key = (schema_id,);
+		let key = (intent_id,);
 		StatefulChildTree::<<Test as Config>::KeyHasher>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -848,6 +857,7 @@ fn apply_item_actions_with_signature_v2_having_page_with_stale_hash_should_fail(
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = ITEMIZED_SCHEMA;
+		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
 		let actions_v2: Vec<ItemActionV2<MaxItemizedBlobSizeBytes>> =
@@ -855,7 +865,7 @@ fn apply_item_actions_with_signature_v2_having_page_with_stale_hash_should_fail(
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
 		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions_v2).unwrap();
-		let key = (schema_id,);
+		let key = (intent_id,);
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,

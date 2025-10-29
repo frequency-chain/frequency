@@ -133,7 +133,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = TestAccountId;
 	type MaxPublicKeysPerMsa = ConstU8<255>;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = ConstU32<16>;
 	type SchemaValidator = Schemas;
 	type HandleProvider = ();

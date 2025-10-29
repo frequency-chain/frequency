@@ -2,7 +2,7 @@ use crate as pallet_messages;
 use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
-		ProviderId, ProviderLookup, SchemaGrantValidator,
+		ProviderId, ProviderLookup, GrantValidator,
 	},
 	schema::*,
 };
@@ -171,8 +171,8 @@ impl MsaValidator for MsaInfoHandler {
 }
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u32;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type DelegationId = SchemaId;
 
 	fn get_delegation_of(
 		_delegator: DelegatorId,
@@ -181,31 +181,31 @@ impl ProviderLookup for DelegationInfoHandler {
 		if provider == ProviderId(2000) {
 			return None
 		};
-		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
+		Some(Delegation { revoked_at: 100, permissions: Default::default() })
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {
 	type BlockNumber = u32;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type DelegationIdType = SchemaId;
 
 	fn ensure_valid_delegation(
 		provider: ProviderId,
 		_delegator: DelegatorId,
 		_block_number: Option<Self::BlockNumber>,
 	) -> Result<
-		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		Delegation<SchemaId, Self::BlockNumber, Self::MaxGrantsPerDelegation>,
 		DispatchError,
 	> {
 		if provider == ProviderId(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
+		Ok(Delegation { permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
-impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHandler {
-	fn ensure_valid_schema_grant(
+impl<BlockNumber> GrantValidator<BlockNumber> for SchemaGrantValidationHandler {
+	fn ensure_valid_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
 		_schema_id: SchemaId,

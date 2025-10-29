@@ -12,9 +12,7 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, Error, Event, PublicKeyCountForMsaId, ValidityError,
 };
 
-use crate::tests::other_tests::{
-	assert_revoke_delegation_by_delegator_no_effect, set_schema_count,
-};
+use crate::tests::other_tests::{assert_revoke_delegation_by_delegator_no_effect, set_intent_count};
 use common_primitives::{
 	handles::ClaimHandlePayload,
 	msa::{DelegatorId, ProviderId},
@@ -177,9 +175,9 @@ fn test_ensure_msa_can_retire_fails_if_any_active_delegations_exist() {
 
 		// Create provider
 		let (provider_id, _provider_key) = create_provider_with_name("test");
-		let schema_ids = vec![1];
-		set_schema_count::<Test>(1);
-		assert_ok!(Msa::add_provider(ProviderId(provider_id), DelegatorId(msa_id), schema_ids));
+		let intent_ids = vec![1];
+		set_intent_count::<Test>(1);
+		assert_ok!(Msa::add_provider(ProviderId(provider_id), DelegatorId(msa_id), intent_ids));
 
 		// Retire the MSA
 		assert_err!(

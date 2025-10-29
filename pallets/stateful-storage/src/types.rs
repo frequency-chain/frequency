@@ -10,7 +10,7 @@ use common_primitives::{
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use lazy_static::lazy_static;
-use parity_scale_codec::{Decode, DecodeAll, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 extern crate alloc;
@@ -304,7 +304,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV3<T> {
 				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV3(uint16 intentId,uint32 targetHash,uint32 expiration,ItemAction[] actions)ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
 
 			static ref SUB_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"ItemAction(string actionType,uint16 schemaId,bytes data,uint16 index)");
+				sp_io::hashing::keccak_256(b"ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
 
 			static ref ITEM_ACTION_ADD: [u8; 32] = sp_io::hashing::keccak_256(b"Add");
 			static ref ITEM_ACTION_DELETE: [u8; 32] = sp_io::hashing::keccak_256(b"Delete");
@@ -486,6 +486,65 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 	}
 }
 
+/// Payload containing all necessary fields to verify signatures to delete a Paginated storage
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
+#[scale_info(skip_type_params(T))]
+pub struct PaginatedDeleteSignaturePayloadV3<T: Config> {
+	/// Intent id of this storage
+	#[codec(compact)]
+	pub intent_id: IntentId,
+
+	/// Page id of this storage
+	#[codec(compact)]
+	pub page_id: PageId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
+	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
+	pub expiration: BlockNumberFor<T>,
+}
+
+impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV3<T> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV3(uint16 intentId,uint16 pageId,uint32 targetHash,uint32 expiration)");
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let coded_intent_id = to_abi_compatible_number(self.intent_id);
+		let coded_page_id = to_abi_compatible_number(self.page_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let message = sp_io::hashing::keccak_256(
+			&[
+				MAIN_TYPE_HASH.as_slice(),
+				&coded_intent_id,
+				&coded_page_id,
+				&coded_target_hash,
+				&coded_expiration,
+			]
+				.concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
+}
+
 /// Indicates the version of the Page storage (header format, etc)
 #[derive(
 	Encode, Decode, DecodeWithMemTracking, Default, Clone, TypeInfo, MaxEncodedLen, Debug, PartialEq,
@@ -534,13 +593,22 @@ impl<PageDataSize: Get<u32>> Debug for Page<PageDataSize> {
 	}
 }
 
+/// An internal struct representing a single parsed item
+#[derive(Debug, PartialEq)]
+pub struct ParsedItem<'a> {
+	/// The item header
+	pub header: ItemHeader,
+	/// The item payload (may include the unparsed header)
+	pub payload: &'a [u8],
+}
+
 /// An internal struct which contains the parsed items in a page
 #[derive(Debug, PartialEq)]
 pub struct ParsedItemPage<'a> {
 	/// Page current size
 	pub page_size: usize,
 	/// A map of item index to a slice of blob (including a header is optional)
-	pub items: BTreeMap<u16, &'a [u8]>,
+	pub items: BTreeMap<u16, ParsedItem<'a>>,
 }
 
 impl<PageDataSize: Get<u32>> Page<PageDataSize> {
@@ -580,7 +648,8 @@ impl<PageDataSize: Get<u32>> PartialEq for Page<PageDataSize> {
 	}
 }
 
-/// Deserializing a Page from a BoundedVec is used for the input payload--
+/// Deserializing a Page from a BoundedVec is used for the input payload,
+/// and also for rebuilding an Itemized page after applying actions--
 /// so there is no schema_id and no nonce to be read, just the raw data.
 /// The rest of the metadata gets filled in before the new/updated page is written.
 impl<PageDataSize: Get<u32>> From<BoundedVec<u8, PageDataSize>> for Page<PageDataSize> {
@@ -651,7 +720,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 
 		// since BTreeMap is sorted by key, all items will be kept in their existing order
 		for (_, slice) in parsed.items.iter() {
-			updated_page_buffer.extend_from_slice(slice);
+			updated_page_buffer.extend_from_slice(slice.payload);
 		}
 		updated_page_buffer.append(&mut add_buffer);
 
@@ -683,11 +752,14 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 
 			items.insert(
 				count,
-				match include_header {
-					true => &self.data[offset..(offset + item_total_length)],
-					false =>
-						&self.data
-							[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
+				ParsedItem {
+					header,
+					payload: match include_header {
+						true => &self.data[offset..(offset + item_total_length)],
+						false =>
+							&self.data
+								[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
+					}
 				},
 			);
 			offset += item_total_length;

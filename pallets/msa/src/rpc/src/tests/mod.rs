@@ -36,11 +36,11 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>{
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<SchemaId, BlockNumber>>>{
 			match (delegator, provider) {
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]),
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]),
-				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]),
+				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), DelegationGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]),
 				_ => None,
 			}
 		}
@@ -49,10 +49,10 @@ sp_api::mock_impl_runtime_apis! {
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
 			#[allow(clippy::match_like_matches_macro)]
 			match delegator {
-				DELEGATE_A => vec![DelegationResponse{ provider_id: ProviderId(1), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]}],
+				DELEGATE_A => vec![DelegationResponse{ provider_id: ProviderId(1), permissions: vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]}],
 				DELEGATE_B => vec![
-					DelegationResponse{ provider_id: ProviderId(2), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]},
-					DelegationResponse{ provider_id: ProviderId(3), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]}
+					DelegationResponse{ provider_id: ProviderId(2), permissions: vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), DelegationGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]},
+					DelegationResponse{ provider_id: ProviderId(3), permissions: vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]}
 					],
 				_ => vec![],
 			}
@@ -150,11 +150,11 @@ async fn get_granted_schemas_by_msa_id_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
-	let result = api.get_granted_schemas_by_msa_id(DELEGATE_A, PROVIDER_WITH_DELEGATE_A);
+	let result = api.get_granted_intents_by_msa_id(DELEGATE_A, PROVIDER_WITH_DELEGATE_A);
 
 	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
-	assert_eq!(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())], response);
+	assert_eq!(vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero())], response);
 }
 
 #[tokio::test]
@@ -171,13 +171,13 @@ async fn get_all_granted_delegations_by_msa_id_with_success() {
 			DelegationResponse {
 				provider_id: ProviderId(2),
 				permissions: vec![
-					SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
-					SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
+					DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
+					DelegationGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
 				]
 			},
 			DelegationResponse {
 				provider_id: ProviderId(3),
-				permissions: vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]
+				permissions: vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]
 			}
 		],
 		response
@@ -189,14 +189,14 @@ async fn get_granted_schemas_by_msa_id_with_none() {
 	let client = Arc::new(TestApi {});
 	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
-	let result = api.get_granted_schemas_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B);
+	let result = api.get_granted_intents_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B);
 
 	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(
 		vec![
-			SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
-			SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
+			DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
+			DelegationGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
 		],
 		response
 	);
@@ -207,7 +207,7 @@ async fn get_granted_schemas_by_msa_id_with_no_delegation() {
 	let client = Arc::new(TestApi {});
 	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
-	let result = api.get_granted_schemas_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A);
+	let result = api.get_granted_intents_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A);
 
 	assert!(result.is_ok());
 	let response = result.unwrap();
@@ -219,7 +219,7 @@ async fn get_granted_schemas_by_msa_id_with_bad_provider_id() {
 	let client = Arc::new(TestApi {});
 	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
-	let result = api.get_granted_schemas_by_msa_id(DELEGATE_A, ProviderId(NOT_EXIST_MSA));
+	let result = api.get_granted_intents_by_msa_id(DELEGATE_A, ProviderId(NOT_EXIST_MSA));
 
 	assert!(result.is_ok());
 	let response = result.unwrap();

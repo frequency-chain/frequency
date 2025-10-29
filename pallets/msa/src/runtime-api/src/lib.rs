@@ -36,15 +36,23 @@ sp_api::decl_runtime_apis! {
 		AccountId: Codec,
 	{
 		/// Check to see if a delegation existed between the given delegator and provider at a given block
-		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool;
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<IntentId>) -> bool;
+		
+		/// Get the list of Intent permission grants (if any) that exist in any delegation between the delegator and provider
+		/// The returned list contains both Intent id and the block number at which permission was revoked (0 if currently not revoked)
+		/// NOTE: pre-deprecation this returned SchemaIds; now it returns IntentIds
+		#[deprecated(note = "Deprecated in favor of get_granted_intents_by_msa_id")]
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>>;
 
-		/// Get the list of schema permission grants (if any) that exist in any delegation between the delegator and provider
-		/// The returned list contains both schema id and the block number at which permission was revoked (0 if currently not revoked)
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>;
+		/// Get the list of Intent permission grants (if any) that exist in any delegation between the delegator and provider.
+		/// The returned list contains both Intent id and the block number at which permission was revoked (0 if currently not revoked).
+		/// NOTE: pre-deprecation this returned SchemaIds; now it returns IntentIds
+		#[api_version(4)]
+		fn get_granted_intents_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>>;
 
-		/// Get the list of all delegated providers with schema permission grants (if any) that exist in any delegation between the delegator and provider
-		/// The returned list contains both schema id and the block number at which permission was revoked (0 if currently not revoked)
-		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>>;
+		/// Get the list of all delegated providers with schema permission grants (if any) that exist in any delegation between the delegator and provider.
+		/// The returned list contains both schema id and the block number at which permission was revoked (0 if currently not revoked).
+		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<IntentId, BlockNumber>>;
 
 		/// Get the Ethereum address of the given MSA.
 		/// The address is returned as both a 20-byte binary address and a hex-encoded checksummed string (ERC-55).

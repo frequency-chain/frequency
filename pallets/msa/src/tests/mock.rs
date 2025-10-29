@@ -4,7 +4,7 @@ use crate::{
 	AddKeyData, AddProvider, AuthorizedKeyData, RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
-	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
+	msa::MessageSourceId, node::BlockNumber, schema::IntentId, utils::wrap_binary_data,
 };
 use common_runtime::constants::DAYS;
 use frame_support::{
@@ -32,7 +32,6 @@ pub use pallet_msa::Call as MsaCall;
 
 #[cfg(feature = "runtime-benchmarks")]
 use pallet_collective::ProposalCount;
-
 use crate::types::PayloadTypeDiscriminator;
 use common_primitives::node::AccountId;
 
@@ -188,7 +187,7 @@ parameter_types! {
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
 pub type MaxProviderNameSize = ConstU32<16>;
-pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
+pub type MaxIntentGrantsPerDelegation = ConstU32<30>;
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
@@ -224,7 +223,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxGrantsPerDelegation = MaxIntentGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
 	type HandleProvider = Handles;
@@ -318,19 +317,19 @@ pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
-	create_and_sign_add_provider_payload_with_schemas(delegator_pair, provider_msa, None, 10)
+	create_and_sign_add_provider_payload_with_intents(delegator_pair, provider_msa, None, 10)
 }
 
-/// Creates and signs an `AddProvider` struct using the provided delegator keypair, provider MSA and schema ids
+/// Creates and signs an `AddProvider` struct using the provided delegator keypair, provider MSA and Intent ids
 /// # Returns
 /// (MultiSignature, AddProvider) - Returns a tuple with the signature and the AddProvider struct
-pub fn create_and_sign_add_provider_payload_with_schemas(
+pub fn create_and_sign_add_provider_payload_with_intents(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
-	schema_ids: Option<Vec<SchemaId>>,
+	intent_ids: Option<Vec<IntentId>>,
 	expiration: BlockNumber,
 ) -> (MultiSignature, AddProvider) {
-	let add_provider_payload = AddProvider::new(provider_msa, schema_ids, expiration);
+	let add_provider_payload = AddProvider::new(provider_msa, intent_ids, expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
 	(signature, add_provider_payload)

@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use crate::{
 	stateful_child_tree::StatefulChildTree,
 	test_common::{constants::*, test_utility::*},
@@ -43,8 +44,9 @@ fn signature_v2_replay_on_existing_page_errors() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
-		let keys = (schema_id, page_id);
+		let keys = (intent_id, page_id);
 		let page_a: PaginatedPage<Test> = generate_page(None, Some(1), Some(1));
 		let page_b: PaginatedPage<Test> = generate_page(None, Some(2), Some(2));
 		let payload_a_to_b = PaginatedUpsertSignaturePayloadV2 {
@@ -117,9 +119,10 @@ fn signature_v2_replay_on_deleted_page_check() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
-		let keys = (schema_id, page_id);
-		let page_a: PaginatedPage<Test> = generate_page(None, Some(1), Some(1));
+		let keys = (intent_id, page_id);
+		let page_a: PaginatedPage<Test> = generate_page(Some(schema_id), Some(1), Some(1));
 		let payload_null_to_a = PaginatedUpsertSignaturePayloadV2 {
 			expiration: 10,
 			schema_id,

@@ -9,7 +9,7 @@ use core::fmt::Debug;
 pub use common_primitives::msa::{
 	Delegation, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId,
 };
-use common_primitives::{node::BlockNumber, schema::SchemaId};
+use common_primitives::node::BlockNumber;
 
 use common_primitives::{
 	signatures::{get_eip712_encoding_prefix, AccountAddressMapper, EthereumAddressMapper},
@@ -138,7 +138,7 @@ pub struct AddProvider {
 	pub authorized_msa_id: MessageSourceId,
 	/// Schemas for which publishing grants are authorized.
 	/// This is private intended for internal use only.
-	pub schema_ids: Vec<SchemaId>,
+	pub intent_ids: Vec<IntentId>,
 	/// The block number at which the proof for grant_delegation expires.
 	pub expiration: BlockNumber,
 }
@@ -148,22 +148,22 @@ impl EIP712Encode for AddProvider {
 		lazy_static! {
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"AddProvider(uint64 authorizedMsaId,uint16[] schemaIds,uint32 expiration)"
+				b"AddProvider(uint64 authorizedMsaId,uint16[] intentIds,uint32 expiration)"
 			);
 		}
 		// get prefix and domain separator
 		let prefix_domain_separator: Box<[u8]> =
 			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_authorized_msa_id = to_abi_compatible_number(self.authorized_msa_id);
-		let schema_ids: Vec<u8> = self
-			.schema_ids
+		let intent_ids: Vec<u8> = self
+			.intent_ids
 			.iter()
-			.flat_map(|schema_id| to_abi_compatible_number(*schema_id))
+			.flat_map(|intent_id| to_abi_compatible_number(*intent_id))
 			.collect();
-		let schema_ids = sp_io::hashing::keccak_256(&schema_ids);
+		let intent_ids = sp_io::hashing::keccak_256(&intent_ids);
 		let coded_expiration = to_abi_compatible_number(self.expiration);
 		let message = sp_io::hashing::keccak_256(
-			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
+			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &intent_ids, &coded_expiration]
 				.concat(),
 		);
 		let combined = [prefix_domain_separator.as_ref(), &message].concat();
@@ -175,12 +175,12 @@ impl AddProvider {
 	/// Create new `AddProvider`
 	pub fn new(
 		authorized_msa_id: MessageSourceId,
-		schema_ids: Option<Vec<SchemaId>>,
+		intent_ids: Option<Vec<IntentId>>,
 		expiration: BlockNumber,
 	) -> Self {
-		let schema_ids = schema_ids.unwrap_or_default();
+		let intent_ids = intent_ids.unwrap_or_default();
 
-		Self { authorized_msa_id, schema_ids, expiration }
+		Self { authorized_msa_id, intent_ids, expiration }
 	}
 }
 
@@ -228,64 +228,64 @@ impl<T: Config> EIP712Encode for RecoveryCommitmentPayload<T> {
 	}
 }
 
-/// The interface for mutating schemas permissions in a delegation relationship.
-pub trait PermittedDelegationSchemas<T: Config> {
-	/// Attempt to insert a new schema. Dispatches error when the max allowed schemas are exceeded.
-	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError>;
+/// The interface for mutating Intent permissions in a delegation relationship.
+pub trait PermittedDelegationIntents<T: Config> {
+	/// Attempt to insert a new Intent. Dispatches error when the max allowed delegations are exceeded.
+	fn try_insert_intent(&mut self, intent_id: IntentId) -> Result<(), DispatchError>;
 
-	/// Attempt to insert a collection of schemas. Dispatches error when the max allowed schemas are exceeded.
-	fn try_insert_schemas(&mut self, schema_ids: Vec<SchemaId>) -> Result<(), DispatchError> {
-		for schema_id in schema_ids.into_iter() {
-			self.try_insert_schema(schema_id)?;
+	/// Attempt to insert a collection of Intents. Dispatches error when the max allowed delegations are exceeded.
+	fn try_insert_intents(&mut self, intent_ids: Vec<IntentId>) -> Result<(), DispatchError> {
+		for intent_id in intent_ids.into_iter() {
+			self.try_insert_intent(intent_id)?;
 		}
 
 		Ok(())
 	}
 
-	/// Attempt get and mutate a collection of schemas. Dispatches error when a schema cannot be found.
-	fn try_get_mut_schemas(
+	/// Attempt get and mutate a collection of Intents. Dispatches error when an Intent cannot be found.
+	fn try_get_mut_intents(
 		&mut self,
-		schema_ids: Vec<SchemaId>,
+		intent_ids: Vec<IntentId>,
 		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError> {
-		for schema_id in schema_ids.into_iter() {
-			self.try_get_mut_schema(schema_id, block_number)?;
+		for intent_id in intent_ids.into_iter() {
+			self.try_get_mut_intent(intent_id, block_number)?;
 		}
 		Ok(())
 	}
 
-	/// Attempt get and mutate a schema. Dispatches error when a schema cannot be found.
-	fn try_get_mut_schema(
+	/// Attempt get and mutate an Intent. Dispatches error when an Intent cannot be found.
+	fn try_get_mut_intent(
 		&mut self,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError>;
 }
 
 /// Implementation of SchemaPermission trait on Delegation type.
-impl<T: Config> PermittedDelegationSchemas<T>
-	for Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>
+impl<T: Config> PermittedDelegationIntents<T>
+	for Delegation<IntentId, BlockNumberFor<T>, T::MaxGrantsPerDelegation>
 {
 	/// Attempt to insert a new schema. Dispatches error when the max allowed schemas are exceeded.
-	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError> {
-		self.schema_permissions
-			.try_insert(schema_id, Default::default())
-			.map_err(|_| Error::<T>::ExceedsMaxSchemaGrantsPerDelegation)?;
+	fn try_insert_intent(&mut self, intent_id: IntentId) -> Result<(), DispatchError> {
+		self.permissions
+			.try_insert(intent_id, Default::default())
+			.map_err(|_| Error::<T>::ExceedsMaxGrantsPerDelegation)?;
 		Ok(())
 	}
 
 	/// Attempt get and mutate a schema. Dispatches error when a schema cannot be found.
-	fn try_get_mut_schema(
+	fn try_get_mut_intent(
 		&mut self,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError> {
-		let schema = self
-			.schema_permissions
-			.get_mut(&schema_id)
-			.ok_or(Error::<T>::SchemaNotGranted)?;
+		let intent = self
+			.permissions
+			.get_mut(&intent_id)
+			.ok_or(Error::<T>::PermissionNotGranted)?;
 
-		*schema = block_number;
+		*intent = block_number;
 
 		Ok(())
 	}

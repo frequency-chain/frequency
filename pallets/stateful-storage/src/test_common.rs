@@ -1,19 +1,27 @@
-use common_primitives::{msa::MessageSourceId, schema::SchemaId};
+use common_primitives::{msa::MessageSourceId, schema::{IntentId, SchemaId}};
 
 /// Constants used for tests only
 #[cfg(test)]
 mod test_constants {
-	use common_primitives::msa::SchemaId;
+	use common_primitives::schema::{IntentId, SchemaId};
 
 	/// Itemized
-	pub const UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 102;
-	pub const ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 103;
-	pub const ITEMIZED_SIGNATURE_REQUIRED_SCHEMA: SchemaId = 104;
-	pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 105;
+	pub const UNDELEGATED_ITEMIZED_APPEND_ONLY_INTENT: IntentId = 102;
+	pub const UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 202;
+	pub const ITEMIZED_APPEND_ONLY_INTENT: IntentId = 103;
+	pub const ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 203;
+	pub const ITEMIZED_SIGNATURE_REQUIRED_INTENT: IntentId = 104;
+	pub const ITEMIZED_SIGNATURE_REQUIRED_SCHEMA: SchemaId = 204;
+	pub const UNDELEGATED_ITEMIZED_INTENT: IntentId = 105;
+	pub const UNDELEGATED_ITEMIZED_SCHEMA: SchemaId = 205;
+
 	/// Paginated
-	pub const PAGINATED_SIGNED_SCHEMA: SchemaId = 106;
-	pub const PAGINATED_APPEND_ONLY_SCHEMA: SchemaId = 107;
-	pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 108;
+	pub const PAGINATED_SIGNED_INTENT: IntentId = 106;
+	pub const PAGINATED_SIGNED_SCHEMA: SchemaId = 206;
+	pub const PAGINATED_APPEND_ONLY_INTENT: IntentId = 107;
+	pub const PAGINATED_APPEND_ONLY_SCHEMA: SchemaId = 207;
+	pub const UNDELEGATED_PAGINATED_INTENT: IntentId = 108;
+	pub const UNDELEGATED_PAGINATED_SCHEMA: SchemaId = 208;
 }
 
 ///
@@ -22,10 +30,12 @@ mod test_constants {
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 pub mod constants {
 	use super::*;
-	/// itemized schema id
-	pub const ITEMIZED_SCHEMA: SchemaId = 100;
-	/// paginated schema id
-	pub const PAGINATED_SCHEMA: SchemaId = 101;
+	/// itemized
+	pub const ITEMIZED_INTENT: IntentId = 100;
+	pub const ITEMIZED_SCHEMA: SchemaId = 200;
+	/// paginated
+	pub const PAGINATED_INTENT: IntentId = 101;
+	pub const PAGINATED_SCHEMA: SchemaId = 201;
 	/// Is used in benchmarks and mocks to sign and verify a payload
 	pub const BENCHMARK_SIGNATURE_ACCOUNT_SEED: &str =
 		"replace rhythm attend tank sister accuse ancient piece tornado benefit rubber horror";
