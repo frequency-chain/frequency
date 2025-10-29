@@ -79,7 +79,7 @@ pub mod pallet {
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: GrantValidator<BlockNumberFor<Self>>;
+		type SchemaGrantValidator: GrantValidator<IntentId, BlockNumberFor<Self>>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -293,7 +293,7 @@ pub mod pallet {
 						T::SchemaGrantValidator::ensure_valid_grant(
 							provider_id,
 							delegator_id,
-							schema_id,
+							schema.intent_id,
 							current_block,
 						)
 						.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;

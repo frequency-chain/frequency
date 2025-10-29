@@ -201,7 +201,7 @@ mod benchmarks {
 
 	#[benchmark]
 	fn create_sponsored_account_with_delegation(
-		s: Linear<0, { T::MaxSchemaGrantsPerDelegation::get() }>,
+		s: Linear<0, { T::MaxGrantsPerDelegation::get() }>,
 	) -> Result<(), BenchmarkError> {
 		prep_signature_registry::<T>();
 
@@ -332,7 +332,7 @@ mod benchmarks {
 
 	#[benchmark]
 	fn grant_delegation(
-		s: Linear<0, { T::MaxSchemaGrantsPerDelegation::get() }>,
+		s: Linear<0, { T::MaxGrantsPerDelegation::get() }>,
 	) -> Result<(), BenchmarkError> {
 		prep_signature_registry::<T>();
 

@@ -298,7 +298,7 @@ mod benchmarks {
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
 		let schema_id = constants::PAGINATED_SCHEMA;
-		let intent_id = schema_id as IntentId;
+		let intent_id = constants::PAGINATED_INTENT;
 		let page_id: PageId = 1;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = BoundedVec::<u8, T::MaxPaginatedPageSizeBytes>::try_from(vec![
@@ -318,7 +318,7 @@ mod benchmarks {
 			[intent_id].to_vec()
 		));
 
-		Pallet::<T>::update_paginated(delegator_msa_id, schema_id, page_id, 0, page)
+		Pallet::<T>::update_paginated(delegator_msa_id, intent_id, schema_id, page_id, 0, page)
 			.expect("failed to write page");
 		let key = (intent_id, page_id);
 		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
@@ -405,11 +405,12 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let msa_id = 1u64;
 		let schema_id = constants::ITEMIZED_SCHEMA;
+		let intent_id = constants::ITEMIZED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = n;
 		let num_of_existing_items = T::MaxItemizedPageSizeBytes::get() /
 			(T::MaxItemizedBlobSizeBytes::get() + ItemHeader::max_encoded_len() as u32);
-		let key = (schema_id,);
+		let key = (intent_id,);
 		let expiration = BlockNumberFor::<T>::from(10u32);
 
 		let delegator_account_public = SignerId::generate_pair(Some(
@@ -426,7 +427,7 @@ mod benchmarks {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			msa_id.into(),
 			delegator_msa_id.into(),
-			[schema_id].to_vec()
+			[intent_id].to_vec()
 		));
 
 		for _ in 0..num_of_existing_items {
@@ -490,6 +491,7 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let page_id: PageId = 1;
 		let schema_id = constants::PAGINATED_SCHEMA;
+		let intent_id = constants::PAGINATED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; s as usize];
 		let max_payload = vec![1u8; T::MaxPaginatedPageSizeBytes::get() as usize];
@@ -507,7 +509,7 @@ mod benchmarks {
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
-		let key = (schema_id, page_id);
+		let key = (intent_id, page_id);
 		StatefulChildTree::<T::KeyHasher>::write(
 			&delegator_msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -552,6 +554,7 @@ mod benchmarks {
 	#[benchmark]
 	fn delete_page_with_signature_v2() -> Result<(), BenchmarkError> {
 		let schema_id = constants::PAGINATED_SCHEMA;
+		let intent_id = constants::PAGINATED_INTENT;
 		let page_id: PageId = 1;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = BoundedVec::<u8, T::MaxPaginatedPageSizeBytes>::try_from(vec![
@@ -574,8 +577,8 @@ mod benchmarks {
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
-		let key = (schema_id, page_id);
-		Pallet::<T>::update_paginated(delegator_msa_id, schema_id, page_id, 0, page)
+		let key = (intent_id, page_id);
+		Pallet::<T>::update_paginated(delegator_msa_id, intent_id, schema_id, page_id, 0, page)
 			.expect("failed to write page");
 		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
 			&delegator_msa_id,
@@ -604,7 +607,7 @@ mod benchmarks {
 			payload,
 		);
 
-		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, intent_id, page_id);
 		assert!(page_result.is_none());
 		Ok(())
 	}
@@ -614,6 +617,7 @@ mod benchmarks {
 		// Setup
 		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
 		let schema_id: SchemaId = 1;
+		let intent_id: IntentId = 1;
 		let page_id: PageId = 1;
 
 		// Create a paginated page
@@ -625,7 +629,7 @@ mod benchmarks {
 				.expect("Unable to create BoundedVec payload");
 		page.data = payload;
 		page.nonce = 1;
-		let keys: migration::v1::PaginatedKey = (schema_id, page_id);
+		let keys: migration::v1::PaginatedKey = (intent_id, page_id);
 		StatefulChildTree::<T::KeyHasher>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -633,7 +637,7 @@ mod benchmarks {
 			&keys,
 			&page,
 		);
-		let created_page = get_paginated_page_v1::<T>(msa_id, schema_id, page_id);
+		let created_page = get_paginated_page_v1::<T>(msa_id, intent_id, page_id);
 		assert!(created_page.is_some());
 
 		let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
@@ -657,7 +661,7 @@ mod benchmarks {
 			.expect("failed to migrate paginated page");
 		}
 
-		let updated_page = get_paginated_page::<T>(msa_id, schema_id, page_id);
+		let updated_page = get_paginated_page::<T>(msa_id, intent_id, page_id);
 		assert!(updated_page.is_some());
 		let updated_page = updated_page.unwrap();
 		assert_eq!(updated_page.page_version, PageVersion::V2);
@@ -671,6 +675,7 @@ mod benchmarks {
 		// Setup
 		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
 		let schema_id: SchemaId = 1;
+		let intent_id: IntentId = 1;
 
 		// Construct a page that represents the worst case across Testnet + Mainnet.
 		// Current page size limit there is (10 * (1024 + 2))= 10260
@@ -696,7 +701,7 @@ mod benchmarks {
 		let page =
 			migration::v1::ItemizedOperations::<T>::apply_item_actions(&mut page, &add_actions)
 				.expect("failed to apply item actions");
-		let keys: migration::v1::ItemizedKey = (schema_id,);
+		let keys: migration::v1::ItemizedKey = (intent_id,);
 		StatefulChildTree::<T::KeyHasher>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -704,7 +709,7 @@ mod benchmarks {
 			&keys,
 			&page,
 		);
-		let created_page = get_itemized_page_v1::<T>(msa_id, schema_id);
+		let created_page = get_itemized_page_v1::<T>(msa_id, intent_id);
 		assert!(created_page.is_some());
 		let created_page = created_page.unwrap();
 		let orig_parsed_page = migration::v1::ItemizedOperations::<T>::try_parse(&created_page)
@@ -746,8 +751,8 @@ mod benchmarks {
 			let orig_page = orig_parsed_page.items.get(i);
 			assert!(orig_page.is_some());
 			let orig_page = orig_page.unwrap();
-			assert_eq!(*item, orig_page.data.as_slice());
-			assert_eq!(*item, str);
+			assert_eq!(item.payload, orig_page.data.as_slice());
+			assert_eq!(item.payload, str);
 		});
 
 		Ok(())

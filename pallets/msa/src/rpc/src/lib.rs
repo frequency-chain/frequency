@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -11,12 +12,12 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{
-		DelegationGrant, DelegationResponse, DelegatorId, IntentId, KeyInfoResponse,
+		DelegationGrant, DelegationResponse, DelegatorId, KeyInfoResponse,
 		MessageSourceId, ProviderId,
 	},
 	node::BlockNumber,
 	offchain::get_msa_account_storage_key_name,
-	schema::SchemaId,
+	schema::IntentId,
 };
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
