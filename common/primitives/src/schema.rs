@@ -279,7 +279,7 @@ pub trait SchemaProvider<SchemaId> {
 pub trait SchemaValidator<SchemaId> {
 	/// Checks that a collection of SchemaIds is all valid
 	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool;
-	
+
 	/// Checks that all IntentIds in a collection are valid.
 	fn are_all_intent_ids_valid(intent_ids: &[IntentId]) -> bool;
 

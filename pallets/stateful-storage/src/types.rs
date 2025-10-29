@@ -538,7 +538,7 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV3<T> {
 				&coded_target_hash,
 				&coded_expiration,
 			]
-				.concat(),
+			.concat(),
 		);
 		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
@@ -757,9 +757,9 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 					payload: match include_header {
 						true => &self.data[offset..(offset + item_total_length)],
 						false =>
-							&self.data
-								[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
-					}
+							&self.data[(offset + ItemHeader::max_encoded_len())..
+								(offset + item_total_length)],
+					},
 				},
 			);
 			offset += item_total_length;

@@ -280,10 +280,8 @@ impl<T: Config> PermittedDelegationIntents<T>
 		intent_id: IntentId,
 		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError> {
-		let intent = self
-			.permissions
-			.get_mut(&intent_id)
-			.ok_or(Error::<T>::PermissionNotGranted)?;
+		let intent =
+			self.permissions.get_mut(&intent_id).ok_or(Error::<T>::PermissionNotGranted)?;
 
 		*intent = block_number;
 

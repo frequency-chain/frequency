@@ -7,11 +7,11 @@ use crate::{
 	Config, DelegatorAndProviderToDelegation, Error,
 };
 
-use common_primitives::{
-    msa::{Delegation, DelegatorId, ProviderId, GrantValidator},
-    schema::IntentId,
-};
 use crate::tests::other_tests::set_intent_count;
+use common_primitives::{
+	msa::{Delegation, DelegatorId, GrantValidator, ProviderId},
+	schema::IntentId,
+};
 
 #[test]
 fn grant_permissions_for_intents_errors_when_no_delegation() {
@@ -301,8 +301,8 @@ pub fn ensure_valid_intent_grant_errors_when_delegation_relationship_is_valid_an
 }
 
 #[test]
-pub fn ensure_valid_intent_grant_errors_when_delegation_relationship_is_valid_and_grant_is_revoked(
-) {
+pub fn ensure_valid_intent_grant_errors_when_delegation_relationship_is_valid_and_grant_is_revoked()
+{
 	new_test_ext().execute_with(|| {
 		set_intent_count::<Test>(2);
 

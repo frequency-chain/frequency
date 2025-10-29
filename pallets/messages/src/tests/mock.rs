@@ -1,8 +1,8 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
-		ProviderId, ProviderLookup, GrantValidator,
+		Delegation, DelegationValidator, DelegatorId, GrantValidator, MessageSourceId, MsaLookup,
+		MsaValidator, ProviderId, ProviderLookup,
 	},
 	schema::*,
 };
@@ -193,10 +193,8 @@ impl DelegationValidator for DelegationInfoHandler {
 		provider: ProviderId,
 		_delegator: DelegatorId,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<
-		Delegation<SchemaId, Self::BlockNumber, Self::MaxGrantsPerDelegation>,
-		DispatchError,
-	> {
+	) -> Result<Delegation<SchemaId, Self::BlockNumber, Self::MaxGrantsPerDelegation>, DispatchError>
+	{
 		if provider == ProviderId(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};

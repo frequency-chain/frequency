@@ -20,8 +20,8 @@ use common_primitives::signatures::AccountAddressMapper;
 
 use common_primitives::{
 	msa::{
-        Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
-        ProviderRegistryEntry, DelegationGrant, GrantValidator, H160,
+		Delegation, DelegationGrant, DelegationResponse, DelegatorId, GrantValidator,
+		MessageSourceId, ProviderId, ProviderRegistryEntry, H160,
 	},
 	node::{BlockNumber, EIP712Encode},
 	schema::{IntentId, SchemaValidator},
@@ -491,8 +491,8 @@ pub fn schema_granted_success_rpc() {
 		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
 		let intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
 		let expected_intents_granted = vec![
-            DelegationGrant::new(1, BlockNumber::zero()),
-            DelegationGrant::new(2, BlockNumber::zero()),
+			DelegationGrant::new(1, BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero()),
 		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
@@ -517,12 +517,12 @@ pub fn schema_granted_success_multiple_providers_rpc() {
 		assert_ok!(Msa::add_provider(provider_2, delegator, intent_grants_2));
 		let intents_granted = Msa::get_granted_intents_by_msa_id(delegator, None);
 		let expected_intents_granted_1 = vec![
-            DelegationGrant::new(1, BlockNumber::zero()),
-            DelegationGrant::new(2, BlockNumber::zero()),
+			DelegationGrant::new(1, BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero()),
 		];
 		let expected_intents_granted_2 = vec![
-            DelegationGrant::new(3, BlockNumber::zero()),
-            DelegationGrant::new(4, BlockNumber::zero()),
+			DelegationGrant::new(3, BlockNumber::zero()),
+			DelegationGrant::new(4, BlockNumber::zero()),
 		];
 		let expected_delegation_1 =
 			DelegationResponse { provider_id: provider_1, permissions: expected_intents_granted_1 };
@@ -544,8 +544,8 @@ pub fn schema_revoked_rpc() {
 		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
 		let mut intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
 		let mut expected_intents_granted = vec![
-            DelegationGrant::new(1, BlockNumber::zero()),
-            DelegationGrant::new(2, BlockNumber::zero()),
+			DelegationGrant::new(1, BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero()),
 		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,

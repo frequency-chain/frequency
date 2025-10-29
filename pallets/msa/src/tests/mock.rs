@@ -30,10 +30,10 @@ use alloc::sync::Arc;
 
 pub use pallet_msa::Call as MsaCall;
 
-#[cfg(feature = "runtime-benchmarks")]
-use pallet_collective::ProposalCount;
 use crate::types::PayloadTypeDiscriminator;
 use common_primitives::node::AccountId;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_collective::ProposalCount;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 

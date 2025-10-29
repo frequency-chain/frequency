@@ -12,7 +12,9 @@ use crate::{
 	CheckFreeExtrinsicUse, Config, Error, Event, PublicKeyCountForMsaId, ValidityError,
 };
 
-use crate::tests::other_tests::{assert_revoke_delegation_by_delegator_no_effect, set_intent_count};
+use crate::tests::other_tests::{
+	assert_revoke_delegation_by_delegator_no_effect, set_intent_count,
+};
 use common_primitives::{
 	handles::ClaimHandlePayload,
 	msa::{DelegatorId, ProviderId},

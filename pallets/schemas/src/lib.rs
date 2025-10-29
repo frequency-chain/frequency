@@ -1403,7 +1403,9 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 	}
 
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
-	fn set_intent_count(n: IntentId) { Self::set_intent_count(n); }
+	fn set_intent_count(n: IntentId) {
+		Self::set_intent_count(n);
+	}
 }
 
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {

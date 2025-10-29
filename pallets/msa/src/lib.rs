@@ -1804,8 +1804,10 @@ impl<T: Config> Pallet<T> {
 					(revoked_at > provider_info.revoked_at ||
 						revoked_at == BlockNumberFor::<T>::zero())
 				{
-					intent_list
-						.push(DelegationGrant { granted_id: intent_id, revoked_at: provider_info.revoked_at });
+					intent_list.push(DelegationGrant {
+						granted_id: intent_id,
+						revoked_at: provider_info.revoked_at,
+					});
 				} else {
 					intent_list.push(DelegationGrant { granted_id: intent_id, revoked_at });
 				}
@@ -2158,7 +2160,7 @@ impl<T: Config> GrantValidator<IntentId, BlockNumberFor<T>> for Pallet<T> {
 		provider: ProviderId,
 		delegator: DelegatorId,
 		intent_id: IntentId,
-		block_number: BlockNumberFor<T>
+		block_number: BlockNumberFor<T>,
 	) -> DispatchResult {
 		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 

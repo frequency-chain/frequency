@@ -7,19 +7,17 @@ use frame_support::{
 use sp_runtime::MultiSignature;
 
 use crate::{
-	tests::{mock::*},
+	tests::{mock::*, other_tests::set_intent_count},
 	types::AddProvider,
 	DelegatorAndProviderToDelegation, Error, Event,
 };
 use common_primitives::{
 	msa::{Delegation, DelegationValidator, DelegatorId, ProviderId},
 	node::BlockNumber,
-	schema::SchemaId,
+	schema::{IntentId, SchemaId},
 	utils::wrap_binary_data,
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use common_primitives::schema::IntentId;
-use crate::tests::other_tests::set_intent_count;
 
 fn create_two_keypairs() -> (sr25519::Pair, sr25519::Pair) {
 	// fn create_two_keypairs() -> (Public, Public) {

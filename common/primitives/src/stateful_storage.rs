@@ -1,4 +1,4 @@
-use crate::msa::{MessageSourceId};
+use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils;
 use parity_scale_codec::{Decode, Encode};
@@ -6,10 +6,10 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 extern crate alloc;
+use crate::schema::{IntentId, SchemaId};
 use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use utils::*;
-use crate::schema::{IntentId, SchemaId};
 
 /// PageId is the unique identifier for a Page in Stateful Storage
 pub type PageId = u16;

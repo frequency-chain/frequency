@@ -20,7 +20,10 @@
 use common_primitives::{
 	msa::MessageSourceId,
 	schema::{IntentId, SchemaId},
-	stateful_storage::{ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse, PaginatedStorageResponseV2},
+	stateful_storage::{
+		ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse,
+		PaginatedStorageResponseV2,
+	},
 };
 use sp_runtime::DispatchError;
 extern crate alloc;
@@ -44,7 +47,7 @@ sp_api::decl_runtime_apis! {
 		/// Retrieve the itemized storage for a particular msa and schema
 		#[deprecated(note = "Use get_itemized_storage_v2 instead")]
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError>;
-		
+
 		/// Retrieve the paginated storage for a particular msa and schema
 		#[api_version(2)]
 		fn get_paginated_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<Vec<PaginatedStorageResponseV2>, DispatchError>;

@@ -151,11 +151,8 @@ impl<
 	fn default() -> Self {
 		Delegation {
 			revoked_at: BlockNumber::default(),
-			permissions: BoundedBTreeMap::<
-				DelegatedIdType,
-				BlockNumber,
-				MaxGrantsPerDelegation,
-			>::new(),
+			permissions:
+				BoundedBTreeMap::<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation>::new(),
 		}
 	}
 }
@@ -293,7 +290,7 @@ pub trait GrantValidator<DelegationIdType, BlockNumber> {
 	// type DelegationIdType;
 	// /// The block number type
 	// type BlockNumber;
-	
+
 	/// Validates if the provider is allowed to use the particular delegated item id currently
 	fn ensure_valid_grant(
 		provider_id: ProviderId,

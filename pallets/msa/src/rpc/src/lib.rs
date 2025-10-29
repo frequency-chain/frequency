@@ -11,7 +11,8 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{
-		DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId, DelegationGrant,
+		DelegationGrant, DelegationResponse, DelegatorId, IntentId, KeyInfoResponse,
+		MessageSourceId, ProviderId,
 	},
 	node::BlockNumber,
 	offchain::get_msa_account_storage_key_name,
@@ -32,7 +33,6 @@ use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
-use common_primitives::msa::IntentId;
 
 #[cfg(test)]
 mod tests;
@@ -43,7 +43,10 @@ pub trait MsaApi<BlockHash, AccountId> {
 	/// Check for a list of delegations
 	/// Given a single provider, test a list of potential delegators
 	/// At a given block number
-	#[deprecated(since = "1.17.6", note = "All custom RPCs are deprecated. Use the state_call RPC instead.")]
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
@@ -54,7 +57,10 @@ pub trait MsaApi<BlockHash, AccountId> {
 	) -> RpcResult<Vec<(DelegatorId, bool)>>;
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
-	#[deprecated(since = "1.17.6", note = "All custom RPCs are deprecated. Use the state_call RPC instead.")]
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
 	fn get_granted_intents_by_msa_id(
 		&self,
@@ -63,7 +69,10 @@ pub trait MsaApi<BlockHash, AccountId> {
 	) -> RpcResult<Option<Vec<DelegationGrant<IntentId, BlockNumber>>>>;
 
 	/// Retrieve the list of all delegations for a MsaId
-	#[deprecated(since = "1.17.6", note = "All custom RPCs are deprecated. Use the state_call RPC instead.")]
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_getAllGrantedDelegationsByMsaId")]
 	fn get_all_granted_delegations_by_msa_id(
 		&self,
@@ -71,7 +80,10 @@ pub trait MsaApi<BlockHash, AccountId> {
 	) -> RpcResult<Vec<DelegationResponse<IntentId, BlockNumber>>>;
 
 	/// Retrieve the list of keys for msa id
-	#[deprecated(since = "1.17.6", note = "All custom RPCs are deprecated. Use the state_call RPC instead.")]
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_getKeysByMsaId")]
 	fn get_keys_by_msa_id(
 		&self,

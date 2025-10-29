@@ -96,8 +96,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
-		ProviderId, DelegationGrant, GrantValidator, H160,
+		AccountId20Response, DelegationGrant, DelegationResponse, DelegationValidator, DelegatorId,
+		GrantValidator, MessageSourceId, ProviderId, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -2138,7 +2138,7 @@ sp_api::impl_runtime_apis! {
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
 			Self::get_granted_intents_by_msa_id(delegator, provider)
 		}
-		
+
 		fn get_granted_intents_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
 			match Msa::get_granted_intents_by_msa_id(delegator, Some(provider)) {
 				Ok(res) => match res.into_iter().next() {

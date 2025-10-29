@@ -43,9 +43,7 @@ use alloc::vec::Vec;
 use common_primitives::{
 	cid::*,
 	messages::*,
-	msa::{
-		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, GrantValidator,
-	},
+	msa::{DelegatorId, GrantValidator, MessageSourceId, MsaLookup, MsaValidator, ProviderId},
 	schema::*,
 };
 use frame_support::dispatch::DispatchResult;

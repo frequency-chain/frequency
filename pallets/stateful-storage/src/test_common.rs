@@ -1,4 +1,7 @@
-use common_primitives::{msa::MessageSourceId, schema::{IntentId, SchemaId}};
+use common_primitives::{
+	msa::MessageSourceId,
+	schema::{IntentId, SchemaId},
+};
 
 /// Constants used for tests only
 #[cfg(test)]
