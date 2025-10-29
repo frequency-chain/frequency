@@ -2031,9 +2031,9 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	fn set_delegation_relationship(
 		provider: ProviderId,
 		delegator: DelegatorId,
-		schemas: Vec<IntentId>,
+		intents: Vec<IntentId>,
 	) -> DispatchResult {
-		Self::add_provider(provider, delegator, schemas)?;
+		Self::add_provider(provider, delegator, intents)?;
 		Ok(())
 	}
 
