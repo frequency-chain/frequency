@@ -133,7 +133,12 @@ impl SchemaValidator<SchemaId> for Schemas {
 		true
 	}
 
+	fn are_all_intent_ids_valid(_intent_ids: &[IntentId]) -> bool {
+		true
+	}
 	fn set_schema_count(_n: SchemaId) {}
+
+	fn set_intent_count(_n: IntentId) {}
 }
 
 pub struct CouncilProposalProvider;
@@ -251,7 +256,10 @@ impl pallet_capacity::Config for Test {
 }
 
 use crate::types::GetAddKeyData;
-use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
+use common_primitives::{
+	msa::IntentId,
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
+};
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;

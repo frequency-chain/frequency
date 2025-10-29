@@ -62,9 +62,9 @@ fn create_intent_and_schema<T: Config>(location: PayloadLocation) -> Result<(), 
 
 fn get_itemized_page<T: Config>(
 	msa_id: MessageSourceId,
-	schema_id: SchemaId,
+	intent_id: IntentId,
 ) -> Option<ItemizedPage<T>> {
-	let key: ItemizedKey = (schema_id,);
+	let key: ItemizedKey = (intent_id,);
 	StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
 		&msa_id,
 		PALLET_STORAGE_PREFIX,
@@ -132,10 +132,11 @@ mod benchmarks {
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
 		let schema_id = constants::ITEMIZED_SCHEMA;
+		let intent_id = constants::ITEMIZED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = s / T::MaxItemizedBlobSizeBytes::get();
 
-		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		T::SchemaBenchmarkHelper::set_intent_count(intent_id - 1);
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
@@ -160,7 +161,7 @@ mod benchmarks {
 			));
 		}
 
-		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
+		let page_result = get_itemized_page::<T>(delegator_msa_id, intent_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 		Ok(())
@@ -173,20 +174,21 @@ mod benchmarks {
 		let provider_msa_id = 1u64;
 		let delegator_msa_id = 2u64;
 		let schema_id = constants::ITEMIZED_SCHEMA;
+		let intent_id = constants::ITEMIZED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = n;
 		// removed 2 bytes are for ItemHeader size which is currently 2 bytes per item
 		let max_items = T::MaxItemizedPageSizeBytes::get() /
 			(T::MaxItemizedBlobSizeBytes::get() + ItemHeader::max_encoded_len() as u32);
-		let key = (schema_id,);
+		let key = (intent_id,);
 
-		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		T::SchemaBenchmarkHelper::set_intent_count(intent_id - 1);
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
-			[schema_id].to_vec()
+			[intent_id].to_vec()
 		));
 
 		for _ in 0..max_items {
@@ -231,7 +233,7 @@ mod benchmarks {
 			));
 		}
 
-		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
+		let page_result = get_itemized_page::<T>(delegator_msa_id, intent_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 		Ok(())
@@ -245,6 +247,7 @@ mod benchmarks {
 		let delegator_msa_id = 2u64;
 		let page_id: PageId = 1;
 		let schema_id = constants::PAGINATED_SCHEMA;
+		let intent_id = constants::PAGINATED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![1u8; s as usize];
 		let max_payload = vec![1u8; T::MaxPaginatedPageSizeBytes::get() as usize];
@@ -256,10 +259,10 @@ mod benchmarks {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
-			[schema_id].to_vec()
+			[intent_id].to_vec()
 		));
 
-		let key = (schema_id, page_id);
+		let key = (intent_id, page_id);
 		StatefulChildTree::<T::KeyHasher>::write(
 			&delegator_msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -287,7 +290,7 @@ mod benchmarks {
 			payload.try_into().unwrap(),
 		);
 
-		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, intent_id, page_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 		Ok(())
@@ -348,6 +351,7 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let msa_id = 1u64;
 		let schema_id = constants::ITEMIZED_SCHEMA;
+		let intent_id = constants::ITEMIZED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = s / T::MaxItemizedBlobSizeBytes::get();
 		let expiration = BlockNumberFor::<T>::from(10u32);
@@ -359,14 +363,14 @@ mod benchmarks {
 			T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
-		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		T::SchemaBenchmarkHelper::set_intent_count(intent_id - 1);
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			msa_id.into(),
 			delegator_msa_id.into(),
-			[schema_id].to_vec()
+			[intent_id].to_vec()
 		));
 
 		let actions = itemized_actions_populate::<T>(
@@ -392,7 +396,7 @@ mod benchmarks {
 			));
 		}
 
-		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
+		let page_result = get_itemized_page::<T>(delegator_msa_id, intent_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 
@@ -420,7 +424,7 @@ mod benchmarks {
 			T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
-		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		T::SchemaBenchmarkHelper::set_intent_count(intent_id - 1);
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Itemized));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
@@ -479,7 +483,7 @@ mod benchmarks {
 			));
 		}
 
-		let page_result = get_itemized_page::<T>(delegator_msa_id, schema_id);
+		let page_result = get_itemized_page::<T>(delegator_msa_id, intent_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 		Ok(())
@@ -505,7 +509,7 @@ mod benchmarks {
 			T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
 
-		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
+		T::SchemaBenchmarkHelper::set_intent_count(intent_id - 1);
 		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
@@ -545,7 +549,7 @@ mod benchmarks {
 			payload,
 		);
 
-		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
+		let page_result = get_paginated_page::<T>(delegator_msa_id, intent_id, page_id);
 		assert!(page_result.is_some());
 		assert!(page_result.unwrap().data.len() > 0);
 		Ok(())

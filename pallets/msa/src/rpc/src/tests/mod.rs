@@ -22,7 +22,7 @@ const NOT_EXIST_MSA: u64 = 100;
 
 sp_api::mock_impl_runtime_apis! {
 	impl MsaRuntimeApi<Block, AccountId> for TestRuntimeApi {
-		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<IntentId>) -> bool {
 			if block_number > 1000 {
 				return false
 			}
@@ -36,7 +36,7 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<SchemaId, BlockNumber>>>{
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>>{
 			match (delegator, provider) {
 				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]),
 				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]),
@@ -46,7 +46,7 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		/// Get the list of all delegations and grants
-		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
+		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<IntentId, BlockNumber>> {
 			#[allow(clippy::match_like_matches_macro)]
 			match delegator {
 				DELEGATE_A => vec![DelegationResponse{ provider_id: ProviderId(1), permissions: vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]}],

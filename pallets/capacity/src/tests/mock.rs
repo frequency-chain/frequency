@@ -5,6 +5,7 @@ use crate::{
 	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
+	msa::IntentId,
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -102,7 +103,13 @@ impl SchemaValidator<SchemaId> for Schemas {
 		true
 	}
 
+	fn are_all_intent_ids_valid(_intent_ids: &[IntentId]) -> bool {
+		true
+	}
+
 	fn set_schema_count(_n: SchemaId) {}
+
+	fn set_intent_count(_n: IntentId) {}
 }
 pub struct CouncilProposalProvider;
 

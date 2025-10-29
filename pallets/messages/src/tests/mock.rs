@@ -202,7 +202,7 @@ impl DelegationValidator for DelegationInfoHandler {
 		Ok(Delegation { permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
-impl<BlockNumber> GrantValidator<BlockNumber> for SchemaGrantValidationHandler {
+impl<BlockNumber> GrantValidator<IntentId, BlockNumber> for SchemaGrantValidationHandler {
 	fn ensure_valid_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,

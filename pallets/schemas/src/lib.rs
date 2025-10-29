@@ -1352,6 +1352,11 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 		Self::set_schema_count(schema_id);
 	}
 
+	/// Sets Intent count.
+	fn set_intent_count(intent_id: IntentId) {
+		Self::set_intent_count(intent_id)
+	}
+
 	/// Creates a schema.
 	fn create_schema(
 		intent_id: IntentId,

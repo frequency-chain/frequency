@@ -12,8 +12,8 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{
-		DelegationGrant, DelegationResponse, DelegatorId, KeyInfoResponse,
-		MessageSourceId, ProviderId,
+		DelegationGrant, DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId,
+		ProviderId,
 	},
 	node::BlockNumber,
 	offchain::get_msa_account_storage_key_name,

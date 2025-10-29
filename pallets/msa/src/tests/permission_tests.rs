@@ -2,9 +2,8 @@ use frame_support::{assert_err, assert_noop, assert_ok, BoundedBTreeMap};
 use frame_system::pallet_prelude::BlockNumberFor;
 
 use crate::{
-	tests::{mock::*, other_tests::set_schema_count},
-	types::PermittedDelegationIntents,
-	Config, DelegatorAndProviderToDelegation, Error,
+	tests::mock::*, types::PermittedDelegationIntents, Config, DelegatorAndProviderToDelegation,
+	Error,
 };
 
 use crate::tests::other_tests::set_intent_count;
