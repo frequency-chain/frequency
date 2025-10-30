@@ -146,7 +146,7 @@ describe('Capacity: provider_boost extrinsic', function () {
 
     // Helpers
     // the weight for this is pretty high
-    const weight = api.createType('Weight', { refTime: 1_584_641_224, proofSize: 27000 });
+    const weight = api.createType('Weight', { refTime: 2_000_641_224, proofSize: 27000 });
     const sort = (all: string[], who: string) => sortAddresses(all.filter((addr) => addr !== who));
 
     // 4) First approval by Alice (creates the multisig record)

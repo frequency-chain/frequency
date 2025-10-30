@@ -1,3 +1,5 @@
+/// This tool reads the generated weight.rs file that includes child trie access and replaces
+/// these DB Read and Writes with child trie specific DB weights located at rocksdb_child_trie_weights.rs
 use regex::Regex;
 use std::{
 	env, fs,
@@ -24,6 +26,12 @@ fn main() -> io::Result<()> {
 		e
 	})?;
 
+	// Check if already modified
+	if is_already_modified(&input) {
+		println!("✓ It was already modified and no need for transformation!");
+		return Ok(())
+	}
+
 	// Transform the content
 	let output = transform_weights(&input);
 
@@ -37,6 +45,10 @@ fn main() -> io::Result<()> {
 	println!("  Input:  {input_file}");
 	println!("  Output: {output_file}");
 	Ok(())
+}
+
+fn is_already_modified(content: &str) -> bool {
+	content.contains("'benchmark_transform'")
 }
 
 fn transform_weights(content: &str) -> String {
