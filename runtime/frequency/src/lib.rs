@@ -105,7 +105,7 @@ use common_primitives::{
 	},
 	rpc::RpcEvent,
 	schema::{PayloadLocation, SchemaId, SchemaVersionResponse},
-	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
+	stateful_storage::{ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse, PaginatedStorageResponseV2},
 };
 
 pub use common_runtime::{
@@ -2094,9 +2094,7 @@ sp_api::impl_runtime_apis! {
 	#[api_version(3)]
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			let response = Schemas::get_schema_by_id(schema_id).map(|v2| v2.into());
-			log::error!("RPC response: {:?}", response);
-			response
+			Schemas::get_schema_by_id(schema_id).map(|v2| v2.into())
 		}
 
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
@@ -2164,6 +2162,7 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(2)]
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
 		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
 			StatefulStorage::get_paginated_storage_v1(msa_id, schema_id)
@@ -2171,6 +2170,14 @@ sp_api::impl_runtime_apis! {
 
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
 			StatefulStorage::get_itemized_storage_v1(msa_id, schema_id)
+		}
+
+		fn get_paginated_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<Vec<PaginatedStorageResponseV2>, DispatchError> {
+			StatefulStorage::get_paginated_storage(msa_id, intent_id)
+		}
+
+		fn get_itemized_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<ItemizedStoragePageResponseV2, DispatchError> {
+			StatefulStorage::get_itemized_storage(msa_id, intent_id)
 		}
 	}
 

@@ -9,12 +9,12 @@ import {
   DOLLARS,
   getOrCreateAvroChatMessagePaginatedSchema,
   assertExtrinsicSucceededAndFeesPaid,
-  createAndFundKeypair,
+  createAndFundKeypair, getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { AVRO_CHAT_MESSAGE } from './fixtures/itemizedSchemaType';
-import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
+import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
@@ -22,7 +22,9 @@ const badSchemaId = 65_534;
 let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Paginated', function () {
+  let intentId: IntentId;
   let schemaId: SchemaId;
+  let intentId_unsupported: IntentId;
   let schemaId_unsupported: SchemaId;
   let delegatorKeys: KeyringPair;
   let msa_id: MessageSourceId;
@@ -38,20 +40,18 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       // Delegator Keys
       delegatorKeys,
       // Create a schema for Paginated PayloadLocation
-      schemaId,
+      { intentId, schemaId },
       // Create non supported schema
-      schemaId_unsupported,
+      { intentId: intentId_unsupported, schemaId: schemaId_unsupported },
     ] = await Promise.all([
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
       createAndFundKeypair(fundingSource, 2n * DOLLARS),
       getOrCreateAvroChatMessagePaginatedSchema(fundingSource),
-      ExtrinsicHelper.getOrCreateSchemaV3(
+      getOrCreateIntentAndSchema(
         fundingSource,
-        AVRO_CHAT_MESSAGE,
-        'AvroBinary',
-        'OnChain',
-        [],
-        'test.handlePaginatedUnsupported'
+        'test.handlePaginatedUnsupported',
+        { payloadLocation: 'OnChain', settings: [] },
+        { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
       ),
     ]);
 
@@ -64,7 +64,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       // Create an MSA that is not a provider to be used for testing failure cases
       [badMsaId],
     ] = await Promise.all([
-      createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys, 'sr25519', delegatorKeys),
+      createDelegatorAndDelegation(fundingSource, intentId, providerId, providerKeys, 'sr25519', delegatorKeys),
       createMsa(fundingSource),
     ]);
 
@@ -226,7 +226,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
         0
       );
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'SchemaPayloadLocationMismatch',
+        name: 'IntentPayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });
