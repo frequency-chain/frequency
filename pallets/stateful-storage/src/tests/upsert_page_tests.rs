@@ -178,10 +178,11 @@ fn upsert_existing_page_with_bad_state_hash_errors() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
-		let page = generate_page::<PaginatedPageSize>(None, Some(100));
+		let page = generate_page::<PaginatedPageSize>(Some(schema_id), None, Some(100));
 
-		let key = (schema_id, page_id);
+		let key = (intent_id, page_id);
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -211,6 +212,7 @@ fn upsert_new_page_succeeds() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 		let page: PaginatedPage<Test> = payload.clone().into();
@@ -224,7 +226,7 @@ fn upsert_new_page_succeeds() {
 			payload.into()
 		));
 
-		let keys = (schema_id, page_id);
+		let keys = (intent_id, page_id);
 		let new_page: PaginatedPage<Test> = <StatefulChildTree>::try_read(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -245,6 +247,7 @@ fn upsert_existing_page_modifies_page() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id: SchemaId = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id: PageId = 1;
 		let old_nonce = 3;
 		let old_content = generate_payload_bytes(Some(200));
@@ -252,7 +255,7 @@ fn upsert_existing_page_modifies_page() {
 		let mut old_page: PaginatedPage<Test> = old_content.clone().into();
 		old_page.nonce = old_nonce;
 
-		let keys = (schema_id, page_id);
+		let keys = (intent_id, page_id);
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -620,6 +623,7 @@ fn upsert_page_with_signature_v2_having_valid_inputs_should_work() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
 		let page: PaginatedPage<Test> = payload.clone().into();
@@ -642,7 +646,7 @@ fn upsert_page_with_signature_v2_having_valid_inputs_should_work() {
 		));
 
 		// assert
-		let keys = (schema_id, page_id);
+		let keys = (intent_id, page_id);
 		let new_page: PaginatedPage<Test> = <StatefulChildTree>::try_read(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -656,7 +660,7 @@ fn upsert_page_with_signature_v2_having_valid_inputs_should_work() {
 		System::assert_last_event(
 			StatefulEvent::PaginatedPageUpdated {
 				msa_id,
-				schema_id,
+				intent_id,
 				page_id,
 				prev_content_hash: PageHash::default(),
 				curr_content_hash: new_page.get_hash(),

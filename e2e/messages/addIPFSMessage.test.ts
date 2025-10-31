@@ -5,7 +5,13 @@ import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import assert from 'assert';
-import { assertEvent, assertHasMessage, createAndFundKeypair, getOrCreateDummySchema } from '../scaffolding/helpers';
+import {
+  assertEvent,
+  assertHasMessage,
+  createAndFundKeypair,
+  getOrCreateDummySchema,
+  getOrCreateIntentAndSchema,
+} from '../scaffolding/helpers';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u16 } from '@polkadot/types';
 import { ipfsCid } from './ipfs';
@@ -36,18 +42,11 @@ describe('Add Offchain Message', function () {
 
     [
       // Create a schema for IPFS
-      schemaId,
+      { schemaId },
       // Create a dummy on-chain schema
-      dummySchemaId,
+      { schemaId: dummySchemaId },
     ] = await Promise.all([
-      ExtrinsicHelper.getOrCreateSchemaV3(
-        fundingSource,
-        PARQUET_BROADCAST,
-        'Parquet',
-        'IPFS',
-        [],
-        'test.addIPFSMessage'
-      ),
+      getOrCreateIntentAndSchema(fundingSource, 'test.addIPFSMessage', { payloadLocation: "IPFS", settings: [] }, { model: PARQUET_BROADCAST, modelType: "Parquet" }),
       getOrCreateDummySchema(fundingSource),
       // Create a new MSA
       ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),

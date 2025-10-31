@@ -147,7 +147,9 @@ mod benchmarks {
 	#[benchmark]
 	fn v2_to_v3_step() {
 		let payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
-			vec![1; 3072].try_into().expect("Unable to create BoundedVec payload");
+			vec![1; T::MessagesMaxPayloadSizeBytes::get() as usize]
+				.try_into()
+				.expect("Unable to create BoundedVec payload");
 		let old_message = migration::v2::Message {
 			payload: payload.clone(),
 			provider_msa_id: 1u64,
@@ -157,12 +159,16 @@ mod benchmarks {
 			(BlockNumberFor::<T>::default(), 0u16, 0u16),
 			old_message,
 		);
-		let mut meter = WeightMeter::new();
+
+		let mut iter = migration::v2::MessagesV2::<T>::drain();
+		let mut cursor = migration::v3::MessagesCursor::<T>::default();
 
 		#[block]
 		{
-			migration::v3::MigrateV2ToV3::<T, weights::SubstrateWeight<T>>::step(None, &mut meter)
-				.expect("migration call failed");
+			assert!(
+				migration::v3::migrate_single_record::<T>(&mut iter, &mut cursor),
+				"expected migration to have processed a record"
+			);
 		}
 
 		// Check that the new storage is decodable:

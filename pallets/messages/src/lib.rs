@@ -43,9 +43,7 @@ use alloc::vec::Vec;
 use common_primitives::{
 	cid::*,
 	messages::*,
-	msa::{
-		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
-	},
+	msa::{DelegatorId, GrantValidator, MessageSourceId, MsaLookup, MsaValidator, ProviderId},
 	schema::*,
 };
 use frame_support::dispatch::DispatchResult;
@@ -81,7 +79,7 @@ pub mod pallet {
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: SchemaGrantValidator<BlockNumberFor<Self>>;
+		type SchemaGrantValidator: GrantValidator<IntentId, BlockNumberFor<Self>>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -89,6 +87,12 @@ pub mod pallet {
 		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
 		type MessagesMaxPayloadSizeBytes: Get<u32> + Clone + Debug + MaxEncodedLen;
+
+		/// How often to emit status events during a storage migration.
+		/// Try to make this larger than the number of message migrations that will fit
+		/// in a block by weight, as multiple of these events in a block is not really useful
+		/// or desireable.
+		type MigrateEmitEvery: Get<u32> + Clone + Debug;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
@@ -165,6 +169,15 @@ pub mod pallet {
 		},
 		/// Messages stored in the current block
 		MessagesInBlock,
+		/// Event emitted during storage migration to track progress
+		MessagesMigrated {
+			/// The storage version being migrated from
+			from_version: u16,
+			/// The storage version being migrated to
+			to_version: u16,
+			/// Total number of messages migrated in the current migration
+			cumulative_total_migrated: u64,
+		},
 	}
 
 	#[pallet::hooks]
@@ -277,10 +290,10 @@ pub mod pallet {
 				let maybe_delegator = match on_behalf_of {
 					Some(delegator_msa_id) => {
 						let delegator_id = DelegatorId(delegator_msa_id);
-						T::SchemaGrantValidator::ensure_valid_schema_grant(
+						T::SchemaGrantValidator::ensure_valid_grant(
 							provider_id,
 							delegator_id,
-							schema_id,
+							schema.intent_id,
 							current_block,
 						)
 						.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;

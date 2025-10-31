@@ -96,8 +96,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
-		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
+		AccountId20Response, DelegationGrant, DelegationResponse, DelegationValidator, DelegatorId,
+		GrantValidator, MessageSourceId, ProviderId, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -105,7 +105,7 @@ use common_primitives::{
 	},
 	rpc::RpcEvent,
 	schema::{PayloadLocation, SchemaId, SchemaVersionResponse},
-	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
+	stateful_storage::{ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse, PaginatedStorageResponseV2},
 };
 
 pub use common_runtime::{
@@ -803,7 +803,7 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrants;
+	type MaxGrantsPerDelegation = MaxSchemaGrants;
 	// The maximum provider name size (in bytes)
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
@@ -1299,8 +1299,8 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
             RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
                 capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
             ),
-            RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
-            RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
+            RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.intent_ids.len() as u32)),
+            RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.intent_ids.len() as u32)),
             &RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
                 capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
             ),
@@ -1537,6 +1537,7 @@ impl pallet_messages::Config for Runtime {
 	type SchemaProvider = Schemas;
 	// The maximum message payload in bytes
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+	type MigrateEmitEvery = MessagesMigrateEmitEvery;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1576,6 +1577,7 @@ impl pallet_stateful_storage::Config for Runtime {
 	type MsaBenchmarkHelper = Msa;
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = Schemas;
+	type MigrateEmitEvery = StatefulMigrateEmitEvery;
 }
 
 impl pallet_handles::Config for Runtime {
@@ -1662,6 +1664,18 @@ impl pallet_migrations::Config for Runtime {
 		pallet_messages::migration::FinalizeV3Migration<
 			Runtime,
 			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::MigratePaginatedV1ToV2<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::MigrateItemizedV1ToV2<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::FinalizeV2Migration<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
 		>,
 	);
 	// Benchmarks need mocked migrations to guarantee that they succeed.
@@ -2080,9 +2094,7 @@ sp_api::impl_runtime_apis! {
 	#[api_version(3)]
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			let response = Schemas::get_schema_by_id(schema_id).map(|v2| v2.into());
-			log::error!("RPC response: {:?}", response);
-			response
+			Schemas::get_schema_by_id(schema_id).map(|v2| v2.into())
 		}
 
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
@@ -2112,16 +2124,21 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(4)]
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
-		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
-			match schema_id {
-				Some(sid) => Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number).is_ok(),
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, intent_id: Option<IntentId>) -> bool {
+			match intent_id {
+				Some(intent_id) => Msa::ensure_valid_grant(provider, delegator, intent_id, block_number).is_ok(),
 				None => Msa::ensure_valid_delegation(provider, delegator, Some(block_number)).is_ok(),
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>> {
-			match Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)) {
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
+			Self::get_granted_intents_by_msa_id(delegator, provider)
+		}
+
+		fn get_granted_intents_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
+			match Msa::get_granted_intents_by_msa_id(delegator, Some(provider)) {
 				Ok(res) => match res.into_iter().next() {
 					Some(delegation) => Some(delegation.permissions),
 					None => None,
@@ -2131,7 +2148,7 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
-			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
+			Msa::get_granted_intents_by_msa_id(delegator, None).unwrap_or_default()
 		}
 
 		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
@@ -2145,13 +2162,22 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(2)]
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
 		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
-			StatefulStorage::get_paginated_storage(msa_id, schema_id)
+			StatefulStorage::get_paginated_storage_v1(msa_id, schema_id)
 		}
 
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
-			StatefulStorage::get_itemized_storage(msa_id, schema_id)
+			StatefulStorage::get_itemized_storage_v1(msa_id, schema_id)
+		}
+
+		fn get_paginated_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<Vec<PaginatedStorageResponseV2>, DispatchError> {
+			StatefulStorage::get_paginated_storage(msa_id, intent_id)
+		}
+
+		fn get_itemized_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<ItemizedStoragePageResponseV2, DispatchError> {
+			StatefulStorage::get_itemized_storage(msa_id, intent_id)
 		}
 	}
 

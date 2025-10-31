@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use crate::{
 	stateful_child_tree::StatefulChildTree,
 	test_common::{constants::*, test_utility::*},
@@ -96,7 +97,7 @@ fn delete_page_with_invalid_schema_payload_location_errors() {
 				page_id,
 				NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			Error::<Test>::IntentPayloadLocationMismatch
 		)
 	})
 }
@@ -149,10 +150,11 @@ fn delete_existing_page_with_bad_hash_errors() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 11;
-		let page: PaginatedPage<Test> = generate_page(None, None);
+		let page: PaginatedPage<Test> = generate_page(Some(schema_id), None, None);
 
-		let keys = (schema_id, page_id);
+		let keys = (intent_id, page_id);
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -181,10 +183,11 @@ fn delete_existing_page_succeeds() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 11;
-		let page: PaginatedPage<Test> = generate_page(None, None);
+		let page: PaginatedPage<Test> = generate_page(Some(schema_id), None, None);
 		let page_hash = page.get_hash();
-		let keys = (schema_id, page_id);
+		let keys = (intent_id, page_id);
 
 		<StatefulChildTree>::write(
 			&msa_id,
@@ -205,7 +208,7 @@ fn delete_existing_page_succeeds() {
 		System::assert_last_event(
 			crate::Event::PaginatedPageDeleted {
 				msa_id,
-				schema_id,
+				intent_id: PAGINATED_INTENT,
 				page_id,
 				prev_content_hash: page_hash,
 			}
@@ -559,13 +562,14 @@ fn delete_page_with_signature_v2_having_valid_inputs_should_remove_page() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
-		let page = generate_page::<PaginatedPageSize>(Some(1), Some(100));
+		let page = generate_page::<PaginatedPageSize>(Some(schema_id), Some(1), Some(100));
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
 			PAGINATED_STORAGE_PREFIX,
-			&(schema_id, page_id),
+			&(intent_id, page_id),
 			&page,
 		);
 
@@ -599,7 +603,7 @@ fn delete_page_with_signature_v2_having_valid_inputs_should_remove_page() {
 		System::assert_last_event(
 			StatefulEvent::PaginatedPageDeleted {
 				msa_id,
-				schema_id,
+				intent_id: PAGINATED_INTENT,
 				page_id,
 				prev_content_hash: page.get_hash(),
 			}
@@ -620,7 +624,7 @@ fn delete_page_on_signature_schema_fails_for_non_owner() {
 		let caller_1: AccountId32 = caller_keys.public().into();
 		let schema_id = PAGINATED_SIGNED_SCHEMA;
 		let page_id = 1;
-		let page = generate_page::<PaginatedPageSize>(Some(1), Some(100));
+		let page = generate_page::<PaginatedPageSize>(Some(schema_id), Some(1), Some(100));
 		<StatefulChildTree>::write(
 			&owner_msa_id,
 			PALLET_STORAGE_PREFIX,
@@ -649,7 +653,7 @@ fn delete_page_on_signature_schema_succeeds_for_owner() {
 		let caller_1: AccountId32 = caller_keys.public().into();
 		let schema_id = PAGINATED_SIGNED_SCHEMA;
 		let page_id = 1;
-		let page = generate_page::<PaginatedPageSize>(Some(1), Some(100));
+		let page = generate_page::<PaginatedPageSize>(Some(schema_id), Some(1), Some(100));
 		<StatefulChildTree>::write(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,

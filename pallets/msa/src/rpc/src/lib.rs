@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -11,11 +12,12 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{
-		DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId, SchemaGrant,
+		DelegationGrant, DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId,
+		ProviderId,
 	},
 	node::BlockNumber,
 	offchain::get_msa_account_storage_key_name,
-	schema::SchemaId,
+	schema::IntentId,
 };
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -42,31 +44,47 @@ pub trait MsaApi<BlockHash, AccountId> {
 	/// Check for a list of delegations
 	/// Given a single provider, test a list of potential delegators
 	/// At a given block number
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_checkDelegations")]
 	fn check_delegations(
 		&self,
 		delegator_msa_ids: Vec<DelegatorId>,
 		provider_msa_id: ProviderId,
 		block_number: BlockNumber,
-		schema_id: Option<SchemaId>,
+		intent_id: Option<IntentId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>>;
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
-	fn get_granted_schemas_by_msa_id(
+	fn get_granted_intents_by_msa_id(
 		&self,
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
-	) -> RpcResult<Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>>;
+	) -> RpcResult<Option<Vec<DelegationGrant<IntentId, BlockNumber>>>>;
 
 	/// Retrieve the list of all delegations for a MsaId
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_getAllGrantedDelegationsByMsaId")]
 	fn get_all_granted_delegations_by_msa_id(
 		&self,
 		delegator_msa_id: DelegatorId,
-	) -> RpcResult<Vec<DelegationResponse<SchemaId, BlockNumber>>>;
+	) -> RpcResult<Vec<DelegationResponse<IntentId, BlockNumber>>>;
 
 	/// Retrieve the list of keys for msa id
+	#[deprecated(
+		since = "1.17.6",
+		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
+	)]
 	#[method(name = "msa_getKeysByMsaId")]
 	fn get_keys_by_msa_id(
 		&self,
@@ -132,7 +150,7 @@ where
 		delegator_msa_ids: Vec<DelegatorId>,
 		provider_msa_id: ProviderId,
 		block_number: BlockNumber,
-		schema_id: Option<SchemaId>,
+		intent_id: Option<IntentId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>> {
 		let at = self.client.info().best_hash;
 		let results = delegator_msa_ids
@@ -146,7 +164,7 @@ where
 					*delegator_msa_id,
 					provider_msa_id,
 					block_number,
-					schema_id,
+					intent_id,
 				) {
 					Ok(result) => result,
 					Err(e) => {
@@ -160,11 +178,11 @@ where
 		Ok(results)
 	}
 
-	fn get_granted_schemas_by_msa_id(
+	fn get_granted_intents_by_msa_id(
 		&self,
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
-	) -> RpcResult<Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>> {
+	) -> RpcResult<Option<Vec<DelegationGrant<IntentId, BlockNumber>>>> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
 		let runtime_api_result =
@@ -175,7 +193,7 @@ where
 	fn get_all_granted_delegations_by_msa_id(
 		&self,
 		delegator_msa_id: DelegatorId,
-	) -> RpcResult<Vec<DelegationResponse<SchemaId, BlockNumber>>> {
+	) -> RpcResult<Vec<DelegationResponse<IntentId, BlockNumber>>> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
 		let runtime_api_result = api.get_all_granted_delegations_by_msa_id(at, delegator_msa_id);

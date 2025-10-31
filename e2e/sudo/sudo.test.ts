@@ -1,7 +1,7 @@
 // All the sudo required tests must be in one test for parallelization needs
 
 import '@frequency-chain/api-augment';
-import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
+import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { KeyringPair } from '@polkadot/keyring/types';
 import assert from 'assert';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -16,21 +16,19 @@ import {
   getCurrentItemizedHash,
   generateSchemaPartialName,
   createKeys,
-  createMsaAndProvider,
+  createMsaAndProvider, getOrCreateIntentAndSchema, assertExtrinsicSuccess,
 } from '../scaffolding/helpers';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import { stakeToProvider } from '../scaffolding/helpers';
+import { AnyNumber } from '@polkadot/types/types';
 
 describe('Sudo required', function () {
-  let sudoKey: KeyringPair;
+  const sudoKey: KeyringPair = getSudo().keys;
   let fundingSource: KeyringPair;
-  let schemaName: string;
 
   before(async function () {
     if (isTestnet()) this.skip();
-    sudoKey = getSudo().keys;
     fundingSource = await getFundingSource(import.meta.url);
-    schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
   });
 
   describe('schema#setMaxSchemaModelBytes', function () {
@@ -56,96 +54,126 @@ describe('Sudo required', function () {
   });
 
   describe('schema-pallet ', function () {
-    it('should create schema with name using createSchemaWithSettingsGovV2', async function () {
+    let intentId: AnyNumber;
+
+    it('should create intent with name using createIntentWithSettingsGov', async function () {
       if (isTestnet()) this.skip();
-      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
+
+      const intentName = 'e-e.sudo-' + generateSchemaPartialName(15);
+      const createIntent = ExtrinsicHelper.createIntentWithSettingsGov(
         sudoKey,
+        'Itemized',
+        ['AppendOnly'],
+        intentName
+      );
+      const { target: event, eventMap } = await createIntent.sudoSignAndSend();
+      assert.notEqual(event, undefined);
+      intentId = event?.data.intentId || new u16(ExtrinsicHelper.api.registry, 0);
+      assert.notEqual(intentId.toNumber(), 0);
+      const intent_response = await ExtrinsicHelper.getIntent(intentId);
+      assert(intent_response.isSome);
+      const intent_response_value = intent_response.unwrap();
+      assert.notEqual(intent_response_value.settings.length, 0);
+    });
+
+    it('should create schema with using createSchemaGovV3', async function () {
+      if (isTestnet()) this.skip();
+      const createSchema = ExtrinsicHelper.createSchemaGovV3(
+        sudoKey,
+        intentId,
         AVRO_GRAPH_CHANGE,
         'AvroBinary',
-        'Itemized',
-        'AppendOnly',
-        schemaName
       );
       const { target: event, eventMap } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);
-      const itemizedSchemaId: u16 = event?.data.schemaId || new u16(ExtrinsicHelper.api.registry, 0);
-      assert.notEqual(itemizedSchemaId.toNumber(), 0);
-      const schema_response = await ExtrinsicHelper.getSchema(itemizedSchemaId);
+      const schemaId: u16 = event?.data.schemaId || new u16(ExtrinsicHelper.api.registry, 0);
+      assert.notEqual(schemaId.toNumber(), 0);
+      const schema_response = await ExtrinsicHelper.getSchema(schemaId);
       assert(schema_response.isSome);
       const schema_response_value = schema_response.unwrap();
       const schema_settings = schema_response_value.settings;
       assert.notEqual(schema_settings.length, 0);
-      assert.notEqual(eventMap['schemas.SchemaNameCreated'], undefined);
     });
   });
 
   describe('stateful-pallet-storage', function () {
-    it('should fail to create non itemized schema with AppendOnly settings', async function () {
+    it('should fail to create non itemized intent with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();
 
-      const ex = ExtrinsicHelper.createSchemaWithSettingsGovV2(
+      const intentName = 'e-e.sudo-' + generateSchemaPartialName(15);
+      const ex = ExtrinsicHelper.createIntentWithSettingsGov(
         sudoKey,
-        AVRO_GRAPH_CHANGE,
-        'AvroBinary',
         'Paginated',
-        'AppendOnly',
-        schemaName
+        ['AppendOnly'],
+        intentName
       );
       await assert.rejects(ex.sudoSignAndSend(), {
         name: 'InvalidSetting',
       });
     });
 
-    it('should not fail to create itemized schema with AppendOnly settings', async function () {
+    it('should not fail to create itemized intent with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();
 
-      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
+      const intentName = 'e-e.sudo-' + generateSchemaPartialName(15);
+      const createSchema = ExtrinsicHelper.createIntentWithSettingsGov(
         sudoKey,
-        AVRO_GRAPH_CHANGE,
-        'AvroBinary',
         'Itemized',
-        'AppendOnly',
-        schemaName
+        ['AppendOnly'],
+        intentName
       );
       const { target: event } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);
-      const itemizedSchemaId: u16 = event?.data.schemaId || new u16(ExtrinsicHelper.api.registry, 0);
-      assert.notEqual(itemizedSchemaId.toNumber(), 0);
-      const schema_response = await ExtrinsicHelper.getSchema(itemizedSchemaId);
-      assert(schema_response.isSome);
-      const schema_response_value = schema_response.unwrap();
-      const schema_settings = schema_response_value.settings;
-      assert.notEqual(schema_settings.length, 0);
+      const itemizedIntentId: u16 = event?.data.intentId || new u16(ExtrinsicHelper.api.registry, 0);
+      assert.notEqual(itemizedIntentId.toNumber(), 0);
+      const intent_response = await ExtrinsicHelper.getIntent(itemizedIntentId);
+      assert(intent_response.isSome);
+      const intent_response_value = intent_response.unwrap();
+      const intent_settings = intent_response_value.settings;
+      assert.notEqual(intent_settings.length, 0);
     });
 
-    describe('📗 Stateful Pallet Storage AppendOnly Schemas', function () {
+    describe('📗 Stateful Pallet Storage AppendOnly Intents', function () {
       // This requires schema creation abilities
 
+      let itemizedIntentId: IntentId;
       let itemizedSchemaId: SchemaId;
       let msa_id: MessageSourceId;
       let providerId: MessageSourceId;
       let providerKeys: KeyringPair;
 
       before(async function () {
+        const intentName = 'e-e.sudo-' + generateSchemaPartialName(15);
         // Create a provider for the MSA, the provider will be used to grant delegation
         [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
         assert.notEqual(providerId, undefined, 'setup should populate providerId');
         assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
         // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
+        const createIntent = ExtrinsicHelper.createIntentWithSettingsGov(
           sudoKey,
-          AVRO_CHAT_MESSAGE,
-          'AvroBinary',
           'Itemized',
-          'AppendOnly',
-          schemaName
+          ['AppendOnly'],
+          intentName
         );
-        const { target: event } = await createSchema.sudoSignAndSend();
-        itemizedSchemaId = event!.data.schemaId;
+        const { target: intentCreateEvent, eventMap: intentEventMap } = await createIntent.sudoSignAndSend();
+        assertExtrinsicSuccess(intentEventMap);
+        assert.notEqual(intentCreateEvent, undefined, 'setup should create intent');
+        itemizedIntentId = intentCreateEvent!.data.intentId;
+
+        const createSchema = ExtrinsicHelper.createSchemaGovV3(
+          sudoKey,
+          itemizedIntentId,
+          AVRO_CHAT_MESSAGE,
+          'AvroBinary'
+        );
+        const { target: schemaCreateEvent, eventMap: schemaEventMap } = await createSchema.sudoSignAndSend();
+        assertExtrinsicSuccess(schemaEventMap);
+        assert.notEqual(schemaCreateEvent, undefined, 'setup should create schema');
+        itemizedSchemaId = schemaCreateEvent!.data.schemaId;
 
         // Create a MSA for the delegator and delegate to the provider for the itemized schema
-        [, msa_id] = await createDelegatorAndDelegation(fundingSource, itemizedSchemaId, providerId, providerKeys);
+        [, msa_id] = await createDelegatorAndDelegation(fundingSource, itemizedIntentId, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
       });
 
@@ -169,7 +197,7 @@ describe('Sudo required', function () {
           const delete_action = {
             Delete: idx_1,
           };
-          const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+          const target_hash = await getCurrentItemizedHash(msa_id, itemizedIntentId);
 
           const add_actions = [add_action, update_action, delete_action];
 

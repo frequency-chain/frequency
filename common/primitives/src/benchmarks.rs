@@ -24,6 +24,9 @@ pub trait MsaBenchmarkHelper<AccountId> {
 
 	/// Sets a public key to an MSA.
 	fn add_key(msa_id: MessageSourceId, key: AccountId) -> DispatchResult;
+
+	/// Creates a new MSA and increments the current maximum ID
+	fn create_msa(keys: AccountId) -> Result<MessageSourceId, DispatchError>;
 }
 
 impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
@@ -40,12 +43,20 @@ impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
 	fn add_key(_msa_id: MessageSourceId, _key: AccountId) -> DispatchResult {
 		Ok(())
 	}
+
+	/// Creates a new MSA and increments the current maximum ID
+	fn create_msa(_keys: AccountId) -> Result<MessageSourceId, DispatchError> {
+		Ok(MessageSourceId::default())
+	}
 }
 
 /// A trait for Schema pallet helping setup state for running benchmarks.
 pub trait SchemaBenchmarkHelper {
 	/// Sets the schema count.
 	fn set_schema_count(schema_id: SchemaId);
+
+	/// Sets the Intent count.
+	fn set_intent_count(intent_id: IntentId);
 
 	/// Creates a new schema.
 	fn create_schema(
@@ -66,6 +77,8 @@ pub trait SchemaBenchmarkHelper {
 impl SchemaBenchmarkHelper for () {
 	/// Sets the schema count.
 	fn set_schema_count(_schema_id: SchemaId) {}
+
+	fn set_intent_count(_intent_id: IntentId) {}
 
 	/// Adds a new schema.
 	fn create_schema(

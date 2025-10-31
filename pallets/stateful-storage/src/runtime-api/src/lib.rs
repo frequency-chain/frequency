@@ -10,7 +10,7 @@
 	missing_docs
 )]
 
-//! Runtime API definition for [Stateful  Storage](../pallet_stateful_storage/index.html)
+//! Runtime API definition for [StatefulStorage](../pallet_stateful_storage/index.html)
 //!
 //! This api must be implemented by the node runtime.
 //! Runtime APIs Provide:
@@ -19,8 +19,11 @@
 
 use common_primitives::{
 	msa::MessageSourceId,
-	schema::SchemaId,
-	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
+	schema::{IntentId, SchemaId},
+	stateful_storage::{
+		ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse,
+		PaginatedStorageResponseV2,
+	},
 };
 use sp_runtime::DispatchError;
 extern crate alloc;
@@ -39,8 +42,17 @@ sp_api::decl_runtime_apis! {
 	pub trait StatefulStorageRuntimeApi
 	{
 		/// Retrieve the paginated storage for a particular msa and schema
+		#[deprecated(note = "Use get_paginated_storage_v2 instead")]
 		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError>;
 		/// Retrieve the itemized storage for a particular msa and schema
+		#[deprecated(note = "Use get_itemized_storage_v2 instead")]
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError>;
+
+		/// Retrieve the paginated storage for a particular msa and schema
+		#[api_version(2)]
+		fn get_paginated_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<Vec<PaginatedStorageResponseV2>, DispatchError>;
+		/// Retrieve the itemized storage for a particular msa and schema
+		#[api_version(2)]
+		fn get_itemized_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<ItemizedStoragePageResponseV2, DispatchError>;
 	}
 }

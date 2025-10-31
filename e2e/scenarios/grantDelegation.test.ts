@@ -8,7 +8,7 @@ import {
   createAndFundKeypairs,
   createMsaAndProvider,
   generateDelegationPayload,
-  signPayloadSr25519,
+  signPayloadSr25519, getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -22,7 +22,9 @@ describe('Delegation Scenario Tests', function () {
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
   let schemaId: u16;
+  let intentId: u16;
   let schemaId2: SchemaId;
+  let intentId2: u16;
   let providerId: u64;
   let otherProviderId: u64;
   let msaId: u64;
@@ -50,20 +52,14 @@ describe('Delegation Scenario Tests', function () {
     };
 
     let msaCreatedEvent1, msaCreatedEvent2, msaCreatedEvent3;
-    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { target: msaCreatedEvent3 }, schemaId, schemaId2] =
+    // eslint-disable-next-line prefer-const
+    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { target: msaCreatedEvent3 }, { intentId, schemaId }, { intentId: intentId2, schemaId: schemaId2 }] =
       await Promise.all([
         ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
         ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource),
         ExtrinsicHelper.createMsa(thirdMsaKeys).fundAndSend(fundingSource),
-        ExtrinsicHelper.getOrCreateSchemaV3(fundingSource, schema, 'AvroBinary', 'OnChain', [], 'test.grantDelegation'),
-        ExtrinsicHelper.getOrCreateSchemaV3(
-          fundingSource,
-          schema,
-          'AvroBinary',
-          'OnChain',
-          [],
-          'test.grantDelegationSecond'
-        ),
+        getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegation', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
+        getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegationSecond', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
       ]);
     msaId = msaCreatedEvent1!.data.msaId;
     otherMsaId = msaCreatedEvent2!.data.msaId;
@@ -82,7 +78,7 @@ describe('Delegation Scenario Tests', function () {
   it('should fail to grant delegation if payload not signed by delegator (AddProviderSignatureVerificationFailed)', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: providerId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -100,7 +96,7 @@ describe('Delegation Scenario Tests', function () {
   it('should fail to delegate to self (InvalidSelfProvider)', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: providerId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -116,7 +112,7 @@ describe('Delegation Scenario Tests', function () {
   it('should fail to grant delegation to an MSA that is not a registered provider (ProviderNotRegistered)', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: otherMsaId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -132,7 +128,7 @@ describe('Delegation Scenario Tests', function () {
   it('should fail to grant delegation if ID in payload does not match origin (UnauthorizedDelegator)', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: otherMsaId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -148,7 +144,7 @@ describe('Delegation Scenario Tests', function () {
   it('should grant a delegation to a provider', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: providerId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -164,21 +160,21 @@ describe('Delegation Scenario Tests', function () {
     assert.deepEqual(grantDelegationEvent?.data.delegatorId, msaId, 'delegator IDs should match');
   });
 
-  it('initial granted schemas should be correct', async function () {
-    const schemaGrants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
-    assert.equal(schemaGrants.isSome, true);
-    const schemaIds = schemaGrants
+  it('initial granted intents should be correct', async function () {
+    const intentGrants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
+    assert.equal(intentGrants.isSome, true);
+    const intentIds = intentGrants
       .unwrap()
       .filter((grant) => grant.revoked_at.toBigInt() === 0n)
       .map((grant) => grant.schema_id.toNumber());
-    const expectedSchemaIds = [schemaId.toNumber()];
-    assert.deepStrictEqual(schemaIds, expectedSchemaIds, 'granted schemas should equal initial set');
+    const expectedIntentIds = [intentId.toNumber()];
+    assert.deepStrictEqual(intentIds, expectedIntentIds, 'granted intents should equal initial set');
   });
 
-  it('should grant additional schema permissions', async function () {
+  it('should grant additional intent permissions', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: providerId,
-      schemaIds: [schemaId, schemaId2],
+      intentIds: [intentId, intentId2],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -193,19 +189,19 @@ describe('Delegation Scenario Tests', function () {
     assert.deepEqual(grantDelegationEvent?.data.providerId, providerId, 'provider IDs should match');
     assert.deepEqual(grantDelegationEvent?.data.delegatorId, msaId, 'delegator IDs should match');
     const grants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
-    const grantedSchemaIds = grants
+    const grantedIntentIds = grants
       .unwrap()
       .filter((grant) => grant.revoked_at.toBigInt() === 0n)
       .map((grant) => grant.schema_id.toNumber());
-    const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
+    const expectedIntentIds = [intentId.toNumber(), intentId2.toNumber()];
     // Sort them as order doesn't matter
-    assert.deepStrictEqual(grantedSchemaIds.sort(), expectedSchemaIds.sort());
+    assert.deepStrictEqual(grantedIntentIds.sort(), expectedIntentIds.sort());
   });
 
   it('should get all delegations and grants', async function () {
     const payload = await generateDelegationPayload({
       authorizedMsaId: providerId,
-      schemaIds: [schemaId, schemaId2],
+      intentIds: [intentId, intentId2],
     });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
     const grantDelegationOp = ExtrinsicHelper.grantDelegation(
@@ -219,7 +215,7 @@ describe('Delegation Scenario Tests', function () {
 
     const payload2 = await generateDelegationPayload({
       authorizedMsaId: otherProviderId,
-      schemaIds: [schemaId, schemaId2],
+      intentIds: [intentId, intentId2],
     });
     const addProviderData2 = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload2);
     const grantDelegationOp2 = ExtrinsicHelper.grantDelegation(

@@ -133,7 +133,12 @@ impl SchemaValidator<SchemaId> for Schemas {
 		true
 	}
 
+	fn are_all_intent_ids_valid(_intent_ids: &[IntentId]) -> bool {
+		true
+	}
 	fn set_schema_count(_n: SchemaId) {}
+
+	fn set_intent_count(_n: IntentId) {}
 }
 
 pub struct CouncilProposalProvider;
@@ -165,7 +170,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = TestAccountId;
 	type MaxPublicKeysPerMsa = ConstU8<255>;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = ConstU32<16>;
 	type SchemaValidator = Schemas;
 	type HandleProvider = ();
@@ -251,7 +256,10 @@ impl pallet_capacity::Config for Test {
 }
 
 use crate::types::GetAddKeyData;
-use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
+use common_primitives::{
+	msa::IntentId,
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
+};
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
