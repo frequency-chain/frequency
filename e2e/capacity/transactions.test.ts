@@ -44,7 +44,7 @@ import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
-const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
+const FUNDS_AMOUNT: bigint = 100n * DOLLARS;
 let fundingSource: KeyringPair;
 
 describe('Capacity Transactions', function () {
@@ -52,7 +52,7 @@ describe('Capacity Transactions', function () {
     describe('when caller has a Capacity account', function () {
       let schemaId: u16;
       let intentId: u16;
-      const amountStaked = 3n * DOLLARS;
+      const amountStaked = 6n * DOLLARS;
 
       before(async function () {
         fundingSource = await getFundingSource(import.meta.url);
@@ -67,7 +67,7 @@ describe('Capacity Transactions', function () {
         let capacityProvider: u64;
         let delegatorKeys: KeyringPair;
         let payload: any = {};
-        const stakedForMsa = 15n * DOLLARS;
+        const stakedForMsa = 30n * DOLLARS;
 
         before(async function () {
           capacityKeys = createKeys('CapacityKeys');

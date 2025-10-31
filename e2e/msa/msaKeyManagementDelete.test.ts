@@ -111,6 +111,7 @@ describe('MSA Key management: delete keys and retire', function () {
     });
   });
 
+  // This test hangs under some unknown circumstances in parallel mode
   it('should allow retiring MSA after additional keys have been deleted and tokens withdran', async function () {
     // Withdraw tokens from MSA account
     const receiverKeys = createKeys('receiver keys');
