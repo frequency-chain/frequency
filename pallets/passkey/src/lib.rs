@@ -86,6 +86,7 @@ pub mod module {
 		frame_system::Config + pallet_transaction_payment::Config + Send + Sync
 	{
 		/// The overarching event type.
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The overarching call type.
@@ -143,7 +144,7 @@ pub mod module {
 			let total = overhead.saturating_add(dispatch_info.call_weight);
 			(total, dispatch_info.class)
 		})]
-		#[allow(deprecated)]
+		#[allow(clippy::useless_conversion)]
 		pub fn proxy(
 			origin: OriginFor<T>,
 			payload: PasskeyPayload<T>,
@@ -161,6 +162,7 @@ pub mod module {
 			let total = overhead.saturating_add(dispatch_info.call_weight);
 			(total, dispatch_info.class)
 		})]
+		#[allow(clippy::useless_conversion)]
 		pub fn proxy_v2(
 			origin: OriginFor<T>,
 			payload: PasskeyPayloadV2<T>,

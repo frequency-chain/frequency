@@ -17,7 +17,7 @@ use sp_core::sr25519;
 // The panic from expect will not occur here because these input values are hardcoded.
 #[allow(clippy::expect_used)]
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
+	TPublic::Pair::from_string(&format!("//{seed}"), None)
 		.expect("static values are valid; qed")
 		.public()
 }
@@ -41,7 +41,7 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 #[allow(clippy::expect_used)]
 // The panic from expect will not occur here because these input values are hardcoded.
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
+	TPublic::Pair::from_string(&format!("//{seed}"), None)
 		.expect("static values are valid; qed")
 		.public()
 }

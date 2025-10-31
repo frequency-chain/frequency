@@ -104,7 +104,7 @@ pub mod as_string {
 	/// Serializes a `Vec<u8>` into a UTF-8 string
 	pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
 		std::str::from_utf8(bytes)
-			.map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e)))?
+			.map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {e:?}")))?
 			.serialize(serializer)
 	}
 
@@ -128,7 +128,7 @@ pub mod as_string_option {
 		match bytes {
 			Some(bytes) => std::str::from_utf8(bytes)
 				.map_err(|e| {
-					S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e))
+					S::Error::custom(format!("Debug buffer contains invalid UTF8: {e:?}"))
 				})?
 				.serialize(serializer),
 			None => serializer.serialize_none(),
@@ -157,6 +157,30 @@ pub fn wrap_binary_data(data: Vec<u8>) -> Vec<u8> {
 	encapsuled.append(&mut data.clone());
 	encapsuled.append(&mut POSTFIX.as_bytes().to_vec());
 	encapsuled
+}
+
+/// This is useful for testing and benchmarks and should not be used for any
+/// cryptographically secure operation
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub struct XorRng {
+	state: u64,
+}
+
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+impl XorRng {
+	/// Creates Rnd from the seed
+	pub fn new(seed: u64) -> Self {
+		Self { state: if seed == 0 { 1 } else { seed } }
+	}
+
+	/// Generates the next u8
+	pub fn gen_u8(&mut self) -> u8 {
+		// XorShift64
+		self.state ^= self.state << 13;
+		self.state ^= self.state >> 7;
+		self.state ^= self.state << 17;
+		self.state as u8
+	}
 }
 
 #[cfg(test)]

@@ -26,17 +26,20 @@ use jsonrpsee::{
 	types::{error::ErrorObjectOwned, ErrorObject},
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
-use parity_scale_codec::{Codec, Decode};
+use parity_scale_codec::{Codec, Decode, Encode};
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_core::Bytes;
-use sp_runtime::traits::Block as BlockT;
+use sp_core::{bytes::from_hex, sr25519, Bytes};
+use sp_runtime::traits::{Block as BlockT, Verify};
 use std::sync::Arc;
 
 #[cfg(test)]
 mod tests;
+
+/// A key used to sign the payloads for offchain key overrides
+static AUTH_PUBLIC_KEY: &str = "0x90aa6dfa192c0999ea47397c137507a4f11d45371c54bd5cdbba6f13da24b416";
 
 /// Frequency MSA Custom RPC API
 #[rpc(client, server)]
@@ -90,6 +93,15 @@ pub trait MsaApi<BlockHash, AccountId> {
 		&self,
 		msa_id: MessageSourceId,
 	) -> RpcResult<Option<KeyInfoResponse<AccountId>>>;
+
+	/// Set the list of keys for msa id
+	#[method(name = "msa_setKeysByMsaId")]
+	fn set_keys_by_msa_id(
+		&self,
+		msa_id: MessageSourceId,
+		public_keys: Vec<AccountId>,
+		signature_hex: String,
+	) -> RpcResult<()>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -118,17 +130,20 @@ pub enum MsaOffchainRpcError {
 	ErrorDecodingData,
 	/// Offchain indexing is not enabled
 	OffchainIndexingNotEnabled,
+	/// Invalid signature
+	InvalidSignature,
 }
 
 impl From<MsaOffchainRpcError> for ErrorObjectOwned {
 	fn from(e: MsaOffchainRpcError) -> Self {
-		let msg = format!("{:?}", e);
+		let msg = format!("{e:?}");
 
 		match e {
 			MsaOffchainRpcError::ErrorAcquiringLock => ErrorObject::owned(1, msg, None::<()>),
 			MsaOffchainRpcError::ErrorDecodingData => ErrorObject::owned(2, msg, None::<()>),
 			MsaOffchainRpcError::OffchainIndexingNotEnabled =>
 				ErrorObject::owned(3, msg, None::<()>),
+			MsaOffchainRpcError::InvalidSignature => ErrorObject::owned(4, msg, None::<()>),
 		}
 	}
 }
@@ -218,5 +233,40 @@ where
 			return Ok(Some(KeyInfoResponse { msa_id, msa_keys: keys }))
 		}
 		Ok(None)
+	}
+
+	fn set_keys_by_msa_id(
+		&self,
+		msa_id: MessageSourceId,
+		public_keys: Vec<AccountId>,
+		signature_hex: String,
+	) -> RpcResult<()> {
+		let sig = sr25519::Signature::from_raw(
+			from_hex(&signature_hex)
+				.map_err(|_| MsaOffchainRpcError::ErrorDecodingData)?
+				.try_into()
+				.map_err(|_| MsaOffchainRpcError::ErrorDecodingData)?,
+		);
+		let auth_key = from_hex(AUTH_PUBLIC_KEY)
+			.map_err(|_| MsaOffchainRpcError::ErrorDecodingData)?
+			.try_into()
+			.map_err(|_| MsaOffchainRpcError::ErrorDecodingData)?;
+		let auth_key = sr25519::Public::from_raw(auth_key);
+
+		let payload = (msa_id, &public_keys).encode();
+
+		if sig.verify(&payload[..], &auth_key) {
+			let msa_key = get_msa_account_storage_key_name(msa_id);
+			let mut writer =
+				self.offchain.try_write().ok_or(MsaOffchainRpcError::ErrorAcquiringLock)?;
+			writer.as_mut().ok_or(MsaOffchainRpcError::OffchainIndexingNotEnabled)?.set(
+				sp_offchain::STORAGE_PREFIX,
+				&msa_key,
+				&public_keys.encode(),
+			);
+			return Ok(())
+		}
+
+		Err(MsaOffchainRpcError::InvalidSignature.into())
 	}
 }

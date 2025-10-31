@@ -1,5 +1,5 @@
 import '@frequency-chain/api-augment';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { base64 } from 'multiformats/bases/base64';
 import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid';

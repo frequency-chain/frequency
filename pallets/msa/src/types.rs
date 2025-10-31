@@ -7,7 +7,7 @@ use parity_scale_codec::{Decode, Encode};
 use core::fmt::Debug;
 
 pub use common_primitives::msa::{
-	Delegation, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId,
+	ApplicationIndex, Delegation, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId,
 };
 use common_primitives::node::BlockNumber;
 
@@ -18,8 +18,8 @@ use common_primitives::{
 use scale_info::TypeInfo;
 use sp_core::U256;
 
-/// Dispatch Empty
-pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
+/// LogoCID type
+pub type LogoCid<T> = BoundedVec<u8, <T as Config>::MaxLogoCidSize>;
 
 /// A type definition for the payload for the following operation:
 /// -  Adding an MSA key - `pallet_msa::add_public_key_to_msa`
@@ -287,4 +287,13 @@ impl<T: Config> PermittedDelegationIntents<T>
 
 		Ok(())
 	}
+}
+
+/// Helper function to compute CID of given bytes and return Vec<u8>
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+pub fn compute_cid(bytes: &[u8]) -> Vec<u8> {
+	let cid = compute_cid_v1(bytes).expect("Failed to compute CID");
+	// Encode CID into multibase Base58btc string, then return as Vec<u8>
+	let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
+	encoded.into_bytes()
 }

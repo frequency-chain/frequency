@@ -96,8 +96,9 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		AccountId20Response, DelegationGrant, DelegationResponse, DelegationValidator, DelegatorId,
-		GrantValidator, MessageSourceId, ProviderId, H160,
+		AccountId20Response, ApplicationIndex, DelegationGrant, DelegationResponse, DelegationValidator,
+		DelegatorId, GrantValidator, MessageSourceId, ProviderApplicationContext, ProviderId,
+		H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -262,6 +263,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			#[cfg(feature = "frequency")]
 			// Filter out calls that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+            RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
@@ -312,6 +314,7 @@ impl BaseCallFilter {
 			#[cfg(feature = "frequency")]
 			// Block calls from utility (or Capacity) batch that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+            RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
@@ -375,10 +378,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::Staking => {
 				matches!(
 					c,
-					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. }) |
-						RuntimeCall::CollatorSelection(
-							pallet_collator_selection::Call::set_candidacy_bond { .. }
-						)
+					RuntimeCall::Capacity(
+						pallet_capacity::Call::stake { .. } |
+							pallet_capacity::Call::claim_staking_rewards { .. } |
+							pallet_capacity::Call::provider_boost { .. } |
+							pallet_capacity::Call::unstake { .. }
+					) | RuntimeCall::CollatorSelection(
+						pallet_collator_selection::Call::set_candidacy_bond { .. }
+					)
 				)
 			},
 			ProxyType::CancelProxy => {
@@ -522,26 +529,24 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 
 		// Access storage directly using storage key because `pallet_xcm` does not provide a direct API to get the safe XCM version.
 		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
-		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+		log::info!("Checking SafeXcmVersion in storage with key: {storage_key:?}");
 
 		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 		match current_version {
 			Some(version) if version == SAFE_XCM_VERSION => {
-				log::info!("SafeXcmVersion already set to {}, skipping migration.", version);
+				log::info!("SafeXcmVersion already set to {version}, skipping migration.");
 				T::DbWeight::get().reads(1)
 			},
 			Some(version) => {
 				log::info!(
-					"SafeXcmVersion currently set to {}, updating to {}",
-					version,
-					SAFE_XCM_VERSION
+					"SafeXcmVersion currently set to {version}, updating to {SAFE_XCM_VERSION}"
 				);
 				// Set the safe XCM version directly in storage
 				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
 				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
 			},
 			None => {
-				log::info!("SafeXcmVersion not set, setting to {}", SAFE_XCM_VERSION);
+				log::info!("SafeXcmVersion not set, setting to {SAFE_XCM_VERSION}");
 				// Set the safe XCM version directly in storage
 				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
 				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
@@ -579,9 +584,7 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 
 		log::info!(
-			"post_upgrade: Pre-upgrade version = {:?}, Current version = {:?}",
-			pre_upgrade_version,
-			current_version
+			"post_upgrade: Pre-upgrade version = {pre_upgrade_version:?}, Current version = {current_version:?}",
 		);
 
 		// Verify the migration worked correctly
@@ -648,7 +651,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 177,
+	spec_version: 182,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -662,7 +665,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 177,
+	spec_version: 182,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -833,6 +836,14 @@ impl pallet_msa::Config for Runtime {
 	>;
 	// The Currency type for managing MSA token balances
 	type Currency = Balances;
+	// The maximum language code size (in bytes)
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	// The maximum logo CID size (in bytes)
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	// The maximum locale count
+	type MaxLocaleCount = MsaMaxLocaleCount;
+	// The maximum logo size (in bytes)
+	type MaxLogoSize = MsaMaxLogoSize;
 }
 
 parameter_types! {
@@ -1418,6 +1429,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
 	type SelectCore = DefaultCoreSelector<Runtime>;
+	type RelayParentOffset = ConstU32<0>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -2001,16 +2013,16 @@ sp_api::impl_runtime_apis! {
 
 			// if the call is wrapped in a batch, we need to get the weight of the outer call
 			// and use that to compute the fee with the inner call's stable weight(s)
-			let dispatch_weight = match &uxt.function {
-				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
-				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
-					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).call_weight
-				},
+			let capacity_overhead_weight = match &uxt.function {
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) =>
+					<() as pallet_frequency_tx_payment::WeightInfo>::pay_with_capacity(),
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { calls, .. }) =>
+					<() as pallet_frequency_tx_payment::WeightInfo>::pay_with_capacity_batch_all(calls.len() as u32),
 				_ => {
 					Weight::zero()
 				}
 			};
-			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &dispatch_weight, len)
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &capacity_overhead_weight, len)
 		}
 	}
 
@@ -2159,6 +2171,10 @@ sp_api::impl_runtime_apis! {
 
 		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
 			Msa::validate_eth_address_for_msa(address, msa_id)
+		}
+
+		fn get_provider_application_context(provider_id: ProviderId, application_id: Option<ApplicationIndex>, locale: Option<Vec<u8>>) -> Option<ProviderApplicationContext> {
+			Msa::get_provider_application_context(provider_id, application_id, locale)
 		}
 	}
 
@@ -2345,10 +2361,6 @@ sp_api::impl_runtime_apis! {
 					Ok((origin, ticket, assets))
 				}
 
-				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
-					Ok(xcm::benchmarks::RelayAsset::get())
-				}
-
 				// We do not support locking and unlocking on Frequency
 				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
 					Err(BenchmarkError::Skip)
@@ -2361,6 +2373,11 @@ sp_api::impl_runtime_apis! {
 
 				// We do not support alias origin on Frequency
 				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support worst case for trader on Frequency
+				fn worst_case_for_trader() -> Result<(xcm::benchmarks::Asset, cumulus_primitives_core::WeightLimit), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}

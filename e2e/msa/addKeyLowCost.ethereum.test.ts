@@ -1,5 +1,5 @@
-import { KeyringPair } from '@polkadot/keyring/types';
-import { AddKeyData, Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { Extrinsic, ExtrinsicHelper, type AddKeyData } from '../scaffolding/extrinsicHelpers';
 import {
   assertEvent,
   CENTS,

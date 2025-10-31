@@ -46,3 +46,6 @@ pub mod benchmarks;
 pub mod cid;
 /// Signature support for ethereum
 pub mod signatures;
+
+/// IPFS CIDv1 related utilities
+pub mod cid;

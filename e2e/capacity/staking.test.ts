@@ -1,8 +1,8 @@
 import '@frequency-chain/api-augment';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { u64 } from '@polkadot/types';
 import assert from 'assert';
-import { ExtrinsicHelper, ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, type ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
 import {
   createKeys,
   createMsaAndProvider,

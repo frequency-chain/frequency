@@ -1,10 +1,9 @@
 use crate::{
-	tests::mock::*,
-	types::{PayloadTypeDiscriminator, EMPTY_FUNCTION},
-	AuthorizedKeyData, CheckFreeExtrinsicUse, Config, ValidityError,
+	tests::mock::*, types::PayloadTypeDiscriminator, AuthorizedKeyData, CheckFreeExtrinsicUse,
+	Config, ValidityError,
 };
 use common_primitives::{
-	msa::H160,
+	msa::{ProviderRegistryEntry, H160},
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
@@ -409,7 +408,7 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &new_key));
 
 		let original_key: AccountId32 = original_key_pair.public().into();
 
@@ -451,7 +450,7 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(owner_msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(owner_msa_id, &new_key));
 
 		let call_delete_msa_public_key: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
@@ -1094,10 +1093,12 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
 		));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
@@ -1143,10 +1144,12 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (_delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
+		let entry = ProviderRegistryEntry::default();
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
+		assert_ok!(Msa::create_provider_via_governance_v2(
+			RawOrigin::Root.into(),
+			provider_account.into(),
+			entry
 		));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
@@ -1220,7 +1223,7 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_delete_ms
 		let (msa_id, original_key_pair) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &new_key));
 		let original_key: AccountId32 = original_key_pair.public().into();
 		let call: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
@@ -1256,7 +1259,7 @@ fn check_free_extrinsic_use_refunds_extension_weight_for_root_origin_delete_msa_
 		let (msa_id, _) = create_account();
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key: AccountId32 = new_key_pair.public().into();
-		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		assert_ok!(Msa::add_key(msa_id, &new_key));
 		let call: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
 				public_key_to_delete: new_key.clone(),

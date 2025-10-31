@@ -13,7 +13,7 @@ import {
   signPayload,
   assertExtrinsicSucceededAndFeesPaid, getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';

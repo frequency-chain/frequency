@@ -20,12 +20,12 @@ jobs:
     if: github.repository == 'frequency-chain/frequency'
     name: Build Benchmark Binary
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     permissions:
       contents: read
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{github.event.inputs.branch}}
 
@@ -64,7 +64,7 @@ jobs:
           echo "Pallets: ${{github.event.inputs.pallets}}"
 
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{github.event.inputs.branch}}
 
@@ -72,13 +72,13 @@ jobs:
         run: mkdir -p target/release
 
       - name: Download Benchmark Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: benchmark-binary
           path: target/release
 
       - name: Download WASM Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: wasm-artifacts
           path: target/release/wbuild
@@ -117,12 +117,12 @@ jobs:
     name: Post Benchmark Tests
     needs: run-benchmarks
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     permissions:
       contents: read
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{github.event.inputs.branch}}
 

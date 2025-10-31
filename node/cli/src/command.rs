@@ -311,6 +311,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
+#[allow(clippy::result_large_err)]
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
@@ -357,7 +358,7 @@ pub fn run() -> Result<()> {
 					&polkadot_cli,
 					config.tokio_handle.clone(),
 				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				.map_err(|err| format!("Relay chain argument error: {err:?}"))?;
 
 				cmd.run(config, polkadot_config)
 			})
@@ -415,8 +416,8 @@ pub fn run() -> Result<()> {
 					let partials = new_partial(&config, false, None)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
-
-					cmd.run(config, partials.client.clone(), db, storage)
+					let shared_cache = partials.backend.expose_shared_trie_cache();
+					cmd.run(config, partials.client.clone(), db, storage, shared_cache)
 				}),
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false, None)?;
@@ -449,7 +450,7 @@ pub fn run() -> Result<()> {
 				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
 				let task_manager =
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-						.map_err(|e| format!("Error: {:?}", e))?;
+						.map_err(|e| format!("Error: {e:?}"))?;
 				Ok((cmd.run(version), task_manager))
 			})
 		},
@@ -458,6 +459,7 @@ pub fn run() -> Result<()> {
 }
 
 // This appears messy but due to layers of Rust complexity, it's necessary.
+#[allow(clippy::result_large_err)]
 pub fn run_chain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	#[allow(unused)]
 	let mut result: sc_service::Result<(), polkadot_cli::Error> = Ok(());

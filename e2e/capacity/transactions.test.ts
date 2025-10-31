@@ -1,8 +1,8 @@
 import '@frequency-chain/api-augment';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
 import assert from 'assert';
-import { AddKeyData, RecoveryCommitmentPayload, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, type AddKeyData, type RecoveryCommitmentPayload } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import {
   generateRecoverySecret,

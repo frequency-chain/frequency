@@ -9,7 +9,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::weights;
+use common_runtime::{constants::*, weights};
 use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -78,7 +78,7 @@ impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU64<1>;
+	type ExistentialDeposit = ConstU64<10>;
 	type AccountStore = System;
 	type WeightInfo = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
@@ -141,7 +141,11 @@ impl pallet_msa::Config for Test {
 	type ConvertIntoAccountId32 = TestAccountId;
 	type MaxPublicKeysPerMsa = ConstU8<255>;
 	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type MaxProviderNameSize = ConstU32<16>;
+	type MaxProviderNameSize = MsaMaxProviderNameSize;
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	type MaxLogoSize = MsaMaxLogoSize;
+	type MaxLocaleCount = MsaMaxLocaleCount;
 	type SchemaValidator = Schemas;
 	type HandleProvider = ();
 	type MortalityWindowSize = ConstU32<100>;
@@ -231,7 +235,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
-			(50, 5),
+			(50, 15),
 			(100, 100),
 			(200, 200),
 			(300, 300),

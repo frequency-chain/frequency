@@ -8,7 +8,7 @@ use sp_io::hashing::sha2_256;
 use sp_runtime::Vec;
 
 /// Multihash type for wrapping digests (support up to 64-byte digests)
-type Multihash = cid::multihash::Multihash<64>;
+pub type Multihash = cid::multihash::Multihash<64>;
 
 /// SHA2-256 multihash code
 const SHA2_256: u64 = 0x12;

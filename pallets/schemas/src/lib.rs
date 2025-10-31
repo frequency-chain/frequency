@@ -74,6 +74,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
@@ -1005,7 +1006,7 @@ pub mod pallet {
 					Some(response)
 				},
 				(None, Some(_)) | (Some(_), None) => {
-					log::error!("Corrupted state for schema {:?}, Should never happen!", schema_id);
+					log::error!("Corrupted state for schema {schema_id:?}, Should never happen!");
 					None
 				},
 				(None, None) => None,

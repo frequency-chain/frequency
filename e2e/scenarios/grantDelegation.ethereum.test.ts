@@ -1,13 +1,14 @@
 import '@frequency-chain/api-augment';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u64 } from '@polkadot/types';
 import assert from 'assert';
-import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { Extrinsic, ExtrinsicHelper, type AddProviderPayload } from '../scaffolding/extrinsicHelpers';
 import {
   DOLLARS,
   createAndFundKeypair,
   createAndFundKeypairs,
   generateDelegationPayload,
+  generateValidProviderPayloadWithName,
   signPayload, getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
@@ -53,14 +54,15 @@ describe('Delegation Scenario Tests Ethereum', function () {
 
     let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
     await createProviderMsaOp.signAndSend();
-    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'MyPoster');
+
+    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'MYYProvider');
     let { target: providerEvent } = await createProviderOp.signAndSend();
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     providerId = providerEvent!.data.providerId;
 
     createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
     await createProviderMsaOp.signAndSend();
-    createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, 'MyPoster');
+    createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, 'MyProvider100');
     ({ target: providerEvent } = await createProviderOp.signAndSend());
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;

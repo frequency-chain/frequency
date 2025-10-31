@@ -1,10 +1,10 @@
 import '@frequency-chain/api-augment';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import assert from 'assert';
-import { AddProviderPayload, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, type AddProviderPayload } from '../scaffolding/extrinsicHelpers';
 import {
   createKeys,
   createMsaAndProvider,

@@ -64,7 +64,7 @@ pub enum MessageRpcError {
 
 impl From<MessageRpcError> for ErrorObjectOwned {
 	fn from(e: MessageRpcError) -> Self {
-		let msg = format!("{:?}", e);
+		let msg = format!("{e:?}");
 		match e {
 			MessageRpcError::InvalidPaginationRequest => ErrorObject::owned(1, msg, None::<()>),
 			MessageRpcError::TypeConversionOverflow => ErrorObject::owned(2, msg, None::<()>),

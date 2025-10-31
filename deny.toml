@@ -75,7 +75,8 @@ ignore = [
   { id = "RUSTSEC-2024-0436", reason = "Unmaintained sub-dependency: paste, pending updates to dependencies."},
   { id = "RUSTSEC-2023-0091", reason = "'Users prior to 10.0.0 are unaffected', according to the advisory; we are on 8.0.1"},
   { id = "RUSTSEC-2024-0438", reason = "Windows only"},
-  { id = "RUSTSEC-2024-0442", reason = "Substrate dependency"}
+  { id = "RUSTSEC-2024-0442", reason = "Substrate dependency"},
+  { id = "RUSTSEC-2025-0057", reason = "Remove when https://github.com/paritytech/polkadot-sdk/pull/8714 is merged into a stable release."}
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
@@ -100,8 +101,9 @@ allow = [
   "CC0-1.0",
   "MPL-2.0",
   "ISC",
+  "GPL-3.0-only",
   "GPL-3.0",
-  "GPL-3.0 WITH Classpath-exception-2.0",
+  "GPL-3.0-or-later WITH Classpath-exception-2.0",
   "OpenSSL",
   "Zlib",
   "Unicode-3.0",

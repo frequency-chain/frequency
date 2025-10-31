@@ -5,15 +5,15 @@ import {
   createAndFundKeypair,
   createAndFundKeypairs,
   signPayloadSr25519,
-  Sr25519Signature,
+  type Sr25519Signature,
   generateAddKeyPayload,
   createProviderKeysAndId,
   DOLLARS,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
-import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { ExtrinsicHelper, type AddKeyData } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
-import { Codec } from '@polkadot/types/types';
+import type { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 

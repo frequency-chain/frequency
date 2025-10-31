@@ -80,7 +80,7 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 				hashed[..20].copy_from_slice(&hashed_full[12..]);
 			},
 			_ => {
-				log::error!("Invalid public key size provided for {:?}", public_key_or_address);
+				log::error!("Invalid public key size provided for {public_key_or_address:?}");
 				return [0u8; 32];
 			},
 		};
@@ -95,7 +95,7 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 		if Self::is_ethereum_address(&account_id) {
 			eth_address[..].copy_from_slice(&account_id.as_slice()[0..20]);
 		} else {
-			log::error!("Incompatible ethereum account id is provided {:?}", account_id);
+			log::error!("Incompatible ethereum account id is provided {account_id:?}");
 		}
 		eth_address.into()
 	}
@@ -317,9 +317,9 @@ impl TryFrom<UnifiedSigner> for ecdsa::Public {
 impl std::fmt::Display for UnifiedSigner {
 	fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
 		match *self {
-			Self::Ed25519(ref who) => write!(fmt, "ed25519: {}", who),
-			Self::Sr25519(ref who) => write!(fmt, "sr25519: {}", who),
-			Self::Ecdsa(ref who) => write!(fmt, "ecdsa: {}", who),
+			Self::Ed25519(ref who) => write!(fmt, "ed25519: {who:?}"),
+			Self::Sr25519(ref who) => write!(fmt, "sr25519: {who:?}"),
+			Self::Ecdsa(ref who) => write!(fmt, "ecdsa: {who:?}"),
 		}
 	}
 }
@@ -350,7 +350,7 @@ fn check_secp256k1_signature(signature: &[u8; 65], msg: &[u8; 32], signer: &Acco
 fn eth_message_hash(message: &[u8]) -> [u8; 32] {
 	let only_len = (message.len() as u32).to_string().into_bytes();
 	let concatenated = [ETHEREUM_MESSAGE_PREFIX.as_slice(), only_len.as_slice(), message].concat();
-	log::debug!(target:"ETHEREUM", "prefixed {:?}",concatenated);
+	log::debug!(target:"ETHEREUM", "prefixed {concatenated:?}");
 	sp_io::hashing::keccak_256(concatenated.as_slice())
 }
 
