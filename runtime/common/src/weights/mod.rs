@@ -40,4 +40,5 @@ pub mod pallet_utility;
 pub mod pallet_xcm;
 pub mod pallet_xcm_benchmarks_fungible;
 pub mod pallet_xcm_benchmarks_generic;
+pub mod rocksdb_child_trie_weights;
 pub mod rocksdb_weights;

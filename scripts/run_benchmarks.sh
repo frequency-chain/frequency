@@ -231,6 +231,11 @@ function run_benchmark() {
   then
     set +x
   fi
+
+  if [[ ${1} == "pallet_stateful-storage" ]]; then
+    STATEFUL_LOCATION=${PROJECT}/pallets/stateful-storage/src/weights.rs
+    cargo run -p benchmark_transform -- ${STATEFUL_LOCATION} ${STATEFUL_LOCATION} || exit_err
+  fi
 }
 
 if [[ ${skip_build} == false ]]
