@@ -45,7 +45,10 @@ describe('Sudo required', function () {
 
   describe('schema#setMaxSchemaModelBytes', function () {
     it('should fail to set the schema size because of lack of root authority (BadOrigin)', async function () {
-      const operation = new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(1000000), sudoKey);
+      const operation = new Extrinsic(
+        () => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(1000000),
+        fundingSource
+      );
       await assert.rejects(operation.signAndSend(), { name: 'BadOrigin' });
     });
 

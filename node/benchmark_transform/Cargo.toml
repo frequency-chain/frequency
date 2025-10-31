@@ -1,0 +1,13 @@
+[package]
+name = "benchmark_transform"
+version = "0.1.0"
+authors = ["Frequency"]
+description = "A tool to transform generated weight into using the child trie DB benchamrks"
+edition = "2021"
+homepage = "https://frequency.xyz/"
+license = "Apache-2.0"
+publish = false
+repository = "https://github.com/frequency-chain/frequency/"
+
+[dependencies]
+regex = { workspace = true }
