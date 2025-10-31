@@ -2,8 +2,9 @@
   "exit": true,
   "fullTrace": true,
   "extension": ["ts"],
-  "parallel": false,
+  "parallel": true,
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
   "import": "tsx/esm",
+  "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
   "timeout": 20000
 }
