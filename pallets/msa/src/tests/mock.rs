@@ -191,7 +191,6 @@ parameter_types! {
 	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
-pub type MaxProviderNameSize = ConstU32<16>;
 pub type MaxIntentGrantsPerDelegation = ConstU32<30>;
 /// The maximum size of a provider name (in bytes)
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

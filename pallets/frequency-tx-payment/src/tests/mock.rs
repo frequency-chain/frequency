@@ -126,10 +126,6 @@ impl Convert<u64, AccountId> for TestAccountId {
 
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
-		true
-	}
-
 	fn are_all_intent_ids_valid(_intent_ids: &[IntentId]) -> bool {
 		true
 	}

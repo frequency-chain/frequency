@@ -42,8 +42,6 @@ pub mod offchain;
 /// Benchmarking helper trait
 pub mod benchmarks;
 
-/// CID support
-pub mod cid;
 /// Signature support for ethereum
 pub mod signatures;
 

@@ -635,7 +635,7 @@ mod benchmarks {
 			T::MaxPaginatedPageSizeBytes::get()
 				as usize
 		])
-			.expect("failed to convert payload");
+		.expect("failed to convert payload");
 		let page = PaginatedPage::<T>::from(payload);
 		let expiration = BlockNumberFor::<T>::from(10u32);
 
@@ -659,9 +659,9 @@ mod benchmarks {
 			PAGINATED_STORAGE_PREFIX,
 			&key,
 		)
-			.unwrap()
-			.unwrap()
-			.get_hash();
+		.unwrap()
+		.unwrap()
+		.get_hash();
 
 		let payload = PaginatedDeleteSignaturePayloadV3 {
 			target_hash: content_hash,

@@ -96,9 +96,9 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		AccountId20Response, ApplicationIndex, DelegationGrant, DelegationResponse, DelegationValidator,
-		DelegatorId, GrantValidator, MessageSourceId, ProviderApplicationContext, ProviderId,
-		H160,
+		AccountId20Response, ApplicationIndex, DelegationGrant, DelegationResponse,
+		DelegationValidator, DelegatorId, GrantValidator, MessageSourceId,
+		ProviderApplicationContext, ProviderId, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -106,7 +106,10 @@ use common_primitives::{
 	},
 	rpc::RpcEvent,
 	schema::{PayloadLocation, SchemaId, SchemaVersionResponse},
-	stateful_storage::{ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse, PaginatedStorageResponseV2},
+	stateful_storage::{
+		ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse,
+		PaginatedStorageResponseV2,
+	},
 };
 
 pub use common_runtime::{
@@ -263,7 +266,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			#[cfg(feature = "frequency")]
 			// Filter out calls that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
+			RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
@@ -314,7 +317,7 @@ impl BaseCallFilter {
 			#[cfg(feature = "frequency")]
 			// Block calls from utility (or Capacity) batch that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
+			RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
@@ -2065,7 +2068,7 @@ sp_api::impl_runtime_apis! {
 
 			let mut from_index: u32 = pagination.from_index;
 
-			(pagination.from_block..pagination.to_block).try_for_each(|block_number| {
+			let _ = (pagination.from_block..pagination.to_block).try_for_each(|block_number| {
 				let list: Vec<MessageResponseV2> = Messages::get_messages_by_intent_and_block(
 					intent_id,
 					intent.payload_location,

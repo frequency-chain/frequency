@@ -389,7 +389,7 @@ pub type MaxItemizedActionsCount = ConstU32<5>;
 /// The number of blocks for Stateful mortality is 48 hours
 pub type StatefulMortalityWindowSize = ConstU32<{ 2 * DAYS }>;
 /// How often to emit a tracking event when migrating pages in the `stateful-storage` pallet
-pub type StatefulMigrateEmitEvery = ConstU32<10_000>; // 10K
+pub type StatefulMigrateEmitEvery = ConstU32<10_000>;
 // -end- Stateful Storage Pallet
 
 impl Default for MaxItemizedPageSizeBytes {

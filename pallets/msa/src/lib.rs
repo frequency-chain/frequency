@@ -1980,25 +1980,6 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Check that schema ids are all valid
-	///
-	/// # Errors
-	/// * [`Error::InvalidSchemaId`]
-	/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`]
-	///
-	pub fn ensure_all_schema_ids_are_valid(schema_ids: &[SchemaId]) -> DispatchResult {
-		ensure!(
-			schema_ids.len() <= T::MaxGrantsPerDelegation::get() as usize,
-			Error::<T>::ExceedsMaxSchemaGrantsPerDelegation
-		);
-
-		let are_schemas_valid = T::SchemaValidator::are_all_schema_ids_valid(schema_ids);
-
-		ensure!(are_schemas_valid, Error::<T>::InvalidSchemaId);
-
-		Ok(())
-	}
-
 	/// Check that Intent ids are all valid
 	///
 	/// # Errors
@@ -2817,7 +2798,7 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	}
 
 	fn create_msa(keys: T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let (msa_id, _) = Self::create_account(keys, EMPTY_FUNCTION)?;
+		let (msa_id, _) = Self::create_account(keys)?;
 		Ok(msa_id)
 	}
 }

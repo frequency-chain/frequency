@@ -213,16 +213,16 @@ impl Into<SchemaResponse> for SchemaResponseV2 {
 pub struct SchemaInfoResponse {
 	/// The unique identifier for this Schema
 	pub schema_id: SchemaId,
-	/// The IntentId of the Intent that this Schema implements
-	pub intent_id: IntentId,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
-	/// The status of this Schema
-	pub status: SchemaStatus,
 	/// The payload location associated with this Schema's associated Intent
 	pub payload_location: PayloadLocation,
 	/// The settings for this Schema's associated Intent
 	pub settings: Vec<IntentSetting>,
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
+	/// The status of this Schema
+	pub status: SchemaStatus,
 }
 
 #[derive(
@@ -277,9 +277,6 @@ pub trait SchemaProvider<SchemaId> {
 
 /// This allows other Pallets to check the validity of schema ids.
 pub trait SchemaValidator<SchemaId> {
-	/// Checks that a collection of SchemaIds is all valid
-	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool;
-
 	/// Checks that all IntentIds in a collection are valid.
 	fn are_all_intent_ids_valid(intent_ids: &[IntentId]) -> bool;
 
@@ -341,13 +338,13 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn schema_settings_when_disabled_has_no_enabled() {
+	fn intent_settings_when_disabled_has_no_enabled() {
 		let settings = IntentSettings::all_disabled();
 		assert_eq!(settings.get_enabled(), BitFlags::EMPTY);
 	}
 
 	#[test]
-	fn schema_settings_set_from_all_enabled_check() {
+	fn intent_settings_set_from_all_enabled_check() {
 		let settings = IntentSettings::from(BitFlags::ALL);
 		assert!(settings.is_enabled(IntentSetting::AppendOnly));
 		assert!(settings.is_enabled(IntentSetting::SignatureRequired));

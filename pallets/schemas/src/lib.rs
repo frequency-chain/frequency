@@ -1393,11 +1393,6 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 }
 
 impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
-	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool {
-		let latest_issue_schema_id = CurrentSchemaIdentifierMaximum::<T>::get();
-		schema_ids.iter().all(|id| id <= &latest_issue_schema_id)
-	}
-
 	fn are_all_intent_ids_valid(intent_ids: &[IntentId]) -> bool {
 		let latest_issue_intent_id = CurrentIntentIdentifierMaximum::<T>::get();
 		intent_ids.iter().all(|id| id <= &latest_issue_intent_id)
