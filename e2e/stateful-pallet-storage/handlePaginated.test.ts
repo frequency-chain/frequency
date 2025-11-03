@@ -9,7 +9,7 @@ import {
   DOLLARS,
   getOrCreateAvroChatMessagePaginatedSchema,
   assertExtrinsicSucceededAndFeesPaid,
-  createAndFundKeypair, getOrCreateIntentAndSchema,
+  createAndFundKeypair, getOrCreateIntentAndSchema, assertExtrinsicSuccess, assertEvent,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -19,6 +19,7 @@ import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
 const badSchemaId = 65_534;
+const badIntentId = 65_534;
 let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Paginated', function () {
@@ -75,7 +76,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
   describe('Paginated Storage Upsert/Remove Tests 😊/😥', function () {
     it('should be able to call upsert page and add a page and remove a page via id', async function () {
       let page_id = 0;
-      let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
+      let target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
 
       // Add and update actions
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
@@ -89,16 +90,16 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await paginated_add_result_1.fundAndSend(fundingSource);
-      assertExtrinsicSucceededAndFeesPaid(chainEvents);
+      await assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
-        'should have returned a PalletStatefulStoragepaginatedActionApplied event'
+        'should have returned a PalletStatefulStoragePaginatedActionApplied event'
       );
 
       // Add another page
       page_id = 1;
-      target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
+      target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
       const paginated_add_result_2 = ExtrinsicHelper.upsertPage(
         providerKeys,
         schemaId,
@@ -109,38 +110,30 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       );
       const { target: pageUpdateEvent2, eventMap: chainEvents2 } =
         await paginated_add_result_2.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
+      assertExtrinsicSuccess(chainEvents2);
       assert.notEqual(
         pageUpdateEvent2,
         undefined,
-        'should have returned a PalletStatefulStoragepaginatedActionApplied event'
+        'should have returned a PalletStatefulStoragePaginatedActionApplied event'
       );
 
       // Remove the second page
-      target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
+      target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
       const paginated_remove_result_1 = ExtrinsicHelper.removePage(
         providerKeys,
-        schemaId,
+        intentId,
         msa_id,
         page_id,
         target_hash
       );
       const { target: pageRemove, eventMap: chainEvents3 } = await paginated_remove_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents3['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
+      assertExtrinsicSuccess(chainEvents3);
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
     });
 
     it('should fail call to upsert page with invalid schemaId', async function () {
       const page_id = 0;
-      const target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
+      const target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
       const fake_schema_id = new u16(ExtrinsicHelper.api.registry, badSchemaId);
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(
@@ -159,7 +152,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
 
     it('should fail call to upsert page with invalid schema location', async function () {
       const page_id = 0;
-      const target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
+      const target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(
         delegatorKeys,
@@ -175,11 +168,11 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       });
     });
 
-    it('should fail call to upsert page with for un-delegated attempts', async function () {
+    it('should fail call to upsert page for un-delegated intent', async function () {
       const page_id = 0;
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
 
-      const target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
+      const target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(
         providerKeys,
         schemaId,
@@ -207,11 +200,11 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
   });
 
   describe('Paginated Storage Removal Negative Tests 😊/😥', function () {
-    it('should fail call to remove page with invalid schemaId', async function () {
+    it('should fail call to remove page with invalid intentId', async function () {
       const page_id = 0;
-      const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, badSchemaId, msa_id, page_id, 0);
+      const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, badIntentId, msa_id, page_id, 0);
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'InvalidSchemaId',
+        name: 'InvalidIntentId',
         section: 'statefulStorage',
       });
     });
@@ -234,7 +227,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
 
   describe('Paginated Storage RPC Tests', function () {
     it('✅ should be able to call get_paginated_storage and get paginated data', async function () {
-      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, schemaId);
+      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, intentId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
       assert.notEqual(result.length, 0, 'should have returned paginated responses');
       assert.notEqual(result[0].hash, undefined, 'should have returned a valid page');

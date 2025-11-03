@@ -291,7 +291,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
 
   describe('Itemized Storage RPC Tests', function () {
     it('✅ should be able to call getItemizedStorage and get data for itemized schema', async function () {
-      const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId_deletable);
+      const result = await ExtrinsicHelper.getItemizedStorage(msa_id, intentId_deletable);
       assert.notEqual(result.hash, undefined, 'should have returned a hash');
       assert.notEqual(result.size, undefined, 'should have returned a itemized responses');
     });

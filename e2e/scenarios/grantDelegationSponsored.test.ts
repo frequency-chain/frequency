@@ -8,7 +8,7 @@ import {
   createAndFundKeypairs,
   createMsaAndProvider,
   generateDelegationPayload,
-  signPayloadSr25519,
+  signPayloadSr25519, getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
@@ -21,6 +21,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
   let noMsaKeys: KeyringPair;
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
+  let intentId: u16;
   let schemaId: u16;
   let providerId: u64;
   let otherProviderId: u64;
@@ -49,10 +50,10 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
     };
 
     let msaCreatedEvent1, msaCreatedEvent2;
-    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, schemaId] = await Promise.all([
+    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { intentId, schemaId }] = await Promise.all([
       ExtrinsicHelper.createMsa(keys).signAndSend(),
       ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend(),
-      ExtrinsicHelper.getOrCreateSchemaV3(fundingSource, schema, 'AvroBinary', 'OnChain', [], 'test.grantDelegation'),
+      getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegation', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
     ]);
 
     otherMsaId = msaCreatedEvent2!.data.msaId;
@@ -66,7 +67,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
 
     defaultPayload = {
       authorizedMsaId: providerId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     };
     // Make sure we are finalized before all the tests
     await ExtrinsicHelper.waitForFinalization();
@@ -86,7 +87,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
   });
 
   it('should fail to create delegated account if payload signature cannot be verified (InvalidSignature)', async function () {
-    const payload = await generateDelegationPayload({ ...defaultPayload, schemaIds: [] });
+    const payload = await generateDelegationPayload({ ...defaultPayload, intentIds: [] });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
     op = ExtrinsicHelper.createSponsoredAccountWithDelegation(

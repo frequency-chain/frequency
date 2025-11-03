@@ -653,7 +653,7 @@ export function assertEvent(events: EventMap, eventName: string) {
 }
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {
-  assert.notEqual(eventMap['system.ExtrinsicSuccess'], undefined);
+  assert.notEqual(eventMap['system.ExtrinsicSuccess'], undefined, 'extrinsic should have succeeded');
 }
 
 export function assertHasMessage(response: BlockPaginationResponseMessage, testFn: (x: MessageResponse) => boolean) {

@@ -91,6 +91,7 @@ pub struct DelegationResponse<DelegationIdType, BlockNumber> {
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
 pub struct DelegationGrant<DelegationIdType, BlockNumber> {
 	/// SchemaId of schema for which permission is/was granted
+	#[cfg_attr(feature = "std", serde(rename = "schema_id"))]
 	pub granted_id: DelegationIdType,
 	/// Block number the permission was/will be revoked (0 = not revoked)
 	pub revoked_at: BlockNumber,
