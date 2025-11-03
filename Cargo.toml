@@ -3,6 +3,7 @@ members = [
   "node",
   "node/cli",
   "node/service",
+  "node/benchmark_transform",
   "pallets/*",
   "runtime/*",
   "common/helpers",
@@ -22,6 +23,7 @@ parking_lot = "0.12.1"
 lazy_static = { version = "1.5", features = ["spin_no_std"] }
 multibase = { version = "0.9", default-features = false }
 cid = { version = "0.11", default-features = false, features = ["alloc"] }
+regex = "1.12.2"
 
 # substrate wasm
 parity-scale-codec = { version = "3.7.4", default-features = false }
