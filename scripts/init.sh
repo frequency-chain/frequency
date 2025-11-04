@@ -379,12 +379,14 @@ upgrade-frequency-paseo-local)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
-  # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
+  # Need to build using `--release` to generate a compact, compressed WASM, else it will be too big for the upgrade
+  # to succeed
   cargo build \
+    --release \
     --package frequency-runtime \
     --features frequency-local
 
-  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
@@ -397,12 +399,14 @@ upgrade-frequency-no-relay)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
-  # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
+  # Need to build using `--release` to generate a compact, compressed WASM, else it will be too big for the upgrade
+  # to succeed
   cargo build \
+    --release \
     --package frequency-runtime \
     --features frequency-no-relay
 
-  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.wasm
+  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-dev-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 

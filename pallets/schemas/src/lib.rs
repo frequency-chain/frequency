@@ -276,20 +276,6 @@ pub mod pallet {
 	pub(super) type SchemaPayloads<T: Config> =
 		StorageMap<_, Twox64Concat, SchemaId, SchemaPayload<T>, OptionQuery>;
 
-	/// Storage for message schema info struct data
-	/// - Key: Schema Id
-	/// - Value: [`SchemaInfo`](SchemaInfo)
-	#[pallet::storage]
-	pub(super) type SchemaNameToIds<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		SchemaProtocolName,
-		Blake2_128Concat,
-		SchemaDescriptor,
-		SchemaVersionId,
-		ValueQuery,
-	>;
-
 	/// Storage for mapping names to IDs
 	/// - Key: Protocol Name
 	/// - Key: Descriptor

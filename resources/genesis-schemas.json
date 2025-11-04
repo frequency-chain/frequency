@@ -174,7 +174,7 @@
       "intent_id": 18,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.reply-2"
+      "name": "dsnp.reply"
     },
     {
       "intent_id": 3,
@@ -188,7 +188,7 @@
       "settings": [
         "SignatureRequired"
       ],
-      "name": "dsnp.public-key-assertion-meth-1"
+      "name": "dsnp.public-key-assertion-method"
     },
     {
       "intent_id": 2,
@@ -202,31 +202,31 @@
       "settings": [
         "SignatureRequired"
       ],
-      "name": "frequency.default-token-addres-1"
+      "name": "frequency.default-token-address"
     },
     {
       "intent_id": 12,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.dsnp-content-attribute-se-1"
+      "name": "dsnp.dsnp-content-attribute-set"
     },
     {
       "intent_id": 13,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.ext-content-attribute-set-1"
+      "name": "dsnp.ext-content-attribute-set"
     },
     {
       "intent_id": 4,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.reaction-1"
+      "name": "dsnp.reaction"
     },
     {
       "intent_id": 8,
       "payload_location": "Paginated",
       "settings": [],
-      "name": "dsnp.public-follows-1"
+      "name": "dsnp.public-follows"
     },
     {
       "intent_id": 11,
@@ -238,13 +238,13 @@
       "intent_id": 16,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.tombstone-2"
+      "name": "dsnp.tombstone"
     },
     {
       "intent_id": 6,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.profile-1"
+      "name": "dsnp.profile"
     },
     {
       "intent_id": 5,
@@ -259,37 +259,37 @@
         "AppendOnly",
         "SignatureRequired"
       ],
-      "name": "dsnp.public-key-key-agreement-1"
+      "name": "dsnp.public-key-key-agreement"
     },
     {
       "intent_id": 9,
       "payload_location": "Paginated",
       "settings": [],
-      "name": "dsnp.private-follows-1"
+      "name": "dsnp.private-follows"
     },
     {
       "intent_id": 15,
       "payload_location": "Itemized",
       "settings": [],
-      "name": "dsnp.profile-resources-1"
+      "name": "dsnp.profile-resources"
     },
     {
       "intent_id": 17,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.broadcast-2"
+      "name": "dsnp.broadcast"
     },
     {
       "intent_id": 10,
       "payload_location": "Paginated",
       "settings": [],
-      "name": "dsnp.private-connections-1"
+      "name": "dsnp.private-connections"
     },
     {
       "intent_id": 19,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.update-2"
+      "name": "dsnp.update"
     },
     {
       "intent_id": 1,
@@ -301,7 +301,7 @@
       "intent_id": 20,
       "payload_location": "IPFS",
       "settings": [],
-      "name": "dsnp.user-attribute-set-2"
+      "name": "dsnp.user-attribute-set"
     }
   ],
   "intent_groups": []
