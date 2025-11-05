@@ -364,7 +364,7 @@ fn apply_item_actions_on_signature_schema_fails_for_non_owner() {
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions1).unwrap(),
 			),
-			Error::<Test>::UnsupportedOperationForSchema
+			Error::<Test>::UnsupportedOperationForIntent
 		);
 	});
 }
@@ -472,7 +472,7 @@ fn apply_delete_item_on_append_only_fails() {
 				content_hash,
 				BoundedVec::try_from(actions2).unwrap(),
 			),
-			Error::<Test>::UnsupportedOperationForSchema
+			Error::<Test>::UnsupportedOperationForIntent
 		);
 	});
 }

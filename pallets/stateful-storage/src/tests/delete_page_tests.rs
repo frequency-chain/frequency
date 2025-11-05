@@ -256,7 +256,7 @@ fn delete_page_fails_for_append_only() {
 				page_id,
 				page_hash
 			),
-			Error::<Test>::UnsupportedOperationForSchema
+			Error::<Test>::UnsupportedOperationForIntent
 		);
 	});
 }
@@ -640,7 +640,7 @@ fn delete_page_on_signature_schema_fails_for_non_owner() {
 				page_id,
 				page.get_hash()
 			),
-			Error::<Test>::UnsupportedOperationForSchema
+			Error::<Test>::UnsupportedOperationForIntent
 		);
 	});
 }

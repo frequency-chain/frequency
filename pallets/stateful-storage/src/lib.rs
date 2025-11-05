@@ -1131,6 +1131,10 @@ impl<T: Config> Pallet<T> {
 			&keys,
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?;
+
+		// Note: PageVersion::V1 is unsupported because no pages were ever written with that tag;
+		// hence it indicates some kind of corrupted state. In future, the pallet should be able
+		// to support reading pages with multiple versions.
 		if let Some(Page { page_version, .. }) = &page {
 			if *page_version != PageVersion::V2 {
 				return Err(Error::<T>::UnsupportedPageVersion.into());
@@ -1152,6 +1156,10 @@ impl<T: Config> Pallet<T> {
 			&keys,
 		)
 		.map_err(|_| Error::<T>::CorruptedState)?;
+
+		// Note: PageVersion::V1 is unsupported because no pages were ever written with that tag;
+		// hence it indicates some kind of corrupted state. In future, the pallet should be able
+		// to support reading pages with multiple versions.
 		if let Some(Page { page_version, .. }) = &page {
 			if *page_version != PageVersion::V2 {
 				return Err(Error::<T>::UnsupportedPageVersion.into());
