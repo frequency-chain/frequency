@@ -105,20 +105,6 @@ where
 	}
 }
 
-/// Item storage versions
-#[derive(Encode, Decode, Default, PartialEq, MaxEncodedLen, Debug)]
-#[repr(u8)]
-pub enum ItemVersion {
-	/// V1 variant can be removed after migration is complete
-	#[codec(index = 1)]
-	V1,
-
-	/// V2 (added schema_id)
-	#[codec(index = 2)]
-	#[default] // NOTE: move default when adding new variants
-	V2,
-}
-
 /// This header is used to specify the byte size of an item stored inside the buffer
 /// All items will require this header to be inserted before the item data
 #[derive(Encode, Decode, PartialEq, MaxEncodedLen, Debug)]

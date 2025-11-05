@@ -934,12 +934,12 @@ impl<T: Config> Pallet<T> {
 		// Ensure that the schema allows signed payloads.
 		// If so, calling extrinsic must be of signature type.
 		if intent.settings.contains(&IntentSetting::SignatureRequired) {
-			ensure!(is_payload_signed, Error::<T>::UnsupportedOperationForSchema);
+			ensure!(is_payload_signed, Error::<T>::UnsupportedOperationForIntent);
 		}
 
-		// Ensure that the schema does not allow deletion for AppendOnly SchemaSetting.
+		// Ensure that the schema does not allow deletion for AppendOnly IntentSetting.
 		if intent.settings.contains(&IntentSetting::AppendOnly) {
-			ensure!(!is_deleting, Error::<T>::UnsupportedOperationForSchema);
+			ensure!(!is_deleting, Error::<T>::UnsupportedOperationForIntent);
 		}
 
 		Ok(intent)
