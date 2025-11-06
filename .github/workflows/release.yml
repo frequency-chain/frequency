@@ -94,7 +94,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-binary
-          path: target/release/frequency
+          path: |
+            target/release/frequency
+            target/release/benchmark_transform
           retention-days: 3
 
       - name: Upload WASM Build Artifacts
@@ -134,7 +136,9 @@ jobs:
           path: target/release/wbuild
 
       - name: Make Binary Executable
-        run: chmod +x target/release/frequency
+        run: |
+          chmod +x target/release/frequency
+          chmod +x target/release/benchmark_transform
 
       - name: Update Weights for All Pallets
         run: |
