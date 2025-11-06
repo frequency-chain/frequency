@@ -249,6 +249,10 @@ then
   echo ${CMD}
   ${CMD} || exit_err
 
+  CMD_TRANSFORM="cargo build -p benchmark_transform --profile=${PROFILE}"
+  echo ${CMD_TRANSFORM}
+  ${CMD_TRANSFORM} || exit_err
+
   if [[ ${build_only} == true ]]; then
     echo "Build complete. Exiting as requested."
     exit 0
