@@ -193,6 +193,7 @@ fi
 RUST_LOG="info"
 RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
+BENCHMARK_TRANSFORM_BIN=${PROJECT}/target/${PROFILE_DIR}/benchmark_transform
 
 if [[ ${build_only} == false ]]; then
   echo "Running benchmarks for the following pallets:\
@@ -234,7 +235,11 @@ function run_benchmark() {
 
   if [[ ${1} == "pallet_stateful-storage" ]]; then
     STATEFUL_LOCATION=${PROJECT}/pallets/stateful-storage/src/weights.rs
-    cargo run -p benchmark_transform -- ${STATEFUL_LOCATION} ${STATEFUL_LOCATION} || exit_err
+    if [[ ${skip_build} == false ]]; then
+      cargo run -p benchmark_transform -- ${STATEFUL_LOCATION} ${STATEFUL_LOCATION} || exit_err
+    else
+      ${BENCHMARK_TRANSFORM_BIN} ${STATEFUL_LOCATION} ${STATEFUL_LOCATION} || exit_err
+    fi
   fi
 }
 
