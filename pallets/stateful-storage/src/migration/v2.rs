@@ -63,6 +63,12 @@ pub fn process_paginated_page<T: Config, N: Get<u32>>(
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
 	let Some(k) = next_key(&child, &cur.last_key).unwrap_or(None) else {
+		if cur.id % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+			Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
+				last_trie: (cur.id, PayloadLocation::Paginated),
+				total_page_count: cur.cumulative_pages,
+			});
+		}
 		// Finished this child → next id
 		cur.last_key = BoundedVec::default();
 		cur.id += 1;
@@ -101,6 +107,12 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
 	let Some(k) = next_key(&child, &cur.last_key).unwrap_or(None) else {
+		if cur.id % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+			Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
+				last_trie: (cur.id, PayloadLocation::Paginated),
+				total_page_count: cur.cumulative_pages,
+			});
+		}
 		// Finished this child → next id
 		cur.last_key = BoundedVec::default();
 		cur.id += 1;

@@ -147,6 +147,7 @@ use frame_system::{
 
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::ops::ControlFlow;
+use frame_support::pallet_prelude::StorageVersion;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::Perbill;
 
@@ -262,6 +263,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		match call {
 			RuntimeCall::Utility(pallet_utility_call) =>
 				Self::is_utility_call_allowed(pallet_utility_call),
+			// Block stateful-storage extrinsics if V1->V2 migration is not complete
+			// May be removed once the migration has been completed on mainnet
+			RuntimeCall::StatefulStorage(..) =>
+				pallet_stateful_storage::Pallet::<Runtime>::on_chain_storage_version() >=
+					StorageVersion::new(2),
 
 			#[cfg(feature = "frequency")]
 			// Filter out calls that are Governance actions on Mainnet
@@ -454,6 +460,7 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 		pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		pallet_stateful_storage::BlockDuringMigration<Runtime>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),

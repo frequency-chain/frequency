@@ -4333,6 +4333,7 @@ dependencies = [
  "pallet-frequency-tx-payment",
  "pallet-handles",
  "pallet-msa",
+ "pallet-stateful-storage",
  "polkadot-cli",
  "polkadot-service",
  "sc-cli",

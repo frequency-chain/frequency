@@ -58,12 +58,27 @@ use common_primitives::{
 	},
 };
 
-use common_primitives::schema::{IntentId, IntentResponse};
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
+use common_primitives::{
+	schema::{IntentId, IntentResponse},
+};
+use frame_support::{
+	dispatch::{DispatchInfo, DispatchResult},
+	ensure,
+	pallet_prelude::*,
+	traits::{
+		Get, IsSubType,
+	},
+};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use sp_core::{bounded::BoundedVec, crypto::AccountId32};
-use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
+use sp_runtime::{
+	traits::{
+		AsSystemOriginSigner, Convert, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
+		TransactionExtension,
+	},
+	DispatchError, MultiSignature,
+};
 pub use weights::*;
 
 #[frame_support::pallet]
@@ -1166,5 +1181,128 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 		Ok(page)
+	}
+}
+
+/// The TransactionExtension trait is implemented on BlockDuringMigration to prevent extrinsics
+/// in this pallet from being executed while a migration is in progress
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct BlockDuringMigration<T: Config + Send + Sync>(PhantomData<T>);
+
+impl<T: Config + Send + Sync> BlockDuringMigration<T> {
+	/// Create new `TransactionExtension`
+	pub fn new() -> Self {
+		Self(PhantomData)
+	}
+
+	/// Prevent an extrinsic from being executed while a migraiton is in progress.
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	///
+	/// # Errors
+	/// * [`ValidityError::InvalidStorageVersion`] - the on-chain storage version does not match the in-code storage version
+	///
+	pub fn block_extrinsics_during_migration() -> TransactionValidity {
+		const TAG_PREFIX: &str = "StatefulStorageExtrinsicPostV2Migration";
+		ensure!(
+			Pallet::<T>::on_chain_storage_version() >= StorageVersion::new(2),
+			InvalidTransaction::Custom(ValidityError::InvalidStorageVersion as u8)
+		);
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
+	}
+}
+
+/// Errors related to the validity of the BlockDuringMigration signed extension.
+pub enum ValidityError {
+	/// On-chain storage version
+	InvalidStorageVersion,
+}
+
+impl<T: Config + Send + Sync> core::fmt::Debug for BlockDuringMigration<T> {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+		write!(f, "BlockDuringMigration<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
+		Ok(())
+	}
+}
+
+/// The info passed between the `validate` and `prepare` steps for the `BlockDuringMigration` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+/// The info passed between the `prepare` and `post-dispatch` steps for the `BlockDuringMigration` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+impl<T: Config + Send + Sync> TransactionExtension<T::RuntimeCall> for BlockDuringMigration<T>
+where
+	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
+{
+	const IDENTIFIER: &'static str = "BlockDuringMigration";
+	type Implicit = ();
+	type Val = Val;
+	type Pre = Pre;
+
+	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		T::DbWeight::get().reads(1)
+	}
+
+	fn validate(
+		&self,
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		let weight = self.weight(call);
+		let Some(_who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(weight), origin));
+		};
+		let validity = Self::block_extrinsics_during_migration();
+		validity.map(|v| (v, Val::Valid, origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T as frame_system::Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		match val {
+			Val::Valid => Ok(Pre::Valid),
+			Val::Refund(w) => Ok(Pre::Refund(w)),
+		}
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &sp_runtime::DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::Valid => Ok(Weight::zero()),
+			Pre::Refund(w) => Ok(w),
+		}
 	}
 }

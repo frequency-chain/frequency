@@ -9,9 +9,9 @@ use sp_runtime::{
 	DispatchError, MultiSignature, RuntimeDebug,
 };
 extern crate alloc;
-use alloc::vec::Vec;
-
 pub use crate::schema::{IntentId, SchemaId};
+use alloc::vec::Vec;
+use serde::{ser::SerializeStruct, Serializer};
 
 /// ApplicationIndex type
 pub type ApplicationIndex = u16;
@@ -87,14 +87,32 @@ pub struct DelegationResponse<DelegationIdType, BlockNumber> {
 }
 
 /// RPC response for getting schema permission grants
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "std", derive(Deserialize))]
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
 pub struct DelegationGrant<DelegationIdType, BlockNumber> {
-	/// SchemaId of schema for which permission is/was granted
-	#[cfg_attr(feature = "std", serde(rename = "schema_id"))]
+	/// ID of the delegated entity for which permission is/was granted
 	pub granted_id: DelegationIdType,
 	/// Block number the permission was/will be revoked (0 = not revoked)
 	pub revoked_at: BlockNumber,
+}
+
+// Custom serialization implementation to allow for a slow roll-out of renaming
+// the `schema_id` field to `granted_id`; preserves compatibility for older clients
+// while allowing the new field name to also exist for client to update to.
+#[cfg(feature = "std")]
+impl<DelegationIdType: Serialize, BlockNumber: Serialize> Serialize
+	for DelegationGrant<DelegationIdType, BlockNumber>
+{
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut s = serializer.serialize_struct("DelegationGrant", 3)?;
+		s.serialize_field("schema_id", &self.granted_id)?;
+		s.serialize_field("granted_id", &self.granted_id)?;
+		s.serialize_field("revoked_at", &self.revoked_at)?;
+		s.end()
+	}
 }
 
 impl<DelegationIdType, BlockNumber> PartialEq for DelegationResponse<DelegationIdType, BlockNumber>
