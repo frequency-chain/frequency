@@ -44,7 +44,7 @@ export const ADD_PROVIDER_DEFINITION = {
       type: 'uint64',
     },
     {
-      name: 'schemaIds',
+      name: 'intentIds',
       type: 'uint16[]',
     },
     {
@@ -144,6 +144,27 @@ export const PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   ],
 };
 
+export const PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V3 = {
+  PaginatedDeleteSignaturePayloadV3: [
+    {
+      name: 'intentId',
+      type: 'uint16',
+    },
+    {
+      name: 'pageId',
+      type: 'uint16',
+    },
+    {
+      name: 'targetHash',
+      type: 'uint32',
+    },
+    {
+      name: 'expiration',
+      type: 'uint32',
+    },
+  ],
+};
+
 export const PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   PaginatedUpsertSignaturePayloadV2: [
     {
@@ -195,6 +216,33 @@ export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   ],
 };
 
+export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V3 = {
+  ItemizedSignaturePayloadV3: [
+    {
+      name: 'intentId',
+      type: 'uint16',
+    },
+    {
+      name: 'targetHash',
+      type: 'uint32',
+    },
+    {
+      name: 'expiration',
+      type: 'uint32',
+    },
+    {
+      name: 'actions',
+      type: 'ItemActionV2[]',
+    },
+  ],
+  ItemActionV2: [
+    { name: 'actionType', type: 'string' },
+    { name: 'schemaId', type: 'uint16' },
+    { name: 'data', type: 'bytes' },
+    { name: 'index', type: 'uint16' },
+  ],
+};
+
 export const SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION = {
   SiwfSignedRequestPayload: [
     {
@@ -219,9 +267,11 @@ const PAYLOAD_DEFINITIONS = [
   CLAIM_HANDLE_PAYLOAD_DEFINITION,
   PASSKEY_PUBLIC_KEY_DEFINITION,
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V3,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
   ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V3,
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
 ];
 

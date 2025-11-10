@@ -77,6 +77,13 @@ export interface ItemizedSignaturePayloadV2 {
   actions?: any;
 }
 
+export interface ItemizedSignaturePayloadV3 {
+  intentId?: u16;
+  targetHash?: u32;
+  expiration?: any;
+  actions?: any;
+}
+
 export interface PaginatedUpsertSignaturePayload {
   msaId?: u64;
   schemaId?: u16;

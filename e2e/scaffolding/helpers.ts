@@ -254,6 +254,25 @@ export async function generateItemizedActionsSignedPayloadV2(
   );
 }
 
+export async function generateItemizedActionsSignedPayloadV3(
+  actions: any[],
+  intentId: IntentId,
+  signingKeys: KeyringPair,
+  msaId: MessageSourceId
+) {
+  const payloadInput: ItemizedSignaturePayloadV3 = {
+    targetHash: await getCurrentItemizedHash(msaId, intentId),
+    intentId,
+    actions,
+  };
+
+  return generateItemizedActionsPayloadAndSignature(
+    payloadInput,
+    'PalletStatefulStorageItemizedSignaturePayloadV2',
+    signingKeys
+  );
+}
+
 export async function generatePaginatedUpsertSignaturePayloadV2(
   payloadInputs: PaginatedUpsertSignaturePayloadV2,
   expirationOffset: number = 100,

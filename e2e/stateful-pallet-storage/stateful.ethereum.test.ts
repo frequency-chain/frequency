@@ -111,6 +111,34 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         'should have returned a PalletStatefulStorageItemizedActionApplied event'
       );
     });
+
+    it('provider should be able to call applyItemizedActionWithSignatureV3 and apply actions with Ethereum keys', async function () {
+      const { payload, signature } = await generateItemizedActionsSignedPayloadV3(
+        generateItemizedActions([
+          { action: 'Add', value: 'Hello, world from Frequency' },
+          { action: 'Add', value: 'Hello, world again from Frequency' },
+        ]),
+        itemizedIntentId,
+        itemizedSchemaId,
+        ethereumDelegatorKeys,
+        msa_id
+      );
+
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
+        ethereumDelegatorKeys,
+        undelegatedProviderKeys,
+        signature,
+        payload
+      );
+      const { target: pageUpdateEvent1, eventMap: chainEvents } =
+        await itemized_add_result_1.fundAndSend(fundingSource);
+      await assertExtrinsicSucceededAndFeesPaid(chainEvents);
+      assert.notEqual(
+        pageUpdateEvent1,
+        undefined,
+        'should have returned a PalletStatefulStorageItemizedActionApplied event'
+      );
+    });
   });
 
   describe('Paginated With Signature Storage Tests with Ethereum keys', function () {

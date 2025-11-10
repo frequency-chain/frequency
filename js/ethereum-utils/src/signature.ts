@@ -21,6 +21,11 @@ import {
   SiwfSignedRequestPayload,
   SiwfLoginRequestPayload,
   SignatureType,
+  AddItemizedActionV2,
+  DeleteItemizedActionV2,
+  ItemizedActionV2,
+  ItemizedSignaturePayloadV3,
+  PaginatedDeleteSignaturePayloadV3,
 } from './payloads.js';
 import { assert, isHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils.js';
 import { reverseUnifiedAddressToEthereumAddress } from './address.js';
@@ -41,6 +46,8 @@ import {
   SupportedPayloadDefinitions,
   EIP712_DOMAIN_TESTNET,
   RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
+  PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V3,
+  ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V3,
 } from './signature.definitions.js';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
@@ -115,7 +122,9 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
   switch (clonedPayload.type) {
     case 'PaginatedUpsertSignaturePayloadV2':
     case 'PaginatedDeleteSignaturePayloadV2':
+    case 'PaginatedDeleteSignaturePayloadV3':
     case 'ItemizedSignaturePayloadV2':
+    case 'ItemizedSignaturePayloadV3':
     case 'PasskeyPublicKey':
     case 'ClaimHandlePayload':
     case 'AddProvider':
@@ -160,7 +169,9 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
   const PAYLOAD_TYPE_DEFINITIONS: Record<string, SupportedPayloadDefinitions> = {
     PaginatedUpsertSignaturePayloadV2: PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
     PaginatedDeleteSignaturePayloadV2: PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
+    PaginatedDeleteSignaturePayloadV3: PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V3,
     ItemizedSignaturePayloadV2: ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
+    ItemizedSignaturePayloadV3: ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V3,
     PasskeyPublicKey: PASSKEY_PUBLIC_KEY_DEFINITION,
     ClaimHandlePayload: CLAIM_HANDLE_PAYLOAD_DEFINITION,
     AddKeyData: ADD_KEY_DATA_DEFINITION,
@@ -218,7 +229,7 @@ export function createAddKeyData(
  * Build an AuthorizedKeyData payload for signature.
  *
  * @param msaId                  MSA ID (uint64) to add the key
- * @param authorizedPublicKey    32 bytes public key to authorize in hex or Uint8Array
+ * @param newPublicKey           32 bytes public key to authorize in hex or Uint8Array
  * @param expirationBlock        Block number after which this payload is invalid
  */
 export function createAuthorizedKeyData(
@@ -244,24 +255,24 @@ export function createAuthorizedKeyData(
  * Build an AddProvider payload for signature.
  *
  * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
- * @param schemaIds       One or more schema IDs (uint16) the provider may use
+ * @param intentIds       One or more schema IDs (uint16) the provider may use
  * @param expirationBlock Block number after which this payload is invalid
  */
 export function createAddProvider(
   authorizedMsaId: string | bigint,
-  schemaIds: number[],
+  intentIds: number[],
   expirationBlock: number
 ): AddProvider {
   assert(isValidUint64String(authorizedMsaId), 'authorizedMsaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
-  schemaIds.forEach((schemaId) => {
-    assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
+  intentIds.forEach((intentId) => {
+    assert(isValidUint16(intentId), 'intentId should be a valid uint16');
   });
 
   return {
     type: 'AddProvider',
     authorizedMsaId: authorizedMsaId.toString(),
-    schemaIds,
+    intentIds,
     expiration: expirationBlock,
   };
 }
@@ -332,6 +343,19 @@ export function createItemizedAddAction(data: HexString | Uint8Array): AddItemiz
 }
 
 /**
+ * Build V2 AddAction payload for Itemized storage.
+ *
+ * @param data The data to be persisted on the Frequency chain
+ */
+export function createItemizedAddActionV2(schemaId: number, data: HexString | Uint8Array): AddItemizedActionV2 {
+  const parsedData: HexString = typeof data === 'object' ? u8aToHex(data) : data;
+  assert(isHexString(parsedData), 'itemized data should be valid hex');
+  // since Metamask does not support union types, we have to include all fields and have to set the `index` value to zero
+  // even though it is not used for Add action
+  return { actionType: 'Add', schemaId, data, index: 0 } as AddItemizedActionV2;
+}
+
+/**
  * Build DeleteAction payload for Itemized storage.
  *
  * @param index The index of the item that we want to remove from the Frequency chain
@@ -342,6 +366,19 @@ export function createItemizedDeleteAction(index: number): DeleteItemizedAction 
   // since Metamask does not support union types, we have to include all fields and have to set the `data` value to 0x
   // even though it is not used for Delete action
   return { actionType: 'Delete', data: '0x', index };
+}
+
+/**
+ * Build V2 DeleteAction payload for Itemized storage.
+ *
+ * @param index The index of the item that we want to remove from the Frequency chain
+ */
+export function createItemizedDeleteActionV2(index: number): DeleteItemizedActionV2 {
+  assert(isValidUint16(index), 'itemized index should be a valid uint16');
+
+  // since Metamask does not support union types, we have to include all fields and have to set the `data` value to 0x
+  // even though it is not used for Delete action
+  return { actionType: 'Delete', schemaId: 0, data: '0x', index };
 }
 
 /**
@@ -373,6 +410,34 @@ export function createItemizedSignaturePayloadV2(
 }
 
 /**
+ * Build an ItemizedSignaturePayloadV3 for signing.
+ *
+ * @param intentId   uint16 schema identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param actions    Array of Add/Delete itemized actions
+ */
+export function createItemizedSignaturePayloadV3(
+  intentId: number,
+  targetHash: number,
+  expiration: number,
+  actions: ItemizedActionV2[]
+): ItemizedSignaturePayloadV3 {
+  assert(isValidUint16(intentId), 'intentId should be a valid uint16');
+  assert(isValidUint32(targetHash), 'targetHash should be a valid uint32');
+  assert(isValidUint32(expiration), 'expiration should be a valid uint32');
+  assert(actions.length > 0, 'At least one action is required for ItemizedSignaturePayloadV3');
+
+  return {
+    type: 'ItemizedSignaturePayloadV3',
+    intentId,
+    targetHash,
+    expiration,
+    actions,
+  };
+}
+
+/**
  * Build a PaginatedDeleteSignaturePayloadV2 for signing.
  *
  * @param schemaId   uint16 schema identifier
@@ -394,6 +459,34 @@ export function createPaginatedDeleteSignaturePayloadV2(
   return {
     type: 'PaginatedDeleteSignaturePayloadV2',
     schemaId,
+    pageId,
+    targetHash,
+    expiration,
+  };
+}
+
+/**
+ * Build a PaginatedDeleteSignaturePayloadV2 for signing.
+ *
+ * @param intentId   uint16 schema identifier
+ * @param pageId     uint16 page identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ */
+export function createPaginatedDeleteSignaturePayloadV3(
+  intentId: number,
+  pageId: number,
+  targetHash: number,
+  expiration: number
+): PaginatedDeleteSignaturePayloadV3 {
+  assert(isValidUint16(intentId), 'intentId should be a valid uint16');
+  assert(isValidUint16(pageId), 'pageId should be a valid uint16');
+  assert(isValidUint32(targetHash), 'targetHash should be a valid uint32');
+  assert(isValidUint32(expiration), 'expiration should be a valid uint32');
+
+  return {
+    type: 'PaginatedDeleteSignaturePayloadV3',
+    intentId,
     pageId,
     targetHash,
     expiration,
@@ -512,17 +605,17 @@ export function getEip712BrowserRequestAuthorizedKeyData(
  * Returns the EIP-712 browser request for a AddProvider for signing.
  *
  * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
- * @param schemaIds       One or more schema IDs (uint16) the provider may use
+ * @param intentIds       One or more schema IDs (uint16) the provider may use
  * @param expirationBlock Block number after which this payload is invalid
  * @param domain
  */
 export function getEip712BrowserRequestAddProvider(
   authorizedMsaId: string | bigint,
-  schemaIds: number[],
+  intentIds: number[],
   expirationBlock: number,
   domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
-  const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
+  const message = createAddProvider(authorizedMsaId, intentIds, expirationBlock);
   const normalized = normalizePayload(message);
   return createEip712Payload(ADD_PROVIDER_DEFINITION, message.type, domain, normalized);
 }
@@ -589,6 +682,27 @@ export function getEip712BrowserRequestPaginatedDeleteSignaturePayloadV2(
 }
 
 /**
+ * Returns the EIP-712 browser request for a PaginatedDeleteSignaturePayloadV3 for signing.
+ *
+ * @param intentId   uint16 schema identifier
+ * @param pageId     uint16 page identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param domain
+ */
+export function getEip712BrowserRequestPaginatedDeleteSignaturePayloadV3(
+  intentId: number,
+  pageId: number,
+  targetHash: number,
+  expiration: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
+): unknown {
+  const message = createPaginatedDeleteSignaturePayloadV3(intentId, pageId, targetHash, expiration);
+  const normalized = normalizePayload(message);
+  return createEip712Payload(PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V3, message.type, domain, normalized);
+}
+
+/**
  * Returns the EIP-712 browser request for a ItemizedSignaturePayloadV2 for signing.
  *
  * @param schemaId   uint16 schema identifier
@@ -607,6 +721,27 @@ export function getEip712BrowserRequestItemizedSignaturePayloadV2(
   const message = createItemizedSignaturePayloadV2(schemaId, targetHash, expiration, actions);
   const normalized = normalizePayload(message);
   return createEip712Payload(ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2, message.type, domain, normalized);
+}
+
+/**
+ * Returns the EIP-712 browser request for a ItemizedSignaturePayloadV2 for signing.
+ *
+ * @param intentId   uint16 schema identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param actions    Array of Add/Delete itemized actions
+ * @param domain
+ */
+export function getEip712BrowserRequestItemizedSignaturePayloadV3(
+  intentId: number,
+  targetHash: number,
+  expiration: number,
+  actions: ItemizedActionV2[],
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
+): unknown {
+  const message = createItemizedSignaturePayloadV3(intentId, targetHash, expiration, actions);
+  const normalized = normalizePayload(message);
+  return createEip712Payload(ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V3, message.type, domain, normalized);
 }
 
 /**

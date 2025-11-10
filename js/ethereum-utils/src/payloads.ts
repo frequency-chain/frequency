@@ -58,6 +58,19 @@ export interface PaginatedDeleteSignaturePayloadV2 {
   expiration: number;
 }
 
+export interface PaginatedDeleteSignaturePayloadV3 {
+  // type discriminator
+  type: 'PaginatedDeleteSignaturePayloadV3';
+  // uint16 type intent id
+  intentId: number;
+  // uint16 type page id
+  pageId: number;
+  // uint32 type page hash
+  targetHash: number;
+  // uint32 type payload expiration block number
+  expiration: number;
+}
+
 export interface AddItemizedAction {
   // action item type
   actionType: 'Add';
@@ -66,7 +79,6 @@ export interface AddItemizedAction {
   // uint16 type index related to Delete item
   index: 0;
 }
-
 export interface DeleteItemizedAction {
   // action item type
   actionType: 'Delete';
@@ -90,6 +102,43 @@ export interface ItemizedSignaturePayloadV2 {
   expiration: number;
   // itemized actions for this payload
   actions: ItemizedAction[];
+}
+
+export interface AddItemizedActionV2 {
+  // action item type
+  actionType: 'Add';
+  // schema id of the item
+  schemaId: number;
+  // data to be added
+  data: HexString;
+  // dummy item index (unused for Add)
+}
+
+export interface DeleteItemizedActionV2 {
+  // action item type
+  actionType: 'Delete';
+  // dummy data (not used for Delete)
+  data: '0x';
+  // dummy schema id (not used for Delete)
+  schemaId: 0;
+  // item index to be deleted
+  index: number;
+}
+
+// Create a union type of the two action types
+export type ItemizedActionV2 = AddItemizedActionV2 | DeleteItemizedActionV2;
+
+export interface ItemizedSignaturePayloadV3 {
+  // type discriminator
+  type: 'ItemizedSignaturePayloadV3';
+  // uint16 type intent id
+  intentId: number;
+  // uint32 type page hash
+  targetHash: number;
+  // uint32 type payload expiration block number
+  expiration: number;
+  // itemized actions for this payload
+  actions: ItemizedActionV2[];
 }
 
 export interface PasskeyPublicKey {
@@ -135,8 +184,8 @@ export interface AddProvider {
   type: 'AddProvider';
   // uint64 type MessageSourceId
   authorizedMsaId: string;
-  // uint16[] type schema ids
-  schemaIds: number[];
+  // uint16[] type intent ids
+  intentIds: number[];
   // uint32 type payload expiration block number
   expiration: number;
 }
@@ -171,7 +220,9 @@ export interface SiwfLoginRequestPayload {
 export type SupportedPayload =
   | PaginatedUpsertSignaturePayloadV2
   | PaginatedDeleteSignaturePayloadV2
+  | PaginatedDeleteSignaturePayloadV3
   | ItemizedSignaturePayloadV2
+  | ItemizedSignaturePayloadV3
   | PasskeyPublicKey
   | ClaimHandlePayload
   | AddKeyData
