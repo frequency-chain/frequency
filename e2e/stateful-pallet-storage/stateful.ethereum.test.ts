@@ -11,7 +11,10 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   getCurrentPaginatedHash,
   signPayload,
-  assertExtrinsicSucceededAndFeesPaid, getOrCreateIntentAndSchema,
+  assertExtrinsicSucceededAndFeesPaid,
+  getOrCreateIntentAndSchema,
+  generateItemizedActionsSignedPayloadV3,
+  generateItemizedActionsV2,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -114,17 +117,16 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
 
     it('provider should be able to call applyItemizedActionWithSignatureV3 and apply actions with Ethereum keys', async function () {
       const { payload, signature } = await generateItemizedActionsSignedPayloadV3(
-        generateItemizedActions([
-          { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency' },
+        generateItemizedActionsV2([
+          { schemaId: itemizedSchemaId, action: 'Add', value: 'Hello, world from Frequency' },
+          { schemaId: itemizedSchemaId, action: 'Add', value: 'Hello, world again from Frequency' },
         ]),
         itemizedIntentId,
-        itemizedSchemaId,
         ethereumDelegatorKeys,
         msa_id
       );
 
-      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV3(
         ethereumDelegatorKeys,
         undelegatedProviderKeys,
         signature,

@@ -16,7 +16,7 @@ import {
   EventMap,
   Extrinsic,
   ExtrinsicHelper,
-  ItemizedSignaturePayloadV2,
+  ItemizedSignaturePayloadV2, ItemizedSignaturePayloadV3,
   PaginatedDeleteSignaturePayloadV2,
   PaginatedUpsertSignaturePayloadV2,
   RecoveryCommitmentPayload,
@@ -202,10 +202,10 @@ export async function generateRecoveryCommitmentPayload(
 }
 
 export async function generateItemizedSignaturePayload(
-  payloadInputs: ItemizedSignaturePayloadV2,
+  payloadInputs: ItemizedSignaturePayloadV2 | ItemizedSignaturePayloadV3,
   expirationOffset: number = 100,
   blockNumber?: number
-): Promise<ItemizedSignaturePayloadV2> {
+): Promise<ItemizedSignaturePayloadV2 | ItemizedSignaturePayloadV3> {
   const { expiration, ...payload } = payloadInputs;
 
   return {
@@ -222,9 +222,20 @@ export function generateItemizedActions(items: { action: 'Add' | 'Update'; value
   });
 }
 
+export function generateItemizedActionsV2(items: { schemaId: AnyNumber, action: 'Add' | 'Update'; value: string }[]) {
+  return items.map(({ schemaId, action, value }) => {
+    const actionObj = {};
+    actionObj[action] = {
+      schemaId,
+      data: new Bytes(ExtrinsicHelper.api.registry, value)
+    };
+    return actionObj;
+  });
+}
+
 export async function generateItemizedActionsPayloadAndSignature(
-  payloadInput: ItemizedSignaturePayloadV2,
-  payloadType: 'PalletStatefulStorageItemizedSignaturePayloadV2',
+  payloadInput: ItemizedSignaturePayloadV2 | ItemizedSignaturePayloadV3,
+  payloadType: 'PalletStatefulStorageItemizedSignaturePayloadV2' | 'PalletStatefulStorageItemizedSignaturePayloadV3',
   signingKeys: KeyringPair
 ) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
@@ -268,7 +279,7 @@ export async function generateItemizedActionsSignedPayloadV3(
 
   return generateItemizedActionsPayloadAndSignature(
     payloadInput,
-    'PalletStatefulStorageItemizedSignaturePayloadV2',
+    'PalletStatefulStorageItemizedSignaturePayloadV3',
     signingKeys
   );
 }

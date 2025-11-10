@@ -225,7 +225,7 @@ describe('Sudo required', function () {
           target_hash
         );
         await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
-          name: 'UnsupportedOperationForSchema',
+          name: 'UnsupportedOperationForIntent',
           section: 'statefulStorage',
         });
       });

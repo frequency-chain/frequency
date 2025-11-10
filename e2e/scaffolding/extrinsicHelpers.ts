@@ -917,6 +917,24 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static applyItemActionsWithSignatureV3(
+    delegatorKeys: KeyringPair,
+    providerKeys: KeyringPair,
+    signature: MultiSignatureType,
+    payload: ItemizedSignaturePayloadV3
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignatureV3(
+          getUnifiedPublicKey(delegatorKeys),
+          signature,
+          payload
+        ),
+      providerKeys,
+      ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated
+    );
+  }
+
   public static deletePageWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,

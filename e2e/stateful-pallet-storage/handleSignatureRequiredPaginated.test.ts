@@ -252,7 +252,7 @@ describe('📗 Stateful Pallet Storage Signature Required Paginated', function (
       page_id,
       target_hash
     );
-    await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
+    await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForIntent' });
   });
 
   // Fails to emit event but appears to pass
