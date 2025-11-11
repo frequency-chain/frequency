@@ -9,7 +9,10 @@ import {
   DOLLARS,
   getOrCreateAvroChatMessagePaginatedSchema,
   assertExtrinsicSucceededAndFeesPaid,
-  createAndFundKeypair, getOrCreateIntentAndSchema, assertExtrinsicSuccess, assertEvent,
+  createAndFundKeypair,
+  getOrCreateIntentAndSchema,
+  assertExtrinsicSuccess,
+  assertEvent,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';

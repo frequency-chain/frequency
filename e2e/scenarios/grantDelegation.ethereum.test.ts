@@ -9,7 +9,8 @@ import {
   createAndFundKeypairs,
   generateDelegationPayload,
   generateValidProviderPayloadWithName,
-  signPayload, getOrCreateIntentAndSchema,
+  signPayload,
+  getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -78,8 +79,18 @@ describe('Delegation Scenario Tests Ethereum', function () {
       ],
     };
 
-    ({ intentId, schemaId } = await getOrCreateIntentAndSchema(keys, 'test.grantDelegation', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }));
-    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateIntentAndSchema(keys, 'test.grantDelegationSecond', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }));
+    ({ intentId, schemaId } = await getOrCreateIntentAndSchema(
+      keys,
+      'test.grantDelegation',
+      { payloadLocation: 'OnChain', settings: [] },
+      { model: schema, modelType: 'AvroBinary' }
+    ));
+    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateIntentAndSchema(
+      keys,
+      'test.grantDelegationSecond',
+      { payloadLocation: 'OnChain', settings: [] },
+      { model: schema, modelType: 'AvroBinary' }
+    ));
   });
 
   describe('delegation grants for a Ethereum key', function () {

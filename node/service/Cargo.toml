@@ -78,6 +78,7 @@ pallet-messages-rpc = { path = "../../pallets/messages/src/rpc" }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api" }
 pallet-msa-rpc = { path = "../../pallets/msa/src/rpc" }
 pallet-msa-runtime-api = { path = "../../pallets/msa/src/runtime-api" }
+pallet-schemas-rpc = { path = "../../pallets/schemas/src/rpc" }
 pallet-schemas-runtime-api = { path = "../../pallets/schemas/src/runtime-api" }
 pallet-stateful-storage-rpc = { path = "../../pallets/stateful-storage/src/rpc" }
 pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api" }

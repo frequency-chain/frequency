@@ -46,7 +46,12 @@ describe('Add Offchain Message', function () {
       // Create a dummy on-chain schema
       { schemaId: dummySchemaId },
     ] = await Promise.all([
-      getOrCreateIntentAndSchema(fundingSource, 'test.addIPFSMessage', { payloadLocation: "IPFS", settings: [] }, { model: PARQUET_BROADCAST, modelType: "Parquet" }),
+      getOrCreateIntentAndSchema(
+        fundingSource,
+        'test.addIPFSMessage',
+        { payloadLocation: 'IPFS', settings: [] },
+        { model: PARQUET_BROADCAST, modelType: 'Parquet' }
+      ),
       getOrCreateDummySchema(fundingSource),
       // Create a new MSA
       ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),

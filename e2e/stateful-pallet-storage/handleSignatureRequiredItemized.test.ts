@@ -10,7 +10,8 @@ import {
   getCurrentItemizedHash,
   assertExtrinsicSucceededAndFeesPaid,
   createAndFundKeypair,
-  MultiSignatureType, getOrCreateIntentAndSchema,
+  MultiSignatureType,
+  getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper, ItemizedSignaturePayloadV2 } from '../scaffolding/extrinsicHelpers';

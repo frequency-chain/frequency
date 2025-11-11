@@ -11,7 +11,8 @@ import {
   createMsaAndProvider,
   generateDelegationPayload,
   getBlockNumber,
-  signPayloadSr25519, getOrCreateIntentAndSchema,
+  signPayloadSr25519,
+  getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { SchemaGrantResponse } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -48,10 +49,16 @@ describe('Delegation Scenario Tests: Revocation', function () {
       ],
     };
 
-    let msaCreatedEvent1;
+    let msaCreatedEvent1: any;
+    // eslint-disable-next-line prefer-const
     [{ target: msaCreatedEvent1 }, { intentId }] = await Promise.all([
       ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
-      getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegation', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
+      getOrCreateIntentAndSchema(
+        fundingSource,
+        'test.grantDelegation',
+        { payloadLocation: 'OnChain', settings: [] },
+        { model: schema, modelType: 'AvroBinary' }
+      ),
     ]);
     msaId = msaCreatedEvent1!.data.msaId;
 

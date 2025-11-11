@@ -18,8 +18,8 @@ let fundingSource: KeyringPair;
 describe('#schemas pallet tests', function () {
   let keys: KeyringPair;
   let accountWithNoFunds: KeyringPair;
-  const createdIntents: { intentId: number, intentName: string, schemaIds: number[] }[] = [];
-  const createdIntentGroups: { intentGroupId: number, intentIds: number[], intentGroupName: string }[] = [];
+  const createdIntents: { intentId: number; intentName: string; schemaIds: number[] }[] = [];
+  const createdIntentGroups: { intentGroupId: number; intentIds: number[]; intentGroupName: string }[] = [];
 
   before(async function () {
     fundingSource = await getFundingSource(import.meta.url);
@@ -39,8 +39,7 @@ describe('#schemas pallet tests', function () {
   describe('intents', function () {
     it('create intent should fail if account does not have enough tokens', async function () {
       await assert.rejects(
-        ExtrinsicHelper.createIntent(accountWithNoFunds, 'OnChain', [], 'unk.random_name'
-        ).signAndSend('current'),
+        ExtrinsicHelper.createIntent(accountWithNoFunds, 'OnChain', [], 'unk.random_name').signAndSend('current')
       );
     });
 
@@ -84,7 +83,11 @@ describe('#schemas pallet tests', function () {
       const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], intentName);
       const { target: createIntentEvent, eventMap } = await f.fundAndSend(fundingSource);
       if (createIntentEvent && ExtrinsicHelper.apiPromise.events.schemas.IntentCreated.is(createIntentEvent)) {
-        createdIntents.push({ intentId: createIntentEvent.data.intentId.toNumber(), intentName: createIntentEvent.data.intentName.toString(), schemaIds: [] });
+        createdIntents.push({
+          intentId: createIntentEvent.data.intentId.toNumber(),
+          intentName: createIntentEvent.data.intentName.toString(),
+          schemaIds: [],
+        });
       }
 
       assertExtrinsicSuccess(eventMap);
@@ -96,7 +99,11 @@ describe('#schemas pallet tests', function () {
       const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], intentName);
       const { target: createIntentEvent, eventMap } = await f.fundAndSend(fundingSource);
       if (createIntentEvent && ExtrinsicHelper.apiPromise.events.schemas.IntentCreated.is(createIntentEvent)) {
-        createdIntents.push({ intentId: createIntentEvent.data.intentId.toNumber(), intentName: createIntentEvent.data.intentName.toString(), schemaIds: [] });
+        createdIntents.push({
+          intentId: createIntentEvent.data.intentId.toNumber(),
+          intentName: createIntentEvent.data.intentName.toString(),
+          schemaIds: [],
+        });
       }
 
       assertExtrinsicSuccess(eventMap);
@@ -111,12 +118,7 @@ describe('#schemas pallet tests', function () {
   describe('schemas', function () {
     it('should fail if account does not have enough tokens v4', async function () {
       await assert.rejects(
-        ExtrinsicHelper.createSchemaV4(
-          accountWithNoFunds,
-          1,
-          AVRO_GRAPH_CHANGE,
-          'AvroBinary',
-        ).signAndSend('current'),
+        ExtrinsicHelper.createSchemaV4(accountWithNoFunds, 1, AVRO_GRAPH_CHANGE, 'AvroBinary').signAndSend('current'),
         {
           name: 'RpcError',
           message: /Inability to pay some fees/,
@@ -125,7 +127,7 @@ describe('#schemas pallet tests', function () {
     });
 
     it('should fail to create a schema with a non-existent intent id', async function () {
-      const f = ExtrinsicHelper.createSchemaV4(keys, 2**16 - 1, AVRO_GRAPH_CHANGE, 'AvroBinary');
+      const f = ExtrinsicHelper.createSchemaV4(keys, 2 ** 16 - 1, AVRO_GRAPH_CHANGE, 'AvroBinary');
 
       await assert.rejects(f.fundAndSend(fundingSource), {
         name: 'InvalidIntentId',
@@ -190,17 +192,25 @@ describe('#schemas pallet tests', function () {
         createdIntents[0].schemaIds = [schemaCreatedEvent.data.schemaId.toNumber()];
       }
 
-      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentById(createdIntents[0].intentId, true);
+      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentById(
+        createdIntents[0].intentId,
+        true
+      );
       assert(response.isSome);
       assert(response.unwrap().schemaIds.isSome);
-      assert(response.unwrap().schemaIds.unwrap().some(s => s.toNumber() === createdIntents[0].schemaIds[0]));
+      assert(
+        response
+          .unwrap()
+          .schemaIds.unwrap()
+          .some((s) => s.toNumber() === createdIntents[0].schemaIds[0])
+      );
     });
   });
 
-  describe('context groups', function (){
+  describe('context groups', function () {
     it('should fail to create an intent group with an invalid intent id', async function () {
       const intentGroupName = 'e-e.' + generateSchemaPartialName(20);
-      const f = ExtrinsicHelper.createIntentGroup(keys, [createdIntents[0].intentId, 2**16 - 1], intentGroupName);
+      const f = ExtrinsicHelper.createIntentGroup(keys, [createdIntents[0].intentId, 2 ** 16 - 1], intentGroupName);
 
       await assert.rejects(f.fundAndSend(fundingSource), {
         name: 'InvalidIntentId',
@@ -212,8 +222,15 @@ describe('#schemas pallet tests', function () {
       const f = ExtrinsicHelper.createIntentGroup(keys, [createdIntents[0].intentId], intentGroupName);
 
       const { target: createIntentGroupEvent, eventMap } = await f.fundAndSend(fundingSource);
-      if (createIntentGroupEvent && ExtrinsicHelper.apiPromise.events.schemas.IntentGroupCreated.is(createIntentGroupEvent)) {
-        createdIntentGroups.push({ intentGroupId: createIntentGroupEvent.data.intentGroupId.toNumber(), intentGroupName, intentIds: [createdIntents[0].intentId] });
+      if (
+        createIntentGroupEvent &&
+        ExtrinsicHelper.apiPromise.events.schemas.IntentGroupCreated.is(createIntentGroupEvent)
+      ) {
+        createdIntentGroups.push({
+          intentGroupId: createIntentGroupEvent.data.intentGroupId.toNumber(),
+          intentGroupName,
+          intentIds: [createdIntents[0].intentId],
+        });
       }
 
       assertExtrinsicSuccess(eventMap);
@@ -221,7 +238,7 @@ describe('#schemas pallet tests', function () {
     });
 
     it('should fail to update a non-existent intent group', async function () {
-      const f = ExtrinsicHelper.updateIntentGroup(keys, 2**16 - 1, [createdIntents[1].intentId]);
+      const f = ExtrinsicHelper.updateIntentGroup(keys, 2 ** 16 - 1, [createdIntents[1].intentId]);
 
       await assert.rejects(f.fundAndSend(fundingSource), {
         name: 'InvalidIntentGroupId',
@@ -229,7 +246,10 @@ describe('#schemas pallet tests', function () {
     });
 
     it('should fail to update an intent group with an invalid intent id', async function () {
-      const f = ExtrinsicHelper.updateIntentGroup(keys, createdIntentGroups[0].intentGroupId, [createdIntents[0].intentId, 2**16 - 1]);
+      const f = ExtrinsicHelper.updateIntentGroup(keys, createdIntentGroups[0].intentGroupId, [
+        createdIntents[0].intentId,
+        2 ** 16 - 1,
+      ]);
 
       await assert.rejects(f.fundAndSend(fundingSource), {
         name: 'InvalidIntentId',
@@ -237,14 +257,16 @@ describe('#schemas pallet tests', function () {
     });
 
     it('should successfully update an existing intent group', async function () {
-      const intentIds = [...createdIntents.map(intent => intent.intentId)];
+      const intentIds = [...createdIntents.map((intent) => intent.intentId)];
       const f = ExtrinsicHelper.updateIntentGroup(keys, createdIntentGroups[0].intentGroupId, intentIds);
       const { target: updateIntentGroupEvent, eventMap } = await f.fundAndSend(fundingSource);
 
       assertExtrinsicSuccess(eventMap);
       assert.notEqual(updateIntentGroupEvent, undefined);
 
-      const intentGroup = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentGroupById(createdIntentGroups[0].intentGroupId);
+      const intentGroup = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentGroupById(
+        createdIntentGroups[0].intentGroupId
+      );
       assert(intentGroup.isSome);
       intentGroup.unwrap().intentIds.forEach((intentId) => assert(intentIds.includes(intentId.toNumber())));
       createdIntentGroups[0].intentIds = intentIds;
@@ -259,31 +281,45 @@ describe('#schemas pallet tests', function () {
       assert(versions.isSome);
       const versions_response_value = versions.unwrap();
       assert(versions_response_value.length > 3);
-      const intents = versions_response_value.filter(v => v.entityId.isIntent).map(v => v.entityId.asIntent.toNumber());
-      const intentGroups = versions_response_value.filter(v => v.entityId.isIntentGroup).map(v => v.entityId.asIntentGroup.toNumber());
+      const intents = versions_response_value
+        .filter((v) => v.entityId.isIntent)
+        .map((v) => v.entityId.asIntent.toNumber());
+      const intentGroups = versions_response_value
+        .filter((v) => v.entityId.isIntentGroup)
+        .map((v) => v.entityId.asIntentGroup.toNumber());
       createdIntents.forEach((intent) => {
-        assert(intents.some(i => i === intent.intentId));
+        assert(intents.some((i) => i === intent.intentId));
       });
       createdIntentGroups.forEach((intentGroup) => {
-        assert(intentGroups.some(i => i === intentGroup.intentGroupId));
+        assert(intentGroups.some((i) => i === intentGroup.intentGroupId));
       });
     });
 
     it('get intent by id should return the correct intent', async function () {
-      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentById(createdIntents[0].intentId, true);
+      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentById(
+        createdIntents[0].intentId,
+        true
+      );
       assert(response.isSome);
       assert(response.unwrap().intentId.toNumber() === createdIntents[0].intentId);
     });
 
     it('get intent group by id should return the correct intent group', async function () {
-      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentGroupById(createdIntentGroups[0].intentGroupId);
+      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentGroupById(
+        createdIntentGroups[0].intentGroupId
+      );
       assert(response.isSome);
       assert(response.unwrap().intentGroupId.toNumber() === createdIntentGroups[0].intentGroupId);
-      assert.deepEqual(new Set(response.unwrap().intentIds.map(id => id.toNumber())), new Set(createdIntentGroups[0].intentIds));
+      assert.deepEqual(
+        new Set(response.unwrap().intentIds.map((id) => id.toNumber())),
+        new Set(createdIntentGroups[0].intentIds)
+      );
     });
 
     it('get schema by id should return the correct schema', async function () {
-      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getSchemaById(createdIntents[0].schemaIds[0]);
+      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getSchemaById(
+        createdIntents[0].schemaIds[0]
+      );
       assert(response.isSome);
       assert(response.unwrap().schemaId.toNumber() === createdIntents[0].schemaIds[0]);
       assert(response.unwrap().intentId.toNumber() === createdIntents[0].intentId);
@@ -291,9 +327,14 @@ describe('#schemas pallet tests', function () {
 
     // Deprecated runtime API--should get removed in a future version
     it('get schema versions by name should return the correct schema versions', async function () {
-      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getSchemaVersionsByName(createdIntents[0].intentName);
+      const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getSchemaVersionsByName(
+        createdIntents[0].intentName
+      );
       assert(response.isSome);
-      const schemaVersion = response.unwrap().toArray().filter(v => v.schemaId.toNumber() === createdIntents[0].schemaIds[0]);
+      const schemaVersion = response
+        .unwrap()
+        .toArray()
+        .filter((v) => v.schemaId.toNumber() === createdIntents[0].schemaIds[0]);
       assert(schemaVersion.length === 1);
       assert(schemaVersion[0].schemaId.toNumber() === createdIntents[0].schemaIds[0]);
       assert(schemaVersion[0].schemaVersion.toNumber() === 1);

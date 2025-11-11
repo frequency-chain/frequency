@@ -69,6 +69,7 @@ where
 	use pallet_handles_rpc::{HandlesApiServer, HandlesHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
+	use pallet_schemas_rpc::{SchemasApiServer, SchemasHandler};
 	use pallet_stateful_storage_rpc::{StatefulStorageApiServer, StatefulStorageHandler};
 
 	let mut module = RpcExtension::new(());
@@ -77,6 +78,7 @@ where
 	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
+	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
 	module.merge(MsaHandler::new(client.clone(), offchain).into_rpc())?;
 	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;

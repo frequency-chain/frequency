@@ -4473,6 +4473,7 @@ dependencies = [
  "pallet-messages-runtime-api",
  "pallet-msa-rpc",
  "pallet-msa-runtime-api",
+ "pallet-schemas-rpc",
  "pallet-schemas-runtime-api",
  "pallet-stateful-storage-rpc",
  "pallet-stateful-storage-runtime-api",
@@ -8780,6 +8781,21 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+]
+
+[[package]]
+name = "pallet-schemas-rpc"
+version = "0.0.0"
+dependencies = [
+ "common-helpers",
+ "common-primitives",
+ "jsonrpsee",
+ "pallet-schemas-runtime-api",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+ "tokio",
 ]
 
 [[package]]

@@ -245,7 +245,10 @@ describe('Signature related tests', function () {
     });
 
     it('should create a valid signature for ItemizedSignaturePayloadV3', async function () {
-      const addAction = createItemizedAddActionV2(10, '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026');
+      const addAction = createItemizedAddActionV2(
+        10,
+        '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026'
+      );
       const deleteAction = createItemizedDeleteActionV2(2);
       const actions = [addAction, deleteAction];
       const payload1 = createItemizedSignaturePayloadV3(10, 1982672367, 100, actions);

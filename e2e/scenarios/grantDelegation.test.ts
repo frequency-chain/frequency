@@ -8,9 +8,9 @@ import {
   createAndFundKeypairs,
   createMsaAndProvider,
   generateDelegationPayload,
-  signPayloadSr25519, getOrCreateIntentAndSchema,
+  signPayloadSr25519,
+  getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
-import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
 let fundingSource: KeyringPair;
@@ -21,9 +21,7 @@ describe('Delegation Scenario Tests', function () {
   let thirdMsaKeys: KeyringPair;
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
-  let schemaId: u16;
   let intentId: u16;
-  let schemaId2: SchemaId;
   let intentId2: u16;
   let providerId: u64;
   let otherProviderId: u64;
@@ -51,16 +49,33 @@ describe('Delegation Scenario Tests', function () {
       ],
     };
 
-    let msaCreatedEvent1, msaCreatedEvent2, msaCreatedEvent3;
-    // eslint-disable-next-line prefer-const
-    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { target: msaCreatedEvent3 }, { intentId, schemaId }, { intentId: intentId2, schemaId: schemaId2 }] =
-      await Promise.all([
-        ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
-        ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource),
-        ExtrinsicHelper.createMsa(thirdMsaKeys).fundAndSend(fundingSource),
-        getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegation', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
-        getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegationSecond', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
-      ]);
+    let msaCreatedEvent1: any, msaCreatedEvent2: any, msaCreatedEvent3: any;
+
+    [
+      /* eslint-disable prefer-const */
+      { target: msaCreatedEvent1 },
+      { target: msaCreatedEvent2 },
+      { target: msaCreatedEvent3 },
+      /* eslint-enable prefer-const */
+      { intentId },
+      { intentId: intentId2 },
+    ] = await Promise.all([
+      ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
+      ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource),
+      ExtrinsicHelper.createMsa(thirdMsaKeys).fundAndSend(fundingSource),
+      getOrCreateIntentAndSchema(
+        fundingSource,
+        'test.grantDelegation',
+        { payloadLocation: 'OnChain', settings: [] },
+        { model: schema, modelType: 'AvroBinary' }
+      ),
+      getOrCreateIntentAndSchema(
+        fundingSource,
+        'test.grantDelegationSecond',
+        { payloadLocation: 'OnChain', settings: [] },
+        { model: schema, modelType: 'AvroBinary' }
+      ),
+    ]);
     msaId = msaCreatedEvent1!.data.msaId;
     otherMsaId = msaCreatedEvent2!.data.msaId;
     thirdMsaId = msaCreatedEvent3!.data.msaId;

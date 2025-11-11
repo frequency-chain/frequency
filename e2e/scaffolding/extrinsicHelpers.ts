@@ -5,7 +5,12 @@ import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Result } from '@polkadot/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkadot/types';
-import { CommonPrimitivesStatefulStoragePaginatedStorageResponseV2, CommonPrimitivesStatefulStorageItemizedStoragePageResponseV2, FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
+import {
+  CommonPrimitivesStatefulStoragePaginatedStorageResponseV2,
+  CommonPrimitivesStatefulStorageItemizedStoragePageResponseV2,
+  FrameSystemAccountInfo,
+  SpRuntimeDispatchError,
+} from '@polkadot/types/lookup';
 import type { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import {
@@ -21,7 +26,9 @@ import { connect, connectPromise } from './apiConnection';
 import type { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
 import { IsEvent } from '@polkadot/types/metadata/decorate/types';
 import {
-  HandleResponse, IntentId, IntentResponse,
+  HandleResponse,
+  IntentId,
+  IntentResponse,
   ItemizedStoragePageResponse,
   MessageSourceId,
   PaginatedStorageResponse,
@@ -473,12 +480,11 @@ export class ExtrinsicHelper {
       return registeredEntities[registeredEntities.length - 1];
     }
     // Not found? Create it!
-    const { target: event } = await ExtrinsicHelper.createIntent(
-      keys,
-      payloadLocation,
-      grant,
-      intentName
-    ).signAndSend(undefined, undefined, false);
+    const { target: event } = await ExtrinsicHelper.createIntent(keys, payloadLocation, grant, intentName).signAndSend(
+      undefined,
+      undefined,
+      false
+    );
     if (event?.data.intentId) {
       return event.data.intentId;
     }
@@ -493,45 +499,24 @@ export class ExtrinsicHelper {
     intentName: string
   ) {
     return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.schemas.createIntent(
-          intentName,
-          payloadLocation,
-          settings,
-        ),
+      () => ExtrinsicHelper.api.tx.schemas.createIntent(intentName, payloadLocation, settings),
       keys,
       ExtrinsicHelper.api.events.schemas.IntentCreated
     );
   }
 
   /** Create IntentGroup */
-  public static createIntentGroup(
-    keys: KeyringPair,
-    intentIds: AnyNumber[],
-    intentGroupName: string
-  ) {
+  public static createIntentGroup(keys: KeyringPair, intentIds: AnyNumber[], intentGroupName: string) {
     return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.schemas.createIntentGroup(
-          intentGroupName,
-          intentIds,
-        ),
+      () => ExtrinsicHelper.api.tx.schemas.createIntentGroup(intentGroupName, intentIds),
       keys,
       ExtrinsicHelper.api.events.schemas.IntentGroupCreated
     );
   }
 
-  public static updateIntentGroup(
-    keys: KeyringPair,
-    intentGroupId: AnyNumber,
-    intentIds: AnyNumber[],
-  ) {
+  public static updateIntentGroup(keys: KeyringPair, intentGroupId: AnyNumber, intentIds: AnyNumber[]) {
     return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.schemas.updateIntentGroup(
-          intentGroupId,
-          intentIds,
-        ),
+      () => ExtrinsicHelper.api.tx.schemas.updateIntentGroup(intentGroupId, intentIds),
       keys,
       ExtrinsicHelper.api.events.schemas.IntentGroupUpdated
     );
@@ -542,15 +527,10 @@ export class ExtrinsicHelper {
     keys: KeyringPair,
     intentId: AnyNumber,
     model: any,
-    modelType: 'AvroBinary' | 'Parquet',
+    modelType: 'AvroBinary' | 'Parquet'
   ) {
     return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.schemas.createSchemaV4(
-          intentId,
-          JSON.stringify(model),
-          modelType,
-        ),
+      () => ExtrinsicHelper.api.tx.schemas.createSchemaV4(intentId, JSON.stringify(model), modelType),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
     );
@@ -560,7 +540,7 @@ export class ExtrinsicHelper {
     keys: KeyringPair,
     payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
     settings: ('AppendOnly' | 'SignatureRequired')[],
-    intentName: string,
+    intentName: string
   ) {
     return new Extrinsic(
       () =>
@@ -568,7 +548,7 @@ export class ExtrinsicHelper {
           getUnifiedPublicKey(keys),
           payloadLocation,
           settings,
-          intentName,
+          intentName
         ),
       keys,
       ExtrinsicHelper.api.events.schemas.IntentCreated
@@ -580,7 +560,7 @@ export class ExtrinsicHelper {
     keys: KeyringPair,
     intentId: AnyNumber,
     model: any,
-    modelType: 'AvroBinary' | 'Parquet',
+    modelType: 'AvroBinary' | 'Parquet'
   ) {
     return new Extrinsic(
       () =>
@@ -588,7 +568,7 @@ export class ExtrinsicHelper {
           getUnifiedPublicKey(keys),
           intentId,
           JSON.stringify(model),
-          modelType,
+          modelType
         ),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
@@ -876,7 +856,13 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static removePage(keys: KeyringPair, intentId: AnyNumber, msa_id: MessageSourceId, page_id: AnyNumber, target_hash: any) {
+  public static removePage(
+    keys: KeyringPair,
+    intentId: AnyNumber,
+    msa_id: MessageSourceId,
+    page_id: AnyNumber,
+    target_hash: any
+  ) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.statefulStorage.deletePageV2(msa_id, intentId, page_id, target_hash),
       keys,
@@ -971,14 +957,24 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static async getItemizedStorage(msa_id: MessageSourceId, intentId: AnyNumber): Promise<CommonPrimitivesStatefulStorageItemizedStoragePageResponseV2> {
-    const result: Result<CommonPrimitivesStatefulStorageItemizedStoragePageResponseV2, any> = await ExtrinsicHelper.apiPromise.call.statefulStorageRuntimeApi.getItemizedStorageV2(msa_id, intentId);
+  public static async getItemizedStorage(
+    msa_id: MessageSourceId,
+    intentId: AnyNumber
+  ): Promise<CommonPrimitivesStatefulStorageItemizedStoragePageResponseV2> {
+    const result: Result<CommonPrimitivesStatefulStorageItemizedStoragePageResponseV2, any> =
+      await ExtrinsicHelper.apiPromise.call.statefulStorageRuntimeApi.getItemizedStorageV2(msa_id, intentId);
     assert(result.isOk);
     return result.asOk;
   }
 
-  public static async getPaginatedStorage(msa_id: MessageSourceId, intentId: AnyNumber): Promise<Vec<CommonPrimitivesStatefulStoragePaginatedStorageResponseV2>> {
-    const result: Result<Vec<CommonPrimitivesStatefulStoragePaginatedStorageResponseV2>, any> = await ExtrinsicHelper.apiPromise.call.statefulStorageRuntimeApi.getPaginatedStorageV2(msa_id, intentId);
+  public static async getPaginatedStorage(
+    msa_id: MessageSourceId,
+    intentId: AnyNumber
+  ): Promise<Vec<CommonPrimitivesStatefulStoragePaginatedStorageResponseV2>> {
+    const result: Result<
+      Vec<CommonPrimitivesStatefulStoragePaginatedStorageResponseV2>,
+      any
+    > = await ExtrinsicHelper.apiPromise.call.statefulStorageRuntimeApi.getPaginatedStorageV2(msa_id, intentId);
     assert(result.isOk);
     return result.asOk;
   }

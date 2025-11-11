@@ -58,16 +58,12 @@ use common_primitives::{
 	},
 };
 
-use common_primitives::{
-	schema::{IntentId, IntentResponse},
-};
+use common_primitives::schema::{IntentId, IntentResponse};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult},
 	ensure,
 	pallet_prelude::*,
-	traits::{
-		Get, IsSubType,
-	},
+	traits::{Get, IsSubType},
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;

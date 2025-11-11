@@ -11,7 +11,9 @@ import {
   signPayloadSr25519,
   assertExtrinsicSucceededAndFeesPaid,
   createMsa,
-  createAndFundKeypair, getOrCreateIntentAndSchema, assertExtrinsicSuccess,
+  createAndFundKeypair,
+  getOrCreateIntentAndSchema,
+  assertExtrinsicSuccess,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';

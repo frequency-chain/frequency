@@ -6,8 +6,9 @@ The Schemas Pallet provides universal schema registration for data flowing throu
 
 This pallet provides an on chain repository for Schemas, Intents, and IntentGroups, thereby allowing participants of the
 network to flexibly interact and exchange messages with each other with the correct human intent and data structure.
-All Messages and Stateful Storage content must be attached to a Schema Identifier so that the content can be correctly
-parsed and interpreted.
+All Messages and Stateful Storage content must be attached to both an Intent and a Schema Identifier so that the content
+can be correctly
+located, parsed, and interpreted.
 
 ## Data Structure vs Human Intent
 
@@ -15,6 +16,11 @@ Schemas provide for consistent data structures, while Intents encapsulate the hu
 Some schemas may be structurally the same, but have a different interpretation of the contents.
 For example, two schemas might both only have a hash for contents, but one is a recording of the hash for time
 validation purposes, while the other is to mark an off-chain vote.
+
+- _Intents_ designate the semantic meaning or _purpose_ of a payload, as well as designating its _location_.
+- _Schemas_ indicate how the data of a payload is to be parsed or interpreted. Many schemas can implement the same
+  Intent as a data format evolves over time, but the semantic meaning or purpose does not change, nor does the storage
+  lcoation.
 
 ## Groups
 
@@ -24,7 +30,8 @@ discovery by dApps to determine which Intents need to be requested as delegation
 ## Name Resolution
 
 Intents & Intent Groups can be looked up by name (Schemas cannot). Names are of the form `<protocol>.<descriptor>`.<br/>
-_NOTE: until the deprecated legacy RPCs are fully removed, Schemas can still be looked up by their associated Intent name using the `schemas_getVersions` RPC call or `SchemasPallet_get_schema_versions_by_name` runtime API._
+_NOTE: until all nodes implementing deprecated legacy RPCs are fully removed, Schemas can still be looked up by their associated Intent
+name using the `SchemasPallet_get_schema_versions_by_name` runtime API._.
 
 ## Structure
 
@@ -38,7 +45,8 @@ _NOTE: until the deprecated legacy RPCs are fully removed, Schemas can still be 
 - Model: The actual JSON representing the data structure.
 - Model Type: The type of serialization used. (Parquet, Avro, etc...)
 - Intent ID: The Intent that the Schema implements
-- _NOTE: The state storage for Schemas includes a copy of the associated Intent's `settings` and `payload_location`. This is an optimization introduced so that Intent storage does not need to be read when writing to a Schema._
+- _NOTE: The state storage for Schemas includes a copy of the associated Intent's `settings` and `payload_location`.
+  This is an optimization introduced so that Intent storage does not need to be read when writing to a Schema._
 
 #### Model Types
 
@@ -139,13 +147,10 @@ additional state queries and details.
 ### RPCs
 
 Note: May be restricted based on node settings and configuration.<br/>
-_RPCs have been marked deprecated and removed from the node as of runtime version `?`, Frequency release `1.17.?`, to be fully removed from the runtime once all RPC nodes have been upgraded to >= `1.17.?`. Existing nodes may continue to serve existing RPCs until upgraded._ 
 
 | Name                  | Description                                                         | Call                                                                                                                                               | Node Version |
 |-----------------------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
 | Get Schema by Id      | Retrieves the schema for the given Schema Id                        | [`getBySchemaId`](https://frequency-chain.github.io/frequency/pallet_schemas_rpc/trait.SchemasApiServer.html#tymethod.get_by_schema_id)            | v1.0.0+      |
-| Check Schema Validity | Validates a schema model and returns “true” if the model is correct | [`checkSchemaValidity`](https://frequency-chain.github.io/frequency/pallet_schemas_rpc/trait.SchemasApiServer.html#tymethod.check_schema_validity) | v1.0.0+      |
-| Get Schema Versions   | Returns an array of schema versions                                 | [`getVersions`](https://frequency-chain.github.io/frequency/pallet_schemas_rpc/trait.SchemasApiServer.html#tymethod.get_versions)                  | v1.10.0+     |
 
 \* Must be enabled with off-chain indexing
 
@@ -154,14 +159,14 @@ details.
 
 ### Runtime API
 
-| Name                                                     | Description                                                    | Call                          | API Version Added | Runtime Added |
-|----------------------------------------------------------|----------------------------------------------------------------|-------------------------------|-------------------|---------------|
-| Get Schema by Id _(deprecated)_                          | Retrieves the schema for the given Schema Id                   | `getBySchemaId`               | 1                 | 1             |
-| Get Schema by Id (version 2)                             | Retrieves the schema for the given SchemaId                    | `getSchemaById`               | 3                 | ?             |
-| Get Schema Versions by Name (_deprecated_)               | Retrieves the ordered list of Schema Ids for the given name(s) | `getSchemaVersionsByName`     | 2                 | 66            |
-| Get registered entities (Intent, IntentGroup) by Name    | Retrieves the entities belonging to the given name(s)          | `getRegisteredEntitiesByName` | 3                 | ?             |
-| Get Intent by Id                                         | Retrieves the Intent for the given IntentId                    | `getIntentById`               | 3                 | ?             |
-| Get IntentGroup by Id                                    | Retrieves the IntentGroup for the given IntentGroupId          | `getIntentGroupById`          | 3                 | ?             |
+| Name                                                  | Description                                                    | Call                          | API Version Added | Runtime Added |
+|-------------------------------------------------------|----------------------------------------------------------------|-------------------------------|-------------------|---------------|
+| Get Schema by Id _(deprecated)_                       | Retrieves the schema for the given Schema Id                   | `getBySchemaId`               | 1                 | 1             |
+| Get Schema by Id (version 2)                          | Retrieves the schema for the given SchemaId                    | `getSchemaById`               | 3                 | ?             |
+| Get Schema Versions by Name (_deprecated_)            | Retrieves the ordered list of Schema Ids for the given name(s) | `getSchemaVersionsByName`     | 2                 | 66            |
+| Get registered entities (Intent, IntentGroup) by Name | Retrieves the entities belonging to the given name(s)          | `getRegisteredEntitiesByName` | 3                 | ?             |
+| Get Intent by Id                                      | Retrieves the Intent for the given IntentId                    | `getIntentById`               | 3                 | ?             |
+| Get IntentGroup by Id                                 | Retrieves the IntentGroup for the given IntentGroupId          | `getIntentGroupById`          | 3                 | ?             |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html) for
 more details.

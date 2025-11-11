@@ -8,7 +8,8 @@ import {
   createAndFundKeypairs,
   createMsaAndProvider,
   generateDelegationPayload,
-  signPayloadSr25519, getOrCreateIntentAndSchema,
+  signPayloadSr25519,
+  getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
@@ -22,7 +23,6 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
   let intentId: u16;
-  let schemaId: u16;
   let providerId: u64;
   let otherProviderId: u64;
   let otherMsaId: u64;
@@ -49,11 +49,17 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
       ],
     };
 
-    let msaCreatedEvent1, msaCreatedEvent2;
-    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { intentId, schemaId }] = await Promise.all([
+    let _msaCreatedEvent1: any, msaCreatedEvent2: any;
+    // eslint-disable-next-line prefer-const
+    [{ target: _msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { intentId }] = await Promise.all([
       ExtrinsicHelper.createMsa(keys).signAndSend(),
       ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend(),
-      getOrCreateIntentAndSchema(fundingSource, 'test.grantDelegation', { payloadLocation: 'OnChain', settings: [] }, { model: schema, modelType: 'AvroBinary' }),
+      getOrCreateIntentAndSchema(
+        fundingSource,
+        'test.grantDelegation',
+        { payloadLocation: 'OnChain', settings: [] },
+        { model: schema, modelType: 'AvroBinary' }
+      ),
     ]);
 
     otherMsaId = msaCreatedEvent2!.data.msaId;

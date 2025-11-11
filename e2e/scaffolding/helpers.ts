@@ -1,14 +1,15 @@
 import { Keyring } from '@polkadot/api';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes, Result } from '@polkadot/types';
-import type { CommonPrimitivesStatefulStoragePaginatedStorageResponseV2, FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
+import type {
+  CommonPrimitivesStatefulStoragePaginatedStorageResponseV2,
+  FrameSystemAccountInfo,
+  PalletCapacityCapacityDetails,
+} from '@polkadot/types/lookup';
 import { AnyNumber, Codec } from '@polkadot/types/types';
 import { hexToU8a, u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
-import {
-  verbose,
-  getNamedIntentAndSchema,
-} from './env';
+import { verbose, getNamedIntentAndSchema } from './env';
 import {
   AddKeyData,
   AddProviderPayload,
@@ -16,7 +17,8 @@ import {
   EventMap,
   Extrinsic,
   ExtrinsicHelper,
-  ItemizedSignaturePayloadV2, ItemizedSignaturePayloadV3,
+  ItemizedSignaturePayloadV2,
+  ItemizedSignaturePayloadV3,
   PaginatedDeleteSignaturePayloadV2,
   PaginatedUpsertSignaturePayloadV2,
   RecoveryCommitmentPayload,
@@ -24,7 +26,8 @@ import {
 } from './extrinsicHelpers';
 import {
   BlockPaginationResponseMessage,
-  HandleResponse, IntentId,
+  HandleResponse,
+  IntentId,
   IntentSetting,
   MessageResponse,
   MessageSourceId,
@@ -222,12 +225,12 @@ export function generateItemizedActions(items: { action: 'Add' | 'Update'; value
   });
 }
 
-export function generateItemizedActionsV2(items: { schemaId: AnyNumber, action: 'Add' | 'Update'; value: string }[]) {
+export function generateItemizedActionsV2(items: { schemaId: AnyNumber; action: 'Add' | 'Update'; value: string }[]) {
   return items.map(({ schemaId, action, value }) => {
     const actionObj = {};
     actionObj[action] = {
       schemaId,
-      data: new Bytes(ExtrinsicHelper.api.registry, value)
+      data: new Bytes(ExtrinsicHelper.api.registry, value),
     };
     return actionObj;
   });
@@ -464,7 +467,11 @@ export async function getCurrentItemizedHash(msa_id: MessageSourceId, intentId: 
   return result.contentHash;
 }
 
-export async function getCurrentPaginatedHash(msa_id: MessageSourceId, intentId: AnyNumber, page_id: number): Promise<u32> {
+export async function getCurrentPaginatedHash(
+  msa_id: MessageSourceId,
+  intentId: AnyNumber,
+  page_id: number
+): Promise<u32> {
   const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, intentId);
   const page_response = result.toArray().filter((page) => page.pageId.toNumber() === page_id);
   if (page_response.length <= 0) {
@@ -608,7 +615,7 @@ export async function getOrCreateIntentAndSchema(
   source: KeyringPair,
   name: string,
   intentParameters: {
-    payloadLocation: 'OnChain' | 'IPFS' | 'Paginated' | 'Itemized',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Paginated' | 'Itemized';
     settings: IntentSetting['type'][];
   },
   schemaParameters: { model: any; modelType: ModelType['type'] }
@@ -616,7 +623,12 @@ export async function getOrCreateIntentAndSchema(
   let { intentId, schemaId } = await getNamedIntentAndSchema(name);
 
   if (!intentId) {
-    const intentOp = ExtrinsicHelper.createIntent(source, intentParameters.payloadLocation, intentParameters.settings, name);
+    const intentOp = ExtrinsicHelper.createIntent(
+      source,
+      intentParameters.payloadLocation,
+      intentParameters.settings,
+      name
+    );
     const { target: createIntentevent, eventMap } = await intentOp.fundAndSend(source, false);
     assertExtrinsicSuccess(eventMap);
     if (createIntentevent) {
@@ -638,21 +650,30 @@ export async function getOrCreateIntentAndSchema(
   }
 
   return { intentId, schemaId };
-
 }
 
 export function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<{ intentId: u16; schemaId: u16 }> {
-  return getOrCreateIntentAndSchema(source, 'test.graphChange', { payloadLocation: 'OnChain', settings: [] }, { model: AVRO_GRAPH_CHANGE, modelType: 'AvroBinary' });
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.graphChange',
+    { payloadLocation: 'OnChain', settings: [] },
+    { model: AVRO_GRAPH_CHANGE, modelType: 'AvroBinary' }
+  );
 }
 
 export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Promise<{
   intentId: u16;
   schemaId: u16;
 }> {
-  return getOrCreateIntentAndSchema(source, 'test.parquetBroadcast', { payloadLocation: 'IPFS', settings: [] }, { model: PARQUET_BROADCAST, modelType: 'Parquet' });
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.parquetBroadcast',
+    { payloadLocation: 'IPFS', settings: [] },
+    { model: PARQUET_BROADCAST, modelType: 'Parquet' }
+  );
 }
 
-export function getOrCreateDummySchema(source: KeyringPair): Promise<{ intentId: u16, schemaId: u16 }> {
+export function getOrCreateDummySchema(source: KeyringPair): Promise<{ intentId: u16; schemaId: u16 }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.dummySchema',
@@ -661,12 +682,26 @@ export function getOrCreateDummySchema(source: KeyringPair): Promise<{ intentId:
   );
 }
 
-export function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringPair): Promise<{ intentId: u16, schemaId: u16 }> {
-  return getOrCreateIntentAndSchema(source, 'test.AvroChatMessagePaginated', { payloadLocation: 'Paginated', settings: [] }, { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' });
+export function getOrCreateAvroChatMessagePaginatedSchema(
+  source: KeyringPair
+): Promise<{ intentId: u16; schemaId: u16 }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.AvroChatMessagePaginated',
+    { payloadLocation: 'Paginated', settings: [] },
+    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
+  );
 }
 
-export function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPair): Promise<{ intentId: u16, schemaId: u16 }> {
-  return getOrCreateIntentAndSchema(source, 'test.AvroChatMessageItemized', { payloadLocation: 'Itemized', settings: [] }, { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' });
+export function getOrCreateAvroChatMessageItemizedSchema(
+  source: KeyringPair
+): Promise<{ intentId: u16; schemaId: u16 }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.AvroChatMessageItemized',
+    { payloadLocation: 'Itemized', settings: [] },
+    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
+  );
 }
 
 export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
