@@ -136,14 +136,18 @@ format-js:
 
 format-all: format format-js
 
-.PHONY: lint lint-audit lint-fix lint-clippy
-lint:
+.PHONY: lint lint-fmt lint-docs lint-audit lint-fix lint-clippy
+
+lint: lint-fmt lint-clippy lint-docs
+
+lint-fmt:
 	cargo $(NIGHTLY) fmt --check
-	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
-	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
 lint-clippy:
 	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
+
+lint-docs:
+	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
 lint-audit:
 	cargo deny check -c deny.toml
@@ -437,6 +441,7 @@ check-onfinality-api-key:
 space := $(subst ,, )
 
 try-runtime-%: PALLET_FLAGS=$(if $(strip $(PALLETS)),$(PALLETS:%=-p %) $(MINIMAL_PALLETS:%=-p %),)
+try-runtime-%: PREFIX_FLAGS=$(if $(strip $(PREFIXES)),$(PREFIXES:%=--prefix %),)
 try-runtime-%: SNAPSHOT_PALLETS=$(if $(strip $(PALLETS)),$(subst  $(space),-,$(strip $(PALLETS))),all-pallets)
 try-runtime-%: CHILD_TREE_FLAGS=$(if $(filter true,$(CHILD_TREES)), --child-tree --prefix $(DEFAULT_CHILD_TREE_PREFIX),)
 try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: URI := $(PASEO_URI)
@@ -474,33 +479,33 @@ try-runtime-create-snapshot-local \
 try-runtime-create-snapshot-paseo-testnet \
 try-runtime-create-snapshot-westend-testnet \
 try-runtime-create-snapshot-mainnet: check-try-runtime-installed check-onfinality-api-key
-	try-runtime create-snapshot $(PALLET_FLAGS) $(CHILD_TREE_FLAGS) --uri $(URI) $(CHAIN)-$(SNAPSHOT_PALLETS).state
+	try-runtime create-snapshot $(PREFIX_FLAGS) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS) --uri $(URI) $(CHAIN)-$(SNAPSHOT_PALLETS).state
 
 
 .PHONY: try-runtime-upgrade-paseo-testnet try-runtime-upgrade-mainnet
 try-runtime-upgrade-paseo-testnet \
 try-runtime-upgrade-mainnet: try-runtime-upgrade-%: check-try-runtime-installed build-runtime-%
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 live $(PALLET_FLAGS) $(CHILD_TREE_FLAGS) --uri $(URI)
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 live $(PREFIX_FLAGS) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS) --uri $(URI)
 
 .PHONY: try-runtime-use-snapshot-paseo-testnet try-runtime-use-snapshot-mainnet try-runtime-use-snapshot-local
 try-runtime-use-snapshot-local \
 try-runtime-use-snapshot-paseo-testnet \
 try-runtime-use-snapshot-mainnet: try-runtime-use-snapshot-%: check-try-runtime-installed build-runtime-%
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --disable-spec-version-check snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --mbm-max-blocks=10000 --disable-spec-version-check snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
 
 .PHONY: try-runtime-check-migrations-paseo-testnet try-runtime-check-migrations-bridging-testnet try-runtime-check-migrations-westend-testnet
 try-runtime-check-migrations-paseo-testnet \
 try-runtime-check-migrations-bridging-testnet \
 try-runtime-check-migrations-westend-testnet: try-runtime-check-migrations-%: check-try-runtime-installed check-onfinality-api-key build-runtime-%
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PREFIX_FLAGS) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
 
 .PHONY: try-runtime-check-migrations-local
 try-runtime-check-migrations-local: check-try-runtime-installed build-runtime-local
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PREFIX_FLAGS) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
 
 .PHONY: try-runtime-check-migrations-none-local
 try-runtime-check-migrations-none-local: check-try-runtime-installed build-runtime-local
-	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check live --uri $(URI) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
+	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check live --uri $(URI) $(PREFIX_FLAGS) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
