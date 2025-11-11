@@ -377,12 +377,19 @@ test-common-primitives \
 test-common-helpers \
 test-pallet-capacity \
 test-pallet-frequency-tx-payment \
+test-pallet-frequency-tx-payment-rpc \
 test-pallet-handles \
+test-pallet-handles-rpc \
+test-handles-utils \
 test-pallet-messages \
+test-pallet-messages-rpc \
 test-pallet-msa \
+test-pallet-msa-rpc \
 test-pallet-passkey \
 test-pallet-schemas \
+test-pallet-schemas-rpc \
 test-pallet-stateful-storage \
+test-pallet-stateful-storage-rpc \
 test-pallet-time-release \
 test-pallet-treasury@27.0.0 \
 test-cli-opt:
