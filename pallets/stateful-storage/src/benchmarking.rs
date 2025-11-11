@@ -762,8 +762,8 @@ mod benchmarks {
 		let max_items = 10;
 		let str: &[u8; 18] = b"This is a payload."; // length 18
 
-		// Create a paginated page
-		let mut page: migration::v1::ItemizedPage<T> = migration::v1::ItemizedPage::<T>::default();
+		// Create an itemized page
+		let page: migration::v1::ItemizedPage<T> = migration::v1::ItemizedPage::<T>::default();
 		let payload = BoundedVec::<u8, T::MaxItemizedBlobSizeBytes>::try_from(str.to_vec())
 			.expect("Unable to create BoundedVec payload");
 		let add_actions: Vec<migration::v1::ItemAction<T::MaxItemizedBlobSizeBytes>> =
@@ -771,9 +771,8 @@ mod benchmarks {
 				.iter()
 				.map(|_| migration::v1::ItemAction::Add { data: payload.clone() })
 				.collect();
-		let page =
-			migration::v1::ItemizedOperations::<T>::apply_item_actions(&mut page, &add_actions)
-				.expect("failed to apply item actions");
+		let page = migration::v1::ItemizedOperations::<T>::apply_item_actions(&page, &add_actions)
+			.expect("failed to apply item actions");
 		let keys: migration::v1::ItemizedKey = (intent_id,);
 		StatefulChildTree::<T::KeyHasher>::write(
 			&msa_id,

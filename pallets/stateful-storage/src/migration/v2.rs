@@ -29,7 +29,7 @@ pub type PaginatedKeyLength = ConstU32<72>;
 pub type ItemizedKeyLength = ConstU32<36>;
 
 /// Type to encapsulate a child key of a certain size, or no key.
-/// Necessary because we need MaxEncodedLen, which Vec<u8> doesn't give us.
+/// Necessary because we need MaxEncodedLen, which `Vec<u8>` doesn't give us.
 /// Cursor struct for tracking migration progress
 #[derive(Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, RuntimeDebug)]
 pub struct ChildCursor<N: Get<u32>> {
@@ -62,7 +62,7 @@ pub fn process_paginated_page<T: Config, N: Get<u32>>(
 	child: &ChildInfo,
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
-	let Some(k) = next_key(&child, &cur.last_key).unwrap_or(None) else {
+	let Some(k) = next_key(child, &cur.last_key).unwrap_or(None) else {
 		if cur.id % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
 			Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
 				last_trie: (cur.id, PayloadLocation::Paginated),
@@ -76,17 +76,17 @@ pub fn process_paginated_page<T: Config, N: Get<u32>>(
 	};
 
 	if let Some(old) =
-		StatefulChildTree::<T::KeyHasher>::try_read_raw::<v1::PaginatedPage<T>>(&child, &k)
+		StatefulChildTree::<T::KeyHasher>::try_read_raw::<v1::PaginatedPage<T>>(child, &k)
 			.map_err(|_| SteppedMigrationError::Failed)?
 	{
 		let (schema_id, _page_index) =
-			<v1::PaginatedKey as MultipartKey<T::KeyHasher>>::decode(&mut &k[..])
+			<v1::PaginatedKey as MultipartKey<T::KeyHasher>>::decode(&k[..])
 				.map_err(|_| SteppedMigrationError::Failed)?;
 		let page_parts = (Some(schema_id), old);
 		let mut new_page: crate::PaginatedPage<T> = page_parts.into();
 		new_page.nonce = new_page.nonce.wrapping_add(1);
 
-		StatefulChildTree::<T::KeyHasher>::write_raw(&child, &k, new_page);
+		StatefulChildTree::<T::KeyHasher>::write_raw(child, &k, new_page);
 	}
 
 	cur.last_key = k;
@@ -106,7 +106,7 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 	child: &ChildInfo,
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
-	let Some(k) = next_key(&child, &cur.last_key).unwrap_or(None) else {
+	let Some(k) = next_key(child, &cur.last_key).unwrap_or(None) else {
 		if cur.id % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
 			Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
 				last_trie: (cur.id, PayloadLocation::Paginated),
@@ -120,11 +120,11 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 	};
 
 	if let Some(old) =
-		StatefulChildTree::<T::KeyHasher>::try_read_raw::<v1::ItemizedPage<T>>(&child, &k)
+		StatefulChildTree::<T::KeyHasher>::try_read_raw::<v1::ItemizedPage<T>>(child, &k)
 			.map_err(|_| SteppedMigrationError::Failed)
 			.expect("failed to read raw itemized page")
 	{
-		let (schema_id,) = <v1::ItemizedKey as MultipartKey<T::KeyHasher>>::decode(&mut &k[..])
+		let (schema_id,) = <v1::ItemizedKey as MultipartKey<T::KeyHasher>>::decode(&k[..])
 			.map_err(|_| SteppedMigrationError::Failed)
 			.expect("failed to decode itemized key");
 
@@ -150,7 +150,7 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 		new_page.schema_id = None;
 		new_page.nonce = old.nonce.wrapping_add(1);
 
-		StatefulChildTree::<T::KeyHasher>::write_raw(&child, &k, new_page);
+		StatefulChildTree::<T::KeyHasher>::write_raw(child, &k, new_page);
 	}
 
 	cur.last_key = k;
@@ -201,7 +201,7 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1T
 		}
 		let max_id = <T::MsaInfoProvider>::get_max_msa_id();
 		let mut cur = cursor.unwrap_or_else(|| {
-			log::info!(target: LOG_TARGET, "Starting migrating paginated storage, max MSA: {}", max_id);
+			log::info!(target: LOG_TARGET, "Starting migrating paginated storage, max MSA: {max_id}");
 			Self::Cursor::default()
 		});
 		let required = W::paginated_v1_to_v2();
@@ -269,7 +269,7 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 		}
 		let max_id = <T::MsaInfoProvider>::get_max_msa_id();
 		let mut cur = cursor.unwrap_or_else(|| {
-			log::info!(target: LOG_TARGET, "Starting migrating itemized storage, max MSA: {}", max_id);
+			log::info!(target: LOG_TARGET, "Starting migrating itemized storage, max MSA: {max_id}");
 			Self::Cursor::default()
 		});
 		let required = W::itemized_v1_to_v2();
@@ -301,8 +301,7 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 	}
 }
 
-/// Finalize the migration of [`v2::MessagesV2`] map to [`crate::MessagesV3`]
-/// by updating the pallet storage version.
+/// Finalize the migration by updating the pallet storage version.
 pub struct FinalizeV2Migration<T: Config, W: weights::WeightInfo>(PhantomData<(T, W)>);
 impl<T: Config, W: weights::WeightInfo> SteppedMigration for FinalizeV2Migration<T, W> {
 	type Cursor = ();

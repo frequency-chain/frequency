@@ -56,9 +56,9 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 	fn on_runtime_upgrade() -> Weight {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		let current_version = Pallet::<T>::in_code_storage_version();
-		log::info!(target: LOG_TARGET, "onchain_version={:?}, current_version={:?}", onchain_version, current_version);
+		log::info!(target: LOG_TARGET, "onchain_version={onchain_version:?}, current_version={current_version:?}");
 		if SCHEMA_STORAGE_VERSION != current_version {
-			log::error!(target: LOG_TARGET, "storage version mismatch: expected {:?}, found {:?}", SCHEMA_STORAGE_VERSION, current_version);
+			log::error!(target: LOG_TARGET, "storage version mismatch: expected {SCHEMA_STORAGE_VERSION:?}, found {current_version:?}");
 			return T::DbWeight::get().reads(1)
 		}
 		if onchain_version < current_version {
@@ -97,11 +97,11 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 						// Let the latest schema version be the original name, and postfix previous versions
 						// with "-<version>"
 						if version < max_version {
-							let version_str = Vec::<u8>::from(format!("-{}", version).as_bytes());
+							let version_str = Vec::<u8>::from(format!("-{version}").as_bytes());
 							match append_or_overlay(&mut name, &version_str, &schema_id) {
 								Ok(_) => (),
 								Err(e) => {
-									log::error!(target: LOG_TARGET, "{:?} unable to append id {:?} to name: {:?}", e, version_str, name);
+									log::error!(target: LOG_TARGET, "{e:?} unable to append id {version_str:?} to name: {name:?}");
 									return Some(version_id)
 								},
 							};
@@ -123,22 +123,22 @@ impl<T: Config> UncheckedOnRuntimeUpgrade for InnerMigrateV4ToV5<T> {
 
 			log::info!(target: LOG_TARGET,
 				"Migration complete. \
-				schemas_migrated={:?}, intents_created={:?}, \
-				new_names={:?}, old_names={:?}",
-				schemas_migrated, intents_created, new_names, old_names,
+				schemas_migrated={schemas_migrated:?}, intents_created={intents_created:?}, \
+				new_names={new_names:?}, old_names={old_names:?}"
 			);
 
 			// Set storage version to current version
 			SCHEMA_STORAGE_VERSION.put::<Pallet<T>>();
 			let weight = T::DbWeight::get().reads_writes(reads, writes);
-			log::info!(target: LOG_TARGET, "Schemas storage migrated to version {:?}. reads={:?}, writes={:?}, proof_size={:?}, ref_time={:?}", current_version, reads, writes, weight.proof_size(), weight.ref_time());
+			log::info!(target: LOG_TARGET,
+				"Schemas storage migrated to version {current_version:?}. reads={reads:?}, writes={writes:?}, proof_size={:?}, ref_time={:?}",
+				weight.proof_size(), weight.ref_time());
 
 			weight
 		} else {
 			log::info!(target: LOG_TARGET,
 			"Migration did not execute; storage version is already up to date. \
-			onchain_version={:?}, current_version={:?}",
-				onchain_version, current_version,
+			onchain_version={onchain_version:?}, current_version={current_version:?}"
 			);
 			T::DbWeight::get().reads(1)
 		}

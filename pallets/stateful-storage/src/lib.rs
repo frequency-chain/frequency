@@ -727,7 +727,7 @@ impl<T: Config> Pallet<T> {
 			.ok_or(Error::<T>::InvalidSchemaId)?;
 		Self::get_paginated_storage(msa_id, schema.intent_id).map(|v| {
 			v.into_iter()
-				.map(|p| <PaginatedStorageResponseV2 as Into<PaginatedStorageResponse>>::into(p))
+				.map(<PaginatedStorageResponseV2 as Into<PaginatedStorageResponse>>::into)
 				.collect()
 		})
 	}
