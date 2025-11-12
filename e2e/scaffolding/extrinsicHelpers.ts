@@ -340,10 +340,10 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
-  public async fundAndSend(source: KeyringPair, waitForInBlock = true) {
+  public async fundAndSend(source: KeyringPair, waitForInBlock = true, nonce?: number) {
     await this.fundOperation(source);
     log('Fund and Send', `${this.extrinsic().method.method} Fund Source: ${getUnifiedAddress(source)}`);
-    return this.signAndSend(undefined, undefined, waitForInBlock);
+    return this.signAndSend(nonce, undefined, waitForInBlock);
   }
 
   public async fundAndSendUnsigned(source: KeyringPair, willError = false) {

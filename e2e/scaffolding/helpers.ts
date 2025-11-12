@@ -1,3 +1,4 @@
+import { verbose } from './env';
 import { Keyring } from '@polkadot/api';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes, Result } from '@polkadot/types';
@@ -9,7 +10,6 @@ import type {
 import { AnyNumber, Codec } from '@polkadot/types/types';
 import { hexToU8a, u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
-import { verbose, getNamedIntentAndSchema } from './env';
 import {
   AddKeyData,
   AddProviderPayload,
@@ -611,6 +611,25 @@ export async function getNextRewardEraBlock(): Promise<number> {
   return actualEraLength + eraInfo.startedAt.toNumber() + 1;
 }
 
+export async function getNamedIntentAndSchema(name: string) {
+  const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getRegisteredEntitiesByName(name);
+  if (response.isSome && response.unwrap().length > 0 && response.unwrap()[0].entityId.isIntent) {
+    const intentId = response.unwrap()[0].entityId.asIntent;
+    const schemaResponse = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentById(intentId, true);
+    if (schemaResponse.isSome) {
+      const schemaIds = schemaResponse.unwrap().schemaIds;
+      if (schemaIds.isSome && schemaIds.unwrap().length > 0) {
+        const ids = schemaIds.unwrap();
+        return { intentId, schemaId: ids[ids.length - 1] };
+      }
+    }
+
+    return { intentId, schemaId: null };
+  }
+
+  return { intentId: null, schemaId: null };
+}
+
 export async function getOrCreateIntentAndSchema(
   source: KeyringPair,
   name: string,
@@ -618,7 +637,8 @@ export async function getOrCreateIntentAndSchema(
     payloadLocation: 'OnChain' | 'IPFS' | 'Paginated' | 'Itemized';
     settings: IntentSetting['type'][];
   },
-  schemaParameters: { model: any; modelType: ModelType['type'] }
+  schemaParameters: { model: any; modelType: ModelType['type'] },
+  nonce?: number
 ): Promise<{ intentId: u16; schemaId: u16 }> {
   let { intentId, schemaId } = await getNamedIntentAndSchema(name);
 
@@ -629,7 +649,7 @@ export async function getOrCreateIntentAndSchema(
       intentParameters.settings,
       name
     );
-    const { target: createIntentevent, eventMap } = await intentOp.fundAndSend(source, false);
+    const { target: createIntentevent, eventMap } = await intentOp.fundAndSend(source, false, nonce);
     assertExtrinsicSuccess(eventMap);
     if (createIntentevent) {
       intentId = createIntentevent.data.intentId;
@@ -652,16 +672,17 @@ export async function getOrCreateIntentAndSchema(
   return { intentId, schemaId };
 }
 
-export function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<{ intentId: u16; schemaId: u16 }> {
+export function getOrCreateGraphChangeSchema(source: KeyringPair, nonce?: number): Promise<{ intentId: u16; schemaId: u16 }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.graphChange',
     { payloadLocation: 'OnChain', settings: [] },
-    { model: AVRO_GRAPH_CHANGE, modelType: 'AvroBinary' }
+    { model: AVRO_GRAPH_CHANGE, modelType: 'AvroBinary' },
+    nonce
   );
 }
 
-export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Promise<{
+export async function getOrCreateParquetBroadcastSchema(source: KeyringPair, nonce?: number): Promise<{
   intentId: u16;
   schemaId: u16;
 }> {
@@ -669,38 +690,44 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
     source,
     'test.parquetBroadcast',
     { payloadLocation: 'IPFS', settings: [] },
-    { model: PARQUET_BROADCAST, modelType: 'Parquet' }
+    { model: PARQUET_BROADCAST, modelType: 'Parquet' },
+    nonce
   );
 }
 
-export function getOrCreateDummySchema(source: KeyringPair): Promise<{ intentId: u16; schemaId: u16 }> {
+export function getOrCreateDummySchema(source: KeyringPair, nonce?: number): Promise<{ intentId: u16; schemaId: u16 }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.dummySchema',
     { payloadLocation: 'OnChain', settings: [] },
-    { model: { type: 'record', name: 'Dummy on-chain schema', fields: [] }, modelType: 'AvroBinary' }
+    { model: { type: 'record', name: 'Dummy on-chain schema', fields: [] }, modelType: 'AvroBinary' },
+    nonce
   );
 }
 
 export function getOrCreateAvroChatMessagePaginatedSchema(
-  source: KeyringPair
+  source: KeyringPair,
+  nonce?: number
 ): Promise<{ intentId: u16; schemaId: u16 }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.AvroChatMessagePaginated',
     { payloadLocation: 'Paginated', settings: [] },
-    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
+    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' },
+    nonce
   );
 }
 
 export function getOrCreateAvroChatMessageItemizedSchema(
-  source: KeyringPair
+  source: KeyringPair,
+  nonce?: number
 ): Promise<{ intentId: u16; schemaId: u16 }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.AvroChatMessageItemized',
     { payloadLocation: 'Itemized', settings: [] },
-    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
+    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' },
+    nonce
   );
 }
 

@@ -3,7 +3,17 @@ import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { globSync } from 'glob';
 import { ExtrinsicHelper } from './extrinsicHelpers';
 import { getFundingSource, getRootFundingSource, getSudo } from './funding';
-import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
+import {
+  TEST_EPOCH_LENGTH,
+  drainKeys,
+  getNonce,
+  setEpochLength,
+  getOrCreateGraphChangeSchema,
+  getOrCreateParquetBroadcastSchema,
+  getOrCreateDummySchema,
+  getOrCreateAvroChatMessagePaginatedSchema,
+  getOrCreateAvroChatMessageItemizedSchema,
+} from './helpers';
 import { isDev, providerUrl } from './env';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import type { KeyringPair } from '@polkadot/keyring/types';
@@ -59,6 +69,20 @@ async function fundAccountsToDefault(dests: KeyringPair[]) {
   console.log('Root funding complete!');
 }
 
+async function seedTestIntentsAndSchemas() {
+  const keys = getRootFundingSource().keys;
+  let nonce = await getNonce(keys);
+  await getOrCreateGraphChangeSchema(keys, nonce); nonce += 1;
+  await getOrCreateParquetBroadcastSchema(keys); nonce += 1;
+  await getOrCreateDummySchema(keys); nonce += 1;
+  await getOrCreateAvroChatMessagePaginatedSchema(keys); nonce += 1;
+  await getOrCreateAvroChatMessageItemizedSchema(keys); nonce += 1;
+
+  // Make sure we are finalized so that we don't get intent and schema creation race conditions
+  await ExtrinsicHelper.waitForFinalization();
+  console.log('Test intents and schemas created!');
+}
+
 async function devSudoActions() {
   // Because there is only one sudo, these actions must take place globally
   const sudo = getSudo().keys;
@@ -71,7 +95,10 @@ export async function mochaGlobalSetup(context) {
   await fundAccountsToDefault(await Promise.all(getAllTestFiles().map(getFundingSource)));
 
   // Sudo is only when not on Testnet
-  if (isDev()) await devSudoActions();
+  if (isDev()) {
+    await devSudoActions();
+    await seedTestIntentsAndSchemas();
+  }
 
   console.log('Global Setup Complete');
 }

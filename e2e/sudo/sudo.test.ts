@@ -21,7 +21,7 @@ import {
   assertExtrinsicSuccess,
   generateValidProviderPayloadWithName,
   computeCid,
-  createAndFundKeypair,
+  createAndFundKeypair, suppressConsoleLogs, restoreConsoleLogs,
 } from '../scaffolding/helpers';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import { stakeToProvider } from '../scaffolding/helpers';
@@ -29,6 +29,7 @@ import { AnyNumber } from '@polkadot/types/types';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { afterEach, beforeEach } from 'mocha';
 
 // reconstruct __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
