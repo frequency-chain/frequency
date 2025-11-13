@@ -9,10 +9,10 @@ use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 
 #[test]
-fn get_non_existing_intent_by_id_should_return_none() {
+fn get_non_existing_intent_group_by_id_should_return_none() {
 	new_test_ext().execute_with(|| {
 		// act
-		let res = SchemasPallet::get_intent_by_id(1, false);
+		let res = SchemasPallet::get_intent_group_by_id(1);
 
 		// assert
 		assert!(res.as_ref().is_none());

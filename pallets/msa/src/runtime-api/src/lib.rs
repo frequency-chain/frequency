@@ -36,7 +36,7 @@ sp_api::decl_runtime_apis! {
 		AccountId: Codec,
 	{
 		/// Check to see if a delegation existed between the given delegator and provider at a given block
-		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<IntentId>) -> bool;
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, intent_id: Option<IntentId>) -> bool;
 
 		/// Get the list of Intent permission grants (if any) that exist in any delegation between the delegator and provider
 		/// The returned list contains both Intent id and the block number at which permission was revoked (0 if currently not revoked)

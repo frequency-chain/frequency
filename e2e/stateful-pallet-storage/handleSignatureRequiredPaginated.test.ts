@@ -71,7 +71,6 @@ describe('📗 Stateful Pallet Storage Signature Required Paginated', function (
       'sr25519',
       delegatorKeys
     );
-    // ExtrinsicHelper.transferFunds(fundingSource, delegatorKeys, 2n * DOLLARS);
     assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
   });

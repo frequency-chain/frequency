@@ -7,7 +7,7 @@ import assert from 'assert';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { isTestnet } from '../scaffolding/env';
 import { getSudo, getFundingSource } from '../scaffolding/funding';
-import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
+import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures';
 import { Bytes, u16, u64 } from '@polkadot/types';
 import {
   DOLLARS,
@@ -17,11 +17,10 @@ import {
   generateSchemaPartialName,
   createKeys,
   createMsaAndProvider,
-  getOrCreateIntentAndSchema,
   assertExtrinsicSuccess,
   generateValidProviderPayloadWithName,
   computeCid,
-  createAndFundKeypair, suppressConsoleLogs, restoreConsoleLogs,
+  createAndFundKeypair,
 } from '../scaffolding/helpers';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import { stakeToProvider } from '../scaffolding/helpers';
@@ -29,7 +28,6 @@ import { AnyNumber } from '@polkadot/types/types';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { afterEach, beforeEach } from 'mocha';
 
 // reconstruct __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -77,7 +75,7 @@ describe('Sudo required', function () {
 
       const intentName = 'e-e.sudo-' + generateSchemaPartialName(15);
       const createIntent = ExtrinsicHelper.createIntentWithSettingsGov(sudoKey, 'Itemized', ['AppendOnly'], intentName);
-      const { target: event, eventMap } = await createIntent.sudoSignAndSend();
+      const { target: event } = await createIntent.sudoSignAndSend();
       assert.notEqual(event, undefined);
       intentId = event?.data.intentId || new u16(ExtrinsicHelper.api.registry, 0);
       assert.notEqual(intentId.toNumber(), 0);
@@ -90,7 +88,7 @@ describe('Sudo required', function () {
     it('should create schema with using createSchemaGovV3', async function () {
       if (isTestnet()) this.skip();
       const createSchema = ExtrinsicHelper.createSchemaGovV3(sudoKey, intentId, AVRO_GRAPH_CHANGE, 'AvroBinary');
-      const { target: event, eventMap } = await createSchema.sudoSignAndSend();
+      const { target: event } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);
       const schemaId: u16 = event?.data.schemaId || new u16(ExtrinsicHelper.api.registry, 0);
       assert.notEqual(schemaId.toNumber(), 0);

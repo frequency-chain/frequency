@@ -288,7 +288,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV3<T> {
 		lazy_static! {
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV3(uint16 intentId,uint32 targetHash,uint32 expiration,ItemAction[] actions)ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
+				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV3(uint16 intentId,uint32 targetHash,uint32 expiration,ItemActionV2[] actions)ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
 
 			static ref SUB_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
@@ -704,7 +704,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 		let mut offset = 0;
 		let page_size = self.data.len();
 
-		while offset < self.data.len() {
+		while offset < page_size {
 			ensure!(
 				offset + ItemHeader::max_encoded_len() <= page_size,
 				PageError::ErrorParsing("incomplete item header")

@@ -210,6 +210,8 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1T
 			return Err(SteppedMigrationError::InsufficientWeight { required });
 		}
 
+		let mut page_count = 0u32;
+
 		while cur.id <= max_id {
 			let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
 				cur.id,
@@ -218,17 +220,21 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1T
 			);
 
 			'inner: loop {
-				if meter.try_consume(required).is_err() {
+				if !meter.can_consume(required) {
+					log::info!(target: LOG_TARGET, "Migrated {page_count} pages; current MSA {}", cur.id);
 					return Ok(Some(cur));
 				}
 				if !process_paginated_page::<T, PaginatedKeyLength>(&child, &mut cur)? {
 					break 'inner;
+				} else {
+					meter.consume(required);
+					page_count += 1;
 				}
 			}
 		}
 
 		v1::DonePaginated::<T>::put(true);
-		log::info!(target: LOG_TARGET, "Finished migrating paginated storage");
+		log::info!(target: LOG_TARGET, "Finished migrating paginated storage; migrated {} total pages", cur.cumulative_pages);
 		Ok(None) // done
 	}
 }
@@ -278,6 +284,8 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 			return Err(SteppedMigrationError::InsufficientWeight { required });
 		}
 
+		let mut page_count = 0u32;
+
 		while cur.id <= max_id {
 			let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
 				cur.id,
@@ -286,17 +294,21 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 			);
 
 			'inner: loop {
-				if meter.try_consume(required).is_err() {
+				if !meter.can_consume(required) {
+					log::info!(target: LOG_TARGET, "Migrated {page_count} pages; current MSA {}", cur.id);
 					return Ok(Some(cur));
 				}
 				if !process_itemized_page::<T, ItemizedKeyLength>(&child, &mut cur)? {
 					break 'inner;
+				} else {
+					meter.consume(required);
+					page_count += 1;
 				}
 			}
 		}
 
 		v1::DoneItemized::<T>::put(true);
-		log::info!(target: LOG_TARGET, "Finished migrating itemized storage");
+		log::info!(target: LOG_TARGET, "Finished migrating itemized storage; migrated {} total pages", cur.cumulative_pages);
 		Ok(None) // done
 	}
 }
