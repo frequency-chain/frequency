@@ -270,16 +270,19 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 					StorageVersion::new(2),
 
 			#[cfg(feature = "frequency")]
-			// Filter out calls that are Governance actions on Mainnet
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
+            {
+				// Filter out calls that are Governance actions on Mainnet
+				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
+			}
 
 			#[cfg(all(feature = "frequency-bridging", feature = "frequency"))]
 			RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
+
 			// Everything else is allowed
 			_ => true,
 		}

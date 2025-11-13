@@ -201,7 +201,7 @@ impl EIP712Encode for AddProviderV2 {
 		lazy_static! {
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"AddProvider(uint64 authorizedMsaId,uint16[] intentIds,uint32 expiration)"
+				b"AddProviderV2(uint64 authorizedMsaId,uint16[] intentIds,uint32 expiration)"
 			);
 		}
 		// get prefix and domain separator

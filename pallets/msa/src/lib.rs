@@ -2905,8 +2905,6 @@ impl<T: Config> TargetValidator for Pallet<T> {
 }
 
 impl<T: Config> GrantValidator<IntentId, BlockNumberFor<T>> for Pallet<T> {
-	// type DelegationIdType = IntentId;
-	// type BlockNumber = BlockNumberFor<T>;
 
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///

@@ -613,7 +613,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			payload: crate::types::ItemizedSignaturePayloadV3<T>,
+			payload: ItemizedSignaturePayloadV3<T>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 
@@ -653,7 +653,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
 			proof: MultiSignature,
-			payload: crate::types::PaginatedDeleteSignaturePayloadV3<T>,
+			payload: PaginatedDeleteSignaturePayloadV3<T>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			ensure!(
