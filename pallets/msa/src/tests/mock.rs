@@ -1,5 +1,5 @@
 use crate::{
-	self as pallet_msa, types::RecoveryHash, AddKeyData, AddProvider, AuthorizedKeyData,
+	self as pallet_msa, types::RecoveryHash, AddKeyData, AddProvider, AuthorizedKeyData, Config,
 	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
@@ -261,6 +261,14 @@ impl pallet_msa::Config for Test {
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
 	>;
 	type Currency = pallet_balances::Pallet<Self>;
+}
+
+pub fn set_schema_count(n: u16) {
+	<Test as Config>::SchemaValidator::set_schema_count(n);
+}
+
+pub fn set_intent_count(n: u16) {
+	<Test as Config>::SchemaValidator::set_intent_count(n);
 }
 
 pub fn set_max_signature_stored(max: u32) {

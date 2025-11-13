@@ -146,8 +146,6 @@ use frame_system::{
 };
 
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::ops::ControlFlow;
-use frame_support::pallet_prelude::StorageVersion;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::Perbill;
 
@@ -263,22 +261,14 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		match call {
 			RuntimeCall::Utility(pallet_utility_call) =>
 				Self::is_utility_call_allowed(pallet_utility_call),
+
 			// Block stateful-storage extrinsics if V1->V2 migration is not complete
 			// May be removed once the migration has been completed on mainnet
 			RuntimeCall::StatefulStorage(..) =>
-				pallet_stateful_storage::Pallet::<Runtime>::on_chain_storage_version() >=
-					StorageVersion::new(2),
+				pallet_stateful_storage::Pallet::<Runtime>::should_extrinsics_be_run(),
 
 			#[cfg(feature = "frequency")]
-            {
-				// Filter out calls that are Governance actions on Mainnet
-				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
-				RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
-				RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
-				RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
-			}
+			call if Self::is_filtered_on_mainnet(call) => false,
 
 			#[cfg(all(feature = "frequency-bridging", feature = "frequency"))]
 			RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
@@ -290,6 +280,20 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
+	#[cfg(feature = "frequency")]
+	// Filter out calls that are Governance actions on Mainnet
+	fn is_filtered_on_mainnet(call: &RuntimeCall) -> bool {
+		matches!(
+			call,
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. })
+		)
+	}
+
 	#[cfg(all(feature = "frequency", feature = "frequency-bridging"))]
 	fn is_xcm_call_allowed(call: &pallet_xcm::Call<Runtime>) -> bool {
 		!matches!(
@@ -1333,16 +1337,16 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
             ),
             RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
             RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_v2 { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes_v2(actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_v2 { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes_v2(actions))),
             RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v3 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes_v2(&payload.actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v3 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes_v2(&payload.actions))),
             RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v3 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v3 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
             RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
             RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
             _ => None,
@@ -2065,54 +2069,8 @@ sp_api::impl_runtime_apis! {
 			}
 		}
 
-		/// Retrieve the messages for a particular intent and block range (paginated)
 		fn get_messages_by_intent_id(intent_id: IntentId, pagination: BlockPaginationRequest) -> BlockPaginationResponse<MessageResponseV2> {
-			let mut response = BlockPaginationResponse::new();
-
-			// Request Validation
-			if !pagination.validate() {
-				return response
-			}
-
-			// Schema Fetch and Check
-			let intent = match Schemas::get_intent_by_id(intent_id, false) {
-				Some(intent) => intent,
-				None => return response,
-			};
-
-			let mut from_index: u32 = pagination.from_index;
-
-			let _ = (pagination.from_block..pagination.to_block).try_for_each(|block_number| {
-				let list: Vec<MessageResponseV2> = Messages::get_messages_by_intent_and_block(
-					intent_id,
-					intent.payload_location,
-					block_number,
-				);
-
-				// Max messages in a block are constrained to MessageIndex (u16) by the storage,
-				// so this is a safe type coercion. Just to be safe, we'll trap in in debug builds
-				let list_size: u32 = list.len() as u32;
-				debug_assert!(list_size <= u16::MAX.into(), "unexpected number of messages in block");
-
-				let iter = list.into_iter().skip((from_index as usize).saturating_sub(1));
-				// all subsequent blocks in this call should start at index 0
-				from_index = 0;
-				iter.enumerate().try_for_each(|(i, m)| {
-					response.content.push(m);
-
-					if response.check_end_condition_and_set_next_pagination(
-						block_number,
-						i as u32,
-						list_size,
-						&pagination,
-					) {
-						return ControlFlow::Break(())
-					}
-
-					ControlFlow::Continue(())
-				})
-			});
-			response
+			Messages::get_messages_by_intent_id(intent_id, pagination)
 		}
 
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
@@ -2139,7 +2097,10 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn get_intent_by_id(intent_id: IntentId, include_schemas: bool) -> Option<IntentResponse> {
-			Schemas::get_intent_by_id(intent_id, include_schemas)
+			match include_schemas {
+				true => Schemas::get_intent_by_id_with_schemas(intent_id),
+				false => Schemas::get_intent_by_id(intent_id),
+			}
 		}
 
 		fn get_intent_group_by_id(group_id: IntentGroupId) -> Option<IntentGroupResponse> {

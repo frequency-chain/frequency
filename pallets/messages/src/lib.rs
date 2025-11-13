@@ -46,6 +46,7 @@ use common_primitives::{
 	msa::{DelegatorId, GrantValidator, MessageSourceId, MsaLookup, MsaValidator, ProviderId},
 	schema::*,
 };
+use core::ops::ControlFlow;
 use frame_support::dispatch::DispatchResult;
 use parity_scale_codec::Encode;
 
@@ -359,6 +360,59 @@ impl<T: Config> Pallet<T> {
 	pub fn find_msa_id(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Ok(T::MsaInfoProvider::ensure_valid_msa_key(key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?)
+	}
+
+	/// Retrieve the messages for a particular intent and block range (paginated)
+	pub fn get_messages_by_intent_id(
+		intent_id: IntentId,
+		pagination: BlockPaginationRequest,
+	) -> BlockPaginationResponse<MessageResponseV2> {
+		let mut response = BlockPaginationResponse::new();
+
+		// Request Validation
+		if !pagination.validate() {
+			return response
+		}
+
+		// Schema Fetch and Check
+		let intent = match <T>::SchemaProvider::get_intent_by_id(intent_id) {
+			Some(intent) => intent,
+			None => return response,
+		};
+
+		let mut from_index: u32 = pagination.from_index;
+
+		let _ = (pagination.from_block..pagination.to_block).try_for_each(|block_number| {
+			let list: Vec<MessageResponseV2> = Self::get_messages_by_intent_and_block(
+				intent_id,
+				intent.payload_location,
+				block_number.into(),
+			);
+
+			// Max messages in a block are constrained to MessageIndex (u16) by the storage,
+			// so this is a safe type coercion. Just to be safe, we'll trap in in debug builds
+			let list_size: u32 = list.len() as u32;
+			debug_assert!(list_size <= u16::MAX.into(), "unexpected number of messages in block");
+
+			let iter = list.into_iter().skip((from_index as usize).saturating_sub(1));
+			// all subsequent blocks in this call should start at index 0
+			from_index = 0;
+			iter.enumerate().try_for_each(|(i, m)| {
+				response.content.push(m);
+
+				if response.check_end_condition_and_set_next_pagination(
+					block_number,
+					i as u32,
+					list_size,
+					&pagination,
+				) {
+					return ControlFlow::Break(())
+				}
+
+				ControlFlow::Continue(())
+			})
+		});
+		response
 	}
 
 	/// Gets messages for a given IntentId and block number.

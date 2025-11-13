@@ -13,7 +13,7 @@ use super::mock::*;
 fn get_non_existing_intent_by_id_should_return_none() {
 	new_test_ext().execute_with(|| {
 		// act
-		let res = SchemasPallet::get_intent_by_id(1, false);
+		let res = SchemasPallet::get_intent_by_id(1);
 
 		// assert
 		assert!(res.as_ref().is_none());
@@ -36,7 +36,7 @@ fn create_intent_happy_path() {
 			PayloadLocation::OnChain,
 			BoundedVec::default(),
 		));
-		let res = SchemasPallet::get_intent_by_id(1, false);
+		let res = SchemasPallet::get_intent_by_id(1);
 		let parsed_name = intent_name.into_inner();
 
 		// assert
@@ -72,7 +72,7 @@ fn create_intent_via_governance_happy_path() {
 		));
 
 		// assert
-		let res = SchemasPallet::get_intent_by_id(1, false);
+		let res = SchemasPallet::get_intent_by_id(1);
 		let parsed_name = intent_name.into_inner();
 
 		// assert
@@ -304,7 +304,7 @@ fn propose_to_create_intent_happy_path() {
 		assert_eq!(intent_events.len(), 1);
 
 		let last_intent_id = intent_events[0];
-		let created_intent = SchemasPallet::get_intent_by_id(last_intent_id, false);
+		let created_intent = SchemasPallet::get_intent_by_id(last_intent_id);
 		assert!(created_intent.as_ref().is_some());
 
 		let resolved_intent_id =

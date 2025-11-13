@@ -1016,28 +1016,28 @@ pub mod pallet {
 		}
 
 		/// Retrieve an Intent by its ID
-		pub fn get_intent_by_id(
-			intent_id: IntentId,
-			include_schemas: bool,
-		) -> Option<IntentResponse> {
-			if let Some(intent_info) = IntentInfos::<T>::get(intent_id) {
-				let saved_settings = intent_info.settings;
-				let settings = saved_settings.0.iter().collect::<Vec<IntentSetting>>();
-				let schema_ids = include_schemas.then_some(
+		pub fn get_intent_by_id(intent_id: IntentId) -> Option<IntentResponse> {
+			IntentInfos::<T>::get(intent_id).map(|intent_info| IntentResponse {
+				intent_id,
+				payload_location: intent_info.payload_location,
+				settings: intent_info.settings.0.iter().collect::<Vec<IntentSetting>>(),
+				schema_ids: None,
+			})
+		}
+
+		/// Retrieve an Intent by its ID
+		/// NOTE: This must not be called on-chain due to inability to determine weight
+		pub fn get_intent_by_id_with_schemas(intent_id: IntentId) -> Option<IntentResponse> {
+			let response = Self::get_intent_by_id(intent_id);
+			response.map(|mut intent| {
+				intent.schema_ids = Some(
 					SchemaInfos::<T>::iter()
 						.filter(|(_, info)| info.intent_id == intent_id)
 						.map(|(id, _)| id)
 						.collect::<Vec<SchemaId>>(),
 				);
-
-				return Some(IntentResponse {
-					intent_id,
-					payload_location: intent_info.payload_location,
-					settings,
-					schema_ids,
-				});
-			}
-			None
+				intent
+			})
 		}
 
 		/// Retrieve an IntentGroup by its ID
@@ -1405,6 +1405,6 @@ impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	}
 
 	fn get_intent_by_id(intent_id: IntentId) -> Option<IntentResponse> {
-		Self::get_intent_by_id(intent_id, false)
+		Self::get_intent_by_id(intent_id)
 	}
 }

@@ -99,7 +99,7 @@ pub fn add_provider_to_msa_is_success() {
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
-		set_schema_count::<Test>(10);
+		set_schema_count(10);
 
 		assert_ok!(Msa::grant_delegation(
 			RuntimeOrigin::signed(provider_account.into()),
@@ -397,18 +397,10 @@ fn create_provider_duplicate() {
 	})
 }
 
-pub fn set_schema_count<T: Config>(n: u16) {
-	<T>::SchemaValidator::set_schema_count(n);
-}
-
-pub fn set_intent_count<T: Config>(n: u16) {
-	<T>::SchemaValidator::set_intent_count(n);
-}
-
 #[test]
 pub fn valid_schema_grant() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -428,7 +420,7 @@ pub fn error_invalid_intent_id() {
 		expected: T,
 	}
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(12);
+		set_intent_count(12);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -446,7 +438,7 @@ pub fn error_invalid_intent_id() {
 #[test]
 pub fn error_exceeding_max_intent_under_minimum_intent_grants() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(16);
+		set_intent_count(16);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -485,7 +477,7 @@ pub fn error_schema_not_granted_rpc() {
 #[test]
 pub fn schema_granted_success_rpc() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -508,7 +500,7 @@ pub fn schema_granted_success_rpc() {
 #[test]
 pub fn schema_granted_success_multiple_providers_rpc() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(4);
+		set_intent_count(4);
 
 		let provider_1 = ProviderId(1);
 		let provider_2 = ProviderId(2);
@@ -538,7 +530,7 @@ pub fn schema_granted_success_multiple_providers_rpc() {
 #[test]
 pub fn schema_revoked_rpc() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -631,7 +623,7 @@ pub fn ensure_all_intent_ids_are_valid_errors() {
 pub fn ensure_all_intent_ids_are_valid_success() {
 	new_test_ext().execute_with(|| {
 		let intent_ids = vec![1];
-		set_intent_count::<Test>(1);
+		set_intent_count(1);
 
 		assert_ok!(Msa::ensure_all_intent_ids_are_valid(&intent_ids));
 	});

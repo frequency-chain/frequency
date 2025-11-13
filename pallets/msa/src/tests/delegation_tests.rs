@@ -7,11 +7,7 @@ use frame_support::{
 use frame_system::RawOrigin;
 use sp_runtime::MultiSignature;
 
-use crate::{
-	tests::{mock::*, other_tests::set_intent_count},
-	types::AddProvider,
-	DelegatorAndProviderToDelegation, Error, Event,
-};
+use crate::{tests::mock::*, types::AddProvider, DelegatorAndProviderToDelegation, Error, Event};
 use common_primitives::{
 	msa::{Delegation, DelegationValidator, DelegatorId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
@@ -56,7 +52,7 @@ pub fn grant_delegation_changes_intent_permissions() {
 		let block_expiration: BlockNumber = 110;
 
 		System::set_block_number(90);
-		set_intent_count::<Test>(10);
+		set_intent_count(10);
 
 		// Create delegation without any schema permissions
 		let (delegator_signature, add_provider_payload) =

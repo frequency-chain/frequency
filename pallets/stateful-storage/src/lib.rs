@@ -1178,6 +1178,11 @@ impl<T: Config> Pallet<T> {
 		};
 		Ok(page)
 	}
+
+	/// Prevent extrinsics in this pallet from being executed while a migration is in progress.
+	pub fn should_extrinsics_be_run() -> bool {
+		Self::on_chain_storage_version() == STATEFUL_STORAGE_VERSION
+	}
 }
 
 /// The TransactionExtension trait is implemented on BlockDuringMigration to prevent extrinsics
@@ -1201,7 +1206,7 @@ impl<T: Config + Send + Sync> BlockDuringMigration<T> {
 	pub fn block_extrinsics_during_migration() -> TransactionValidity {
 		const TAG_PREFIX: &str = "StatefulStorageExtrinsicPostV2Migration";
 		ensure!(
-			Pallet::<T>::on_chain_storage_version() >= StorageVersion::new(2),
+			Pallet::<T>::should_extrinsics_be_run(),
 			InvalidTransaction::Custom(ValidityError::InvalidStorageVersion as u8)
 		);
 		ValidTransaction::with_tag_prefix(TAG_PREFIX).build()

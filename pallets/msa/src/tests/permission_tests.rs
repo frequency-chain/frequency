@@ -6,7 +6,6 @@ use crate::{
 	Error,
 };
 
-use crate::tests::other_tests::set_intent_count;
 use common_primitives::{
 	msa::{Delegation, DelegatorId, GrantValidator, ProviderId},
 	schema::IntentId,
@@ -27,7 +26,7 @@ fn grant_permissions_for_intents_errors_when_no_delegation() {
 #[test]
 fn grant_permissions_for_intents_errors_when_invalid_intent_id() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(1);
+		set_intent_count(1);
 		let delegator = DelegatorId(2);
 		let provider = ProviderId(1);
 		let intent_grants = vec![1];
@@ -44,7 +43,7 @@ fn grant_permissions_for_intents_errors_when_invalid_intent_id() {
 #[test]
 fn grant_permissions_for_intents_errors_when_exceeds_max_grants() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(31);
+		set_intent_count(31);
 
 		let delegator = DelegatorId(2);
 		let provider = ProviderId(1);
@@ -62,7 +61,7 @@ fn grant_permissions_for_intents_errors_when_exceeds_max_grants() {
 #[test]
 fn grant_permissions_for_intent_success() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(3);
+		set_intent_count(3);
 
 		let delegator = DelegatorId(2);
 		let provider = ProviderId(1);
@@ -141,7 +140,7 @@ fn intent_permissions_trait_impl_try_insert_intents_errors_when_exceeds_max_gran
 #[test]
 fn revoke_permissions_for_intent_success() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(3);
+		set_intent_count(3);
 
 		let delegator = DelegatorId(2);
 		let provider = ProviderId(1);
@@ -197,7 +196,7 @@ fn revoke_permissions_for_intents_errors_when_no_delegation() {
 #[test]
 fn revoke_permissions_for_intents_errors_when_intent_does_not_exist_in_list_of_grants() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(31);
+		set_intent_count(31);
 
 		let delegator = DelegatorId(2);
 		let provider = ProviderId(1);
@@ -263,7 +262,7 @@ fn intent_permissions_trait_impl_try_get_mut_intent_success() {
 #[test]
 pub fn ensure_valid_intent_grant_success() {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -280,7 +279,7 @@ pub fn ensure_valid_intent_grant_success() {
 pub fn ensure_valid_intent_grant_errors_when_delegation_relationship_is_valid_and_grant_does_not_exist(
 ) {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
@@ -303,7 +302,7 @@ pub fn ensure_valid_intent_grant_errors_when_delegation_relationship_is_valid_an
 pub fn ensure_valid_intent_grant_errors_when_delegation_relationship_is_valid_and_grant_is_revoked()
 {
 	new_test_ext().execute_with(|| {
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		// Create delegation relationship.
 		let provider = ProviderId(1);
@@ -342,7 +341,7 @@ pub fn ensure_valid_intent_grant_errors_delegation_revoked_when_delegation_relat
 ) {
 	new_test_ext().execute_with(|| {
 		// Set the schemas counts so that it passes validation.
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		// Create delegation relationship.
 		let provider = ProviderId(1);
@@ -383,7 +382,7 @@ pub fn ensure_valid_intent_grant_errors_delegation_revoked_when_delegation_relat
 pub fn ensure_delegation_revocation_reflects_in_intent_permissions() {
 	new_test_ext().execute_with(|| {
 		// Set the schemas counts so that it passes validation.
-		set_intent_count::<Test>(2);
+		set_intent_count(2);
 
 		// Create delegation relationship.
 		let provider = ProviderId(1);
