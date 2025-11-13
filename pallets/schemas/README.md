@@ -30,15 +30,16 @@ discovery by dApps to determine which Intents need to be requested as delegation
 ## Name Resolution
 
 Intents & Intent Groups can be looked up by name (Schemas cannot). Names are of the form `<protocol>.<descriptor>`.<br/>
-_NOTE: until all nodes implementing deprecated legacy RPCs are fully removed, Schemas can still be looked up by their associated Intent
+_NOTE: until all nodes implementing deprecated legacy RPCs are fully removed, Schemas can still be looked up by their
+associated Intent
 name using the `SchemasPallet_get_schema_versions_by_name` runtime API._.
 
 ## Structure
 
 ### Intent Parameters
 
-- Settings: Various options for the Intent like signature requirements.
-- Payload Location: The location the data for this Intent is stored.
+- Settings: Various options for the Intent like signature requirements, append-only behavior, etc.
+- Payload Location: Where data associated with this Intent is stored.
 
 ### Schema Parameters
 
@@ -85,12 +86,18 @@ name using the `SchemasPallet_get_schema_versions_by_name` runtime API._.
 
 ### Mainnet vs Testnet Entity Creation
 
-Mainnet Schemas, Intents, and Intent Groups must be approved by the Frequency Council.
+On Mainnet, Schemas, Intents, and Intent Groups can only be created through the use of the `propose_to_create_XXX`
+extrinsics, which require approval by the Frequency Council in order to be executed.
 This is to prevent malicious schemas and increase the documentation around the schemas available.
 
-On Testnets, these entities can be created by anyone, so there are _no_ guarantees around schema correctness or quality.
-If you want to use a particular schema on a testnet, it is suggested that you use specific Schema Ids or publish the
-needed schema yourself.
+On Testnets, these entities can be created by anyone using the `create_XXX` extrinsics directly, so there are _no_
+guarantees around schema correctness or quality.
+If you want to use a trusted Schema or Intent on a testnet, it is suggested that you use specific Schema Ids or publish
+the
+necessary entity yourself.
+
+On all chains, the `create_XXX_via_governance` extrinsics exist only to support executing a proposal, and are not meant
+to be invoked directly.
 
 Note, both Testnet and local development chains are seeded with the Intents, Groups, and Schemas from Mainnet, to
 facilitate ease of testing.
@@ -148,9 +155,9 @@ additional state queries and details.
 
 Note: May be restricted based on node settings and configuration.<br/>
 
-| Name                  | Description                                                         | Call                                                                                                                                               | Node Version |
-|-----------------------|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| Get Schema by Id      | Retrieves the schema for the given Schema Id                        | [`getBySchemaId`](https://frequency-chain.github.io/frequency/pallet_schemas_rpc/trait.SchemasApiServer.html#tymethod.get_by_schema_id)            | v1.0.0+      |
+| Name             | Description                                  | Call                                                                                                                                    | Node Version |
+|------------------|----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| Get Schema by Id | Retrieves the schema for the given Schema Id | [`getBySchemaId`](https://frequency-chain.github.io/frequency/pallet_schemas_rpc/trait.SchemasApiServer.html#tymethod.get_by_schema_id) | v1.0.0+      |
 
 \* Must be enabled with off-chain indexing
 

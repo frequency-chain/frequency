@@ -9,7 +9,7 @@ references by clients and runtime modules alike, particularly in the delegation 
 Delegations currently allow a user to authorize a provider (e.g., an app or service) to act on their behalf, but this
 authorization is tightly bound to a specific `SchemaId`. This model has proven limiting in several ways:
 
-- **Coupling between schema versions and delegations**
+- **Data format evolution requires re-delegation (expensive and cumbersome)**
 - **Schemas represent data format, not purpose**
 - **Lack of human-readable context**
 
