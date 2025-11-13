@@ -45,8 +45,10 @@ pub trait WeightInfo {
 	fn upsert_page_with_signature_v2(s: u32, ) -> Weight;
 	fn delete_page_with_signature_v2() -> Weight;
 	fn delete_page_with_signature_v3() -> Weight;
-	fn paginated_v1_to_v2() -> Weight;
-	fn itemized_v1_to_v2() -> Weight;
+	fn paginated_v1_to_v2_miss() -> Weight;
+	fn paginated_v1_to_v2_hit() -> Weight;
+	fn itemized_v1_to_v2_miss() -> Weight;
+	fn itemized_v1_to_v2_hit() -> Weight;
 }
 
 /// Weights for `pallet_stateful_storage` using the Substrate node and recommended hardware.
@@ -222,29 +224,49 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
+	fn paginated_v1_to_v2_miss() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11`
+		//  Estimated: `5456`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 5456)
+			.saturating_add(RocksDbWeightChild::get().reads(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Storage: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb1f1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	/// Proof: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb1f1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
-	fn paginated_v1_to_v2() -> Weight {
+	fn paginated_v1_to_v2_hit() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1172`
 		//  Estimated: `6617`
 		// Minimum execution time: 8_000_000 picoseconds.
 		Weight::from_parts(9_000_000, 6617)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
+			.saturating_add(RocksDbWeightChild::get().reads(2_u64))
+			.saturating_add(RocksDbWeightChild::get().writes(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
+	fn itemized_v1_to_v2_miss() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11`
+		//  Estimated: `5456`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 5456)
+			.saturating_add(RocksDbWeightChild::get().reads(1_u64))
 	}
 	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Storage: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb10100` (r:1 w:1)
 	/// Proof: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb10100` (r:1 w:1)
-	fn itemized_v1_to_v2() -> Weight {
+	fn itemized_v1_to_v2_hit() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `329`
 		//  Estimated: `5774`
 		// Minimum execution time: 12_000_000 picoseconds.
 		Weight::from_parts(13_000_000, 5774)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
+			.saturating_add(RocksDbWeightChild::get().reads(2_u64))
+			.saturating_add(RocksDbWeightChild::get().writes(1_u64))
 	}
 }
 
@@ -420,29 +442,49 @@ impl WeightInfo for () {
 	}
 	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
+	fn paginated_v1_to_v2_miss() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11`
+		//  Estimated: `5456`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 5456)
+			.saturating_add(RocksDbWeightChild::get().reads(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Storage: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb1f1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	/// Proof: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb1f1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
-	fn paginated_v1_to_v2() -> Weight {
+	fn paginated_v1_to_v2_hit() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1172`
 		//  Estimated: `6617`
 		// Minimum execution time: 8_000_000 picoseconds.
 		Weight::from_parts(9_000_000, 6617)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(RocksDbWeightChild::get().reads(2_u64))
+			.saturating_add(RocksDbWeightChild::get().writes(1_u64))
+	}
+	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
+	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
+	fn itemized_v1_to_v2_miss() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11`
+		//  Estimated: `5456`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(2_000_000, 5456)
+			.saturating_add(RocksDbWeightChild::get().reads(1_u64))
 	}
 	/// Storage: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Proof: UNKNOWN KEY `0x` (r:1 w:0)
 	/// Storage: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb10100` (r:1 w:1)
 	/// Proof: UNKNOWN KEY `0xf1577fbf1d628fdddb4ebfc6e8d95fb10100` (r:1 w:1)
-	fn itemized_v1_to_v2() -> Weight {
+	fn itemized_v1_to_v2_hit() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `329`
 		//  Estimated: `5774`
 		// Minimum execution time: 12_000_000 picoseconds.
 		Weight::from_parts(13_000_000, 5774)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(RocksDbWeightChild::get().reads(2_u64))
+			.saturating_add(RocksDbWeightChild::get().writes(1_u64))
 	}
 }
 

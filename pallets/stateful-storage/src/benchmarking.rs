@@ -686,28 +686,9 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn get_child_trie() -> Result<(), BenchmarkError> {
-		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
-
-		#[block]
-		{
-			let _ = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
-				msa_id,
-				PALLET_STORAGE_PREFIX,
-				PAGINATED_STORAGE_PREFIX,
-			);
-		}
-
-		Ok(())
-	}
-
-	#[benchmark]
 	fn paginated_v1_to_v2_miss() -> Result<(), BenchmarkError> {
 		// Setup
 		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
-		let schema_id: SchemaId = 1;
-		let intent_id: IntentId = 1;
-		let page_id: PageId = 1;
 
 		let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
 			msa_id,
@@ -734,7 +715,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn paginated_v1_to_v2() -> Result<(), BenchmarkError> {
+	fn paginated_v1_to_v2_hit() -> Result<(), BenchmarkError> {
 		// Setup
 		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
 		let schema_id: SchemaId = 1;
@@ -792,7 +773,36 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn itemized_v1_to_v2() -> Result<(), BenchmarkError> {
+	fn itemized_v1_to_v2_miss() -> Result<(), BenchmarkError> {
+		// Setup
+		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
+
+		let child = StatefulChildTree::<T::KeyHasher>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			ITEMIZED_STORAGE_PREFIX,
+		);
+		let mut cursor = migration::v2::ChildCursor::<migration::v2::ItemizedKeyLength> {
+			id: msa_id,
+			last_key: BoundedVec::default(),
+			cumulative_pages: 0,
+		};
+
+		// Execute
+		#[block]
+		{
+			migration::v2::process_itemized_page::<T, migration::v2::ItemizedKeyLength>(
+				&child,
+				&mut cursor,
+			)
+			.expect("failed to migrate itemized page");
+		}
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn itemized_v1_to_v2_hit() -> Result<(), BenchmarkError> {
 		// Setup
 		let msa_id: MessageSourceId = T::MsaBenchmarkHelper::create_msa(whitelisted_caller())?;
 		let schema_id: SchemaId = 1;

@@ -138,7 +138,7 @@ fn lazy_migration_works() {
 		// Give it a bunch of weight
 		let limit = <T as pallet_migrations::Config>::WeightInfo::progress_mbms_none() +
 			pallet_migrations::Pallet::<T>::exec_migration_max_weight() +
-			<weights::SubstrateWeight<T> as crate::weights::WeightInfo>::paginated_v1_to_v2() *
+			<weights::SubstrateWeight<T> as crate::weights::WeightInfo>::paginated_v1_to_v2_hit() *
 				ITEMS_PER_BLOCK as u64;
 		MigratorServiceWeight::set(&limit);
 

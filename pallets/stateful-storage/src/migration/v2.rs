@@ -20,6 +20,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::storage::ChildInfo;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
+use sp_runtime::Weight;
 
 const LOG_TARGET: &str = "pallet::stateful-storage::migration::v2";
 
@@ -204,10 +205,11 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1T
 			log::info!(target: LOG_TARGET, "Starting migrating paginated storage, max MSA: {max_id}");
 			Self::Cursor::default()
 		});
-		let required = W::paginated_v1_to_v2();
+		let hit_weight = W::paginated_v1_to_v2_hit();
+		let miss_weight = W::paginated_v1_to_v2_miss();
 
-		if meter.remaining().any_lt(required) {
-			return Err(SteppedMigrationError::InsufficientWeight { required });
+		if meter.remaining().any_lt(hit_weight) {
+			return Err(SteppedMigrationError::InsufficientWeight { required: hit_weight });
 		}
 
 		let mut page_count = 0u32;
@@ -220,14 +222,15 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1T
 			);
 
 			'inner: loop {
-				if !meter.can_consume(required) {
+				if !meter.can_consume(hit_weight) {
 					log::info!(target: LOG_TARGET, "Migrated {page_count} pages; current MSA {}", cur.id);
 					return Ok(Some(cur));
 				}
 				if !process_paginated_page::<T, PaginatedKeyLength>(&child, &mut cur)? {
+					meter.consume(miss_weight);
 					break 'inner;
 				} else {
-					meter.consume(required);
+					meter.consume(hit_weight);
 					page_count += 1;
 				}
 			}
@@ -278,10 +281,11 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 			log::info!(target: LOG_TARGET, "Starting migrating itemized storage, max MSA: {max_id}");
 			Self::Cursor::default()
 		});
-		let required = W::itemized_v1_to_v2();
+		let hit_weight = W::itemized_v1_to_v2_hit();
+		let miss_weight = W::itemized_v1_to_v2_miss();
 
-		if meter.remaining().any_lt(required) {
-			return Err(SteppedMigrationError::InsufficientWeight { required });
+		if meter.remaining().any_lt(hit_weight) {
+			return Err(SteppedMigrationError::InsufficientWeight { required: hit_weight });
 		}
 
 		let mut page_count = 0u32;
@@ -294,14 +298,15 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 			);
 
 			'inner: loop {
-				if !meter.can_consume(required) {
+				if !meter.can_consume(hit_weight) {
 					log::info!(target: LOG_TARGET, "Migrated {page_count} pages; current MSA {}", cur.id);
 					return Ok(Some(cur));
 				}
 				if !process_itemized_page::<T, ItemizedKeyLength>(&child, &mut cur)? {
+					meter.consume(miss_weight);
 					break 'inner;
 				} else {
-					meter.consume(required);
+					meter.consume(hit_weight);
 					page_count += 1;
 				}
 			}
