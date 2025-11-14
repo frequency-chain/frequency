@@ -20,7 +20,6 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::storage::ChildInfo;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
-use sp_runtime::Weight;
 
 const LOG_TARGET: &str = "pallet::stateful-storage::migration::v2";
 
@@ -236,6 +235,9 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigratePaginatedV1T
 			}
 		}
 
+		meter.try_consume(T::DbWeight::get().writes(1)).map_err(|_| {
+			SteppedMigrationError::InsufficientWeight { required: T::DbWeight::get().writes(1) }
+		})?;
 		v1::DonePaginated::<T>::put(true);
 		log::info!(target: LOG_TARGET, "Finished migrating paginated storage; migrated {} total pages", cur.cumulative_pages);
 		Ok(None) // done
@@ -312,6 +314,9 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateItemizedV1To
 			}
 		}
 
+		meter.try_consume(T::DbWeight::get().writes(1)).map_err(|_| {
+			SteppedMigrationError::InsufficientWeight { required: T::DbWeight::get().writes(1) }
+		})?;
 		v1::DoneItemized::<T>::put(true);
 		log::info!(target: LOG_TARGET, "Finished migrating itemized storage; migrated {} total pages", cur.cumulative_pages);
 		Ok(None) // done
@@ -342,7 +347,7 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for FinalizeV2Migration
 		// If there is not enough weight for a single step, return an error. This case can be
 		// problematic if it is the first migration that ran in this block. But there is nothing
 		// that we can do about it here.
-		let required = T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1));
+		let required = T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(3));
 		if meter.try_consume(required).is_err() {
 			return Err(SteppedMigrationError::InsufficientWeight { required });
 		}
@@ -351,6 +356,8 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for FinalizeV2Migration
 			return Ok(None);
 		}
 		StorageVersion::new(2).put::<Pallet<T>>();
+		v1::DonePaginated::<T>::kill();
+		v1::DoneItemized::<T>::kill();
 
 		log::info!(target: LOG_TARGET, "Finalized stateful-storage pallet migration: storage version set to 2");
 		Ok(None)

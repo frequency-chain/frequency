@@ -131,7 +131,7 @@ fn lazy_migration_works() {
 				<crate::ItemizedPage::<T> as crate::ItemizedOperations::<T>>::try_parse(
 					&page_v2, true
 				),
-				PageError::ErrorParsing("decoding item header")
+				PageError::ErrorParsing("unable to decode item header")
 			);
 		});
 

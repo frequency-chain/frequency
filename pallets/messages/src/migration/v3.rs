@@ -119,11 +119,7 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateV2ToV3<T, W>
 		let mut messages_remain = true;
 
 		// We loop here to do as much progress as possible per step.
-		loop {
-			if meter.try_consume(required).is_err() {
-				break;
-			}
-
+		while meter.try_consume(required).is_ok() {
 			// If there's a next item in the iterator, perform the migration.
 			messages_remain = migrate_single_record::<T>(&mut iter, &mut last_cursor);
 			if !messages_remain {
@@ -138,6 +134,9 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateV2ToV3<T, W>
 		}
 
 		if !messages_remain {
+			meter.try_consume(T::DbWeight::get().writes(1)).map_err(|_| {
+				SteppedMigrationError::InsufficientWeight { required: T::DbWeight::get().writes(1) }
+			})?;
 			v2::DoneV3Migration::<T>::put(true);
 		}
 		Ok(messages_remain.then_some(last_cursor))

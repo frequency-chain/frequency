@@ -110,7 +110,7 @@ The Schemas pallet provides for:
 - Retrieving entities by their Id (all) or name (Intents and Intent Groups).
 - Retrieving last registered Schema/Intent/IntentGroup Id.
 - Updating the status of a Schema
-- Modifying the Intents contained within an IntentGroup
+- Modifying (overwriting) the Intents contained within an IntentGroup
 
 ## Interactions
 
@@ -128,7 +128,7 @@ The Schemas pallet provides for:
 | `create_intent_group`<br/>Creates an Intent Group                                                                   | Mainnet: prohibited<br/>Testnet: Token Account  | Tokens  | `IntentGroupCreated`                                                                                                                     | ?             |
 | `create_intent_group_via_governance`<br/>Governance action version of `create_intent_group`                         | Frequency Council                               | Tokens  | `IntentGroupCreated`                                                                                                                     | ?             |
 | `propose_to_create_intent_group`<br/>Creates a proposal to the Frequency Council for a new Intent Group             | Token Account                                   | Tokens  | `Proposed`                                                                                                                               | ?             |
-| `update_intent_group`<br/>Updates an existing IntentGroup with a new list of Intents                                | Mainnet: prohibited<br/>Testnet: Token Account  | Tokens  | `IntentGroupUpdated`                                                                                                                     | ?             |
+| `update_intent_group`<br/>Overwrites an existing IntentGroup with a new list of Intents                             | Mainnet: prohibited<br/>Testnet: Token Account  | Tokens  | `IntentGroupUpdated`                                                                                                                     | ?             |
 | `update_intent_group_via_governance`<br/>Governance action verison of `update_intent_group`                         | Frequency Council                               | Tokens  | `IntentGroupUpdated`                                                                                                                     | ?             |
 | `propose_to_update_intent_group`<br/>Creates a proposal to the Frequency Council to update an existing Intent Group | Token Account                                   | Tokens  | `Proposed`                                                                                                                               | ?             |
 

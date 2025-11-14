@@ -92,7 +92,13 @@ pub mod test_utility {
 		}
 	}
 
-	pub fn add_itemized_payload_to_buffer<T: Config>(buffer: &mut Vec<u8>, payload: &[u8]) {
+	pub fn add_v1_itemized_payload_to_buffer<T: Config>(buffer: &mut Vec<u8>, payload: &[u8]) {
+		buffer
+			.extend_from_slice(&ItemHeader::V1 { payload_len: payload.len() as u16 }.encode()[..]);
+		buffer.extend_from_slice(payload);
+	}
+
+	pub fn add_v2_itemized_payload_to_buffer<T: Config>(buffer: &mut Vec<u8>, payload: &[u8]) {
 		buffer.extend_from_slice(
 			&ItemHeader::V2 { schema_id: 0, payload_len: payload.len() as u16 }.encode()[..],
 		);
@@ -106,7 +112,7 @@ pub mod test_utility {
 		let nonce = nonce_in.unwrap_or_default();
 		let mut buffer: Vec<u8> = vec![];
 		for p in payloads {
-			add_itemized_payload_to_buffer::<T>(&mut buffer, p.as_slice());
+			add_v2_itemized_payload_to_buffer::<T>(&mut buffer, p.as_slice());
 		}
 		let data = BoundedVec::<u8, T::MaxItemizedPageSizeBytes>::try_from(buffer).unwrap();
 		ItemizedPage::<T> { page_version: Default::default(), schema_id: None, nonce, data }

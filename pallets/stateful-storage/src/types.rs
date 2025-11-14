@@ -153,6 +153,8 @@ pub enum PageError {
 	ArithmeticOverflow,
 	/// Page byte length over the max size
 	PageSizeOverflow,
+	/// Unsupported Item type
+	UnsupportedItemType,
 }
 
 // REMOVED ItemizedSignaturePayload
@@ -701,35 +703,32 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
-		let mut offset = 0;
-		let page_size = self.data.len();
+		let mut page_slice = &self.data[..];
 
-		while offset < page_size {
+		while page_slice.len() > 0 {
+			let item_slice = page_slice;
+			let header = <ItemHeader>::decode(&mut page_slice)
+				.map_err(|_| PageError::ErrorParsing("unable to decode item header"))?;
+			if let ItemHeader::V1 { .. } = header {
+				return Err(PageError::UnsupportedItemType);
+			}
 			ensure!(
-				offset + ItemHeader::max_encoded_len() <= page_size,
-				PageError::ErrorParsing("incomplete item header")
-			);
-			let header = <ItemHeader>::decode(&mut &self.data[offset..])
-				.map_err(|_| PageError::ErrorParsing("decoding item header"))?;
-			let item_total_length = ItemHeader::max_encoded_len() + header.payload_len() as usize;
-			ensure!(
-				offset + item_total_length <= page_size,
+				page_slice.len() >= header.payload_len() as usize,
 				PageError::ErrorParsing("item payload exceeds page data")
 			);
+			let header_len = item_slice.len() - page_slice.len();
 
-			items.insert(
-				count,
-				ParsedItem {
-					header,
-					payload: match include_header {
-						true => &self.data[offset..(offset + item_total_length)],
-						false =>
-							&self.data[(offset + ItemHeader::max_encoded_len())..
-								(offset + item_total_length)],
-					},
-				},
-			);
-			offset += item_total_length;
+			let payload: &[u8];
+			(payload, page_slice) = match include_header {
+				true => item_slice
+					.split_at_checked(header_len + header.payload_len() as usize)
+					.ok_or(PageError::ErrorParsing("item payload exceeds page data"))?,
+				false => page_slice
+					.split_at_checked(header.payload_len() as usize)
+					.ok_or(PageError::ErrorParsing("item payload exceeds page data"))?,
+			};
+
+			items.insert(count, ParsedItem { header, payload });
 			count = count.checked_add(1).ok_or(PageError::ArithmeticOverflow)?;
 		}
 

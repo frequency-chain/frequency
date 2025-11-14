@@ -676,7 +676,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Update an IntentGroup (testnet)
+		/// Update an [`IntentGroup`] (testnet)
+		/// Replaces an IntentGroup's list of Intents with a new list.
 		///
 		/// # Events
 		/// * [`Event::IntentGroupUpdated`]
@@ -699,7 +700,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Update an IntentGroup by means of council approval
+		/// Update an IntentGroup by means of council approval.
+		/// Replaces an IntentGroup's list of Intents with a new list.
 		///
 		/// # Events
 		/// * [`Event::IntentGroupUpdated`]
@@ -840,13 +842,13 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Set the schema count to something in particular.
+		/// Set the maximum schema id to the supplied value.
 		#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 		pub fn set_schema_count(n: SchemaId) {
 			<CurrentSchemaIdentifierMaximum<T>>::set(n);
 		}
 
-		/// Set the schema count to something in particular.
+		/// Set the maximum intent id to the supplied value.
 		#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]
 		pub fn set_intent_count(n: IntentId) {
 			<CurrentIntentIdentifierMaximum<T>>::set(n);
