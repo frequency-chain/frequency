@@ -13,11 +13,16 @@ authorization is tightly bound to a specific `SchemaId`. This model has proven l
 - **Schemas represent data format, not purpose**
 - **Lack of human-readable context**
 
+Additionally, delegation housekeeping is cumbersome for Providers, due to the need to delegate multiple schemas that
+form a functional group; the determination of which schemas to delegate cannot be discovered except by a manual reading
+of separate documentation.
+
 These limitations have motivated a re-architecture of the schema and delegation systems to introduce the concepts of:
 
 - **Named intents** with version tracking
 - **Intent-based delegation**
 - **More flexible storage models**
+- **Named intent groups** that facilitate functional delegation and discovery
 
 ## 2. **Design Goals** <a id="section_2"></a>
 
@@ -276,6 +281,15 @@ pub struct IntentInfo {
 
 ### 8. **Intent Groups**<a id="intent_groups"></a>
 
+#### Rationale
+
+In order to support all desired operations for a particular function, it is often necessary for a Provider to obtain
+multiple, related delegations. The original design allowed for no discovery mechanism, leaving it as an exercise for the
+developer to discover through external documentation. Furthermore, there was no mechanism to become aware when the
+required list of delegations changed.
+
+#### Details
+
 As mentioned <a href="#delegation_semantics">above</a>, other than changing the interpretation of a Delegation from
 `SchemaId` to `IntentId`, the semantics of Delegations does not change in the new design. However, to
 facilitate user provisioning and onboarding by Providers, we introduce here the concept of _Intent Groups_.
@@ -306,6 +320,33 @@ pub struct IntentGroup {
     pub intent_ids: BoundedVec<IntentId, ConstU32<MAX_INTENTS_PER_GROUP>>,
 }
 ```
+
+#### Example
+
+Consider this example: imagine a fictitious function "have a party". This requires the following Intent delegations:
+
+* `party.eat` (intent_id: 1)
+* `party.drink` (intent_id: 2)
+
+In order to facilitate discovery of this group of Intents, we create the following `IntentGroup`:
+
+* `party.requirements` [1, 2]
+
+We can discover from the chain itself the list of Intents that need to be delegated, from a single reference (the
+IntentGroup name, 'party.requirements').
+
+Now, imagine the list of required Intents changes; we now require an additional delegation:
+
+* `party.be_merry` (intent_id: 12)
+
+We can update the IntentGroup as follows:
+
+* `party.requirements` [1, 2, 12]
+
+Now, we can compare the existing delegations for users on-chain with the set of required delegations and activate an
+appropriate workflow to add any missing delegations. Previously, there was no way to know that this list of required
+delegations had changed. The developer would simply have to monitor a documentation site for (hopefully timely) updates,
+then make the appropriate changes to a client app to add the new Intent to the list of required delegations.
 
 ### 9. **Name Resolution**<a id="name_resolution"></a>
 
@@ -370,18 +411,18 @@ The following modifications to existing extrinsics are proposed:
 
 The following new extrinsics are proposed:
 
-| Extrinsic                                                | Parameters                                                                                                                                                          | Description                                                      |
-|----------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| propose_to_create_schema_v3<br/>create_schema_v4         | `model: BoundedVec<u8>`<br/>`model_type: ModelType`<br/>`intent_id: IntentId`                                                                                       | Propose to create a Schema<br/>Create a Schema                   |
-| create_schema_via_governance_v3                          | `creator_key: AccountId`<br/>`model: BoundedVec<u8>`<br/>`model_type: ModelType`<br/>`intent_id: IntentId`                                                          | Create a Schema via governance                                   |
-| propose_to_create_intent<br/>create_intent               | `protocol_name: ProtocolName`<br/>`intent_name: NameDescriptor`<br/>`payload_location: PayloadLocation`<br/>`settings: IntentSettings`                              | Propose to create an Intent<br/>Create an Intent                 |
-| create_intent_via_governance                             | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`intent_name: NameDescriptor`<br/>`payload_location: PayloadLocation`<br/>`settings: IntentSettings` | Create an Intent via Governance                                  |
-| propose_to_create_intent_group<br/>create_intent_group   | `protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                        | Propose to create a IntentGroup<br/>Create an IntentGroup        |
-| create_intent_group_via_governance                       | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`           | Create an IntentGroup via Governance                             |
-| propose_to_update_intent_group<br/>update_intent_group   | `group_id: IntentGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                                                             | Propose to update an IntentGroup<br/>Update an IntentGroup       |
-| update_intent_group_via_governance                       | `creator_key: AccountId`<br/>`group_id: IntentGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                                | Update an IntentGroup via Governance                             |
-| propose_to_update_schema_status<br/>update_schema_status | `schema_id: SchemaId`<br/>`status: SchemaStatus`                                                                                                                    | Propose to update a Schema's status<br/>Update a Schema's status |
-| update_schema_status_via_governance                      | `schema_id: SchemaId`<br/>`status: SchemaStatus`                                                                                                                    | Update a Schema's status via Governance                          |
+| Extrinsic                                                | Parameters                                                                                                                                                          | Description                                                            |
+|----------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| propose_to_create_schema_v3<br/>create_schema_v4         | `model: BoundedVec<u8>`<br/>`model_type: ModelType`<br/>`intent_id: IntentId`                                                                                       | Propose to create a Schema<br/>Create a Schema                         |
+| create_schema_via_governance_v3                          | `creator_key: AccountId`<br/>`model: BoundedVec<u8>`<br/>`model_type: ModelType`<br/>`intent_id: IntentId`                                                          | Create a Schema via governance                                         |
+| propose_to_create_intent<br/>create_intent               | `protocol_name: ProtocolName`<br/>`intent_name: NameDescriptor`<br/>`payload_location: PayloadLocation`<br/>`settings: IntentSettings`                              | Propose to create an Intent<br/>Create an Intent                       |
+| create_intent_via_governance                             | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`intent_name: NameDescriptor`<br/>`payload_location: PayloadLocation`<br/>`settings: IntentSettings` | Create an Intent via Governance                                        |
+| propose_to_create_intent_group<br/>create_intent_group   | `protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                        | Propose to create a IntentGroup<br/>Create an IntentGroup              |
+| create_intent_group_via_governance                       | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`           | Create an IntentGroup via Governance                                   |
+| propose_to_update_intent_group<br/>update_intent_group   | `group_id: IntentGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                                                             | Propose to update an IntentGroup<br/>Update (overwrite) an IntentGroup |
+| update_intent_group_via_governance                       | `creator_key: AccountId`<br/>`group_id: IntentGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                                | Update (overwrite) an IntentGroup via Governance                       |
+| propose_to_update_schema_status<br/>update_schema_status | `schema_id: SchemaId`<br/>`status: SchemaStatus`                                                                                                                    | Propose to update a Schema's status<br/>Update a Schema's status       |
+| update_schema_status_via_governance                      | `schema_id: SchemaId`<br/>`status: SchemaStatus`                                                                                                                    | Update a Schema's status via Governance                                |
 
 ### 12. **Runtime Calls**<a id="runtime_calls"></a>
 
