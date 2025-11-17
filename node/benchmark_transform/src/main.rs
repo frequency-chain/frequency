@@ -1,6 +1,6 @@
 /// This tool reads the generated weight.rs file that includes child trie access and replaces
 /// these DB Read and Writes with child trie specific DB weights located at rocksdb_child_trie_weights.rs
-/// 
+///
 /// NOTE: This tool relies on the fact that the keys used for child trie access are not registered in the
 /// chain metadata, and hence show up in benchmarked weights as "UNKNOWN KEY". HOWEVER--storage declared using
 /// `#[storage_alias]` ALSO does not get registered with chain metadata, and hence reads to storage aliases
