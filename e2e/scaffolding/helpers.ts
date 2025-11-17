@@ -672,7 +672,10 @@ export async function getOrCreateIntentAndSchema(
   return { intentId, schemaId };
 }
 
-export function getOrCreateGraphChangeSchema(source: KeyringPair, nonce?: number): Promise<{ intentId: u16; schemaId: u16 }> {
+export function getOrCreateGraphChangeSchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16 }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.graphChange',
@@ -682,7 +685,10 @@ export function getOrCreateGraphChangeSchema(source: KeyringPair, nonce?: number
   );
 }
 
-export async function getOrCreateParquetBroadcastSchema(source: KeyringPair, nonce?: number): Promise<{
+export async function getOrCreateParquetBroadcastSchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{
   intentId: u16;
   schemaId: u16;
 }> {

@@ -72,11 +72,16 @@ async function fundAccountsToDefault(dests: KeyringPair[]) {
 async function seedTestIntentsAndSchemas() {
   const keys = getRootFundingSource().keys;
   let nonce = await getNonce(keys);
-  await getOrCreateGraphChangeSchema(keys, nonce); nonce += 1;
-  await getOrCreateParquetBroadcastSchema(keys); nonce += 1;
-  await getOrCreateDummySchema(keys); nonce += 1;
-  await getOrCreateAvroChatMessagePaginatedSchema(keys); nonce += 1;
-  await getOrCreateAvroChatMessageItemizedSchema(keys); nonce += 1;
+  await getOrCreateGraphChangeSchema(keys, nonce);
+  nonce += 1;
+  await getOrCreateParquetBroadcastSchema(keys);
+  nonce += 1;
+  await getOrCreateDummySchema(keys);
+  nonce += 1;
+  await getOrCreateAvroChatMessagePaginatedSchema(keys);
+  nonce += 1;
+  await getOrCreateAvroChatMessageItemizedSchema(keys);
+  nonce += 1;
 
   // Make sure we are finalized so that we don't get intent and schema creation race conditions
   await ExtrinsicHelper.waitForFinalization();

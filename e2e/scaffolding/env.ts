@@ -5,12 +5,24 @@ export const verbose = process.env.VERBOSE_TESTS === 'true' || process.env.VERBO
 
 // Disable console output in non-verbose mode; it's far too noisy.
 if (!verbose) {
-  console.debug = () => { /* empty */ };
-  console.log = () => { /* empty */ };
-  console.info = () => { /* empty */ };
-  console.warn = () => { /* empty */ };
-  console.error = () => { /* empty */ };
-  console.count = () => { /* empty */ };
+  console.debug = () => {
+    /* empty */
+  };
+  console.log = () => {
+    /* empty */
+  };
+  console.info = () => {
+    /* empty */
+  };
+  console.warn = () => {
+    /* empty */
+  };
+  console.error = () => {
+    /* empty */
+  };
+  console.count = () => {
+    /* empty */
+  };
 }
 
 const CHAIN_ENVIRONMENT = {

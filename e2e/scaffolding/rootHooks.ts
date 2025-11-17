@@ -28,7 +28,7 @@ export const mochaHooks = {
       // then any value remaining is drained here at the end
       await Promise.race([
         drainFundedKeys(getRootFundingSource().keys),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Root hook timeout')), 20_000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Root hook timeout')), 20_000)),
       ]);
       console.log('ENDING ROOT hook shutdown', testSuite);
     } catch (e) {
