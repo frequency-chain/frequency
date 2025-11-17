@@ -1338,15 +1338,11 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
             RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
             RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
             RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_v2 { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes_v2(actions))),
             RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
             RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
             RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v3 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes_v2(&payload.actions))),
             RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32)),
             RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v3 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
             RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
             RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
             _ => None,
@@ -1690,14 +1686,6 @@ impl pallet_migrations::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type Migrations = (
-		pallet_messages::migration::MigrateV2ToV3<
-			Runtime,
-			pallet_messages::weights::SubstrateWeight<Runtime>,
-		>,
-		pallet_messages::migration::FinalizeV3Migration<
-			Runtime,
-			pallet_messages::weights::SubstrateWeight<Runtime>,
-		>,
 		pallet_stateful_storage::migration::v2::MigratePaginatedV1ToV2<
 			Runtime,
 			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
@@ -1709,6 +1697,14 @@ impl pallet_migrations::Config for Runtime {
 		pallet_stateful_storage::migration::v2::FinalizeV2Migration<
 			Runtime,
 			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_messages::migration::MigrateV2ToV3<
+			Runtime,
+			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_messages::migration::FinalizeV3Migration<
+			Runtime,
+			pallet_messages::weights::SubstrateWeight<Runtime>,
 		>,
 	);
 	// Benchmarks need mocked migrations to guarantee that they succeed.

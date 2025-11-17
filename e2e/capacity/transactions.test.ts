@@ -373,7 +373,7 @@ describe('Capacity Transactions', function () {
           target_hash = await getCurrentPaginatedHash(capacityProvider, paginatedIntentId, page_id);
           const call2 = ExtrinsicHelper.removePage(
             capacityKeys,
-            paginatedIntentId,
+            paginatedSchemaId,
             capacityProvider,
             page_id,
             target_hash

@@ -150,7 +150,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
       add_actions,
       target_hash
     );
-    await assert.rejects(itemized_add_result_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForIntent' });
+    await assert.rejects(itemized_add_result_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
   });
 
   it('owner should be able to call applyItemizedAction', async function () {

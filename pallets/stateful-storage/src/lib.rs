@@ -1,4 +1,3 @@
-#![allow(deprecated)]
 //! MSA-centric Storage for [`PayloadLocation::Paginated`] and [`PayloadLocation::Itemized`]
 //!
 //! ## Quick Links
@@ -80,7 +79,6 @@ pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	#[allow(deprecated)]
 	use super::*;
 	use core::fmt::Debug;
 
@@ -205,11 +203,8 @@ pub mod pallet {
 		/// Invalid IntentId or Intent not found.
 		InvalidIntentId,
 
-		/// Intent is not valid for storage model.
-		IntentPayloadLocationMismatch,
-
-		/// Unsupported operation for Intent
-		UnsupportedOperationForIntent,
+		/// Specified payload location is not valid for the entity
+		PayloadLocationMismatch,
 	}
 
 	#[pallet::event]
@@ -286,11 +281,10 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageUpdated`]
 		/// * [`Event::ItemizedPageDeleted`]
 		///
-		#[deprecated(note = "Please use apply_item_actions_v2 instead")]
 		#[pallet::call_index(0)]
 		#[pallet::weight(
-			T::WeightInfo::apply_item_actions_delete(actions.len() as u32)
-			.max(T::WeightInfo::apply_item_actions_add(Pallet::<T>::sum_add_actions_bytes(actions)))
+            T::WeightInfo::apply_item_actions_delete(actions.len() as u32)
+            .max(T::WeightInfo::apply_item_actions_add(Pallet::<T>::sum_add_actions_bytes(actions)))
         )]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
@@ -302,20 +296,30 @@ pub mod pallet {
 				T::MaxItemizedActionsCount,
 			>,
 		) -> DispatchResult {
-			let intent = T::SchemaProvider::get_schema_info_by_id(schema_id)
+			let key = ensure_signed(origin)?;
+			let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
 				.ok_or(Error::<T>::InvalidSchemaId)?;
-			let actions: Vec<ItemActionV2<T::MaxItemizedBlobSizeBytes>> =
-				actions.into_iter().map(|a| (schema_id, a).into()).collect();
-			Self::apply_item_actions_v2(
-				origin,
+			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
+			let caller_msa_id =
+				Self::check_msa_and_grants(key, state_owner_msa_id, schema.intent_id)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Itemized,
+				caller_is_state_owner,
+				is_pruning,
+			)?;
+			Self::update_itemized(
 				state_owner_msa_id,
-				intent.intent_id,
+				schema.intent_id,
+				schema_id,
 				target_hash,
-				actions.try_into().map_err(|_| Error::<T>::CorruptedState)?,
-			)
+				actions,
+			)?;
+			Ok(())
 		}
 
-		/// Creates or updates an Paginated storage with new payload
+		/// Creates or updates a Paginated page with new payload
 		///
 		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
 		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
@@ -369,7 +373,6 @@ pub mod pallet {
 		/// # Events
 		/// * [`Event::PaginatedPageDeleted`]
 		///
-		#[deprecated(note = "Please use delete_page_v2 instead")]
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::delete_page())]
 		pub fn delete_page(
@@ -379,9 +382,20 @@ pub mod pallet {
 			#[pallet::compact] page_id: PageId,
 			#[pallet::compact] target_hash: PageHash,
 		) -> DispatchResult {
-			let schema = T::SchemaProvider::get_schema_by_id(schema_id)
+			let provider_key = ensure_signed(origin)?;
+			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
+			let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
 				.ok_or(Error::<T>::InvalidSchemaId)?;
-			Self::delete_page_v2(origin, state_owner_msa_id, schema.intent_id, page_id, target_hash)
+			let caller_msa_id =
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema.intent_id)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			let SchemaInfoResponse { intent_id, .. } = Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Paginated,
+				caller_is_state_owner,
+				true,
+			)?;
+			Self::delete_paginated(state_owner_msa_id, intent_id, page_id, target_hash)
 		}
 
 		// REMOVED apply_item_actions_with_signature() at call index 3
@@ -396,11 +410,10 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageUpdated`]
 		/// * [`Event::ItemizedPageDeleted`]
 		///
-		#[deprecated(note = "Please use apply_item_actions_with_signature_v3 instead")]
 		#[pallet::call_index(6)]
 		#[pallet::weight(
-		T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
-		.max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
+            T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
+            .max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
         )]
 		pub fn apply_item_actions_with_signature_v2(
 			origin: OriginFor<T>,
@@ -424,13 +437,12 @@ pub mod pallet {
 				true,
 				is_pruning,
 			)?;
-			let actions: Vec<ItemActionV2<T::MaxItemizedBlobSizeBytes>> =
-				payload.actions.into_iter().map(|a| (payload.schema_id, a).into()).collect();
 			Self::update_itemized(
 				state_owner_msa_id,
 				schema.intent_id,
+				payload.schema_id,
 				payload.target_hash,
-				actions.try_into().map_err(|_| Error::<T>::CorruptedState)?,
+				payload.actions,
 			)?;
 			Ok(())
 		}
@@ -486,7 +498,6 @@ pub mod pallet {
 		/// # Events
 		/// * [`Event::PaginatedPageDeleted`]
 		///
-		#[deprecated(note = "Please use delete_page_with_signature_v3 instead")]
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::delete_page_with_signature_v2())]
 		pub fn delete_page_with_signature_v2(
@@ -521,167 +532,6 @@ pub mod pallet {
 			)?;
 			Ok(())
 		}
-
-		/// Applies the Add or Delete Actions on the requested Itemized page.
-		/// This is treated as a transaction so either all actions succeed or none will be executed.
-		///
-		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
-		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
-		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
-		/// submitting this extrinsic on behalf of a user would fail.
-		///
-		/// # Events
-		/// * [`Event::ItemizedPageUpdated`]
-		/// * [`Event::ItemizedPageDeleted`]
-		///
-		#[pallet::call_index(9)]
-		#[pallet::weight(
-			T::WeightInfo::apply_item_actions_delete(actions.len() as u32)
-			.max(T::WeightInfo::apply_item_actions_add(Pallet::<T>::sum_add_actions_bytes_v2(actions)))
-        )]
-		pub fn apply_item_actions_v2(
-			origin: OriginFor<T>,
-			#[pallet::compact] state_owner_msa_id: MessageSourceId,
-			#[pallet::compact] intent_id: IntentId,
-			#[pallet::compact] target_hash: PageHash,
-			actions: BoundedVec<
-				crate::types::ItemActionV2<T::MaxItemizedBlobSizeBytes>,
-				T::MaxItemizedActionsCount,
-			>,
-		) -> DispatchResult {
-			let key = ensure_signed(origin)?;
-			let is_pruning = actions.iter().any(|a| matches!(a, ItemActionV2::Delete { .. }));
-			let caller_msa_id = Self::check_msa_and_grants(key, state_owner_msa_id, intent_id)?;
-			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
-			Self::check_intent_for_write(
-				intent_id,
-				PayloadLocation::Itemized,
-				caller_is_state_owner,
-				is_pruning,
-			)?;
-			Self::update_itemized(state_owner_msa_id, intent_id, target_hash, actions)?;
-			Ok(())
-		}
-
-		/// Deletes a Paginated storage
-		///
-		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
-		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
-		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
-		/// submitting this extrinsic on behalf of a user would fail.
-		///
-		/// # Events
-		/// * [`Event::PaginatedPageDeleted`]
-		///
-		#[pallet::call_index(10)]
-		#[pallet::weight(T::WeightInfo::delete_page())]
-		pub fn delete_page_v2(
-			origin: OriginFor<T>,
-			#[pallet::compact] state_owner_msa_id: MessageSourceId,
-			#[pallet::compact] intent_id: IntentId,
-			#[pallet::compact] page_id: PageId,
-			#[pallet::compact] target_hash: PageHash,
-		) -> DispatchResult {
-			let provider_key = ensure_signed(origin)?;
-			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			let caller_msa_id =
-				Self::check_msa_and_grants(provider_key, state_owner_msa_id, intent_id)?;
-			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
-			Self::check_intent_for_write(
-				intent_id,
-				PayloadLocation::Paginated,
-				caller_is_state_owner,
-				true,
-			)?;
-			Self::delete_paginated(state_owner_msa_id, intent_id, page_id, target_hash)?;
-			Ok(())
-		}
-
-		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature.
-		/// Since the signature of delegator is checked, there is no need for delegation validation.
-		/// This is treated as a transaction so either all actions succeed or none will be executed.
-		///
-		/// # Events
-		/// * [`Event::ItemizedPageUpdated`]
-		/// * [`Event::ItemizedPageDeleted`]
-		///
-		#[pallet::call_index(11)]
-		#[pallet::weight(
-		T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
-		.max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes_v2(&payload.actions)))
-        )]
-		pub fn apply_item_actions_with_signature_v3(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: ItemizedSignaturePayloadV3<T>,
-		) -> DispatchResult {
-			ensure_signed(origin)?;
-
-			let is_pruning =
-				payload.actions.iter().any(|a| matches!(a, ItemActionV2::Delete { .. }));
-			Self::check_payload_expiration(
-				frame_system::Pallet::<T>::block_number(),
-				payload.expiration,
-			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
-			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-			let _ = Self::check_intent_for_write(
-				payload.intent_id,
-				PayloadLocation::Itemized,
-				true,
-				is_pruning,
-			)?;
-			Self::update_itemized(
-				state_owner_msa_id,
-				payload.intent_id,
-				payload.target_hash,
-				payload.actions,
-			)?;
-			Ok(())
-		}
-
-		/// Deletes a Paginated storage that requires signature
-		/// since the signature of delegator is checked there is no need for delegation validation
-		///
-		/// # Events
-		/// * [`Event::PaginatedPageDeleted`]
-		///
-		#[pallet::call_index(12)]
-		#[pallet::weight(T::WeightInfo::delete_page_with_signature_v3())]
-		pub fn delete_page_with_signature_v3(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: PaginatedDeleteSignaturePayloadV3<T>,
-		) -> DispatchResult {
-			ensure_signed(origin)?;
-			ensure!(
-				payload.page_id <= T::MaxPaginatedPageId::get(),
-				Error::<T>::PageIdExceedsMaxAllowed
-			);
-			Self::check_payload_expiration(
-				frame_system::Pallet::<T>::block_number(),
-				payload.expiration,
-			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
-			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-			let _ = Self::check_intent_for_write(
-				payload.intent_id,
-				PayloadLocation::Paginated,
-				true,
-				true,
-			)?;
-			Self::delete_paginated(
-				state_owner_msa_id,
-				payload.intent_id,
-				payload.page_id,
-				payload.target_hash,
-			)?;
-			Ok(())
-		}
 	}
 }
 
@@ -696,21 +546,6 @@ impl<T: Config> Pallet<T> {
 		actions.iter().fold(0, |acc, a| {
 			acc.saturating_add(match a {
 				ItemAction::Add { data } => data.len() as u32,
-				_ => 0,
-			})
-		})
-	}
-
-	/// Sums the total bytes over all item actions
-	pub fn sum_add_actions_bytes_v2(
-		actions: &BoundedVec<
-			ItemActionV2<<T as Config>::MaxItemizedBlobSizeBytes>,
-			<T as Config>::MaxItemizedActionsCount,
-		>,
-	) -> u32 {
-		actions.iter().fold(0, |acc, a| {
-			acc.saturating_add(match a {
-				ItemActionV2::Add { data, .. } => data.len() as u32,
 				_ => 0,
 			})
 		})
@@ -859,7 +694,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::InvalidSchemaId`]
-	/// * [`Error::SchemaPayloadLocationMismatch`]
+	/// * [`Error::PayloadLocationMismatch`]
 	///
 	fn check_schema_for_read(
 		schema_id: SchemaId,
@@ -871,7 +706,7 @@ impl<T: Config> Pallet<T> {
 		// Ensure that the schema's payload location matches the expected location.
 		ensure!(
 			schema.payload_location == expected_payload_location,
-			Error::<T>::SchemaPayloadLocationMismatch
+			Error::<T>::PayloadLocationMismatch
 		);
 
 		Ok(schema)
@@ -881,7 +716,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::InvalidIntentId`]
-	/// * [`Error::IntentPayloadLocationMismatch`]
+	/// * [`Error::PayloadLocationMismatch`]
 	///
 	fn check_intent_for_read(
 		intent_id: IntentId,
@@ -893,7 +728,7 @@ impl<T: Config> Pallet<T> {
 		// Ensure that the intent's payload location matches the expected location.
 		ensure!(
 			intent.payload_location == expected_payload_location,
-			Error::<T>::IntentPayloadLocationMismatch
+			Error::<T>::PayloadLocationMismatch
 		);
 
 		Ok(intent)
@@ -903,7 +738,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::InvalidSchemaId`]
-	/// * [`Error::SchemaPayloadLocationMismatch`]
+	/// * [`Error::PayloadLocationMismatch`]
 	/// * [`Error::UnsupportedOperationForSchema`]
 	///
 	fn check_schema_for_write(
@@ -926,35 +761,6 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(schema)
-	}
-
-	/// Checks that the schema is valid for is action
-	///
-	/// # Errors
-	/// * [`Error::InvalidIntentId`]
-	/// * [`Error::IntentPayloadLocationMismatch`]
-	/// * [`Error::UnsupportedOperationForIntent`]
-	///
-	fn check_intent_for_write(
-		intent_id: IntentId,
-		expected_payload_location: PayloadLocation,
-		is_payload_signed: bool,
-		is_deleting: bool,
-	) -> Result<IntentResponse, DispatchError> {
-		let intent = Self::check_intent_for_read(intent_id, expected_payload_location)?;
-
-		// Ensure that the schema allows signed payloads.
-		// If so, calling extrinsic must be of signature type.
-		if intent.settings.contains(&IntentSetting::SignatureRequired) {
-			ensure!(is_payload_signed, Error::<T>::UnsupportedOperationForIntent);
-		}
-
-		// Ensure that the schema does not allow deletion for AppendOnly IntentSetting.
-		if intent.settings.contains(&IntentSetting::AppendOnly) {
-			ensure!(!is_deleting, Error::<T>::UnsupportedOperationForIntent);
-		}
-
-		Ok(intent)
 	}
 
 	/// Checks that existence of Msa for certain key and if the grant is valid when the caller Msa
@@ -987,7 +793,14 @@ impl<T: Config> Pallet<T> {
 		Ok(caller_msa_id)
 	}
 
-	/// Updates an itemized storage by applying provided actions and deposit events
+	/// Updates an itemized storage by applying provided actions and deposit events.
+	/// All items must
+	///
+	/// # Errors
+	/// * [`Error::StalePageState`] - Page content hash does not match on-chain hash.
+	/// * [`Error::CorruptedState`] - Unable to read the existing page data.
+	/// * [`Error::InvalidItemAction`] - Supplied action item is invalid.
+	///
 	///
 	/// # Events
 	/// * [`Event::ItemizedPageUpdated`]
@@ -996,8 +809,9 @@ impl<T: Config> Pallet<T> {
 	fn update_itemized(
 		state_owner_msa_id: MessageSourceId,
 		intent_id: IntentId,
+		schema_id: SchemaId,
 		target_hash: PageHash,
-		actions: BoundedVec<ItemActionV2<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount>,
+		actions: BoundedVec<ItemAction<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
 		let key: ItemizedKey = (intent_id,);
 		let existing_page =
@@ -1007,8 +821,8 @@ impl<T: Config> Pallet<T> {
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
 		let mut updated_page =
-			ItemizedOperations::<T>::apply_item_actions(&existing_page, &actions[..]).map_err(
-				|e| match e {
+			ItemizedOperations::<T>::apply_item_actions(&existing_page, schema_id, &actions[..])
+				.map_err(|e| match e {
 					PageError::ErrorParsing(err) => {
 						log::warn!(
 							"failed parsing Itemized msa={state_owner_msa_id:?} intent_id={intent_id:?} {err:?}",
@@ -1016,8 +830,7 @@ impl<T: Config> Pallet<T> {
 						Error::<T>::CorruptedState
 					},
 					_ => Error::<T>::InvalidItemAction,
-				},
-			)?;
+				})?;
 		updated_page.nonce = existing_page.nonce.wrapping_add(1);
 
 		match updated_page.is_empty() {

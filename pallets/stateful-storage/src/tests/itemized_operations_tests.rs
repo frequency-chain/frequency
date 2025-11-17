@@ -1,5 +1,10 @@
-use crate::{test_common::test_utility::*, tests::mock::*, types::*, Config};
-use common_primitives::stateful_storage::PageNonce;
+use crate::{
+	test_common::{constants::ITEMIZED_SCHEMA, test_utility::*},
+	tests::mock::*,
+	types::*,
+	Config,
+};
+use common_primitives::{schema::SchemaId, stateful_storage::PageNonce};
 use frame_support::{assert_err, assert_ok, traits::Len};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 #[allow(unused_imports)]
@@ -178,10 +183,10 @@ fn applying_delete_action_with_existing_index_should_delete_item() {
 	];
 	let page = create_itemized_page_from::<Test>(None, payloads.as_slice());
 	let expecting_page = create_itemized_page_from::<Test>(None, &payloads[1..]);
-	let actions = vec![ItemActionV2::Delete { index: 0 }];
+	let actions = vec![ItemAction::Delete { index: 0 }];
 
 	// act
-	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions);
+	let result = ItemizedOperations::<Test>::apply_item_actions(&page, ITEMIZED_SCHEMA, &actions);
 
 	// assert
 	assert_ok!(&result);
@@ -201,10 +206,10 @@ fn applying_add_action_should_add_item_to_the_end_of_the_page() {
 		None,
 		&vec![payload1[0].clone(), payload2[0].clone()][..],
 	);
-	let actions = vec![ItemActionV2::Add { schema_id: 0, data: payload2[0].clone().into() }];
+	let actions = vec![ItemAction::Add { data: payload2[0].clone().into() }];
 
 	// act
-	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions[..]);
+	let result = ItemizedOperations::<Test>::apply_item_actions(&page, 0 as SchemaId, &actions[..]);
 
 	// assert
 	assert_ok!(&result);
@@ -220,10 +225,11 @@ fn applying_delete_action_with_non_existing_index_should_fail() {
 		generate_payload_bytes::<ItemizedBlobSize>(Some(4)),
 	];
 	let page = create_itemized_page_from::<Test>(None, payloads.as_slice());
-	let actions = vec![ItemActionV2::Delete { index: 2 }];
+	let actions = vec![ItemAction::Delete { index: 2 }];
 
 	// act
-	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions[..]);
+	let result =
+		ItemizedOperations::<Test>::apply_item_actions(&page, ITEMIZED_SCHEMA, &actions[..]);
 
 	// assert
 	assert_eq!(result.is_err(), true);
@@ -247,10 +253,11 @@ fn applying_add_action_with_full_page_should_fail() {
 		nonce: 0,
 		data: item_buffer.try_into().unwrap(),
 	};
-	let actions = vec![ItemActionV2::Add { schema_id: 0, data: payload.try_into().unwrap() }];
+	let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 
 	// act
-	let result = ItemizedOperations::<Test>::apply_item_actions(&page, &actions[..]);
+	let result =
+		ItemizedOperations::<Test>::apply_item_actions(&page, ITEMIZED_SCHEMA, &actions[..]);
 
 	// assert
 	assert_eq!(result, Err(PageError::PageSizeOverflow));

@@ -239,7 +239,7 @@ describe('📗 Stateful Pallet Storage Signature Required Paginated', function (
 
     const remove_op = ExtrinsicHelper.removePage(
       undelegatedProviderKeys,
-      paginatedIntentId,
+      paginatedSchemaId,
       msa_id,
       page_id,
       target_hash
@@ -248,12 +248,12 @@ describe('📗 Stateful Pallet Storage Signature Required Paginated', function (
 
     const remove_op_2 = ExtrinsicHelper.removePage(
       delegatedProviderKeys,
-      paginatedIntentId,
+      paginatedSchemaId,
       msa_id,
       page_id,
       target_hash
     );
-    await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForIntent' });
+    await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
   });
 
   // Fails to emit event but appears to pass
@@ -261,7 +261,7 @@ describe('📗 Stateful Pallet Storage Signature Required Paginated', function (
     const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
     const target_hash = await getCurrentPaginatedHash(msa_id, paginatedIntentId, page_id.toNumber());
-    const remove_result = ExtrinsicHelper.removePage(delegatorKeys, paginatedIntentId, msa_id, page_id, target_hash);
+    const remove_result = ExtrinsicHelper.removePage(delegatorKeys, paginatedSchemaId, msa_id, page_id, target_hash);
     const { target: pageUpdateEvent, eventMap: chainEvents1 } = await remove_result.fundAndSend(fundingSource);
     await assertExtrinsicSucceededAndFeesPaid(chainEvents1);
     assert.notEqual(pageUpdateEvent, undefined, 'should have returned a PaginatedPageDeleted event');

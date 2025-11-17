@@ -371,11 +371,6 @@ pub trait DelegationValidator {
 
 /// A behavior that allows for validating a schema grant
 pub trait GrantValidator<DelegationIdType, BlockNumber> {
-	// /// The id type of the items being delegated
-	// type DelegationIdType;
-	// /// The block number type
-	// type BlockNumber;
-
 	/// Validates if the provider is allowed to use the particular delegated item id currently
 	fn ensure_valid_grant(
 		provider_id: ProviderId,

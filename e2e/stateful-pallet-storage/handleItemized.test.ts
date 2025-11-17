@@ -145,7 +145,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         0
       );
       await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
-        name: 'IntentPayloadLocationMismatch',
+        name: 'PayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });
@@ -255,7 +255,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         0
       );
       await assert.rejects(itemized_remove_result_1.fundAndSend(fundingSource), {
-        name: 'IntentPayloadLocationMismatch',
+        name: 'PayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });

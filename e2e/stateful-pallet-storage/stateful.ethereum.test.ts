@@ -18,7 +18,7 @@ import {
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
+import { AVRO_CHAT_MESSAGE } from './fixtures/itemizedSchemaType';
 import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
@@ -100,33 +100,6 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
-        ethereumDelegatorKeys,
-        undelegatedProviderKeys,
-        signature,
-        payload
-      );
-      const { target: pageUpdateEvent1, eventMap: chainEvents } =
-        await itemized_add_result_1.fundAndSend(fundingSource);
-      await assertExtrinsicSucceededAndFeesPaid(chainEvents);
-      assert.notEqual(
-        pageUpdateEvent1,
-        undefined,
-        'should have returned a PalletStatefulStorageItemizedActionApplied event'
-      );
-    });
-
-    it('provider should be able to call applyItemizedActionWithSignatureV3 and apply actions with Ethereum keys', async function () {
-      const { payload, signature } = await generateItemizedActionsSignedPayloadV3(
-        generateItemizedActionsV2([
-          { schemaId: itemizedSchemaId, action: 'Add', value: 'Hello, world from Frequency' },
-          { schemaId: itemizedSchemaId, action: 'Add', value: 'Hello, world again from Frequency' },
-        ]),
-        itemizedIntentId,
-        ethereumDelegatorKeys,
-        msa_id
-      );
-
-      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV3(
         ethereumDelegatorKeys,
         undelegatedProviderKeys,
         signature,

@@ -49,7 +49,8 @@ pub trait ItemizedOperations<T: Config> {
 	/// Applies all actions to specified page and returns the updated page
 	fn apply_item_actions(
 		&self,
-		actions: &[ItemActionV2<T::MaxItemizedBlobSizeBytes>],
+		schema_id: SchemaId,
+		actions: &[ItemAction<T::MaxItemizedBlobSizeBytes>],
 	) -> Result<ItemizedPage<T>, PageError>;
 
 	/// Parses all the items inside an ItemPage
@@ -72,38 +73,6 @@ pub enum ItemAction<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq> {
 		/// Index (0+) to delete
 		index: u16,
 	},
-}
-/// Defines the actions that can be applied to an Itemized storage
-#[derive(
-	Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq,
-)]
-#[scale_info(skip_type_params(DataSize))]
-#[codec(mel_bound(DataSize: MaxEncodedLen))]
-pub enum ItemActionV2<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq> {
-	/// Adding new Item into page
-	Add {
-		/// The SchemaId used to serialize this item
-		schema_id: SchemaId,
-		/// The data to add
-		data: BoundedVec<u8, DataSize>,
-	},
-	/// Removing an existing item by index number. Index number starts from 0
-	Delete {
-		/// Index (0+) to delete
-		index: u16,
-	},
-}
-
-impl<DataSize> Into<ItemActionV2<DataSize>> for (SchemaId, ItemAction<DataSize>)
-where
-	DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq,
-{
-	fn into(self) -> ItemActionV2<DataSize> {
-		match self.1 {
-			ItemAction::Add { data } => ItemActionV2::Add { schema_id: self.0, data },
-			ItemAction::Delete { index } => ItemActionV2::Delete { index },
-		}
-	}
 }
 
 /// This header is used to specify the byte size of an item stored inside the buffer
@@ -128,6 +97,7 @@ impl ItemHeader {
 	/// Getter for schema_id across variants
 	pub fn schema_id(&self) -> Option<SchemaId> {
 		match self {
+			// V1 unused but here for Rust match arm completeness
 			ItemHeader::V1 { .. } => None,
 			ItemHeader::V2 { schema_id, .. } => Some(*schema_id),
 		}
@@ -136,6 +106,7 @@ impl ItemHeader {
 	/// Getter for payload_len across variants
 	pub fn payload_len(&self) -> u16 {
 		match self {
+			// V1 unused but here for Rust match arm completeness
 			ItemHeader::V1 { payload_len } => *payload_len,
 			ItemHeader::V2 { payload_len, .. } => *payload_len,
 		}
@@ -254,101 +225,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 	}
 }
 
-/// Payload containing all necessary fields to verify Itemized related signatures
-#[derive(
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	TypeInfo,
-	MaxEncodedLen,
-	PartialEq,
-	RuntimeDebugNoBound,
-	Clone,
-)]
-#[scale_info(skip_type_params(T))]
-pub struct ItemizedSignaturePayloadV3<T: Config> {
-	/// Intent id of this storage
-	#[codec(compact)]
-	pub intent_id: IntentId,
-
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
-
-	/// Actions to apply to storage from possible: [`ItemActionV2`]
-	pub actions: BoundedVec<
-		ItemActionV2<<T as Config>::MaxItemizedBlobSizeBytes>,
-		<T as Config>::MaxItemizedActionsCount,
-	>,
-}
-
-impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV3<T> {
-	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
-		lazy_static! {
-			// signed payload
-			static ref MAIN_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV3(uint16 intentId,uint32 targetHash,uint32 expiration,ItemActionV2[] actions)ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
-
-			static ref SUB_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"ItemActionV2(string actionType,uint16 schemaId,bytes data,uint16 index)");
-
-			static ref ITEM_ACTION_ADD: [u8; 32] = sp_io::hashing::keccak_256(b"Add");
-			static ref ITEM_ACTION_DELETE: [u8; 32] = sp_io::hashing::keccak_256(b"Delete");
-
-			static ref EMPTY_BYTES_HASH: [u8; 32] = sp_io::hashing::keccak_256([].as_slice());
-		}
-		// get prefix and domain separator
-		let prefix_domain_separator: Box<[u8]> =
-			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
-		let coded_intent_id = to_abi_compatible_number(self.intent_id);
-		let coded_target_hash = to_abi_compatible_number(self.target_hash);
-		let expiration: U256 = self.expiration.into();
-		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
-		let coded_actions = {
-			let values: Vec<u8> = self
-				.actions
-				.iter()
-				.flat_map(|a| match a {
-					ItemActionV2::Add { schema_id, data } => sp_io::hashing::keccak_256(
-						&[
-							SUB_TYPE_HASH.as_slice(),
-							ITEM_ACTION_ADD.as_slice(),
-							to_abi_compatible_number(*schema_id).as_slice(),
-							&sp_io::hashing::keccak_256(data.as_slice()),
-							[0u8; 32].as_slice(),
-						]
-						.concat(),
-					),
-					ItemActionV2::Delete { index } => sp_io::hashing::keccak_256(
-						&[
-							SUB_TYPE_HASH.as_slice(),
-							ITEM_ACTION_DELETE.as_slice(),
-							EMPTY_BYTES_HASH.as_slice(),
-							to_abi_compatible_number(*index).as_slice(),
-						]
-						.concat(),
-					),
-				})
-				.collect();
-			sp_io::hashing::keccak_256(&values)
-		};
-		let message = sp_io::hashing::keccak_256(
-			&[
-				MAIN_TYPE_HASH.as_slice(),
-				&coded_intent_id,
-				&coded_target_hash,
-				&coded_expiration,
-				&coded_actions,
-			]
-			.concat(),
-		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
-		combined.into_boxed_slice()
-	}
-} // REMOVED PaginatedSignaturePayload
+// REMOVED PaginatedSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
 #[derive(
@@ -556,7 +433,9 @@ pub enum PageVersion {
 #[scale_info(skip_type_params(PageDataSize))]
 #[codec(mel_bound(PageDataSize: MaxEncodedLen))]
 pub struct Page<PageDataSize: Get<u32>> {
-	/// Page version
+	/// Page "header" version
+	/// This field should always be first in the page as the structure evolves, so pallet reads
+	/// can adapt to evolving page structure.
 	pub page_version: PageVersion,
 	/// SchemaId used to serialize this page's data.
 	/// Use `None` for Itemized pages (schema_id will be per-item)
@@ -622,6 +501,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 /// PartialEq and Hash should be both derived or implemented manually based on clippy rules
 impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
 	fn hash<H: Hasher>(&self, state: &mut H) {
+		state.write(&self.page_version.encode());
 		state.write(&self.schema_id.encode());
 		state.write(&self.nonce.encode());
 		state.write(&self.data[..]);
@@ -631,7 +511,8 @@ impl<PageDataSize: Get<u32>> Hash for Page<PageDataSize> {
 /// PartialEq and Hash should be both derived or implemented manually based on clippy rules
 impl<PageDataSize: Get<u32>> PartialEq for Page<PageDataSize> {
 	fn eq(&self, other: &Self) -> bool {
-		self.schema_id.eq(&other.schema_id) &&
+		self.page_version.eq(&other.page_version) &&
+			self.schema_id.eq(&other.schema_id) &&
 			self.nonce.eq(&other.nonce) &&
 			self.data.eq(&other.data)
 	}
@@ -657,8 +538,9 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
 	fn apply_item_actions(
 		&self,
-		actions: &[ItemActionV2<T::MaxItemizedBlobSizeBytes>],
-	) -> Result<Self, PageError> {
+		schema_id: SchemaId,
+		actions: &[ItemAction<T::MaxItemizedBlobSizeBytes>],
+	) -> Result<ItemizedPage<T>, PageError> {
 		let mut parsed = ItemizedOperations::<T>::try_parse(self, true)?;
 
 		let mut updated_page_buffer = Vec::with_capacity(parsed.page_size);
@@ -666,16 +548,16 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 
 		for action in actions {
 			match action {
-				ItemActionV2::Delete { index } => {
+				ItemAction::Delete { index } => {
 					ensure!(
 						parsed.items.contains_key(index),
 						PageError::InvalidAction("item index is invalid")
 					);
 					parsed.items.remove(index);
 				},
-				ItemActionV2::Add { schema_id, data } => {
+				ItemAction::Add { data } => {
 					let header = ItemHeader::V2 {
-						schema_id: *schema_id,
+						schema_id,
 						payload_len: data
 							.len()
 							.try_into()

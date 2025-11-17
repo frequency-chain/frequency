@@ -137,7 +137,7 @@ pub enum SchemaStatus {
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct IntentGroupResponse {
 	/// The unique identifier for this IntentGroup
-	pub intent_group_id: u16,
+	pub intent_group_id: IntentGroupId,
 	/// The list of currently supported IntentIds for this IntentGroup
 	pub intent_ids: Vec<IntentId>,
 }

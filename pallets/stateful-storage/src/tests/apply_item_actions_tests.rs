@@ -84,7 +84,7 @@ fn apply_item_actions_with_invalid_schema_location_should_fail() {
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions).unwrap(),
 			),
-			Error::<Test>::IntentPayloadLocationMismatch
+			Error::<Test>::PayloadLocationMismatch
 		)
 	});
 }
@@ -188,6 +188,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		let msa_id = 1;
 		let caller_1 = test_public(msa_id);
 		let intent_id = ITEMIZED_INTENT;
+		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
 		let prev_content_hash: PageHash = 0;
 		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
@@ -196,7 +197,7 @@ fn apply_item_actions_initial_state_with_valid_input_should_update_storage() {
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1),
 			msa_id,
-			intent_id,
+			schema_id,
 			prev_content_hash,
 			BoundedVec::try_from(actions).unwrap(),
 		));
@@ -364,7 +365,7 @@ fn apply_item_actions_on_signature_schema_fails_for_non_owner() {
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions1).unwrap(),
 			),
-			Error::<Test>::UnsupportedOperationForIntent
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }
@@ -401,13 +402,8 @@ fn apply_item_actions_existing_page_with_stale_hash_should_fail() {
 
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let actions1_v2: Vec<ItemActionV2<MaxItemizedBlobSizeBytes>> = actions1
-			.iter()
-			.cloned()
-			.map(|a| -> ItemActionV2<MaxItemizedBlobSizeBytes> { (schema_id, a).into() })
-			.collect();
 		let mut new_page =
-			ItemizedOperations::<Test>::apply_item_actions(&page, &actions1_v2).unwrap();
+			ItemizedOperations::<Test>::apply_item_actions(&page, schema_id, &actions1).unwrap();
 		new_page.nonce = 1;
 		let key = (intent_id,);
 		<StatefulChildTree>::write(
@@ -472,7 +468,7 @@ fn apply_delete_item_on_append_only_fails() {
 				content_hash,
 				BoundedVec::try_from(actions2).unwrap(),
 			),
-			Error::<Test>::UnsupportedOperationForIntent
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }
@@ -721,7 +717,7 @@ fn apply_item_actions_with_signature_v2_having_invalid_schema_location_should_fa
 				owner_signature,
 				payload
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			Error::<Test>::PayloadLocationMismatch
 		)
 	});
 }
@@ -860,11 +856,10 @@ fn apply_item_actions_with_signature_v2_having_page_with_stale_hash_should_fail(
 		let intent_id = ITEMIZED_INTENT;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload.clone().try_into().unwrap() }];
-		let actions_v2: Vec<ItemActionV2<MaxItemizedBlobSizeBytes>> =
-			actions.iter().cloned().map(|a| (schema_id, a).into()).collect();
 		let page = ItemizedPage::<Test>::default();
 		let page_hash = page.get_hash();
-		let page = ItemizedOperations::<Test>::apply_item_actions(&page, &actions_v2).unwrap();
+		let page =
+			ItemizedOperations::<Test>::apply_item_actions(&page, schema_id, &actions).unwrap();
 		let key = (intent_id,);
 		<StatefulChildTree>::write(
 			&msa_id,

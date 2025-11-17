@@ -118,7 +118,7 @@ fn upsert_page_with_invalid_schema_payload_location_errors() {
 				hash_payload(&payload),
 				payload
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			Error::<Test>::PayloadLocationMismatch
 		)
 	})
 }
@@ -577,7 +577,7 @@ fn upsert_page_with_signature_v2_having_invalid_schema_location_should_fail() {
 				owner_signature,
 				payload
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			Error::<Test>::PayloadLocationMismatch
 		)
 	})
 }

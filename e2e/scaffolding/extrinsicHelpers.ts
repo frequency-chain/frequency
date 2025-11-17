@@ -858,13 +858,13 @@ export class ExtrinsicHelper {
 
   public static removePage(
     keys: KeyringPair,
-    intentId: AnyNumber,
+    schemaId: AnyNumber,
     msa_id: MessageSourceId,
     page_id: AnyNumber,
     target_hash: any
   ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.statefulStorage.deletePageV2(msa_id, intentId, page_id, target_hash),
+      () => ExtrinsicHelper.api.tx.statefulStorage.deletePage(msa_id, schemaId, page_id, target_hash),
       keys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
     );

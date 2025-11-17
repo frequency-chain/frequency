@@ -46,7 +46,6 @@ use common_primitives::{
 	msa::{DelegatorId, GrantValidator, MessageSourceId, MsaLookup, MsaValidator, ProviderId},
 	schema::*,
 };
-use core::ops::ControlFlow;
 use frame_support::dispatch::DispatchResult;
 use parity_scale_codec::Encode;
 
@@ -382,7 +381,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut from_index: u32 = pagination.from_index;
 
-		let _ = (pagination.from_block..pagination.to_block).try_for_each(|block_number| {
+		'block_loop: for block_number in pagination.from_block..pagination.to_block {
 			let list: Vec<MessageResponseV2> = Self::get_messages_by_intent_and_block(
 				intent_id,
 				intent.payload_location,
@@ -391,13 +390,17 @@ impl<T: Config> Pallet<T> {
 
 			// Max messages in a block are constrained to MessageIndex (u16) by the storage,
 			// so this is a safe type coercion. Just to be safe, we'll trap in in debug builds
-			let list_size: u32 = list.len() as u32;
-			debug_assert!(list_size <= u16::MAX.into(), "unexpected number of messages in block");
+			let list_size = list.len();
+			debug_assert!(
+				list_size <= MessageIndex::MAX.into(),
+				"unexpected number of messages in block"
+			);
+			let list_size: u32 = list_size as u32;
 
-			let iter = list.into_iter().skip((from_index as usize).saturating_sub(1));
+			let iter = list.into_iter().skip(from_index.saturating_sub(1) as usize);
 			// all subsequent blocks in this call should start at index 0
 			from_index = 0;
-			iter.enumerate().try_for_each(|(i, m)| {
+			'message_loop: for (i, m) in iter.enumerate() {
 				response.content.push(m);
 
 				if response.check_end_condition_and_set_next_pagination(
@@ -406,12 +409,12 @@ impl<T: Config> Pallet<T> {
 					list_size,
 					&pagination,
 				) {
-					return ControlFlow::Break(())
+					break 'block_loop;
 				}
 
-				ControlFlow::Continue(())
-			})
-		});
+				continue 'message_loop;
+			}
+		}
 		response
 	}
 

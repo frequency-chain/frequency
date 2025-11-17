@@ -16,10 +16,6 @@ import {
   createSiwfSignedRequestPayload,
   createRecoveryCommitmentPayload,
   EcdsaSignature,
-  createItemizedAddActionV2,
-  createItemizedSignaturePayloadV3,
-  createItemizedDeleteActionV2,
-  createPaginatedDeleteSignaturePayloadV3,
 } from '../src';
 
 describe('Signature related tests', function () {
@@ -114,44 +110,12 @@ describe('Signature related tests', function () {
       assert.deepEqual(payload1, expected);
     });
 
-    it('should create valid createItemizedSignaturePayloadV3 payloads', function () {
-      const addAction = createItemizedAddActionV2(64, '0x123456');
-      const addAction2 = createItemizedAddActionV2(64, new Uint8Array([18, 52, 86]));
-      const deleteAction = createItemizedDeleteActionV2(4);
-      const actions = [addAction, addAction2, deleteAction];
-      const payload1 = createItemizedSignaturePayloadV3(2, 92187389, 90, actions);
-
-      const expected = {
-        type: 'ItemizedSignaturePayloadV3',
-        intentId: 2,
-        targetHash: 92187389,
-        expiration: 90,
-        actions,
-      };
-
-      assert.deepEqual(payload1, expected);
-    });
-
     it('should create valid createPaginatedDeleteSignaturePayloadV2 payloads', function () {
       const payload1 = createPaginatedDeleteSignaturePayloadV2(1, 2, 34324, 90);
 
       const expected = {
         type: 'PaginatedDeleteSignaturePayloadV2',
         schemaId: 1,
-        pageId: 2,
-        targetHash: 34324,
-        expiration: 90,
-      };
-
-      assert.deepEqual(payload1, expected);
-    });
-
-    it('should create valid createPaginatedDeleteSignaturePayloadV3 payloads', function () {
-      const payload1 = createPaginatedDeleteSignaturePayloadV3(1, 2, 34324, 90);
-
-      const expected = {
-        type: 'PaginatedDeleteSignaturePayloadV3',
-        intentId: 1,
         pageId: 2,
         targetHash: 34324,
         expiration: 90,
@@ -215,19 +179,6 @@ describe('Signature related tests', function () {
       assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
-    it('should create a valid signature for PaginatedDeleteSignaturePayloadV3', async function () {
-      const payload1 = createPaginatedDeleteSignaturePayloadV3(10, 5, 1982672367, 100);
-      const signature = await sign(secretKey, payload1, 'Dev');
-
-      const expected: EcdsaSignature = {
-        Ecdsa:
-          '0x170c412172b782543980464f731265a1a7a8188d49caa8f65e56561e81954e4078e7c4e7f00d299a02cbed246e30b2f5acea0713c82db62691710fbfc48d15291c' as HexString,
-      };
-
-      assert.deepEqual(signature, expected);
-      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
-    });
-
     it('should create a valid signature for ItemizedSignaturePayloadV2', async function () {
       const addAction = createItemizedAddAction('0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026');
       const deleteAction = createItemizedDeleteAction(2);
@@ -238,25 +189,6 @@ describe('Signature related tests', function () {
       const expected: EcdsaSignature = {
         Ecdsa:
           '0xc6c38093c57cd605ca5adfe5d538be89c7bbea4309c797078ed23fe4bb6ad8cb245ae12b19bb9c9b8c084b356b02f6f09f7e107c262c1aff0714a681bc3af5b51b' as HexString,
-      };
-
-      assert.deepEqual(signature, expected);
-      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
-    });
-
-    it('should create a valid signature for ItemizedSignaturePayloadV3', async function () {
-      const addAction = createItemizedAddActionV2(
-        10,
-        '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026'
-      );
-      const deleteAction = createItemizedDeleteActionV2(2);
-      const actions = [addAction, deleteAction];
-      const payload1 = createItemizedSignaturePayloadV3(10, 1982672367, 100, actions);
-      const signature = await sign(secretKey, payload1, 'Dev');
-
-      const expected: EcdsaSignature = {
-        Ecdsa:
-          '0xa9074ab215951c1ab022557b73fa3b8da1493b30778bc86a790209d389811dee40b28935dc01404bfc6832d3352389ae5aec1109678f274ace1442d45f7875981c' as HexString,
       };
 
       assert.deepEqual(signature, expected);

@@ -178,7 +178,7 @@ mod benchmarks {
 		let intent_id = constants::ITEMIZED_INTENT;
 		let caller: T::AccountId = whitelisted_caller();
 		let num_of_items = n;
-		// removed 2 bytes are for ItemHeader size which is currently 2 bytes per item
+		// Max items that can fit in a page is `(max_page_bytes / (max_item_bytes + max_item_header_bytes))`
 		let max_items = T::MaxItemizedPageSizeBytes::get() /
 			(T::MaxItemizedBlobSizeBytes::get() + ItemHeader::max_encoded_len() as u32);
 		let key = (intent_id,);
@@ -606,67 +606,6 @@ mod benchmarks {
 			target_hash: content_hash,
 			expiration,
 			schema_id,
-			page_id,
-		};
-		let encode_data_new_key_data = wrap_binary_data(payload.encode());
-		let signature = delegator_account_public.sign(&encode_data_new_key_data).unwrap();
-
-		#[extrinsic_call]
-		_(
-			RawOrigin::Signed(caller),
-			delegator_account,
-			MultiSignature::Sr25519(signature.into()),
-			payload,
-		);
-
-		let page_result = get_paginated_page::<T>(delegator_msa_id, intent_id, page_id);
-		assert!(page_result.is_none());
-		Ok(())
-	}
-
-	#[benchmark]
-	fn delete_page_with_signature_v3() -> Result<(), BenchmarkError> {
-		let schema_id = constants::PAGINATED_SCHEMA;
-		let intent_id = constants::PAGINATED_INTENT;
-		let page_id: PageId = 1;
-		let caller: T::AccountId = whitelisted_caller();
-		let payload = BoundedVec::<u8, T::MaxPaginatedPageSizeBytes>::try_from(vec![
-			0u8;
-			T::MaxPaginatedPageSizeBytes::get()
-				as usize
-		])
-		.expect("failed to convert payload");
-		let page = PaginatedPage::<T>::from(payload);
-		let expiration = BlockNumberFor::<T>::from(10u32);
-
-		let delegator_account_public = SignerId::generate_pair(Some(
-			constants::BENCHMARK_SIGNATURE_ACCOUNT_SEED.as_bytes().to_vec(),
-		));
-		let delegator_account =
-			T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
-		let delegator_msa_id = constants::SIGNATURE_MSA_ID;
-
-		T::SchemaBenchmarkHelper::set_intent_count(intent_id - 1);
-		assert_ok!(create_intent_and_schema::<T>(PayloadLocation::Paginated));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
-
-		let key = (intent_id, page_id);
-		Pallet::<T>::update_paginated(delegator_msa_id, intent_id, schema_id, page_id, 0, page)
-			.expect("failed to write page");
-		let content_hash = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
-			&delegator_msa_id,
-			PALLET_STORAGE_PREFIX,
-			PAGINATED_STORAGE_PREFIX,
-			&key,
-		)
-		.unwrap()
-		.unwrap()
-		.get_hash();
-
-		let payload = PaginatedDeleteSignaturePayloadV3 {
-			target_hash: content_hash,
-			expiration,
-			intent_id,
 			page_id,
 		};
 		let encode_data_new_key_data = wrap_binary_data(payload.encode());

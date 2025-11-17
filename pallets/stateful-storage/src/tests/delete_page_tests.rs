@@ -97,7 +97,7 @@ fn delete_page_with_invalid_schema_payload_location_errors() {
 				page_id,
 				NONEXISTENT_PAGE_HASH,
 			),
-			Error::<Test>::IntentPayloadLocationMismatch
+			Error::<Test>::PayloadLocationMismatch
 		)
 	})
 }
@@ -256,7 +256,7 @@ fn delete_page_fails_for_append_only() {
 				page_id,
 				page_hash
 			),
-			Error::<Test>::UnsupportedOperationForIntent
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }
@@ -477,7 +477,7 @@ fn delete_page_with_signature_v2_having_invalid_schema_location_should_fail() {
 				owner_signature,
 				payload
 			),
-			Error::<Test>::SchemaPayloadLocationMismatch
+			Error::<Test>::PayloadLocationMismatch
 		)
 	})
 }
@@ -640,7 +640,7 @@ fn delete_page_on_signature_schema_fails_for_non_owner() {
 				page_id,
 				page.get_hash()
 			),
-			Error::<Test>::UnsupportedOperationForIntent
+			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
 }

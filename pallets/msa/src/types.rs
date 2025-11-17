@@ -184,46 +184,6 @@ impl AddProvider {
 	}
 }
 
-/// Structure that is signed for granting permissions to a Provider
-#[derive(TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
-pub struct AddProviderV2 {
-	/// The provider being granted permissions
-	pub authorized_msa_id: MessageSourceId,
-	/// Schemas for which publishing grants are authorized.
-	/// This is private intended for internal use only.
-	pub intent_ids: Vec<IntentId>,
-	/// The block number at which the proof for grant_delegation expires.
-	pub expiration: BlockNumber,
-}
-
-impl EIP712Encode for AddProviderV2 {
-	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
-		lazy_static! {
-			// signed payload
-			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"AddProviderV2(uint64 authorizedMsaId,uint16[] intentIds,uint32 expiration)"
-			);
-		}
-		// get prefix and domain separator
-		let prefix_domain_separator: Box<[u8]> =
-			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
-		let coded_authorized_msa_id = to_abi_compatible_number(self.authorized_msa_id);
-		let intent_ids: Vec<u8> = self
-			.intent_ids
-			.iter()
-			.flat_map(|intent_id| to_abi_compatible_number(*intent_id))
-			.collect();
-		let intent_ids = sp_io::hashing::keccak_256(&intent_ids);
-		let coded_expiration = to_abi_compatible_number(self.expiration);
-		let message = sp_io::hashing::keccak_256(
-			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &intent_ids, &coded_expiration]
-				.concat(),
-		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
-		combined.into_boxed_slice()
-	}
-}
-
 /// A type definition for hash types used in the MSA Recovery System.
 pub type RecoveryHash = [u8; 32]; // 32 bytes for
 

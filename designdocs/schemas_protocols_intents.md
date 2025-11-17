@@ -487,18 +487,55 @@ pub(super) type NameRegistry<T: Config> = StorageDoubleMap<
 
 #### `messages` pallet
 
-The `messages` pallet will require storage for an additional constant representing the block number at which this
-implementation is applied.
+The `messages` pallet will require new `messages::MessagesV3` storage that includes the `schema_id` used to format the
+message. The new storage will still be indexed by `(BlockNumber, u16, MessageIndex)` as before. The `u16` part of the
+index, however, will now represent `IntentId` rather than `SchemaId`. The update `Message` structure itself will now
+contain `schema_id`.
 
 ```rust
+pub struct Message<MaxDataSize>
+where
+    MaxDataSize: Get<u32> + Debug,
+{
+    ///  Data structured by the associated schema's model.
+    pub payload: BoundedVec<u8, MaxDataSize>,
+    /// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+    /// indicating that the original source MSA is acting as its own provider. An id differing from that
+    /// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+    /// its behalf.
+    pub provider_msa_id: MessageSourceId,
+    ///  Message source account id (the original source).
+    pub msa_id: Option<MessageSourceId>,
+    ///  The SchemaId of the schema that defines the format of the payload
+    pub schema_id: SchemaId,
+}
+
 #[pallet::storage]
-pub type IntentBasedStorageCutoverBlockNumber<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+pub type MessagesV3<T: Config> = StorageNMap<
+    _,
+    (
+        storage::Key<Twox64Concat, BlockNumberFor<T>>,
+        storage::Key<Twox64Concat, SchemaId>,
+        storage::Key<Twox64Concat, IntentId>,
+        storage::Key<Twox64Concat, MessageIndex>,
+    ),
+    Message<T::MessagesMaxPayloadSizeBytes>,
+    ValueQuery>;
 ```
+
+#### `stateful-storage` pallet
+
+Since the actual user payloads stored in `stateful-storage` are user-defined, there will be no modification to actual
+payload data. However, since storage will now be keyed by `IntentId` rather than `SchemaId`, we need to store the
+associated `schema_id` with each page or item so that readers can know how to interpret the associated payload data.
+This information will be added to the header of each Page and Item.
+
+Additionally, the Page and Item header structs will contain version variant information so that future pallet evolution
+need not necessitate a migration.
 
 ### Migrations
 
-Very little _existing_ data needs to be migrated; mostly just existing `SchemaInfo` storage. Anticipated migrations are
-as follows:
+Anticipated migrations are as follows:
 
 1. Create a new `Intent` for every currently existing `Schema`, as follows:
     1. The new `Intent` will have the same numeric ID value as the original Schema.
@@ -507,23 +544,38 @@ as follows:
     1. For each `SchemaNamespace` '\<protocol_name>'
         1. For each `SchemaDescriptor` '\<name>' at index `n` belonging to a '\<protocol_name>'
             * Create a new name mapping in the `NameRegistry` as `<protocol_name>.<name>_n` to `Intent(id)`
-3. Store the `messages` pallet cutover block number
+3. Migrate `messages::MessagesV2` data to the new `messages::MessagesV3` and kill `messages::MessagesV2`
+4. Migrate the _values_ stored in all `stateful-storage` pages as follows:
+    * All pages (including both Paginated and Itemized pages) shall be re-written with a page header that includes, in
+      addition to the payload size, an initial page version enum and `schema_id`, which will provide for future
+      adaptability without forcing migrations.
+    * All individual items in an Itemized page shall be re-written with a new `ItemHeader` that includes versioning
+      meta-information and `schema_id`.
+    * No storage keys will be transformed as part of this migration; only the values stored under each key.
 
 #### Additional notes
 
-While `stateful-storage` data will not require a migration, in order to support schema resolution going forward, some
-changes will be made to how pages are written and read. Currently, the data on a page of stateful storage contains, as
-its first 2 bytes, a `PageNonce`. With this design, new pages must additionally incorporate an additional `SchemaId` (
-`u16`). In order to determine how to read the page without requiring all existing pages to be migrated, we will take the
-following approach:
+A prior iteration of this document described an approach that required no migrations for either the `messages` or the
+`stateful-storage` pallets. This decision was reversed for the following reasons:
 
-* New/updated pages will be written with the first 2 bytes as a constant hex value (or alternately a known `u16` value),
-  designed such that overlap with a valid existing PageNonce is highly unlikely (we here rely on the fact that the
-  maximum existing page nonce on mainnet is likely to be a relatively low number, most likely not exceeding a `u8` in
-  value). (NOTE: we can write a script to query the chain & determine the actual highest existing page nonce;
-  alternately we could simply use `0xffffffff`)
-* Page nonce & schema ID will occupy the next 4 bytes
-* Page reads will decode the first 2 bytes and determine if the value matches the constant; if so, decode the remaining
-  data as a "new" page; if not, decode as an "old" page
-* If the page is an "old" page, populate the `schema_id` with the value of the current `intent_id` (because our
-  migrations will make sure that existing schemas are mapped to intents with the same ID value).
+* Keeping code to read many versions of the same semantic data is less maintainable.
+* A `messages` pallet migration, as currently designed, incurs no disruption at all to the operaion of the pallet.
+* At the time of development, given chain usage patterns for `stateful-storage`, a data migration is the least
+  disruptive that it is likely to be for the forseeable future.
+
+### Miscellaneous
+
+The following additional changes will be made to other pallets that currently reference Schemas:
+
+#### `msa` pallet
+
+* All storage, extrinsics, and RPC calls that currently reference `SchemaId` shall be updated to instead reference
+  `IntentId`. This will not change the shape of the public API or storage, as both types are `u16` (so SCALE encoding
+  will not change). The only change will be to the runtime interpretation of arguments and return values.
+
+#### `messages` and `stateful-storage` pallets
+
+* All extrinsics for `writing` data shall continue to accept `SchemaId` as a parameter, as that is still required
+  information for writing data, and the `IntentId` can be derived from the `Schema` at no additional runtime cost.
+* All Runtime API and RPC calls shall accept `IntentId` for record retrieval, as that is what identifies the storage
+  location.

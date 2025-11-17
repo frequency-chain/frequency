@@ -24,9 +24,9 @@ use sp_runtime::TryRuntimeError;
 const LOG_TARGET: &str = "pallet::stateful-storage::migration::v2";
 
 /// The length of a PaginatedKey (twox_128, twox_128, u16, u16)
-pub type PaginatedKeyLength = ConstU32<72>;
+pub type PaginatedKeyLength = ConstU32<68>;
 /// The length of an ItemizedKey (twox_128, u16)
-pub type ItemizedKeyLength = ConstU32<36>;
+pub type ItemizedKeyLength = ConstU32<34>;
 
 /// Type to encapsulate a child key of a certain size, or no key.
 /// Necessary because we need MaxEncodedLen, which `Vec<u8>` doesn't give us.

@@ -124,7 +124,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       target_hash = await getCurrentPaginatedHash(msa_id, intentId, page_id);
       const paginated_remove_result_1 = ExtrinsicHelper.removePage(
         providerKeys,
-        intentId,
+        schemaId,
         msa_id,
         page_id,
         target_hash
@@ -166,7 +166,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
         target_hash
       );
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'SchemaPayloadLocationMismatch',
+        name: 'PayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });
@@ -203,11 +203,11 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
   });
 
   describe('Paginated Storage Removal Negative Tests 😊/😥', function () {
-    it('should fail call to remove page with invalid intentId', async function () {
+    it('should fail call to remove page with invalid schemaId', async function () {
       const page_id = 0;
-      const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, badIntentId, msa_id, page_id, 0);
+      const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, badSchemaId, msa_id, page_id, 0);
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'InvalidIntentId',
+        name: 'InvalidSchemaId',
         section: 'statefulStorage',
       });
     });
@@ -222,7 +222,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
         0
       );
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'IntentPayloadLocationMismatch',
+        name: 'PayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });
