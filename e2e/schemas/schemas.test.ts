@@ -3,7 +3,7 @@ import '@frequency-chain/api-augment';
 import assert from 'assert';
 
 import { AVRO_GRAPH_CHANGE, PARQUET_BROADCAST } from './fixtures';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import {
   createKeys,
