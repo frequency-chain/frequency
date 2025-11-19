@@ -144,8 +144,6 @@ impl pallet_schemas::Config for Test {
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = SchemaModelMaxBytesBoundedVecLimit;
-	type MaxSchemaRegistrations = ConstU16<10>;
-	type MaxIntentRegistrations = ConstU16<10>;
 	type MaxIntentsPerIntentGroup = ConstU32<10>;
 	type MaxSchemaSettingsPerSchema = ConstU32<1>;
 	// The proposal type

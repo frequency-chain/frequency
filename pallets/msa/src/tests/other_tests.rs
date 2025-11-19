@@ -25,7 +25,7 @@ use common_primitives::{
 		MessageSourceId, ProviderId, ProviderRegistryEntry, H160,
 	},
 	node::{BlockNumber, EIP712Encode},
-	schema::{IntentId, SchemaValidator},
+	schema::{IntentId},
 	signatures::{EthereumAddressMapper, UnifiedSignature, UnifiedSigner},
 	utils::wrap_binary_data,
 };
