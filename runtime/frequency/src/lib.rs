@@ -901,14 +901,10 @@ impl pallet_capacity::Config for Runtime {
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-	// The maximum number of intents that can be registered
-	type MaxIntentRegistrations = IntentsMaxRegistrations;
 	// The maximum number of intents that can belong to a single IntentGroup
 	type MaxIntentsPerIntentGroup = IntentGroupMaxIntents;
 	// The minimum size (in bytes) for a schema model
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
-	// The maximum number of schemas that can be registered
-	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
 	// The proposal type

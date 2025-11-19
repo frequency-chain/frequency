@@ -278,13 +278,13 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - addOnchainMessage', async function () {
           // Create a dummy on-chain schema
-          const { schemaId: dummySchemaId } = await getOrCreateDummySchema(fundingSource);
+          const { intentId: dummyIntentId, schemaId: dummySchemaId } = await getOrCreateDummySchema(fundingSource);
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, '0xdeadbeef');
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
           // messages.MessagesInBlock in block might not be on this transaction if there are others
           assertEvent(eventMap, 'system.ExtrinsicSuccess');
-          const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
+          const get = await ExtrinsicHelper.apiPromise.rpc.messages.getByIntentId(dummyIntentId, {
             from_block: starting_block,
             from_index: 0,
             to_block: starting_block + 999,

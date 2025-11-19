@@ -12,7 +12,7 @@
 use common_primitives::{
 	msa::MessageSourceId,
 	schema::*,
-	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
+	stateful_storage::{ItemizedStoragePageResponseV2, PaginatedStorageResponseV2},
 };
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -37,16 +37,16 @@ pub trait StatefulStorageApi<BlockHash> {
 	fn get_paginated_storage(
 		&self,
 		msa_id: MessageSourceId,
-		schema_id: SchemaId,
-	) -> RpcResult<Vec<PaginatedStorageResponse>>;
+		intent_id: IntentId,
+	) -> RpcResult<Vec<PaginatedStorageResponseV2>>;
 
 	/// retrieving itemized storage of stateful storage
 	#[method(name = "statefulStorage_getItemizedStorage")]
 	fn get_itemized_storage(
 		&self,
 		msa_id: MessageSourceId,
-		schema_id: SchemaId,
-	) -> RpcResult<ItemizedStoragePageResponse>;
+		intent_id: IntentId,
+	) -> RpcResult<ItemizedStoragePageResponseV2>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -73,22 +73,22 @@ where
 	fn get_paginated_storage(
 		&self,
 		msa_id: MessageSourceId,
-		schema_id: SchemaId,
-	) -> RpcResult<Vec<PaginatedStorageResponse>> {
+		intent_id: IntentId,
+	) -> RpcResult<Vec<PaginatedStorageResponseV2>> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
-		let api_result = api.get_paginated_storage(at, msa_id, schema_id);
+		let api_result = api.get_paginated_storage_v2(at, msa_id, intent_id);
 		map_result(api_result)
 	}
 
 	fn get_itemized_storage(
 		&self,
 		msa_id: MessageSourceId,
-		schema_id: SchemaId,
-	) -> RpcResult<ItemizedStoragePageResponse> {
+		intent_id: IntentId,
+	) -> RpcResult<ItemizedStoragePageResponseV2> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
-		let api_result = api.get_itemized_storage(at, msa_id, schema_id);
+		let api_result = api.get_itemized_storage_v2(at, msa_id, intent_id);
 		map_result(api_result)
 	}
 }

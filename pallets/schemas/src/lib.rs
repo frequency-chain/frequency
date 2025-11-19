@@ -88,14 +88,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type SchemaModelMaxBytesBoundedVecLimit: Get<u32> + MaxEncodedLen;
 
-		/// Maximum number of schemas that can be registered
-		#[pallet::constant]
-		type MaxSchemaRegistrations: Get<SchemaId>;
-
-		/// Maximum number of Intents that can be registered
-		#[pallet::constant]
-		type MaxIntentRegistrations: Get<IntentId>;
-
 		/// Maximum number of Intents that can belong to an IntentGroup
 		#[pallet::constant]
 		type MaxIntentsPerIntentGroup: Get<u32>;
@@ -185,13 +177,14 @@ pub mod pallet {
 		/// The schema model exceeds the maximum length allowed
 		ExceedsMaxSchemaModelBytes,
 
-		/// The schema is less than the minimum length allowed
+		/// The schema model is less than the minimum length allowed
 		LessThanMinSchemaModelBytes,
 
-		/// CurrentSchemaIdentifierMaximum was attempted to overflow max, means MaxSchemaRegistrations is too big
+		/// Attempted to add a new Schema that would cause [`CurrentSchemaIdentifierMaximum`](pallet::storage_types::CurrentSchemaIdentifierMaximum)
+		/// to overflow.
 		SchemaCountOverflow,
 
-		/// Invalid setting for schema
+		/// Invalid [`IntentSetting`] for Intent or Schema
 		InvalidSetting,
 
 		/// Invalid schema name encoding
@@ -227,8 +220,8 @@ pub mod pallet {
 		/// Name already exists in the registry
 		NameAlreadyExists,
 
-		/// Attempted to add a new Intent that would cause CurrentIntentIdentifierMaximum
-		/// to exceed MaxIntentRegistrations
+		/// Attempted to add a new Intent that would cause [`CurrentIntentIdentifierMaximum`](pallet::storage_types::CurrentIntentIdentifierMaximum)
+		/// to overflow.
 		IntentCountOverflow,
 
 		/// The indicated [`IntentId`] does not exist
@@ -237,8 +230,8 @@ pub mod pallet {
 		/// The indicated [`IntentGroupId`] does not exist
 		InvalidIntentGroupId,
 
-		/// Attempted to add a new IntentGroup that would cause CurrentIntentGroupIdentifierMaximum
-		/// to exceed MaxIntentGroupRegistrations
+		/// Attempted to add a new IntentGroup that would cause [`CurrentIntentGroupIdentifierMaximum`](pallet::storage_types::CurrentIntentGroupIdentifierMaximum)
+		/// to overflow.
 		IntentGroupCountOverflow,
 
 		/// Too many intents in the group
@@ -264,7 +257,7 @@ pub mod pallet {
 
 	/// Storage for message schema info struct data
 	/// - Key: Schema Id
-	/// - Value: [`SchemaInfo`](SchemaInfo)
+	/// - Value: [`SchemaInfo`]
 	#[pallet::storage]
 	pub(super) type SchemaInfos<T: Config> =
 		StorageMap<_, Twox64Concat, SchemaId, SchemaInfo, OptionQuery>;
@@ -279,7 +272,7 @@ pub mod pallet {
 	/// Storage for mapping names to IDs
 	/// - Key: Protocol Name
 	/// - Key: Descriptor
-	/// - Value: MappedEntityIdentifier
+	/// - Value: [`MappedEntityIdentifier`]
 	#[pallet::storage]
 	pub(super) type NameToMappedEntityIds<T: Config> = StorageDoubleMap<
 		_,
@@ -299,6 +292,8 @@ pub mod pallet {
 		StorageValue<_, IntentId, ValueQuery>;
 
 	/// Storage for Intents
+	/// - Key: [`IntentId`]
+	/// - Value: [`IntentInfo`]
 	#[pallet::storage]
 	pub(super) type IntentInfos<T: Config> =
 		StorageMap<_, Twox64Concat, IntentId, IntentInfo, OptionQuery>;
@@ -311,6 +306,8 @@ pub mod pallet {
 		StorageValue<_, IntentGroupId, ValueQuery>;
 
 	/// Storage for IntentGroups
+	/// - Key: [`IntentGroupId`]
+	/// - Value: [`IntentGroup`](IntentGroup<T>)
 	#[pallet::storage]
 	pub(super) type IntentGroups<T: Config> =
 		StorageMap<_, Twox64Concat, IntentGroupId, IntentGroup<T>, OptionQuery>;
@@ -867,7 +864,7 @@ pub mod pallet {
 		}
 
 		/// Inserts both the [`SchemaInfo`] and Schema Payload into storage
-		/// Updates the `CurrentSchemaIdentifierMaximum` storage
+		/// Updates the [`CurrentSchemaIdentifierMaximum`] storage
 		pub fn add_schema(
 			intent_id: IntentId,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -903,7 +900,7 @@ pub mod pallet {
 		}
 
 		/// Inserts the [`IntentInfo`] into storage
-		/// Updates the `CurrentIntentIdentifierMaximum` storage
+		/// Updates the [`CurrentIntentIdentifierMaximum`] storage
 		/// Does little validation, as this is an internal method intended to be called
 		/// by higher-level extrinsics that perform various validations.
 		///
@@ -948,7 +945,7 @@ pub mod pallet {
 
 		/// Inserts a list of [`IntentId`]s with a new [`IntentGroupId`] in storage, and adds.
 		/// a new name mapping to the [`IntentGroupId`].
-		/// Updates the `CurrentIntentGroupIdentifierMaximum` storage.
+		/// Updates the [`CurrentIntentGroupIdentifierMaximum`] storage.
 		/// Does little validation, as this is an internal method intended to be called by.
 		/// higher-level extrinsics that perform the validations.
 		///

@@ -186,7 +186,7 @@ pub struct SchemaResponseV2 {
 	pub model: Vec<u8>,
 	/// The model format type for how the schema model is represented
 	pub model_type: ModelType,
-	/// The status of this Schema
+	/// The status of this Schema (Active, Deprecated, Unsupported)
 	pub status: SchemaStatus,
 	/// The payload location associated with this Schema's associated Intent
 	pub payload_location: PayloadLocation,
@@ -221,7 +221,8 @@ pub struct SchemaInfoResponse {
 	pub settings: Vec<IntentSetting>,
 	/// The IntentId of the Intent that this Schema implements
 	pub intent_id: IntentId,
-	/// The status of this Schema
+	/// The status of this Schema (Active, Deprecated, Unsupported)
+	/// Currently has no runtime effect; intended for future use.
 	pub status: SchemaStatus,
 }
 

@@ -8304,6 +8304,7 @@ dependencies = [
  "frame-support",
  "jsonrpsee",
  "pallet-messages-runtime-api",
+ "pallet-schemas-runtime-api",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",

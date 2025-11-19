@@ -137,11 +137,15 @@ pub struct SchemaInfo {
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-/// A structure defining name of a schema
+/// A structure defining name of a registered entity in this pallet.
+/// Names consist of a `protocol` (namespace) and a `descriptor`. Currently, names may be registered
+/// for `Intent`s and `IntentGroup`s. See [name-resolution](https://github.com/frequency-chain/frequency/blob/main/designdocs/schemas_protocols_intents.md#9-name-resolution) for more info.
+/// (Note, the type name `SchemaName` is a relic from the previous implementation of this pallet;
+/// Schemas themselves can no longer be directly associated with names.)
 pub struct SchemaName {
-	/// namespace or domain of the schema
+	/// Protocol portion of the name
 	pub namespace: SchemaProtocolName,
-	/// name or descriptor of this schema
+	/// Descriptor portion of the name
 	pub descriptor: SchemaDescriptor,
 }
 
@@ -150,7 +154,9 @@ pub struct SchemaName {
 pub type FullyQualifiedName = SchemaName;
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Default)]
-/// A structure defining name of a schema
+/// A structure defining a vector of [`SchemaId`](common_primitives::schema::SchemaId)s representing monotonically increasing versions
+/// of a `Schema`.
+// TODO: Remove once Runtime APIs returning this structure have been removed
 pub struct SchemaVersionId {
 	/// the index of each item + 1 is considered as their version.
 	/// Ex: the schemaId located in `ids[2]` is for version number 3

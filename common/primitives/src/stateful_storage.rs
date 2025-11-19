@@ -19,6 +19,7 @@ pub type PageHash = u32;
 pub type PageNonce = u16;
 
 /// A type to expose paginated type of stateful storage
+// TODO: Remove once v1 RPC API is gone (ie, all nodes have upgraded and v1 Runtime API is removed)
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct PaginatedStorageResponse {
@@ -37,7 +38,6 @@ pub struct PaginatedStorageResponse {
 	pub payload: Vec<u8>,
 }
 
-/// A type to expose itemized page of stateful storage
 /// A type to expose paginated type of stateful storage
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -60,6 +60,7 @@ pub struct PaginatedStorageResponseV2 {
 }
 
 /// A type to expose itemized page of stateful storage
+// TODO: Remove once v1 RPC API is gone (ie, all nodes have upgraded and v1 Runtime API is removed)
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct ItemizedStoragePageResponse {
@@ -92,6 +93,7 @@ pub struct ItemizedStoragePageResponseV2 {
 }
 
 /// A type to expose itemized type of stateful storage
+// TODO: Remove once v1 RPC API is gone (ie, all nodes have upgraded and v1 Runtime API is removed)
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct ItemizedStorageResponse {
