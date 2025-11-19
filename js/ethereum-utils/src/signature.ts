@@ -218,16 +218,16 @@ export function createAddKeyData(
  * Build an AuthorizedKeyData payload for signature.
  *
  * @param msaId                  MSA ID (uint64) to add the key
- * @param newPublicKey           32 bytes public key to authorize in hex or Uint8Array
+ * @param authorizedPublicKey    32 bytes public key to authorize in hex or Uint8Array
  * @param expirationBlock        Block number after which this payload is invalid
  */
 export function createAuthorizedKeyData(
   msaId: string | bigint,
-  newPublicKey: HexString | Uint8Array,
+  authorizedPublicKey: HexString | Uint8Array,
   expirationBlock: number
 ): AuthorizedKeyData {
   const parsedMsaId: string = typeof msaId === 'string' ? msaId : `${msaId}`;
-  const parsedNewPublicKey: HexString = typeof newPublicKey === 'object' ? u8aToHex(newPublicKey) : newPublicKey;
+  const parsedNewPublicKey: HexString = typeof authorizedPublicKey === 'object' ? u8aToHex(authorizedPublicKey) : authorizedPublicKey;
 
   assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
