@@ -296,7 +296,7 @@ fn stake_when_staking_amount_is_less_than_min_token_balance_it_errors() {
 		register_provider(target, String::from("Foo"));
 		let account = 50;
 		// An amount that leaves less than the minimum token balance
-		let amount = 4;
+		let amount = 11;
 
 		assert_noop!(
 			Capacity::stake(RuntimeOrigin::signed(account), target, amount),

@@ -1,8 +1,8 @@
 import { Keyring } from '@polkadot/api';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
 import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
-import { Codec } from '@polkadot/types/types';
+import type { Codec } from '@polkadot/types/types';
 import { hexToU8a, u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import {
@@ -18,6 +18,7 @@ import {
   AddProviderPayload,
   AuthorizedKeyData,
   EventMap,
+  Extrinsic,
   ExtrinsicHelper,
   ItemizedSignaturePayloadV2,
   PaginatedDeleteSignaturePayloadV2,
@@ -822,4 +823,10 @@ export async function computeCid(bytes: Uint8Array): Promise<string> {
 
   // Return base58btc-encoded string
   return cid.toString(base58btc);
+}
+
+export async function addProxy(real: KeyringPair, proxy: string, proxyType: any) {
+  const proxyAddCall = ExtrinsicHelper.api.tx.proxy.addProxy(proxy, proxyType, 0);
+  const proxyAddTx = new Extrinsic(() => proxyAddCall, real, ExtrinsicHelper.api.events.proxy.ProxyAdded);
+  await assert.doesNotReject(proxyAddTx.signAndSend());
 }

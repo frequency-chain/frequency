@@ -18,7 +18,7 @@ env:
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
-  NODE_VERSION: 22.17
+  NODE_VERSION: 22.x
 
 jobs:
   changes:
@@ -242,7 +242,7 @@ jobs:
         uses: actions/checkout@v5
       - name: Set Up Cargo Deny
         run: |
-          cargo install --force --locked cargo-deny@0.17.0
+          cargo install --force --locked cargo-deny@0.18.5
           cargo generate-lockfile
       - name: Run Cargo Deny
         run: cargo deny check --hide-inclusion-graph -c deny.toml

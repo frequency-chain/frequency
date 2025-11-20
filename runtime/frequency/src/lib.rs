@@ -375,10 +375,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::Staking => {
 				matches!(
 					c,
-					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. }) |
-						RuntimeCall::CollatorSelection(
-							pallet_collator_selection::Call::set_candidacy_bond { .. }
-						)
+					RuntimeCall::Capacity(
+						pallet_capacity::Call::stake { .. } |
+							pallet_capacity::Call::claim_staking_rewards { .. } |
+							pallet_capacity::Call::provider_boost { .. } |
+							pallet_capacity::Call::unstake { .. }
+					) | RuntimeCall::CollatorSelection(
+						pallet_collator_selection::Call::set_candidacy_bond { .. }
+					)
 				)
 			},
 			ProxyType::CancelProxy => {
@@ -640,7 +644,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 179,
+	spec_version: 183,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -654,7 +658,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 179,
+	spec_version: 183,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1413,6 +1417,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
 	type SelectCore = DefaultCoreSelector<Runtime>;
+	type RelayParentOffset = ConstU32<0>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -2210,10 +2215,6 @@ sp_api::impl_runtime_apis! {
 					Ok((origin, ticket, assets))
 				}
 
-				fn fee_asset() -> Result<xcm::benchmarks::Asset, BenchmarkError> {
-					Ok(xcm::benchmarks::RelayAsset::get())
-				}
-
 				// We do not support locking and unlocking on Frequency
 				fn unlockable_asset() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location, xcm::benchmarks::Asset), BenchmarkError> {
 					Err(BenchmarkError::Skip)
@@ -2226,6 +2227,11 @@ sp_api::impl_runtime_apis! {
 
 				// We do not support alias origin on Frequency
 				fn alias_origin() -> Result<(xcm::benchmarks::Location, xcm::benchmarks::Location), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				// We do not support worst case for trader on Frequency
+				fn worst_case_for_trader() -> Result<(xcm::benchmarks::Asset, cumulus_primitives_core::WeightLimit), BenchmarkError> {
 					Err(BenchmarkError::Skip)
 				}
 			}

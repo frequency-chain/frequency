@@ -1,5 +1,5 @@
-import { keccak_256 } from '@noble/hashes/sha3';
-import { bytesToHex, randomBytes, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { keccak_256 } from '@noble/hashes/sha3.js';
+import { bytesToHex, randomBytes, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 import { ContactType, HexString } from './types.js';
 import { standardizeContact } from './standardize.js';
 

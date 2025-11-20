@@ -27,7 +27,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  NODE_VERSION: 22.17
+  NODE_VERSION: 22.x
 
 jobs:
   validate-release-version:
@@ -94,7 +94,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-binary
-          path: target/release/frequency
+          path: |
+            target/release/frequency
+            target/release/benchmark_transform
           retention-days: 3
 
       - name: Upload WASM Build Artifacts
@@ -134,7 +136,9 @@ jobs:
           path: target/release/wbuild
 
       - name: Make Binary Executable
-        run: chmod +x target/release/frequency
+        run: |
+          chmod +x target/release/frequency
+          chmod +x target/release/benchmark_transform
 
       - name: Update Weights for All Pallets
         run: |

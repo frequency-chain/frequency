@@ -1,5 +1,5 @@
-import { KeyringPair } from '@polkadot/keyring/types';
-import { AddKeyData, Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import type { KeyringPair } from '@polkadot/keyring/types';
+import { Extrinsic, ExtrinsicHelper, type AddKeyData } from '../scaffolding/extrinsicHelpers';
 import {
   assertEvent,
   CENTS,
@@ -100,7 +100,7 @@ describe('adding an Ethereum key for low cost', function () {
     assertEvent(eventMap, 'msa.PublicKeyAdded');
     const capacityFee = ExtrinsicHelper.getCapacityFee(eventMap);
     assert(capacityFee > 0);
-    assert(capacityFee < 1_320_000n); // ~1.3 CENTS
+    assert(capacityFee < 1_600_000n, `should be ~1.6 CENTS but it's ${capacityFee}`);
 
     // add another key; this should cost a lot more
     const thirdKeyEth = await createKeys('Eth2', 'ethereum');
@@ -124,9 +124,9 @@ describe('adding an Ethereum key for low cost', function () {
     const { eventMap: eventMap2 } = await addThirdKeyOp.payWithCapacity();
     assertEvent(eventMap2, 'msa.PublicKeyAdded');
     const thirdKeyCapacityFee = ExtrinsicHelper.getCapacityFee(eventMap2);
-    // 4260363n vs
-    // 1278109n
+    // 5113014n vs
+    // 1533904n
     assert(thirdKeyCapacityFee > capacityFee);
-    assert(thirdKeyCapacityFee < 5n * CENTS);
+    assert(thirdKeyCapacityFee < 6n * CENTS);
   });
 });

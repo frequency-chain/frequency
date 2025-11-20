@@ -1,7 +1,7 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { assertExtrinsicSucceededAndFeesPaid, CENTS, createAndFundKeypair } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 

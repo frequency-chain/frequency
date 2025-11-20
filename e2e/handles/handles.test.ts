@@ -2,7 +2,7 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { CENTS, createMsa, DOLLARS, getTestHandle } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { MessageSourceId } from '@frequency-chain/api-augment/interfaces';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { Bytes } from '@polkadot/types';

@@ -21,7 +21,7 @@ env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
   ETHEREUM_UTILS_FROM_UI: ${{github.event.inputs.ethereum-utils-version}}
   RECOVERY_SDK_FROM_UI: ${{github.event.inputs.recovery-sdk-version}}
-  NODE_VERSION: 22.17
+  NODE_VERSION: 22.x
 
 # Set default permissions as restrictive
 permissions:

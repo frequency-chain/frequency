@@ -9,12 +9,12 @@ import {
   generateAuthorizedKeyPayload,
   signPayloadSr25519,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { ethereumAddressToKeyringPair, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
-import { H160 } from '@polkadot/types/interfaces';
+import type { H160 } from '@polkadot/types/interfaces';
 
 let fundingSource: KeyringPair;
 
@@ -111,6 +111,7 @@ describe('MSA Key management: delete keys and retire', function () {
     });
   });
 
+  // This test hangs under some unknown circumstances in parallel mode
   it('should allow retiring MSA after additional keys have been deleted and tokens withdran', async function () {
     // Withdraw tokens from MSA account
     const receiverKeys = createKeys('receiver keys');

@@ -1,11 +1,11 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
-import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
-import { KeyringPair } from '@polkadot/keyring/types';
+import type { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
+import type { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool, Bytes } from '@polkadot/types';
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
-import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
+import type { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import {
   getBlockNumber,
@@ -13,11 +13,11 @@ import {
   getFinalizedBlockNumber,
   getNonce,
   log,
-  MultiSignatureType,
+  type MultiSignatureType,
 } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
-import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
+import type { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
 import { IsEvent } from '@polkadot/types/metadata/decorate/types';
 import {
   HandleResponse,
@@ -34,7 +34,6 @@ import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime
 import { hasRelayChain } from './env';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
-import { get } from 'http';
 
 export interface ReleaseSchedule {
   start: number;
@@ -255,13 +254,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
-  public async sudoSignAndSend(waitForInBlock = true) {
-    const currentNonce = await getNonce(this.keys);
+  public async sudoSignAndSend(waitForInBlock = false) {
+    const nonce = await getNonce(this.keys);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
       this.api.tx.sudo
         .sudo(this.extrinsic())
-        .signAndSend(this.keys, { nonce: currentNonce, era: 0 })
+        .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
           filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
@@ -1144,5 +1143,18 @@ export class ExtrinsicHelper {
       return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
     }
     return 0n;
+  }
+
+  // Execute a call via proxy.  The proxy 'proxy' must already have been added for 'real'
+  // Note even if the extrinsic fails, the proxy may have executed successfully, so be sure to check state as well.
+  public static async proxySignAndSend(
+    inner: SubmittableExtrinsic<any>,
+    proxy: KeyringPair,
+    real: KeyringPair,
+    expectedEvent: AugmentedEvent<any>
+  ) {
+    const proxyCall = ExtrinsicHelper.api.tx.proxy.proxy(getUnifiedAddress(real), null, inner);
+    const proxyTx = new Extrinsic(() => proxyCall, proxy, expectedEvent);
+    await assert.doesNotReject(proxyTx.signAndSend());
   }
 }
