@@ -54,7 +54,6 @@ describe('#schemas pallet tests', function () {
     });
 
     cases.forEach(({ id, name, error }) => {
-
       it(`create intent should fail ${id}`, async function () {
         // @ts-expect-error allow null string
         const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], name);
@@ -171,7 +170,6 @@ describe('#schemas pallet tests', function () {
     });
 
     cases.forEach(({ id, intentId, model, modelType, error }) => {
-
       it(`create schema v4 should fail ${id}`, async function () {
         const f = ExtrinsicHelper.createSchemaV4(keys, intentId(), model, modelType);
         await assert.rejects(f.fundAndSend(fundingSource), { name: error });
