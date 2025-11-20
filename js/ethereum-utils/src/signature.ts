@@ -227,7 +227,8 @@ export function createAuthorizedKeyData(
   expirationBlock: number
 ): AuthorizedKeyData {
   const parsedMsaId: string = typeof msaId === 'string' ? msaId : `${msaId}`;
-  const parsedNewPublicKey: HexString = typeof authorizedPublicKey === 'object' ? u8aToHex(authorizedPublicKey) : authorizedPublicKey;
+  const parsedNewPublicKey: HexString =
+    typeof authorizedPublicKey === 'object' ? u8aToHex(authorizedPublicKey) : authorizedPublicKey;
 
   assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
