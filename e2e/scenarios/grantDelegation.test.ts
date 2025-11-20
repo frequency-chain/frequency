@@ -9,7 +9,7 @@ import {
   createMsaAndProvider,
   generateDelegationPayload,
   signPayloadSr25519,
-  getOrCreateIntentAndSchema,
+  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
@@ -38,17 +38,6 @@ describe('Delegation Scenario Tests', function () {
       2n * DOLLARS
     );
 
-    const schema = {
-      type: 'record',
-      name: 'Post',
-      fields: [
-        { name: 'title', type: { name: 'Title', type: 'string' } },
-        { name: 'content', type: { name: 'Content', type: 'string' } },
-        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
-        { name: 'objectId', type: 'DSNPId' },
-      ],
-    };
-
     let msaCreatedEvent1: any, msaCreatedEvent2: any, msaCreatedEvent3: any;
 
     [
@@ -63,18 +52,8 @@ describe('Delegation Scenario Tests', function () {
       ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
       ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource),
       ExtrinsicHelper.createMsa(thirdMsaKeys).fundAndSend(fundingSource),
-      getOrCreateIntentAndSchema(
-        fundingSource,
-        'test.grantDelegation',
-        { payloadLocation: 'OnChain', settings: [] },
-        { model: schema, modelType: 'AvroBinary' }
-      ),
-      getOrCreateIntentAndSchema(
-        fundingSource,
-        'test.grantDelegationSecond',
-        { payloadLocation: 'OnChain', settings: [] },
-        { model: schema, modelType: 'AvroBinary' }
-      ),
+      getOrCreateDelegationSchema(fundingSource),
+      getOrCreateDelegationSchema(fundingSource, undefined, 'test.grantDelegationSecond'),
     ]);
     msaId = msaCreatedEvent1!.data.msaId;
     otherMsaId = msaCreatedEvent2!.data.msaId;

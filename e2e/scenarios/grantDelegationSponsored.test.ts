@@ -9,7 +9,7 @@ import {
   createMsaAndProvider,
   generateDelegationPayload,
   signPayloadSr25519,
-  getOrCreateIntentAndSchema,
+  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
@@ -38,28 +38,12 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
       1n * DOLLARS
     );
 
-    const schema = {
-      type: 'record',
-      name: 'Post',
-      fields: [
-        { name: 'title', type: { name: 'Title', type: 'string' } },
-        { name: 'content', type: { name: 'Content', type: 'string' } },
-        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
-        { name: 'objectId', type: 'DSNPId' },
-      ],
-    };
-
     let _msaCreatedEvent1: any, msaCreatedEvent2: any;
     // eslint-disable-next-line prefer-const
     [{ target: _msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { intentId }] = await Promise.all([
       ExtrinsicHelper.createMsa(keys).signAndSend(),
       ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend(),
-      getOrCreateIntentAndSchema(
-        fundingSource,
-        'test.grantDelegation',
-        { payloadLocation: 'OnChain', settings: [] },
-        { model: schema, modelType: 'AvroBinary' }
-      ),
+      getOrCreateDelegationSchema(fundingSource),
     ]);
 
     otherMsaId = msaCreatedEvent2!.data.msaId;

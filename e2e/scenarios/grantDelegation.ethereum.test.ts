@@ -10,7 +10,7 @@ import {
   generateDelegationPayload,
   generateValidProviderPayloadWithName,
   signPayload,
-  getOrCreateIntentAndSchema,
+  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -68,29 +68,8 @@ describe('Delegation Scenario Tests Ethereum', function () {
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;
 
-    const schema = {
-      type: 'record',
-      name: 'Post',
-      fields: [
-        { name: 'title', type: { name: 'Title', type: 'string' } },
-        { name: 'content', type: { name: 'Content', type: 'string' } },
-        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
-        { name: 'objectId', type: 'DSNPId' },
-      ],
-    };
-
-    ({ intentId, schemaId } = await getOrCreateIntentAndSchema(
-      keys,
-      'test.grantDelegation',
-      { payloadLocation: 'OnChain', settings: [] },
-      { model: schema, modelType: 'AvroBinary' }
-    ));
-    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateIntentAndSchema(
-      keys,
-      'test.grantDelegationSecond',
-      { payloadLocation: 'OnChain', settings: [] },
-      { model: schema, modelType: 'AvroBinary' }
-    ));
+    ({ intentId, schemaId } = await getOrCreateDelegationSchema(keys));
+    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateDelegationSchema(keys, undefined, 'test.grantDelegationSecond'));
   });
 
   describe('delegation grants for a Ethereum key', function () {

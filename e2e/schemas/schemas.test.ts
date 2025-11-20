@@ -12,6 +12,8 @@ import {
   generateSchemaPartialName,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
+import { Type } from 'cborg';
+import undefined = Type.undefined;
 
 let fundingSource: KeyringPair;
 
@@ -37,44 +39,26 @@ describe('#schemas pallet tests', function () {
   });
 
   describe('intents', function () {
+    const cases = [
+      { id: 'if no name is supplied', name: null, error: 'InvalidSchemaNameStructure' },
+      { id: 'with invalid character in name', name: 'test@.invalid', error: 'InvalidSchemaNameCharacters' },
+      { id: 'with invalid name structure', name: 'test', error: 'InvalidSchemaNameStructure' },
+      { id: 'with invalid name encoding', name: 'ñòò.ò', error: 'InvalidSchemaNameEncoding' },
+      { id: 'with invalid namespace length', name: 'a.b', error: 'InvalidSchemaNamespaceLength' },
+    ];
+
     it('create intent should fail if account does not have enough tokens', async function () {
       await assert.rejects(
         ExtrinsicHelper.createIntent(accountWithNoFunds, 'OnChain', [], 'unk.random_name').signAndSend('current')
       );
     });
 
-    it('should fail to create an intent without a name', async function () {
-      // @ts-expect-error allow null string
-      const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], null);
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidSchemaNameStructure',
-      });
-    });
+    cases.forEach(({ id, name, error }) => {
 
-    it('should fail to create an intent with invalid character in name', async function () {
-      const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], 'test@.invalid');
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidSchemaNameCharacters',
-      });
-    });
-
-    it('should fail to create an intent with invalid name structure', async function () {
-      const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], 'test');
-      // InvalidSchemaNameStructure is the rejection, but network differences means that it cannot be tested everywhere
-      await assert.rejects(f.fundAndSend(fundingSource));
-    });
-
-    it('should fail to create an intent with invalid name encoding', async function () {
-      const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], 'ñòò.ò');
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidSchemaNameEncoding',
-      });
-    });
-
-    it('should fail to create an intent with invalid namespace length', async function () {
-      const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], 'a.b');
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidSchemaNamespaceLength',
+      it(`create intent should fail ${id}`, async function () {
+        // @ts-expect-error allow null string
+        const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], name);
+        await assert.rejects(f.fundAndSend(fundingSource), { name: error });
       });
     });
 
@@ -94,7 +78,7 @@ describe('#schemas pallet tests', function () {
       assert.notEqual(createIntentEvent, undefined);
     });
 
-    it('should fail to create an intent with a duplicate name', async function () {
+    it('create intent should fail if name is a duplicate', async function () {
       const intentName = 'e-e.' + generateSchemaPartialName(20);
       const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], intentName);
       const { target: createIntentEvent, eventMap } = await f.fundAndSend(fundingSource);
@@ -116,6 +100,66 @@ describe('#schemas pallet tests', function () {
   });
 
   describe('schemas', function () {
+    const hugeSchema = {
+      type: 'record',
+      fields: [],
+    };
+
+    const cases: {
+      id: string;
+      intentId: () => number;
+      model: unknown;
+      modelType: 'AvroBinary' | 'Parquet';
+      error: string;
+    }[] = [
+      {
+        id: 'with a non-existent intent id',
+        intentId: () => 2 ** 16 - 1,
+        model: AVRO_GRAPH_CHANGE,
+        modelType: 'AvroBinary',
+        error: 'InvalidIntentId',
+      },
+      {
+        id: 'if Avro schema is invalid',
+        intentId: () => createdIntents[0].intentId,
+        model: [1000, 3],
+        modelType: 'AvroBinary',
+        error: 'InvalidSchema',
+      },
+      {
+        id: 'if Parquet schema is invalid',
+        intentId: () => createdIntents[0].intentId,
+        model: PARQUET_BROADCAST.map((field) => ({ ...field, unknown_field: true })),
+        modelType: 'Parquet',
+        error: 'InvalidSchema',
+      },
+      {
+        id: 'if schema is less than minimum size',
+        intentId: () => createdIntents[0].intentId,
+        model: {},
+        modelType: 'AvroBinary',
+        error: 'LessThanMinSchemaModelBytes',
+      },
+      {
+        id: 'if schema is greater than maximum size',
+        intentId: () => createdIntents[0].intentId,
+        model: hugeSchema,
+        modelType: 'AvroBinary',
+        error: 'ExceedsMaxSchemaModelBytes',
+      },
+    ];
+
+    before(async function () {
+      const maxBytes = (await ExtrinsicHelper.getSchemaMaxBytes()).toNumber();
+
+      // Create a schema whose JSON representation is exactly 1 byte larger than the max allowed
+      const hugeSize = JSON.stringify(hugeSchema).length;
+      const sizeToFill = maxBytes - hugeSize - ',"name":""'.length + 1;
+      hugeSchema['name'] = Array.from(Array(sizeToFill).keys())
+        .map(() => 'a')
+        .join('');
+    });
+
     it('should fail if account does not have enough tokens v4', async function () {
       await assert.rejects(
         ExtrinsicHelper.createSchemaV4(accountWithNoFunds, 1, AVRO_GRAPH_CHANGE, 'AvroBinary').signAndSend('current'),
@@ -126,60 +170,11 @@ describe('#schemas pallet tests', function () {
       );
     });
 
-    it('should fail to create a schema with a non-existent intent id', async function () {
-      const f = ExtrinsicHelper.createSchemaV4(keys, 2 ** 16 - 1, AVRO_GRAPH_CHANGE, 'AvroBinary');
+    cases.forEach(({ id, intentId, model, modelType, error }) => {
 
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidIntentId',
-      });
-    });
-
-    it('should fail to create invalid Avro schema v4', async function () {
-      const f = ExtrinsicHelper.createSchemaV4(keys, createdIntents[0].intentId, [1000, 3], 'AvroBinary');
-
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidSchema',
-      });
-    });
-
-    it('should fail to create invalid Parquet schema v4', async function () {
-      const BAD_PARQUET_SCHEMA = PARQUET_BROADCAST.map((field) => {
-        return {
-          ...field,
-          unknown_field: true,
-        };
-      });
-      const f = ExtrinsicHelper.createSchemaV4(keys, createdIntents[0].intentId, BAD_PARQUET_SCHEMA, 'Parquet');
-
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'InvalidSchema',
-      });
-    });
-
-    it('should fail to create schema less than minimum size v4', async function () {
-      const f = ExtrinsicHelper.createSchemaV4(keys, createdIntents[0].intentId, {}, 'AvroBinary');
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'LessThanMinSchemaModelBytes',
-      });
-    });
-
-    it('should fail to create schema greater than maximum size v4', async function () {
-      const maxBytes = (await ExtrinsicHelper.getSchemaMaxBytes()).toNumber();
-
-      // Create a schema whose JSON representation is exactly 1 byte larger than the max allowed
-      const hugeSchema = {
-        type: 'record',
-        fields: [],
-      };
-      const hugeSize = JSON.stringify(hugeSchema).length;
-      const sizeToFill = maxBytes - hugeSize - ',"name":""'.length + 1;
-      hugeSchema['name'] = Array.from(Array(sizeToFill).keys())
-        .map(() => 'a')
-        .join('');
-
-      const f = ExtrinsicHelper.createSchemaV4(keys, createdIntents[0].intentId, hugeSchema, 'AvroBinary');
-      await assert.rejects(f.fundAndSend(fundingSource), {
-        name: 'ExceedsMaxSchemaModelBytes',
+      it(`create schema v4 should fail ${id}`, async function () {
+        const f = ExtrinsicHelper.createSchemaV4(keys, intentId(), model, modelType);
+        await assert.rejects(f.fundAndSend(fundingSource), { name: error });
       });
     });
 

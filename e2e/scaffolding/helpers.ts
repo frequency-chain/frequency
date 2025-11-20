@@ -639,7 +639,8 @@ export async function getOrCreateIntentAndSchema(
   },
   schemaParameters: { model: any; modelType: ModelType['type'] },
   nonce?: number
-): Promise<{ intentId: u16; schemaId: u16 }> {
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  let noncesUsed = 0;
   let { intentId, schemaId } = await getNamedIntentAndSchema(name);
 
   if (!intentId) {
@@ -649,10 +650,11 @@ export async function getOrCreateIntentAndSchema(
       intentParameters.settings,
       name
     );
-    const { target: createIntentevent, eventMap } = await intentOp.fundAndSend(source, false, nonce);
+    const { target: createIntentEvent, eventMap } = await intentOp.fundAndSend(source, false, nonce);
+    noncesUsed += 1;
     assertExtrinsicSuccess(eventMap);
-    if (createIntentevent) {
-      intentId = createIntentevent.data.intentId;
+    if (createIntentEvent) {
+      intentId = createIntentEvent.data.intentId;
     } else {
       assert.fail('failed to create an intent');
     }
@@ -660,7 +662,12 @@ export async function getOrCreateIntentAndSchema(
 
   if (!schemaId) {
     const op = ExtrinsicHelper.createSchemaV4(source, intentId, schemaParameters.model, schemaParameters.modelType);
-    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source, false);
+    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(
+      source,
+      false,
+      nonce ? nonce + noncesUsed : undefined
+    );
+    noncesUsed += 1;
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
       schemaId = createSchemaEvent.data.schemaId;
@@ -669,13 +676,13 @@ export async function getOrCreateIntentAndSchema(
     }
   }
 
-  return { intentId, schemaId };
+  return { intentId, schemaId, noncesUsed };
 }
 
 export function getOrCreateGraphChangeSchema(
   source: KeyringPair,
   nonce?: number
-): Promise<{ intentId: u16; schemaId: u16 }> {
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.graphChange',
@@ -691,6 +698,7 @@ export async function getOrCreateParquetBroadcastSchema(
 ): Promise<{
   intentId: u16;
   schemaId: u16;
+  noncesUsed: number;
 }> {
   return getOrCreateIntentAndSchema(
     source,
@@ -701,7 +709,10 @@ export async function getOrCreateParquetBroadcastSchema(
   );
 }
 
-export function getOrCreateDummySchema(source: KeyringPair, nonce?: number): Promise<{ intentId: u16; schemaId: u16 }> {
+export function getOrCreateDummySchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.dummySchema',
@@ -714,7 +725,7 @@ export function getOrCreateDummySchema(source: KeyringPair, nonce?: number): Pro
 export function getOrCreateAvroChatMessagePaginatedSchema(
   source: KeyringPair,
   nonce?: number
-): Promise<{ intentId: u16; schemaId: u16 }> {
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.AvroChatMessagePaginated',
@@ -727,13 +738,36 @@ export function getOrCreateAvroChatMessagePaginatedSchema(
 export function getOrCreateAvroChatMessageItemizedSchema(
   source: KeyringPair,
   nonce?: number
-): Promise<{ intentId: u16; schemaId: u16 }> {
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
   return getOrCreateIntentAndSchema(
     source,
     'test.AvroChatMessageItemized',
     { payloadLocation: 'Itemized', settings: [] },
     { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' },
     nonce
+  );
+}
+
+export function getOrCreateDelegationSchema(
+  source: KeyringPair,
+  nonce?: number,
+  name = 'test.delegation',
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    name,
+    { payloadLocation: 'OnChain', settings: [] },
+    { model: {
+        type: 'record',
+        name: 'Post',
+        fields: [
+          { name: 'title', type: { name: 'Title', type: 'string' } },
+          { name: 'content', type: { name: 'Content', type: 'string' } },
+          { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
+          { name: 'objectId', type: 'DSNPId' },
+        ],
+      }, modelType: 'AvroBinary' },
+    nonce,
   );
 }
 
