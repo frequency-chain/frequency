@@ -38,7 +38,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-binary
-          path: target/release/frequency
+          path: |
+            target/release/frequency
+            target/release/benchmark_transform
           retention-days: 3
 
       - name: Upload WASM Build Artifacts
@@ -84,7 +86,9 @@ jobs:
           path: target/release/wbuild
 
       - name: Make Binary Executable
-        run: chmod +x target/release/frequency
+        run: |
+          chmod +x target/release/frequency
+          chmod +x target/release/benchmark_transform
 
       - name: Update Weights
         run: |
@@ -107,7 +111,7 @@ jobs:
 
       - name: Commit Updated Weights
         id: commit-updated-weights
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
+        uses: stefanzweifel/git-auto-commit-action@28e16e81777b558cc906c8750092100bbb34c5e3
         with:
           commit_message: "Update weights"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
