@@ -12,7 +12,8 @@ import {
   generateDelegationPayload,
   getBlockNumber,
   signPayloadSr25519,
-  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { SchemaGrantResponse } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';

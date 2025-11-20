@@ -13,7 +13,8 @@ import {
   getOrCreateDummySchema,
   getOrCreateAvroChatMessagePaginatedSchema,
   getOrCreateAvroChatMessageItemizedSchema,
-  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from './helpers';
 import { isDev, providerUrl } from './env';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';

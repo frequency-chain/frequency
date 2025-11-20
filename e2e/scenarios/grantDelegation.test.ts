@@ -9,7 +9,8 @@ import {
   createMsaAndProvider,
   generateDelegationPayload,
   signPayloadSr25519,
-  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 

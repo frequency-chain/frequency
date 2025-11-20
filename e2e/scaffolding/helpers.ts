@@ -751,13 +751,14 @@ export function getOrCreateAvroChatMessageItemizedSchema(
 export function getOrCreateDelegationSchema(
   source: KeyringPair,
   nonce?: number,
-  name = 'test.delegation',
+  name = 'test.delegation'
 ): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
   return getOrCreateIntentAndSchema(
     source,
     name,
     { payloadLocation: 'OnChain', settings: [] },
-    { model: {
+    {
+      model: {
         type: 'record',
         name: 'Post',
         fields: [
@@ -766,8 +767,10 @@ export function getOrCreateDelegationSchema(
           { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
           { name: 'objectId', type: 'DSNPId' },
         ],
-      }, modelType: 'AvroBinary' },
-    nonce,
+      },
+      modelType: 'AvroBinary',
+    },
+    nonce
   );
 }
 

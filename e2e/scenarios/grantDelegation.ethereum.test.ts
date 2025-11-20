@@ -10,7 +10,8 @@ import {
   generateDelegationPayload,
   generateValidProviderPayloadWithName,
   signPayload,
-  getOrCreateIntentAndSchema, getOrCreateDelegationSchema,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -69,7 +70,11 @@ describe('Delegation Scenario Tests Ethereum', function () {
     otherProviderId = providerEvent!.data.providerId;
 
     ({ intentId, schemaId } = await getOrCreateDelegationSchema(keys));
-    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateDelegationSchema(keys, undefined, 'test.grantDelegationSecond'));
+    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateDelegationSchema(
+      keys,
+      undefined,
+      'test.grantDelegationSecond'
+    ));
   });
 
   describe('delegation grants for a Ethereum key', function () {
