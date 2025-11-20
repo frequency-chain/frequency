@@ -10,31 +10,6 @@ export default {
       ],
       type: 'Option<SchemaResponse>',
     },
-    checkSchemaValidity: {
-      description: '',
-      params: [
-        {
-          name: 'model',
-          type: 'SchemaModel',
-        },
-        {
-          name: 'at',
-          type: 'BlockHash',
-          isOptional: true,
-        },
-      ],
-      type: 'bool',
-    },
-    getVersions: {
-      description: 'Get different versions and schema ids for a complete schema name or only a namespace',
-      params: [
-        {
-          name: 'schema_name',
-          type: 'String',
-        },
-      ],
-      type: 'Option<Vec<SchemaVersionResponse>>',
-    },
   },
   types: {
     SchemaId: 'u16',
@@ -47,14 +22,59 @@ export default {
       payload_location: 'PayloadLocation',
       settings: 'Vec<SchemaSetting>',
     },
+    IntentGroupId: 'u16',
+    IntentGroupResponse: {
+      intent_group_id: 'IntentGroupId',
+      intent_ids: 'Vec<IntentId>',
+    },
+    IntentId: 'u16',
+    IntentResponse: {
+      intent_id: 'IntentId',
+      payload_location: 'PayloadLocation',
+      settings: 'Vec<IntentSetting>',
+      schema_ids: 'Option<Vec<SchemaId>>',
+    },
+    IntentSetting: {
+      _enum: ['AppendOnly', 'SignatureRequired'],
+    },
+    MappedEntityIdentifier: {
+      _enum: {
+        Intent: 'IntentId',
+        IntentGroup: 'IntentGroupId',
+      },
+    },
     ModelType: {
       _enum: ['AvroBinary', 'Parquet'],
+    },
+    NameLookupResponse: {
+      name: 'String',
+      entity_id: 'MappedEntityIdentifier',
     },
     PayloadLocation: {
       _enum: ['OnChain', 'IPFS', 'Itemized', 'Paginated'],
     },
+    SchemaInfoResponse: {
+      schema_id: 'SchemaId',
+      intent_id: 'IntentId',
+      model_type: 'ModelType',
+      status: 'SchemaStatus',
+      payload_location: 'PayloadLocation',
+      settings: 'Vec<IntentSetting>',
+    },
+    SchemaResponseV2: {
+      schema_id: 'SchemaId',
+      intent_id: 'IntentId',
+      model: 'SchemaModel',
+      model_type: 'ModelType',
+      payload_location: 'PayloadLocation',
+      settings: 'Vec<IntentSetting>',
+      status: 'SchemaStatus',
+    },
     SchemaSetting: {
       _enum: ['AppendOnly', 'SignatureRequired'],
+    },
+    SchemaStatus: {
+      _enum: ['Active', 'Deprecated', 'Unsupported'],
     },
     SchemaVersionResponse: {
       schema_name: 'String',

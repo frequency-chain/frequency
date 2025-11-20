@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
+log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -30,10 +31,9 @@ multibase = { workspace = true }
 [dev-dependencies]
 common-runtime = { path = '../../runtime/common', default-features = false }
 # Testing dependencies
-rand = { workspace = true }
+pallet-migrations = { workspace = true }
 pretty_assertions = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
 
 [features]
 default = ['std']

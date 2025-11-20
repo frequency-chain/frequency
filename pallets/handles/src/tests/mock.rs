@@ -32,6 +32,10 @@ impl MsaLookup for MsaInfoHandler {
 
 		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
 	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		u64::MAX
+	}
 }
 
 impl MsaValidator for MsaInfoHandler {

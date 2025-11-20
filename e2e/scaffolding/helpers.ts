@@ -1,18 +1,15 @@
+import { verbose } from './env';
 import { Keyring } from '@polkadot/api';
 import type { KeyringPair } from '@polkadot/keyring/types';
-import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
-import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
-import type { Codec } from '@polkadot/types/types';
+import { u16, u32, u64, Option, Bytes, Result } from '@polkadot/types';
+import type {
+  CommonPrimitivesStatefulStoragePaginatedStorageResponseV2,
+  FrameSystemAccountInfo,
+  PalletCapacityCapacityDetails,
+} from '@polkadot/types/lookup';
+import { AnyNumber, Codec } from '@polkadot/types/types';
 import { hexToU8a, u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
-import {
-  verbose,
-  getGraphChangeSchema,
-  getBroadcastSchema,
-  getDummySchema,
-  getAvroChatMessageItemizedSchema,
-  getAvroChatMessagePaginatedSchema,
-} from './env';
 import {
   AddKeyData,
   AddProviderPayload,
@@ -21,6 +18,7 @@ import {
   Extrinsic,
   ExtrinsicHelper,
   ItemizedSignaturePayloadV2,
+  ItemizedSignaturePayloadV3,
   PaginatedDeleteSignaturePayloadV2,
   PaginatedUpsertSignaturePayloadV2,
   RecoveryCommitmentPayload,
@@ -29,19 +27,21 @@ import {
 import {
   BlockPaginationResponseMessage,
   HandleResponse,
+  IntentId,
+  IntentSetting,
   MessageResponse,
   MessageSourceId,
+  ModelType,
   PageHash,
   SchemaId,
 } from '@frequency-chain/api-augment/interfaces';
 import assert from 'assert';
-import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
-import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
+import { AVRO_GRAPH_CHANGE, PARQUET_BROADCAST } from '../schemas/fixtures';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import { getUnifiedAddress, getUnifiedPublicKey, createAddKeyData, sign } from '@frequency-chain/ethereum-utils';
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
-import { ethers, keccak256 } from 'ethers';
+import { keccak256 } from 'ethers';
 import { secp256k1PairFromSeed } from '@polkadot/util-crypto/secp256k1/pair/fromSeed';
 import { Keypair } from '@polkadot/util-crypto/types';
 import { CID } from 'multiformats/cid';
@@ -146,7 +146,7 @@ export async function generateAddKeyPayload(
 /**
  * Generates a signed AddKey proof that can use either Sr25519 or EIP-712 ECDSA signatures
  *
- * @param addKeyData - The add key data to be signed
+ * @param addKeyData - The AddKeyData to be signed
  * @param signingKey - The keypair to sign the payload with
  * @param expirationOffset - Optional expiration offset for the payload (default: 100)
  * @param blockNumber - Optional block number for the payload
@@ -205,10 +205,10 @@ export async function generateRecoveryCommitmentPayload(
 }
 
 export async function generateItemizedSignaturePayload(
-  payloadInputs: ItemizedSignaturePayloadV2,
+  payloadInputs: ItemizedSignaturePayloadV2 | ItemizedSignaturePayloadV3,
   expirationOffset: number = 100,
   blockNumber?: number
-): Promise<ItemizedSignaturePayloadV2> {
+): Promise<ItemizedSignaturePayloadV2 | ItemizedSignaturePayloadV3> {
   const { expiration, ...payload } = payloadInputs;
 
   return {
@@ -225,9 +225,20 @@ export function generateItemizedActions(items: { action: 'Add' | 'Update'; value
   });
 }
 
+export function generateItemizedActionsV2(items: { schemaId: AnyNumber; action: 'Add' | 'Update'; value: string }[]) {
+  return items.map(({ schemaId, action, value }) => {
+    const actionObj = {};
+    actionObj[action] = {
+      schemaId,
+      data: new Bytes(ExtrinsicHelper.api.registry, value),
+    };
+    return actionObj;
+  });
+}
+
 export async function generateItemizedActionsPayloadAndSignature(
-  payloadInput: ItemizedSignaturePayloadV2,
-  payloadType: 'PalletStatefulStorageItemizedSignaturePayloadV2',
+  payloadInput: ItemizedSignaturePayloadV2 | ItemizedSignaturePayloadV3,
+  payloadType: 'PalletStatefulStorageItemizedSignaturePayloadV2' | 'PalletStatefulStorageItemizedSignaturePayloadV3',
   signingKeys: KeyringPair
 ) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
@@ -239,12 +250,13 @@ export async function generateItemizedActionsPayloadAndSignature(
 
 export async function generateItemizedActionsSignedPayloadV2(
   actions: any[],
+  intentId: IntentId,
   schemaId: SchemaId,
   signingKeys: KeyringPair,
   msaId: MessageSourceId
 ) {
   const payloadInput: ItemizedSignaturePayloadV2 = {
-    targetHash: await getCurrentItemizedHash(msaId, schemaId),
+    targetHash: await getCurrentItemizedHash(msaId, intentId),
     schemaId,
     actions,
   };
@@ -252,6 +264,25 @@ export async function generateItemizedActionsSignedPayloadV2(
   return generateItemizedActionsPayloadAndSignature(
     payloadInput,
     'PalletStatefulStorageItemizedSignaturePayloadV2',
+    signingKeys
+  );
+}
+
+export async function generateItemizedActionsSignedPayloadV3(
+  actions: any[],
+  intentId: IntentId,
+  signingKeys: KeyringPair,
+  msaId: MessageSourceId
+) {
+  const payloadInput: ItemizedSignaturePayloadV3 = {
+    targetHash: await getCurrentItemizedHash(msaId, intentId),
+    intentId,
+    actions,
+  };
+
+  return generateItemizedActionsPayloadAndSignature(
+    payloadInput,
+    'PalletStatefulStorageItemizedSignaturePayloadV3',
     signingKeys
   );
 }
@@ -297,7 +328,7 @@ export function createKeys(name: string = 'first pair', keyType: KeypairType = '
   // create & add the pair to the keyring with the type and some additional
   // metadata specified
   const keyring = new Keyring({ type: keyType });
-  let keyringPair;
+  let keyringPair: KeyringPair;
   if (keyType === 'ethereum') {
     // since we don't have access to the secret key from inside the KeyringPair
     const keypair = secp256k1PairFromSeed(hexToU8a(keccak256(Buffer.from(mnemonic, 'utf8'))));
@@ -318,7 +349,7 @@ export function getEthereumKeyPairFromUnifiedAddress(unifiedAddress: string): Ke
 function canDrainAccount(info: FrameSystemAccountInfo): boolean {
   return (
     !info.isEmpty &&
-    info.data.free.toNumber() > 1_500_000 && // ~Cost to do the transfer
+    info.data.free.toNumber() > 1_900_000 && // ~Cost to do the transfer
     info.data.reserved.toNumber() < 1 &&
     info.data.frozen.toNumber() < 1
   );
@@ -357,7 +388,7 @@ export async function createAndFundKeypair(
 ): Promise<KeyringPair> {
   const keypair = createKeys(keyName, keyType);
 
-  await fundKeypair(source, keypair, amount || (await getExistentialDeposit()), nonce);
+  await fundKeypair(source, keypair, amount || getExistentialDeposit(), nonce);
   log('Funded', `Name: ${keyName || 'None provided'}`, `Address: ${getUnifiedAddress(keypair)}`);
 
   return keypair;
@@ -370,7 +401,7 @@ export async function createAndFundKeypairs(
   keyType: KeypairType = 'sr25519'
 ): Promise<KeyringPair[]> {
   const nonce = await getNonce(source);
-  const existentialDeposit = await getExistentialDeposit();
+  const existentialDeposit = getExistentialDeposit();
 
   const wait: Promise<KeyringPair>[] = keyNames.map((keyName, i) => {
     const keypair = createKeys(keyName + ` ${i}th`, keyType);
@@ -405,7 +436,7 @@ export async function createProviderKeysAndId(
 
 export async function createDelegatorAndDelegation(
   source: KeyringPair,
-  schemaId: u16 | u16[],
+  intentId: u16 | u16[],
   providerId: u64,
   providerKeys: KeyringPair,
   keyType: KeypairType = 'sr25519',
@@ -416,7 +447,7 @@ export async function createDelegatorAndDelegation(
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,
-    schemaIds: Array.isArray(schemaId) ? schemaId : [schemaId],
+    intentIds: Array.isArray(intentId) ? intentId : [intentId],
   });
   const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -431,24 +462,27 @@ export async function createDelegatorAndDelegation(
   return [delegatorKeys, targetEvent!.data.msaId];
 }
 
-export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
-  const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId);
-  return result.content_hash;
+export async function getCurrentItemizedHash(msa_id: MessageSourceId, intentId: AnyNumber): Promise<PageHash> {
+  const result = await ExtrinsicHelper.getItemizedStorage(msa_id, intentId);
+  return result.contentHash;
 }
 
-export async function getCurrentPaginatedHash(msa_id: MessageSourceId, schemaId: u16, page_id: number): Promise<u32> {
-  const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, schemaId);
-  const page_response = result.filter((page) => page.page_id.toNumber() === page_id);
+export async function getCurrentPaginatedHash(
+  msa_id: MessageSourceId,
+  intentId: AnyNumber,
+  page_id: number
+): Promise<u32> {
+  const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, intentId);
+  const page_response = result.toArray().filter((page) => page.pageId.toNumber() === page_id);
   if (page_response.length <= 0) {
     return new u32(ExtrinsicHelper.api.registry, 0);
   }
 
-  return page_response[0].content_hash;
+  return page_response[0].contentHash;
 }
 
-export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
-  const result = await ExtrinsicHelper.getHandleForMSA(msa_id);
-  return result;
+export function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
+  return ExtrinsicHelper.getHandleForMSA(msa_id);
 }
 
 // 1. Creates and funds a key pair.
@@ -577,117 +611,167 @@ export async function getNextRewardEraBlock(): Promise<number> {
   return actualEraLength + eraInfo.startedAt.toNumber() + 1;
 }
 
-export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<u16> {
-  const existingSchemaId = getGraphChangeSchema();
-  if (existingSchemaId) {
-    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
-  } else {
-    const op = ExtrinsicHelper.createSchemaV3(
+export async function getNamedIntentAndSchema(name: string) {
+  const response = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getRegisteredEntitiesByName(name);
+  if (response.isSome && response.unwrap().length > 0 && response.unwrap()[0].entityId.isIntent) {
+    const intentId = response.unwrap()[0].entityId.asIntent;
+    const schemaResponse = await ExtrinsicHelper.apiPromise.call.schemasRuntimeApi.getIntentById(intentId, true);
+    if (schemaResponse.isSome) {
+      const schemaIds = schemaResponse.unwrap().schemaIds;
+      if (schemaIds.isSome && schemaIds.unwrap().length > 0) {
+        const ids = schemaIds.unwrap();
+        return { intentId, schemaId: ids[ids.length - 1] };
+      }
+    }
+
+    return { intentId, schemaId: null };
+  }
+
+  return { intentId: null, schemaId: null };
+}
+
+export async function getOrCreateIntentAndSchema(
+  source: KeyringPair,
+  name: string,
+  intentParameters: {
+    payloadLocation: 'OnChain' | 'IPFS' | 'Paginated' | 'Itemized';
+    settings: IntentSetting['type'][];
+  },
+  schemaParameters: { model: any; modelType: ModelType['type'] },
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  let noncesUsed = 0;
+  let { intentId, schemaId } = await getNamedIntentAndSchema(name);
+
+  if (!intentId) {
+    const intentOp = ExtrinsicHelper.createIntent(
       source,
-      AVRO_GRAPH_CHANGE,
-      'AvroBinary',
-      'OnChain',
-      [],
-      'test.graphChangeSchema'
+      intentParameters.payloadLocation,
+      intentParameters.settings,
+      name
     );
-    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source, false);
+    const { target: createIntentEvent, eventMap } = await intentOp.fundAndSend(source, false, nonce);
+    noncesUsed += 1;
+    assertExtrinsicSuccess(eventMap);
+    if (createIntentEvent) {
+      intentId = createIntentEvent.data.intentId;
+    } else {
+      assert.fail('failed to create an intent');
+    }
+  }
+
+  if (!schemaId) {
+    const op = ExtrinsicHelper.createSchemaV4(source, intentId, schemaParameters.model, schemaParameters.modelType);
+    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(
+      source,
+      false,
+      nonce ? nonce + noncesUsed : undefined
+    );
+    noncesUsed += 1;
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
-      return createSchemaEvent.data.schemaId;
+      schemaId = createSchemaEvent.data.schemaId;
     } else {
       assert.fail('failed to create a schema');
     }
   }
+
+  return { intentId, schemaId, noncesUsed };
 }
 
-export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Promise<u16> {
-  const existingSchemaId = getBroadcastSchema();
-  if (existingSchemaId) {
-    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
-  } else {
-    const createSchema = ExtrinsicHelper.createSchemaV3(
-      source,
-      PARQUET_BROADCAST,
-      'Parquet',
-      'IPFS',
-      [],
-      'test.parquetBroadcast'
-    );
-    const { target: event } = await createSchema.fundAndSend(source, false);
-    if (event) {
-      return event.data.schemaId;
-    } else {
-      assert.fail('failed to create a schema');
-    }
-  }
+export function getOrCreateGraphChangeSchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.graphChange',
+    { payloadLocation: 'OnChain', settings: [] },
+    { model: AVRO_GRAPH_CHANGE, modelType: 'AvroBinary' },
+    nonce
+  );
 }
 
-export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> {
-  const existingSchemaId = getDummySchema();
-  if (existingSchemaId) {
-    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
-  } else {
-    const createDummySchema = ExtrinsicHelper.createSchemaV3(
-      source,
-      { type: 'record', name: 'Dummy on-chain schema', fields: [] },
-      'AvroBinary',
-      'OnChain',
-      [],
-      'test.dummySchema'
-    );
-    const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source, false);
-    if (dummySchemaEvent) {
-      return dummySchemaEvent.data.schemaId;
-    } else {
-      assert.fail('failed to create a schema');
-    }
-  }
+export async function getOrCreateParquetBroadcastSchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{
+  intentId: u16;
+  schemaId: u16;
+  noncesUsed: number;
+}> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.parquetBroadcast',
+    { payloadLocation: 'IPFS', settings: [] },
+    { model: PARQUET_BROADCAST, modelType: 'Parquet' },
+    nonce
+  );
 }
 
-export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringPair): Promise<u16> {
-  const existingSchemaId = getAvroChatMessagePaginatedSchema();
-  if (existingSchemaId) {
-    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
-  } else {
-    // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchemaV3(
-      source,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'Paginated',
-      [],
-      'test.AvroChatMessagePaginated'
-    );
-    const { target: event } = await createSchema.fundAndSend(source, false);
-    if (event) {
-      return event.data.schemaId;
-    } else {
-      assert.fail('failed to create a schema');
-    }
-  }
+export function getOrCreateDummySchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.dummySchema',
+    { payloadLocation: 'OnChain', settings: [] },
+    { model: { type: 'record', name: 'Dummy on-chain schema', fields: [] }, modelType: 'AvroBinary' },
+    nonce
+  );
 }
 
-export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPair): Promise<u16> {
-  const existingSchemaId = getAvroChatMessageItemizedSchema();
-  if (existingSchemaId) {
-    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
-  } else {
-    // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchemaV3(
-      source,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'Itemized',
-      [],
-      'test.AvroChatMessageItemized'
-    );
-    const { target: event } = await createSchema.fundAndSend(source, false);
-    if (event) {
-      return event.data.schemaId;
-    } else {
-      assert.fail('failed to create a schema');
-    }
-  }
+export function getOrCreateAvroChatMessagePaginatedSchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.AvroChatMessagePaginated',
+    { payloadLocation: 'Paginated', settings: [] },
+    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' },
+    nonce
+  );
+}
+
+export function getOrCreateAvroChatMessageItemizedSchema(
+  source: KeyringPair,
+  nonce?: number
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    'test.AvroChatMessageItemized',
+    { payloadLocation: 'Itemized', settings: [] },
+    { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' },
+    nonce
+  );
+}
+
+export function getOrCreateDelegationSchema(
+  source: KeyringPair,
+  nonce?: number,
+  name = 'test.delegation'
+): Promise<{ intentId: u16; schemaId: u16; noncesUsed: number }> {
+  return getOrCreateIntentAndSchema(
+    source,
+    name,
+    { payloadLocation: 'OnChain', settings: [] },
+    {
+      model: {
+        type: 'record',
+        name: 'Post',
+        fields: [
+          { name: 'title', type: { name: 'Title', type: 'string' } },
+          { name: 'content', type: { name: 'Content', type: 'string' } },
+          { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
+          { name: 'objectId', type: 'DSNPId' },
+        ],
+      },
+      modelType: 'AvroBinary',
+    },
+    nonce
+  );
 }
 
 export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
@@ -704,7 +788,7 @@ export function assertEvent(events: EventMap, eventName: string) {
 }
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {
-  assert.notEqual(eventMap['system.ExtrinsicSuccess'], undefined);
+  assert.notEqual(eventMap['system.ExtrinsicSuccess'], undefined, 'extrinsic should have succeeded');
 }
 
 export function assertHasMessage(response: BlockPaginationResponseMessage, testFn: (x: MessageResponse) => boolean) {
@@ -756,12 +840,12 @@ export const base64UrlToUint8Array = (base64: string): Uint8Array => new Uint8Ar
 
 export async function getFreeBalance(source: KeyringPair): Promise<bigint> {
   const accountInfo = await ExtrinsicHelper.getAccountInfo(source);
-  return BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
+  return BigInt(accountInfo.data.free.toString()) - getExistentialDeposit();
 }
 
 // spendable = free - max(frozen - on_hold, ED)
 export async function getSpendableBalance(source: KeyringPair): Promise<bigint> {
-  const ed = await getExistentialDeposit();
+  const ed = getExistentialDeposit();
   const accountInfo = await ExtrinsicHelper.getAccountInfo(source);
   const frozenLessReserved = accountInfo.data.frozen.toBigInt() - accountInfo.data.reserved.toBigInt();
   const maxVsED = frozenLessReserved > ed ? frozenLessReserved : ed;
@@ -777,9 +861,7 @@ export function getBlocksInMonthPeriod(blockTime: number, periodInMonths: number
   const secondsPerMonth = 2592000; // Assuming 30 days in a month
 
   // Calculate the number of blocks in the given period
-  const blocksInPeriod = Math.floor((periodInMonths * secondsPerMonth) / blockTime);
-
-  return blocksInPeriod;
+  return Math.floor((periodInMonths * secondsPerMonth) / blockTime);
 }
 
 export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedule {

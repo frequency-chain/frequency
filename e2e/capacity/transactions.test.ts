@@ -4,7 +4,6 @@ import { Bytes, u64, u16 } from '@polkadot/types';
 import assert from 'assert';
 import { ExtrinsicHelper, type AddKeyData, type RecoveryCommitmentPayload } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
-import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import {
   generateRecoverySecret,
   getRecoveryCommitment,
@@ -52,12 +51,14 @@ describe('Capacity Transactions', function () {
   describe('pay_with_capacity', function () {
     describe('when caller has a Capacity account', function () {
       let schemaId: u16;
+      let intentId: u16;
       const amountStaked = 6n * DOLLARS;
 
       before(async function () {
         fundingSource = await getFundingSource(import.meta.url);
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
-        schemaId = await getOrCreateGraphChangeSchema(fundingSource);
+        ({ intentId, schemaId } = await getOrCreateGraphChangeSchema(fundingSource));
+        assert.notEqual(intentId, undefined, 'setup should populate intentId');
         assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
       });
 
@@ -79,7 +80,7 @@ describe('Capacity Transactions', function () {
           delegatorKeys = createKeys('delegatorKeys');
           payload = await generateDelegationPayload({
             authorizedMsaId: capacityProvider,
-            schemaIds: [schemaId],
+            intentIds: [intentId],
           });
         });
 
@@ -263,11 +264,11 @@ describe('Capacity Transactions', function () {
         });
 
         it('successfully pays with Capacity for eligible transaction - addIPFSMessage', async function () {
-          const schemaId = await getOrCreateParquetBroadcastSchema(fundingSource);
+          const { schemaId: broadcastSchemaId } = await getOrCreateParquetBroadcastSchema(fundingSource);
           const ipfs_payload_data = 'This is a test of Frequency.';
           const ipfs_payload_len = ipfs_payload_data.length + 1;
           const ipfs_cid_64 = (await ipfsCid(ipfs_payload_data, './e2e_test.txt')).toString(base64);
-          const call = ExtrinsicHelper.addIPFSMessage(capacityKeys, schemaId, ipfs_cid_64, ipfs_payload_len);
+          const call = ExtrinsicHelper.addIPFSMessage(capacityKeys, broadcastSchemaId, ipfs_cid_64, ipfs_payload_len);
 
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
@@ -277,13 +278,13 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - addOnchainMessage', async function () {
           // Create a dummy on-chain schema
-          const dummySchemaId: u16 = await getOrCreateDummySchema(fundingSource);
+          const { intentId: dummyIntentId, schemaId: dummySchemaId } = await getOrCreateDummySchema(fundingSource);
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, '0xdeadbeef');
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
           // messages.MessagesInBlock in block might not be on this transaction if there are others
           assertEvent(eventMap, 'system.ExtrinsicSuccess');
-          const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
+          const get = await ExtrinsicHelper.apiPromise.rpc.messages.getByIntentId(dummyIntentId, {
             from_block: starting_block,
             from_index: 0,
             to_block: starting_block + 999,
@@ -316,7 +317,8 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - applyItemActions', async function () {
           // Create a schema to allow delete actions
-          const schemaId_deletable: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
+          const { intentId: itemizedIntentId, schemaId: itemizedSchemaId } =
+            await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
 
           // Add and update actions
           const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
@@ -329,12 +331,12 @@ describe('Capacity Transactions', function () {
             Add: payload_2,
           };
 
-          const target_hash = await getCurrentItemizedHash(capacityProvider, schemaId_deletable);
+          const target_hash = await getCurrentItemizedHash(capacityProvider, itemizedIntentId);
 
           const add_actions = [add_action, update_action];
           const call = ExtrinsicHelper.applyItemActions(
             capacityKeys,
-            schemaId_deletable,
+            itemizedSchemaId,
             capacityProvider,
             add_actions,
             target_hash
@@ -347,15 +349,16 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - upsertPage; deletePage', async function () {
           // Get a schema for Paginated PayloadLocation
-          schemaId = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
+          const { intentId: paginatedIntentId, schemaId: paginatedSchemaId } =
+            await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
           const page_id = 0;
-          let target_hash = await getCurrentPaginatedHash(capacityProvider, schemaId, page_id);
+          let target_hash = await getCurrentPaginatedHash(capacityProvider, paginatedIntentId, page_id);
 
           // Add and update actions
           const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
           const call = ExtrinsicHelper.upsertPage(
             capacityKeys,
-            schemaId,
+            paginatedSchemaId,
             capacityProvider,
             page_id,
             payload_1,
@@ -367,8 +370,14 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap, 'statefulStorage.PaginatedPageUpdated');
 
           // Remove the page
-          target_hash = await getCurrentPaginatedHash(capacityProvider, schemaId, page_id);
-          const call2 = ExtrinsicHelper.removePage(capacityKeys, schemaId, capacityProvider, page_id, target_hash);
+          target_hash = await getCurrentPaginatedHash(capacityProvider, paginatedIntentId, page_id);
+          const call2 = ExtrinsicHelper.removePage(
+            capacityKeys,
+            paginatedSchemaId,
+            capacityProvider,
+            page_id,
+            target_hash
+          );
           const { eventMap: eventMap2 } = await call2.payWithCapacity();
           assertEvent(eventMap2, 'system.ExtrinsicSuccess');
           assertEvent(eventMap2, 'capacity.CapacityWithdrawn');
@@ -377,7 +386,8 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - applyItemActionsWithSignatureV2', async function () {
           // Create a schema for Itemized PayloadLocation
-          const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
+          const { intentId: itemizedIntentId, schemaId: itemizedSchemaId } =
+            await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
 
           // Add and update actions
           const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
@@ -390,7 +400,7 @@ describe('Capacity Transactions', function () {
             Add: payload_2,
           };
 
-          const target_hash = await getCurrentItemizedHash(delegatorProviderId, itemizedSchemaId);
+          const target_hash = await getCurrentItemizedHash(delegatorProviderId, itemizedIntentId);
 
           const add_actions = [add_action, update_action];
           const payload = await generateItemizedSignaturePayload({
@@ -419,7 +429,7 @@ describe('Capacity Transactions', function () {
         });
 
         it('successfully pays with Capacity for eligible transaction - upsertPageWithSignatureV2; deletePageWithSignatureV2', async function () {
-          const paginatedSchemaId: SchemaId = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
+          const { schemaId: paginatedSchemaId } = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
 
           const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
@@ -531,7 +541,7 @@ describe('Capacity Transactions', function () {
 
           // Confirm that a transfer fails because the available balance is 0
           const failTransferObj = ExtrinsicHelper.transferFunds(capacityKeys, fundingSource, 1n * CENTS);
-          assert.rejects(failTransferObj.signAndSend('current'), {
+          await assert.rejects(failTransferObj.signAndSend('current'), {
             name: 'RpcError',
             message: '1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low',
           });

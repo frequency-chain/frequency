@@ -223,11 +223,12 @@ export function createAddKeyData(
  */
 export function createAuthorizedKeyData(
   msaId: string | bigint,
-  newPublicKey: HexString | Uint8Array,
+  authorizedPublicKey: HexString | Uint8Array,
   expirationBlock: number
 ): AuthorizedKeyData {
   const parsedMsaId: string = typeof msaId === 'string' ? msaId : `${msaId}`;
-  const parsedNewPublicKey: HexString = typeof newPublicKey === 'object' ? u8aToHex(newPublicKey) : newPublicKey;
+  const parsedNewPublicKey: HexString =
+    typeof authorizedPublicKey === 'object' ? u8aToHex(authorizedPublicKey) : authorizedPublicKey;
 
   assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
@@ -244,24 +245,24 @@ export function createAuthorizedKeyData(
  * Build an AddProvider payload for signature.
  *
  * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
- * @param schemaIds       One or more schema IDs (uint16) the provider may use
+ * @param intentIds       One or more schema IDs (uint16) the provider may use
  * @param expirationBlock Block number after which this payload is invalid
  */
 export function createAddProvider(
   authorizedMsaId: string | bigint,
-  schemaIds: number[],
+  intentIds: number[],
   expirationBlock: number
 ): AddProvider {
   assert(isValidUint64String(authorizedMsaId), 'authorizedMsaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
-  schemaIds.forEach((schemaId) => {
-    assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
+  intentIds.forEach((intentId) => {
+    assert(isValidUint16(intentId), 'intentId should be a valid uint16');
   });
 
   return {
     type: 'AddProvider',
     authorizedMsaId: authorizedMsaId.toString(),
-    schemaIds,
+    intentIds,
     expiration: expirationBlock,
   };
 }
@@ -512,17 +513,17 @@ export function getEip712BrowserRequestAuthorizedKeyData(
  * Returns the EIP-712 browser request for a AddProvider for signing.
  *
  * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
- * @param schemaIds       One or more schema IDs (uint16) the provider may use
+ * @param intentIds       One or more schema IDs (uint16) the provider may use
  * @param expirationBlock Block number after which this payload is invalid
  * @param domain
  */
 export function getEip712BrowserRequestAddProvider(
   authorizedMsaId: string | bigint,
-  schemaIds: number[],
+  intentIds: number[],
   expirationBlock: number,
   domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
-  const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
+  const message = createAddProvider(authorizedMsaId, intentIds, expirationBlock);
   const normalized = normalizePayload(message);
   return createEip712Payload(ADD_PROVIDER_DEFINITION, message.type, domain, normalized);
 }

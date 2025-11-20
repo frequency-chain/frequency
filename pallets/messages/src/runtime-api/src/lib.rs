@@ -34,10 +34,18 @@ sp_api::decl_runtime_apis! {
 	pub trait MessagesRuntimeApi
 	{
 		/// Retrieve the messages for a particular schema and block number
+		// TODO: Remove once all RPC nodes have been updated to remove get_messages_by_schema_id RPC method
+		#[deprecated(note = "Please use get_messages_by_intent_and_block instead")]
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber) ->
 			Vec<MessageResponse>;
 
+		/// Retrieve the messages for a particular intent and block range (paginated)
+		#[api_version(2)]
+		fn get_messages_by_intent_id(intent_id: IntentId, pagination: BlockPaginationRequest) -> BlockPaginationResponse<MessageResponseV2>;
+
 		/// Retrieve a schema by id
+		// TODO: Remove once all RPC nodes have been updated to call the schemas pallet runtime for this
+		#[deprecated(note = "Use SchemasRuntimeApi_get_schema_by_id instead")]
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
 	}
 }

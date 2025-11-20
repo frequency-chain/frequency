@@ -1,14 +1,16 @@
 use crate as pallet_messages;
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
-		ProviderId, ProviderLookup, SchemaGrantValidator,
+		Delegation, DelegationValidator, DelegatorId, GrantValidator, MessageSourceId, MsaLookup,
+		MsaValidator, ProviderId, ProviderLookup,
 	},
 	schema::*,
 };
+use frame_support::{derive_impl, pallet_prelude::Weight};
 
 use frame_support::{
 	dispatch::DispatchResult,
+	migrations::MultiStepMigrator,
 	parameter_types,
 	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
@@ -27,11 +29,15 @@ pub const INVALID_SCHEMA_ID: SchemaId = 65534;
 // this value should be the same as the one used in benchmarking
 pub const IPFS_SCHEMA_ID: SchemaId = 20;
 
+pub const ON_CHAIN_SCHEMA_ID: SchemaId = 16001;
+
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
 pub const DUMMY_CID_BASE32: &[u8; 59] =
 	b"bafkreieb2x7yyuhy6hmct4j7tkmgnthrfpqyo4mt5nscx7pvc6oiweiwjq";
 pub const DUMMY_CID_BASE64: &[u8; 49] = b"mAVUSIIHV/4xQ+PHYKfE/mphmzPEr4Ydxk+tkK/31F5yLERZM";
+
+pub const DUMMY_MSA_ID: u64 = 10;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -39,6 +45,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		MessagesPallet: pallet_messages::{Pallet, Call, Storage, Event<T>},
+		Migrator: pallet_migrations,
 	}
 );
 
@@ -68,25 +75,35 @@ impl system::Config for Test {
 	type OnSetCode = ();
 	type MaxConsumers = ConstU32<16>;
 	type SingleBlockMigrations = ();
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = Migrator;
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
 	type ExtensionsWeightInfo = ();
 }
 
+frame_support::parameter_types! {
+	pub storage MigratorServiceWeight: Weight = Weight::from_parts(100, 100); // do not use in prod
+}
+
+#[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
+impl pallet_migrations::Config for Test {
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		crate::migration::v3::MigrateV2ToV3<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v3::FinalizeV3Migration<Test, crate::SubstrateWeight<Test>>,
+	);
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type MaxServiceWeight = MigratorServiceWeight;
+}
+
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
 parameter_types! {
-	// Max payload size was picked specifically to be large enough to accommodate
-	// a CIDv1 using SHA2-256, but too small to accommodate CIDv1 w/SHA2-512.
-	// This is purely so that we can test the error condition. Real world configuration
-	// should have this set large enough to accommodate the largest possible CID.
-	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
-	// is not too big.
-	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
-
+	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3;
+	pub const MessagesMigrateEmitEvery: u32 = 100;
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -132,6 +149,10 @@ impl MsaLookup for MsaInfoHandler {
 		}
 		Some(get_msa_from_account(*key) as MessageSourceId)
 	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		MessageSourceId::MAX
+	}
 }
 
 impl MsaValidator for MsaInfoHandler {
@@ -150,8 +171,8 @@ impl MsaValidator for MsaInfoHandler {
 }
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u32;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type DelegationId = SchemaId;
 
 	fn get_delegation_of(
 		_delegator: DelegatorId,
@@ -160,31 +181,29 @@ impl ProviderLookup for DelegationInfoHandler {
 		if provider == ProviderId(2000) {
 			return None
 		};
-		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
+		Some(Delegation { revoked_at: 100, permissions: Default::default() })
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {
 	type BlockNumber = u32;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type DelegationIdType = SchemaId;
 
 	fn ensure_valid_delegation(
 		provider: ProviderId,
 		_delegator: DelegatorId,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<
-		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
+	) -> Result<Delegation<SchemaId, Self::BlockNumber, Self::MaxGrantsPerDelegation>, DispatchError>
+	{
 		if provider == ProviderId(2000) {
 			return Err(DispatchError::Other("some delegation error"))
 		};
 
-		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
+		Ok(Delegation { permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
-impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHandler {
-	fn ensure_valid_schema_grant(
+impl<BlockNumber> GrantValidator<IntentId, BlockNumber> for SchemaGrantValidationHandler {
+	fn ensure_valid_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
 		_schema_id: SchemaId,
@@ -199,36 +218,46 @@ impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHan
 
 pub struct SchemaHandler;
 impl SchemaProvider<u16> for SchemaHandler {
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 		if schema_id == INVALID_SCHEMA_ID {
 			return None
 		}
 		if schema_id == IPFS_SCHEMA_ID {
-			return Some(SchemaResponse {
+			return Some(SchemaResponseV2 {
 				schema_id,
+				intent_id: schema_id,
 				model: r#"schema"#.to_string().as_bytes().to_vec(),
 				model_type: ModelType::Parquet,
 				payload_location: PayloadLocation::IPFS,
 				settings: Vec::new(),
+				status: SchemaStatus::Active,
 			})
 		}
 
-		Some(SchemaResponse {
+		Some(SchemaResponseV2 {
 			schema_id,
+			intent_id: schema_id,
 			model: r#"schema"#.to_string().as_bytes().to_vec(),
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
 			settings: Vec::new(),
+			status: SchemaStatus::Active,
 		})
 	}
 
 	fn get_schema_info_by_id(schema_id: u16) -> Option<SchemaInfoResponse> {
 		Self::get_schema_by_id(schema_id).map(|schema| SchemaInfoResponse {
 			schema_id: schema.schema_id,
+			intent_id: schema.intent_id,
 			settings: schema.settings,
 			model_type: schema.model_type,
 			payload_location: schema.payload_location,
+			status: schema.status,
 		})
+	}
+
+	fn get_intent_by_id(_intent_id: IntentId) -> Option<IntentResponse> {
+		None
 	}
 }
 
@@ -245,6 +274,7 @@ impl pallet_messages::Config for Test {
 	type MsaBenchmarkHelper = ();
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = ();
+	type MigrateEmitEvery = ConstU32<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -264,6 +294,17 @@ pub fn run_to_block(n: u32) {
 		System::on_initialize(System::block_number());
 		MessagesPallet::on_initialize(System::block_number());
 	}
+}
+
+#[allow(dead_code)]
+pub fn run_to_block_with_migrations(n: u32) {
+	System::run_to_block_with::<AllPalletsWithSystem>(
+		n,
+		frame_system::RunToBlockHooks::default().after_initialize(|_| {
+			// Done by Executive:
+			<Test as frame_system::Config>::MultiBlockMigrator::step();
+		}),
+	);
 }
 
 pub fn get_msa_from_account(account_id: u64) -> u64 {

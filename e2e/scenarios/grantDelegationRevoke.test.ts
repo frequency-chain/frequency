@@ -12,6 +12,8 @@ import {
   generateDelegationPayload,
   getBlockNumber,
   signPayloadSr25519,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { SchemaGrantResponse } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -23,7 +25,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
   let revokeKeys: KeyringPair;
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
-  let schemaId: u16;
+  let intentId: u16;
   let providerId: u64;
   let otherProviderId: u64;
   let msaId: u64;
@@ -37,21 +39,11 @@ describe('Delegation Scenario Tests: Revocation', function () {
       2n * DOLLARS
     );
 
-    const schema = {
-      type: 'record',
-      name: 'Post',
-      fields: [
-        { name: 'title', type: { name: 'Title', type: 'string' } },
-        { name: 'content', type: { name: 'Content', type: 'string' } },
-        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
-        { name: 'objectId', type: 'DSNPId' },
-      ],
-    };
-
-    let msaCreatedEvent1;
-    [{ target: msaCreatedEvent1 }, schemaId] = await Promise.all([
+    let msaCreatedEvent1: any;
+    // eslint-disable-next-line prefer-const
+    [{ target: msaCreatedEvent1 }, { intentId }] = await Promise.all([
       ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
-      ExtrinsicHelper.getOrCreateSchemaV3(fundingSource, schema, 'AvroBinary', 'OnChain', [], 'test.grantDelegation'),
+      getOrCreateDelegationSchema(fundingSource, undefined, 'test.grantDelegation'),
     ]);
     msaId = msaCreatedEvent1!.data.msaId;
 
@@ -77,7 +69,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
       // Create Delegation
       const payload = await generateDelegationPayload({
         authorizedMsaId: providerId,
-        schemaIds: [schemaId],
+        intentIds: [intentId],
       });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -119,7 +111,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
     let revokedAtBlock: number;
 
     before(async function () {
-      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
+      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, intentIds: [intentId] });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
       const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(
         revokeKeys,
@@ -132,7 +124,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
       assert.notEqual(revokeMsaId, undefined, 'should have returned an MSA');
     });
 
-    it('schema permissions revoked block of delegation should be zero', async function () {
+    it('intent permissions revoked block of delegation should be zero', async function () {
       const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(
         revokeMsaId,
         providerId
@@ -156,7 +148,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
     it('revoked delegation should be reflected in all previously-granted schema permissions', async function () {
       // Make a block first to make sure the state has rolled to the next block
       const currentBlock = await getBlockNumber();
-      ExtrinsicHelper.runToBlock(currentBlock + 1);
+      await ExtrinsicHelper.runToBlock(currentBlock + 1);
       const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(
         revokeMsaId,
         providerId
@@ -172,7 +164,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
 
     it('should re-grant a previously revoked delegation', async function () {
       const delegatorKeys = createKeys();
-      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
+      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, intentIds: [intentId] });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
       const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(
         delegatorKeys,
@@ -208,7 +200,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
 
     it('should revoke a delegation by delegator and retire msa', async function () {
       const delegatorKeys = createKeys();
-      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
+      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, intentIds: [intentId] });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
       const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(
         delegatorKeys,
@@ -231,7 +223,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
 
     it('should fail to retire msa with any active delegations', async function () {
       const delegatorKeys = createKeys();
-      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
+      const payload = await generateDelegationPayload({ authorizedMsaId: providerId, intentIds: [intentId] });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
       const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(
         delegatorKeys,

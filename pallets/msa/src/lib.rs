@@ -15,7 +15,7 @@
 //! - [`MsaValidator`](../common_primitives/msa/trait.MsaValidator.html): Functions for validating MSAs.
 //! - [`ProviderLookup`](../common_primitives/msa/trait.ProviderLookup.html): Functions for accessing Provider info.
 //! - [`DelegationValidator`](../common_primitives/msa/trait.DelegationValidator.html): Functions for validating delegations.
-//! - [`SchemaGrantValidator`](../common_primitives/msa/trait.SchemaGrantValidator.html): Functions for validating schema grants.
+//! - [`SchemaGrantValidator`](../common_primitives/msa/trait.GrantValidator.html): Functions for validating permission grants.
 //!
 //! ## Assumptions
 //!
@@ -77,7 +77,7 @@ use sp_runtime::{
 	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
 pub use types::{
-	AddKeyData, AddProvider, ApplicationIndex, AuthorizedKeyData, PermittedDelegationSchemas,
+	AddKeyData, AddProvider, ApplicationIndex, AuthorizedKeyData, PermittedDelegationIntents,
 	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 pub use weights::*;
@@ -123,9 +123,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxPublicKeysPerMsa: Get<u8>;
 
-		/// Maximum count of schemas granted for publishing data per Provider
+		/// Maximum count of items granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrantsPerDelegation: Get<u32>;
+		type MaxGrantsPerDelegation: Get<u32>;
 
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
@@ -203,7 +203,7 @@ pub mod pallet {
 		DelegatorId,
 		Twox64Concat,
 		ProviderId,
-		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
+		Delegation<IntentId, BlockNumberFor<T>, T::MaxGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -581,6 +581,15 @@ pub mod pallet {
 
 		/// Application not found for given application_id
 		ApplicationNotFound,
+
+		/// The operation would exceed the maximum allowable number of permission grants.
+		ExceedsMaxGrantsPerDelegation,
+
+		/// An invalid IntentId was provided
+		InvalidIntentId,
+
+		/// The requested item does not have a current permission delegation in force
+		PermissionNotGranted,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -652,7 +661,7 @@ pub mod pallet {
 		///
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::create_sponsored_account_with_delegation(
-		add_provider_payload.schema_ids.len() as u32
+		add_provider_payload.intent_ids.len() as u32
 		))]
 		pub fn create_sponsored_account_with_delegation(
 			origin: OriginFor<T>,
@@ -686,7 +695,7 @@ pub mod pallet {
 			Self::add_provider(
 				ProviderId(provider_msa_id),
 				DelegatorId(new_delegator_msa_id),
-				add_provider_payload.schema_ids,
+				add_provider_payload.intent_ids,
 			)?;
 			let event =
 				Event::MsaCreated { msa_id: new_delegator_msa_id, key: new_delegator_public_key };
@@ -743,11 +752,11 @@ pub mod pallet {
 		/// * [`Error::InvalidSelfProvider`] - Cannot delegate to the same MSA
 		/// * [`Error::InvalidSignature`] - `proof` verification fails; `delegator_key` must have signed `add_provider_payload`
 		/// * [`Error::NoKeyExists`] - there is no MSA for `origin` or `delegator_key`.
-		/// * [`Error::ProviderNotRegistered`] - the a non-provider MSA is used as the provider
+		/// * [`Error::ProviderNotRegistered`] - a non-provider MSA is used as the provider
 		/// * [`Error::UnauthorizedDelegator`] - Origin attempted to add a delegate for someone else's MSA
 		///
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.schema_ids.len() as u32))]
+		#[pallet::weight(T::WeightInfo::grant_delegation(add_provider_payload.intent_ids.len() as u32))]
 		pub fn grant_delegation(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -770,10 +779,10 @@ pub mod pallet {
 				Error::<T>::UnauthorizedDelegator
 			);
 
-			Self::upsert_schema_permissions(
+			Self::upsert_intent_permissions(
 				provider_id,
 				delegator_id,
-				add_provider_payload.schema_ids,
+				add_provider_payload.intent_ids,
 			)?;
 			Self::deposit_event(Event::DelegationGranted { delegator_id, provider_id });
 
@@ -1904,37 +1913,38 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	/// Adds a list of schema permissions to a delegation relationship.
-	pub fn grant_permissions_for_schemas(
+	/// Adds a list of Intent permissions to a delegation relationship.
+	#[cfg(test)]
+	pub fn grant_permissions_for_intents(
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,
-		schema_ids: Vec<SchemaId>,
+		intent_ids: Vec<IntentId>,
 	) -> DispatchResult {
 		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, is_new_delegation| {
 			ensure!(!is_new_delegation, Error::<T>::DelegationNotFound);
-			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+			Self::ensure_all_intent_ids_are_valid(&intent_ids)?;
 
-			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, schema_ids)?;
+			PermittedDelegationIntents::<T>::try_insert_intents(delegation, intent_ids)?;
 
 			Ok(())
 		})
 	}
 
 	/// Revokes a list of schema permissions from a delegation relationship.
-	pub fn revoke_permissions_for_schemas(
+	pub fn revoke_permissions_for_intents(
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,
-		schema_ids: Vec<SchemaId>,
+		intent_ids: Vec<IntentId>,
 	) -> DispatchResult {
 		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, is_new_delegation| {
 			ensure!(!is_new_delegation, Error::<T>::DelegationNotFound);
-			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+			Self::ensure_all_intent_ids_are_valid(&intent_ids)?;
 
 			let current_block = frame_system::Pallet::<T>::block_number();
 
-			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
+			PermittedDelegationIntents::<T>::try_get_mut_intents(
 				delegation,
-				schema_ids,
+				intent_ids,
 				current_block,
 			)?;
 
@@ -1970,21 +1980,21 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Check that schema ids are all valid
+	/// Check that Intent ids are all valid
 	///
 	/// # Errors
-	/// * [`Error::InvalidSchemaId`]
-	/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`]
+	/// * [`Error::InvalidIntentId`]
+	/// * [`Error::ExceedsMaxGrantsPerDelegation`]
 	///
-	pub fn ensure_all_schema_ids_are_valid(schema_ids: &[SchemaId]) -> DispatchResult {
+	pub fn ensure_all_intent_ids_are_valid(intent_ids: &[IntentId]) -> DispatchResult {
 		ensure!(
-			schema_ids.len() <= T::MaxSchemaGrantsPerDelegation::get() as usize,
-			Error::<T>::ExceedsMaxSchemaGrantsPerDelegation
+			intent_ids.len() <= T::MaxGrantsPerDelegation::get() as usize,
+			Error::<T>::ExceedsMaxGrantsPerDelegation
 		);
 
-		let are_schemas_valid = T::SchemaValidator::are_all_schema_ids_valid(schema_ids);
+		let all_valid = T::SchemaValidator::are_all_intent_ids_valid(intent_ids);
 
-		ensure!(are_schemas_valid, Error::<T>::InvalidSchemaId);
+		ensure!(all_valid, Error::<T>::InvalidIntentId);
 
 		Ok(())
 	}
@@ -2059,13 +2069,13 @@ impl<T: Config> Pallet<T> {
 	pub fn add_provider(
 		provider_id: ProviderId,
 		delegator_id: DelegatorId,
-		schema_ids: Vec<SchemaId>,
+		intent_ids: Vec<IntentId>,
 	) -> DispatchResult {
 		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, is_new_delegation| {
 			ensure!(is_new_delegation, Error::<T>::DuplicateProvider);
-			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+			Self::ensure_all_intent_ids_are_valid(&intent_ids)?;
 
-			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, schema_ids)?;
+			PermittedDelegationIntents::<T>::try_insert_intents(delegation, intent_ids)?;
 
 			Ok(())
 		})
@@ -2075,56 +2085,56 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`]
-	pub fn upsert_schema_permissions(
+	pub fn upsert_intent_permissions(
 		provider_id: ProviderId,
 		delegator_id: DelegatorId,
-		schema_ids: Vec<SchemaId>,
+		intent_ids: Vec<IntentId>,
 	) -> DispatchResult {
 		Self::try_mutate_delegation(delegator_id, provider_id, |delegation, _is_new_delegation| {
-			Self::ensure_all_schema_ids_are_valid(&schema_ids)?;
+			Self::ensure_all_intent_ids_are_valid(&intent_ids)?;
 
 			// Create revoke and insert lists
-			let mut revoke_ids: Vec<SchemaId> = Vec::new();
-			let mut update_ids: Vec<SchemaId> = Vec::new();
-			let mut insert_ids: Vec<SchemaId> = Vec::new();
+			let mut revoke_ids: Vec<IntentId> = Vec::new();
+			let mut update_ids: Vec<IntentId> = Vec::new();
+			let mut insert_ids: Vec<IntentId> = Vec::new();
 
-			let existing_keys = delegation.schema_permissions.keys();
+			let existing_keys = delegation.permissions.keys();
 
-			for existing_schema_id in existing_keys {
-				if !schema_ids.contains(existing_schema_id) {
-					if let Some(block) = delegation.schema_permissions.get(existing_schema_id) {
+			for existing_intent_id in existing_keys {
+				if !intent_ids.contains(existing_intent_id) {
+					if let Some(block) = delegation.permissions.get(existing_intent_id) {
 						if *block == BlockNumberFor::<T>::zero() {
-							revoke_ids.push(*existing_schema_id);
+							revoke_ids.push(*existing_intent_id);
 						}
 					}
 				}
 			}
-			for schema_id in &schema_ids {
-				if !delegation.schema_permissions.contains_key(schema_id) {
-					insert_ids.push(*schema_id);
+			for intent_id in &intent_ids {
+				if !delegation.permissions.contains_key(intent_id) {
+					insert_ids.push(*intent_id);
 				} else {
-					update_ids.push(*schema_id);
+					update_ids.push(*intent_id);
 				}
 			}
 
 			let current_block = frame_system::Pallet::<T>::block_number();
 
 			// Revoke any that are not in the new list that are not already revoked
-			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
+			PermittedDelegationIntents::<T>::try_get_mut_intents(
 				delegation,
 				revoke_ids,
 				current_block,
 			)?;
 
 			// Update any that are in the list but are not new
-			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
+			PermittedDelegationIntents::<T>::try_get_mut_intents(
 				delegation,
 				update_ids,
 				BlockNumberFor::<T>::zero(),
 			)?;
 
 			// Insert any new ones that are not in the existing list
-			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, insert_ids)?;
+			PermittedDelegationIntents::<T>::try_insert_intents(delegation, insert_ids)?;
 			delegation.revoked_at = BlockNumberFor::<T>::zero();
 			Ok(())
 		})
@@ -2237,7 +2247,7 @@ impl<T: Config> Pallet<T> {
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,
 		f: impl FnOnce(
-			&mut Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
+			&mut Delegation<IntentId, BlockNumberFor<T>, T::MaxGrantsPerDelegation>,
 			bool,
 		) -> Result<R, E>,
 	) -> Result<R, E> {
@@ -2326,10 +2336,10 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::DelegationNotFound`]
 	/// * [`Error::SchemaNotGranted`]
 	///
-	pub fn get_granted_schemas_by_msa_id(
+	pub fn get_granted_intents_by_msa_id(
 		delegator: DelegatorId,
 		provider: Option<ProviderId>,
-	) -> Result<Vec<DelegationResponse<SchemaId, BlockNumberFor<T>>>, DispatchError> {
+	) -> Result<Vec<DelegationResponse<IntentId, BlockNumberFor<T>>>, DispatchError> {
 		let delegations = match provider {
 			Some(provider_id) => vec![(
 				provider_id,
@@ -2341,26 +2351,28 @@ impl<T: Config> Pallet<T> {
 
 		let mut result = vec![];
 		for (provider_id, provider_info) in delegations {
-			let schema_permissions = provider_info.schema_permissions;
+			let intent_permissions = provider_info.permissions;
 			// checking only if this is called for a specific provider
-			if provider.is_some() && schema_permissions.is_empty() {
-				return Err(Error::<T>::SchemaNotGranted.into());
+			if provider.is_some() && intent_permissions.is_empty() {
+				return Err(Error::<T>::PermissionNotGranted.into());
 			}
 
-			let mut schema_list = Vec::new();
-			for (schema_id, revoked_at) in schema_permissions {
+			let mut intent_list = Vec::new();
+			for (intent_id, revoked_at) in intent_permissions {
 				if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
 					(revoked_at > provider_info.revoked_at ||
 						revoked_at == BlockNumberFor::<T>::zero())
 				{
-					schema_list
-						.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
+					intent_list.push(DelegationGrant {
+						granted_id: intent_id,
+						revoked_at: provider_info.revoked_at,
+					});
 				} else {
-					schema_list.push(SchemaGrant { schema_id, revoked_at });
+					intent_list.push(DelegationGrant { granted_id: intent_id, revoked_at });
 				}
 			}
 
-			result.push(DelegationResponse { provider_id, permissions: schema_list });
+			result.push(DelegationResponse { provider_id, permissions: intent_list });
 		}
 
 		Ok(result)
@@ -2773,9 +2785,9 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	fn set_delegation_relationship(
 		provider: ProviderId,
 		delegator: DelegatorId,
-		schemas: Vec<SchemaId>,
+		intents: Vec<IntentId>,
 	) -> DispatchResult {
-		Self::add_provider(provider, delegator, schemas)?;
+		Self::add_provider(provider, delegator, intents)?;
 		Ok(())
 	}
 
@@ -2783,6 +2795,11 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 	fn add_key(msa_id: MessageSourceId, key: T::AccountId) -> DispatchResult {
 		Self::add_key(msa_id, &key)?;
 		Ok(())
+	}
+
+	fn create_msa(keys: T::AccountId) -> Result<MessageSourceId, DispatchError> {
+		let (msa_id, _) = Self::create_account(keys)?;
+		Ok(msa_id)
 	}
 }
 
@@ -2809,6 +2826,10 @@ impl<T: Config> MsaLookup for Pallet<T> {
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId> {
 		Self::get_owner_of(key)
 	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		CurrentMsaIdentifierMaximum::<T>::get()
+	}
 }
 
 impl<T: Config> MsaValidator for Pallet<T> {
@@ -2821,21 +2842,21 @@ impl<T: Config> MsaValidator for Pallet<T> {
 
 impl<T: Config> ProviderLookup for Pallet<T> {
 	type BlockNumber = BlockNumberFor<T>;
-	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = T::MaxGrantsPerDelegation;
+	type DelegationId = IntentId;
 
 	fn get_delegation_of(
 		delegator: DelegatorId,
 		provider: ProviderId,
-	) -> Option<Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
+	) -> Option<Delegation<Self::DelegationId, Self::BlockNumber, Self::MaxGrantsPerDelegation>> {
 		DelegatorAndProviderToDelegation::<T>::get(delegator, provider)
 	}
 }
 
 impl<T: Config> DelegationValidator for Pallet<T> {
 	type BlockNumber = BlockNumberFor<T>;
-	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = T::MaxGrantsPerDelegation;
+	type DelegationIdType = IntentId;
 
 	/// Check that the delegator has an active delegation to the provider.
 	/// `block_number`: Provide `None` to know if the delegation is active at the current block.
@@ -2849,9 +2870,9 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	fn ensure_valid_delegation(
 		provider_id: ProviderId,
 		delegator_id: DelegatorId,
-		block_number: Option<BlockNumberFor<T>>,
+		block_number: Option<Self::BlockNumber>,
 	) -> Result<
-		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
+		Delegation<Self::DelegationIdType, Self::BlockNumber, Self::MaxGrantsPerDelegation>,
 		DispatchError,
 	> {
 		let info = DelegatorAndProviderToDelegation::<T>::get(delegator_id, provider_id)
@@ -2868,7 +2889,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 			None => current_block,
 		};
 
-		if info.revoked_at == BlockNumberFor::<T>::zero() {
+		if info.revoked_at == Self::BlockNumber::zero() {
 			return Ok(info);
 		}
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
@@ -2883,7 +2904,7 @@ impl<T: Config> TargetValidator for Pallet<T> {
 	}
 }
 
-impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
+impl<T: Config> GrantValidator<IntentId, BlockNumberFor<T>> for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///
 	/// # Errors
@@ -2892,26 +2913,26 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 	/// * [`Error::SchemaNotGranted`]
 	/// * [`Error::CannotPredictValidityPastCurrentBlock`]
 	///
-	fn ensure_valid_schema_grant(
+	fn ensure_valid_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 		block_number: BlockNumberFor<T>,
 	) -> DispatchResult {
 		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 
-		let schema_permission_revoked_at_block_number = provider_info
-			.schema_permissions
-			.get(&schema_id)
-			.ok_or(Error::<T>::SchemaNotGranted)?;
+		let permission_revoked_at_block_number = provider_info
+			.permissions
+			.get(&intent_id)
+			.ok_or(Error::<T>::PermissionNotGranted)?;
 
-		if *schema_permission_revoked_at_block_number == BlockNumberFor::<T>::zero() {
+		if *permission_revoked_at_block_number == BlockNumberFor::<T>::zero() {
 			return Ok(());
 		}
 
 		ensure!(
-			block_number <= *schema_permission_revoked_at_block_number,
-			Error::<T>::SchemaNotGranted
+			block_number <= *permission_revoked_at_block_number,
+			Error::<T>::PermissionNotGranted
 		);
 
 		Ok(())

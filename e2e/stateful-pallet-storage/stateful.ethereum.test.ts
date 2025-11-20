@@ -12,18 +12,23 @@ import {
   getCurrentPaginatedHash,
   signPayload,
   assertExtrinsicSucceededAndFeesPaid,
+  getOrCreateIntentAndSchema,
+  generateItemizedActionsSignedPayloadV3,
+  generateItemizedActionsV2,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
-import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
+import { AVRO_CHAT_MESSAGE } from './fixtures/itemizedSchemaType';
+import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
 let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Ethereum', function () {
+  let itemizedIntentId: IntentId;
   let itemizedSchemaId: SchemaId;
+  let paginatedIntentId: IntentId;
   let paginatedSchemaId: SchemaId;
   let msa_id: MessageSourceId;
   let undelegatedProviderId: MessageSourceId;
@@ -42,27 +47,23 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       // Create a provider for the MSA, the provider will be used to grant delegation
       [delegatedProviderKeys, delegatedProviderId],
       // Create a schema for Itemized PayloadLocation
-      itemizedSchemaId,
+      { intentId: itemizedIntentId, schemaId: itemizedSchemaId },
       // Create a schema for Paginated PayloadLocation
-      paginatedSchemaId,
+      { intentId: paginatedIntentId, schemaId: paginatedSchemaId },
     ] = await Promise.all([
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
-      ExtrinsicHelper.getOrCreateSchemaV3(
+      getOrCreateIntentAndSchema(
         fundingSource,
-        AVRO_CHAT_MESSAGE,
-        'AvroBinary',
-        'Itemized',
-        ['AppendOnly', 'SignatureRequired'],
-        'test.ItemizedSignatureRequired'
+        'test.ItemizedSignatureRequired',
+        { payloadLocation: 'Itemized', settings: ['AppendOnly', 'SignatureRequired'] },
+        { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
       ),
-      ExtrinsicHelper.getOrCreateSchemaV3(
+      getOrCreateIntentAndSchema(
         fundingSource,
-        AVRO_CHAT_MESSAGE,
-        'AvroBinary',
-        'Paginated',
-        ['SignatureRequired'],
-        'test.PaginatedSignatureRequired'
+        'test.PaginatedSignatureRequired',
+        { payloadLocation: 'Paginated', settings: ['SignatureRequired'] },
+        { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
       ),
     ]);
     assert.notEqual(undelegatedProviderId, undefined, 'setup should populate undelegatedProviderId');
@@ -74,7 +75,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
     // Create a MSA for the delegator
     [ethereumDelegatorKeys, msa_id] = await createDelegatorAndDelegation(
       fundingSource,
-      [itemizedSchemaId, paginatedSchemaId],
+      [itemizedIntentId, paginatedIntentId],
       delegatedProviderId,
       delegatedProviderKeys,
       'ethereum'
@@ -92,6 +93,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
           { action: 'Add', value: 'Hello, world from Frequency' },
           { action: 'Add', value: 'Hello, world again from Frequency' },
         ]),
+        itemizedIntentId,
         itemizedSchemaId,
         ethereumDelegatorKeys,
         msa_id
@@ -105,7 +107,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assertExtrinsicSucceededAndFeesPaid(chainEvents);
+      await assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -119,7 +121,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
-      let target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      let target_hash = await getCurrentPaginatedHash(msa_id, paginatedIntentId, page_id.toNumber());
       const upsertPayload = await generatePaginatedUpsertSignaturePayloadV2({
         targetHash: target_hash,
         schemaId: paginatedSchemaId,
@@ -137,7 +139,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         upsertPayload
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
+      await assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -145,7 +147,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       );
 
       // Remove the page
-      target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      target_hash = await getCurrentPaginatedHash(msa_id, paginatedIntentId, page_id.toNumber());
       const deletePayload = await generatePaginatedDeleteSignaturePayloadV2({
         targetHash: target_hash,
         schemaId: paginatedSchemaId,
@@ -162,13 +164,13 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
+      await assertExtrinsicSucceededAndFeesPaid(chainEvents2);
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
 
       // no pages should exist
-      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
+      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedIntentId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      const thePage = result.toArray().find((page) => page.page_id === page_id);
+      const thePage = result.toArray().find((page) => page.pageId === page_id);
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
   });

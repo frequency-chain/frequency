@@ -7,15 +7,11 @@ use frame_support::{
 use frame_system::RawOrigin;
 use sp_runtime::MultiSignature;
 
-use crate::{
-	tests::{mock::*, other_tests::set_schema_count},
-	types::AddProvider,
-	DelegatorAndProviderToDelegation, Error, Event,
-};
+use crate::{tests::mock::*, types::AddProvider, DelegatorAndProviderToDelegation, Error, Event};
 use common_primitives::{
 	msa::{Delegation, DelegationValidator, DelegatorId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
-	schema::SchemaId,
+	schema::{IntentId, SchemaId},
 	utils::wrap_binary_data,
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
@@ -28,7 +24,7 @@ fn create_two_keypairs() -> (sr25519::Pair, sr25519::Pair) {
 }
 
 #[test]
-pub fn grant_delegation_changes_schema_permissions() {
+pub fn grant_delegation_changes_intent_permissions() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
 		let provider_account = key_pair.public();
@@ -56,11 +52,11 @@ pub fn grant_delegation_changes_schema_permissions() {
 		let block_expiration: BlockNumber = 110;
 
 		System::set_block_number(90);
-		set_schema_count::<Test>(10);
+		set_intent_count(10);
 
 		// Create delegation without any schema permissions
 		let (delegator_signature, add_provider_payload) =
-			create_and_sign_add_provider_payload_with_schemas(
+			create_and_sign_add_provider_payload_with_intents(
 				delegator_pair.clone(),
 				provider_msa,
 				None,
@@ -79,7 +75,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		assert_eq!(
 			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
-			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
+			Some(Delegation { revoked_at: 0, permissions: Default::default() })
 		);
 
 		System::assert_last_event(
@@ -92,7 +88,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		// Grant delegation w/schemas 1, 2, and 3 (implies block 0)
 		let (delegator_signature, add_provider_payload) =
-			create_and_sign_add_provider_payload_with_schemas(
+			create_and_sign_add_provider_payload_with_intents(
 				delegator_pair.clone(),
 				provider_msa,
 				Some(vec![1, 2, 3]),
@@ -106,12 +102,12 @@ pub fn grant_delegation_changes_schema_permissions() {
 			add_provider_payload
 		));
 
-		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxSchemaGrantsPerDelegation>::new();
+		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxIntentGrantsPerDelegation>::new();
 		assert_ok!(sp.try_insert(1u16, 0u32));
 		assert_ok!(sp.try_insert(2u16, 0u32));
 		assert_ok!(sp.try_insert(3u16, 0u32));
 
-		let expected = Delegation { revoked_at: 0u32, schema_permissions: sp };
+		let expected = Delegation { revoked_at: 0u32, permissions: sp };
 
 		assert_eq!(
 			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
@@ -122,7 +118,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 		System::set_block_number(revoked_block_number);
 		// Revoke all schema ids.
 		let (delegator_signature, add_provider_payload) =
-			create_and_sign_add_provider_payload_with_schemas(
+			create_and_sign_add_provider_payload_with_intents(
 				delegator_pair.clone(),
 				provider_msa,
 				None,
@@ -136,12 +132,12 @@ pub fn grant_delegation_changes_schema_permissions() {
 			add_provider_payload
 		));
 
-		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxSchemaGrantsPerDelegation>::new();
+		let mut sp = BoundedBTreeMap::<IntentId, u32, MaxIntentGrantsPerDelegation>::new();
 		assert_ok!(sp.try_insert(1u16, revoked_block_number)); // schema id 1 revoked at revoked_block_number
 		assert_ok!(sp.try_insert(2u16, revoked_block_number)); // schema id 2 revoked at revoked_block_number
 		assert_ok!(sp.try_insert(3u16, revoked_block_number)); // schema id 3 revoked at revoked_block_number
 
-		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
+		let expected = Delegation { revoked_at: 0, permissions: sp };
 
 		assert_eq!(
 			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
@@ -151,7 +147,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 		System::set_block_number(revoked_block_number + 1);
 		// Grant 2, 3, 4
 		let (delegator_signature, add_provider_payload) =
-			create_and_sign_add_provider_payload_with_schemas(
+			create_and_sign_add_provider_payload_with_intents(
 				delegator_pair.clone(),
 				provider_msa,
 				Some(vec![2, 3, 4]),
@@ -165,13 +161,13 @@ pub fn grant_delegation_changes_schema_permissions() {
 			add_provider_payload
 		));
 
-		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxSchemaGrantsPerDelegation>::new();
+		let mut sp = BoundedBTreeMap::<IntentId, u32, MaxIntentGrantsPerDelegation>::new();
 		assert_ok!(sp.try_insert(1u16, 100u32)); // schema id 1 revoked at block 100
 		assert_ok!(sp.try_insert(2u16, 0u32)); // schema id 2 granted (block 0)
 		assert_ok!(sp.try_insert(3u16, 0u32)); // schema id 3 granted (block 0)
 		assert_ok!(sp.try_insert(4u16, 0u32)); // schema id 4 granted (block 0)
 
-		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
+		let expected = Delegation { revoked_at: 0, permissions: sp };
 		assert_eq!(
 			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
 			Some(expected)
@@ -361,7 +357,7 @@ pub fn revoke_delegation_by_provider_happy_path() {
 			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
-			Some(Delegation { revoked_at: 26, schema_permissions: Default::default() })
+			Some(Delegation { revoked_at: 26, permissions: Default::default() })
 		);
 
 		// 7. verify the event
@@ -414,7 +410,7 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
-			Some(Delegation { revoked_at: 2, schema_permissions: Default::default() })
+			Some(Delegation { revoked_at: 2, permissions: Default::default() })
 		);
 
 		// 7. set some block number to ensure it's not a default value
@@ -437,7 +433,7 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
-			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
+			Some(Delegation { revoked_at: 0, permissions: Default::default() })
 		)
 	})
 }

@@ -1,5 +1,29 @@
+import { ExtrinsicHelper } from './extrinsicHelpers';
+
 export const providerUrl: string = process.env.WS_PROVIDER_URL || 'ws://localhost:9944';
 export const verbose = process.env.VERBOSE_TESTS === 'true' || process.env.VERBOSE_TESTS === '1';
+
+// Disable console output in non-verbose mode; it's far too noisy.
+if (!verbose) {
+  console.debug = () => {
+    /* empty */
+  };
+  console.log = () => {
+    /* empty */
+  };
+  console.info = () => {
+    /* empty */
+  };
+  console.warn = () => {
+    /* empty */
+  };
+  console.error = () => {
+    /* empty */
+  };
+  console.count = () => {
+    /* empty */
+  };
+}
 
 const CHAIN_ENVIRONMENT = {
   DEVELOPMENT: 'dev',
@@ -26,43 +50,4 @@ export function hasRelayChain() {
       return true;
   }
   return false;
-}
-
-export function getGraphChangeSchema() {
-  switch (process.env.CHAIN_ENVIRONMENT) {
-    case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 8;
-  }
-  return null;
-}
-export function getBroadcastSchema() {
-  switch (process.env.CHAIN_ENVIRONMENT) {
-    case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 2;
-  }
-  return null;
-}
-
-export function getDummySchema() {
-  switch (process.env.CHAIN_ENVIRONMENT) {
-    case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 16_074;
-  }
-  return null;
-}
-
-export function getAvroChatMessagePaginatedSchema() {
-  switch (process.env.CHAIN_ENVIRONMENT) {
-    case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 16_075;
-  }
-  return null;
-}
-
-export function getAvroChatMessageItemizedSchema() {
-  switch (process.env.CHAIN_ENVIRONMENT) {
-    case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 16_073;
-  }
-  return null;
 }

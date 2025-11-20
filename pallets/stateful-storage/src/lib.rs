@@ -36,36 +36,51 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 
+/// Migration module
+pub mod migration;
 mod stateful_child_tree;
 pub mod types;
 pub mod weights;
 
 extern crate alloc;
+extern crate core;
+
 use alloc::vec::Vec;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
 use common_primitives::{
-	msa::{
-		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
-	},
+	msa::{DelegatorId, GrantValidator, MessageSourceId, MsaLookup, MsaValidator, ProviderId},
 	node::EIP712Encode,
-	schema::{PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaSetting},
+	schema::{IntentSetting, PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider},
 	stateful_storage::{
-		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
-		PaginatedStorageResponse,
+		ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, ItemizedStorageResponseV2,
+		PageHash, PageId, PaginatedStorageResponse, PaginatedStorageResponseV2,
 	},
 };
 
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
+use common_primitives::schema::{IntentId, IntentResponse};
+use frame_support::{
+	dispatch::{DispatchInfo, DispatchResult},
+	ensure,
+	pallet_prelude::*,
+	traits::{Get, IsSubType},
+};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use sp_core::{bounded::BoundedVec, crypto::AccountId32};
-use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
+use sp_runtime::{
+	traits::{
+		AsSystemOriginSigner, Convert, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
+		TransactionExtension,
+	},
+	DispatchError, MultiSignature,
+};
 pub use weights::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use core::fmt::Debug;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -80,7 +95,7 @@ pub mod pallet {
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: SchemaGrantValidator<BlockNumberFor<Self>>;
+		type SchemaGrantValidator: GrantValidator<IntentId, BlockNumberFor<Self>>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -123,6 +138,12 @@ pub mod pallet {
 		/// to make sure a signed payload would not be replayable.
 		#[pallet::constant]
 		type MortalityWindowSize: Get<u32>;
+
+		/// How often to emit status events during a storage migration.
+		/// Try to make this larger than the number of message migrations that will fit
+		/// in a block by weight, as multiple of these events in a block is not really useful
+		/// or desireable.
+		type MigrateEmitEvery: Get<u32> + Clone + Debug;
 	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -175,6 +196,15 @@ pub mod pallet {
 
 		/// The submitted proof expiration block is too far in the future
 		ProofNotYetValid,
+
+		/// Page was written with an unsupported page storage version
+		UnsupportedPageVersion,
+
+		/// Invalid IntentId or Intent not found.
+		InvalidIntentId,
+
+		/// Specified payload location is not valid for the entity
+		PayloadLocationMismatch,
 	}
 
 	#[pallet::event]
@@ -185,7 +215,7 @@ pub mod pallet {
 			/// message source id of storage owner
 			msa_id: MessageSourceId,
 			/// schema related to the storage
-			schema_id: SchemaId,
+			intent_id: IntentId,
 			/// previous content hash before update
 			prev_content_hash: PageHash,
 			/// current content hash after update
@@ -197,7 +227,7 @@ pub mod pallet {
 			/// message source id of storage owner
 			msa_id: MessageSourceId,
 			/// schema related to the storage
-			schema_id: SchemaId,
+			intent_id: IntentId,
 			/// previous content hash before removal
 			prev_content_hash: PageHash,
 		},
@@ -207,7 +237,7 @@ pub mod pallet {
 			/// message source id of storage owner
 			msa_id: MessageSourceId,
 			/// schema related to the storage
-			schema_id: SchemaId,
+			intent_id: IntentId,
 			/// id of updated page
 			page_id: PageId,
 			/// previous content hash before update
@@ -221,19 +251,20 @@ pub mod pallet {
 			/// message source id of storage owner
 			msa_id: MessageSourceId,
 			/// schema related to the storage
-			schema_id: SchemaId,
+			intent_id: IntentId,
 			/// id of updated page
 			page_id: PageId,
 			/// previous content hash before removal
 			prev_content_hash: PageHash,
 		},
-	}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
-			Weight::zero()
-		}
+		/// An event to track storage migrations
+		StatefulPagesMigrated {
+			/// Last child trie prefix processed
+			last_trie: (u64, PayloadLocation),
+			/// Total number of pages migrated
+			total_page_count: u64,
+		},
 	}
 
 	#[pallet::call]
@@ -252,9 +283,9 @@ pub mod pallet {
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(
-			T::WeightInfo::apply_item_actions_delete(actions.len() as u32)
-			.max(T::WeightInfo::apply_item_actions_add(Pallet::<T>::sum_add_actions_bytes(actions)))
-		)]
+            T::WeightInfo::apply_item_actions_delete(actions.len() as u32)
+            .max(T::WeightInfo::apply_item_actions_add(Pallet::<T>::sum_add_actions_bytes(actions)))
+        )]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
@@ -266,8 +297,11 @@ pub mod pallet {
 			>,
 		) -> DispatchResult {
 			let key = ensure_signed(origin)?;
+			let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
+				.ok_or(Error::<T>::InvalidSchemaId)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			let caller_msa_id = Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id =
+				Self::check_msa_and_grants(key, state_owner_msa_id, schema.intent_id)?;
 			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
 			Self::check_schema_for_write(
 				schema_id,
@@ -275,11 +309,17 @@ pub mod pallet {
 				caller_is_state_owner,
 				is_pruning,
 			)?;
-			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
+			Self::update_itemized(
+				state_owner_msa_id,
+				schema.intent_id,
+				schema_id,
+				target_hash,
+				actions,
+			)?;
 			Ok(())
 		}
 
-		/// Creates or updates an Paginated storage with new payload
+		/// Creates or updates a Paginated page with new payload
 		///
 		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
 		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
@@ -301,8 +341,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
+			let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
+				.ok_or(Error::<T>::InvalidSchemaId)?;
 			let caller_msa_id =
-				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema.intent_id)?;
 			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
 			Self::check_schema_for_write(
 				schema_id,
@@ -312,6 +354,7 @@ pub mod pallet {
 			)?;
 			Self::update_paginated(
 				state_owner_msa_id,
+				schema.intent_id,
 				schema_id,
 				page_id,
 				target_hash,
@@ -341,17 +384,18 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
+			let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
+				.ok_or(Error::<T>::InvalidSchemaId)?;
 			let caller_msa_id =
-				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema.intent_id)?;
 			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
-			Self::check_schema_for_write(
+			let SchemaInfoResponse { intent_id, .. } = Self::check_schema_for_write(
 				schema_id,
 				PayloadLocation::Paginated,
 				caller_is_state_owner,
 				true,
 			)?;
-			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
-			Ok(())
+			Self::delete_paginated(state_owner_msa_id, intent_id, page_id, target_hash)
 		}
 
 		// REMOVED apply_item_actions_with_signature() at call index 3
@@ -368,9 +412,9 @@ pub mod pallet {
 		///
 		#[pallet::call_index(6)]
 		#[pallet::weight(
-		T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
-		.max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
-		)]
+            T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
+            .max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
+        )]
 		pub fn apply_item_actions_with_signature_v2(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -387,7 +431,7 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
 			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-			Self::check_schema_for_write(
+			let schema = Self::check_schema_for_write(
 				payload.schema_id,
 				PayloadLocation::Itemized,
 				true,
@@ -395,6 +439,7 @@ pub mod pallet {
 			)?;
 			Self::update_itemized(
 				state_owner_msa_id,
+				schema.intent_id,
 				payload.schema_id,
 				payload.target_hash,
 				payload.actions,
@@ -402,14 +447,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Creates or updates an Paginated storage with new payload that requires signature
-		/// since the signature of delegator is checked there is no need for delegation validation
+		/// Creates or updates Paginated storage with new payload that requires signature.
+		/// Since the signature of delegator is checked, there is no need for delegation validation.
 		///
 		/// # Events
 		/// * [`Event::PaginatedPageUpdated`]
 		///
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::upsert_page_with_signature_v2(payload.payload.len() as u32))]
+		#[pallet::weight(
+            T::WeightInfo::upsert_page_with_signature_v2(payload.payload.len() as u32)
+        )]
 		pub fn upsert_page_with_signature_v2(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -428,7 +475,7 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
 			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-			Self::check_schema_for_write(
+			let schema = Self::check_schema_for_write(
 				payload.schema_id,
 				PayloadLocation::Paginated,
 				true,
@@ -436,6 +483,7 @@ pub mod pallet {
 			)?;
 			Self::update_paginated(
 				state_owner_msa_id,
+				schema.intent_id,
 				payload.schema_id,
 				payload.page_id,
 				payload.target_hash,
@@ -470,7 +518,7 @@ pub mod pallet {
 			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
 			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-			Self::check_schema_for_write(
+			let schema = Self::check_schema_for_write(
 				payload.schema_id,
 				PayloadLocation::Paginated,
 				true,
@@ -478,7 +526,7 @@ pub mod pallet {
 			)?;
 			Self::delete_paginated(
 				state_owner_msa_id,
-				payload.schema_id,
+				schema.intent_id,
 				payload.page_id,
 				payload.target_hash,
 			)?;
@@ -488,7 +536,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Sums the total bytes of each item actions
+	/// Sums the total bytes over all item actions
 	pub fn sum_add_actions_bytes(
 		actions: &BoundedVec<
 			ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>,
@@ -507,12 +555,29 @@ impl<T: Config> Pallet<T> {
 	///
 	/// Warning: since this function iterates over all the potential keys it should never called
 	/// from runtime.
-	pub fn get_paginated_storage(
+	pub fn get_paginated_storage_v1(
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
-		Self::check_schema_for_read(schema_id, PayloadLocation::Paginated)?;
-		let prefix: PaginatedPrefixKey = (schema_id,);
+		let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
+			.ok_or(Error::<T>::InvalidSchemaId)?;
+		Self::get_paginated_storage(msa_id, schema.intent_id).map(|v| {
+			v.into_iter()
+				.map(<PaginatedStorageResponseV2 as Into<PaginatedStorageResponse>>::into)
+				.collect()
+		})
+	}
+
+	/// This function returns all the paginated storage associated with `msa_id` and `schema_id`
+	///
+	/// Warning: since this function iterates over all the potential keys it should never called
+	/// from runtime.
+	pub fn get_paginated_storage(
+		msa_id: MessageSourceId,
+		intent_id: IntentId,
+	) -> Result<Vec<PaginatedStorageResponseV2>, DispatchError> {
+		Self::check_intent_for_read(intent_id, PayloadLocation::Paginated)?;
+		let prefix: PaginatedPrefixKey = (intent_id,);
 		Ok(StatefulChildTree::<T::KeyHasher>::prefix_iterator::<
 			PaginatedPage<T>,
 			PaginatedKey,
@@ -521,10 +586,11 @@ impl<T: Config> Pallet<T> {
 		.map(|(k, v)| {
 			let content_hash = v.get_hash();
 			let nonce = v.nonce;
-			PaginatedStorageResponse::new(
+			PaginatedStorageResponseV2::new(
 				k.1,
 				msa_id,
-				schema_id,
+				intent_id,
+				v.schema_id.unwrap_or_default(),
 				content_hash,
 				nonce,
 				v.data.into_inner(),
@@ -534,19 +600,47 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// This function returns all the itemized storage associated with `msa_id` and `schema_id`
-	pub fn get_itemized_storage(
+	pub fn get_itemized_storage_v1(
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<ItemizedStoragePageResponse, DispatchError> {
-		Self::check_schema_for_read(schema_id, PayloadLocation::Itemized)?;
-		let page = Self::get_itemized_page_for(msa_id, schema_id)?.unwrap_or_default();
-		let items: Vec<ItemizedStorageResponse> = ItemizedOperations::<T>::try_parse(&page, false)
-			.map_err(|_| Error::<T>::CorruptedState)?
-			.items
-			.iter()
-			.map(|(key, v)| ItemizedStorageResponse::new(*key, v.to_vec()))
-			.collect();
-		Ok(ItemizedStoragePageResponse::new(msa_id, schema_id, page.get_hash(), page.nonce, items))
+		let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
+			.ok_or(Error::<T>::InvalidSchemaId)?;
+		Self::get_itemized_storage(msa_id, schema.intent_id).map(|v| v.into())
+	}
+
+	/// This function returns all the itemized storage associated with `msa_id` and `schema_id`
+	pub fn get_itemized_storage(
+		msa_id: MessageSourceId,
+		intent_id: IntentId,
+	) -> Result<ItemizedStoragePageResponseV2, DispatchError> {
+		Self::check_intent_for_read(intent_id, PayloadLocation::Itemized)?;
+		let page = Self::get_itemized_page_for(msa_id, intent_id)?.unwrap_or_default();
+		let items: Vec<ItemizedStorageResponseV2> =
+			ItemizedOperations::<T>::try_parse(&page, false)
+				.map_err(|_| Error::<T>::CorruptedState)?
+				.items
+				.iter()
+				.map(|(key, v)| {
+					ItemizedStorageResponseV2::new(
+						*key,
+						match v.header {
+							// V1 items should not exist post-migration, but theoretically any items without a schema_id would have the same
+							// numeric schema_id as the intent_id.
+							ItemHeader::V1 { .. } => intent_id as SchemaId,
+							ItemHeader::V2 { schema_id, .. } => schema_id,
+						},
+						v.payload.to_vec(),
+					)
+				})
+				.collect();
+		Ok(ItemizedStoragePageResponseV2::new(
+			msa_id,
+			intent_id,
+			page.get_hash(),
+			page.nonce,
+			items,
+		))
 	}
 
 	/// This function checks to ensure `payload_expire_block` is in a valid range
@@ -600,7 +694,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Errors
 	/// * [`Error::InvalidSchemaId`]
-	/// * [`Error::SchemaPayloadLocationMismatch`]
+	/// * [`Error::PayloadLocationMismatch`]
 	///
 	fn check_schema_for_read(
 		schema_id: SchemaId,
@@ -612,17 +706,39 @@ impl<T: Config> Pallet<T> {
 		// Ensure that the schema's payload location matches the expected location.
 		ensure!(
 			schema.payload_location == expected_payload_location,
-			Error::<T>::SchemaPayloadLocationMismatch
+			Error::<T>::PayloadLocationMismatch
 		);
 
 		Ok(schema)
+	}
+
+	/// Checks that the Intent is valid for is action
+	///
+	/// # Errors
+	/// * [`Error::InvalidIntentId`]
+	/// * [`Error::PayloadLocationMismatch`]
+	///
+	fn check_intent_for_read(
+		intent_id: IntentId,
+		expected_payload_location: PayloadLocation,
+	) -> Result<IntentResponse, DispatchError> {
+		let intent =
+			T::SchemaProvider::get_intent_by_id(intent_id).ok_or(Error::<T>::InvalidIntentId)?;
+
+		// Ensure that the intent's payload location matches the expected location.
+		ensure!(
+			intent.payload_location == expected_payload_location,
+			Error::<T>::PayloadLocationMismatch
+		);
+
+		Ok(intent)
 	}
 
 	/// Checks that the schema is valid for is action
 	///
 	/// # Errors
 	/// * [`Error::InvalidSchemaId`]
-	/// * [`Error::SchemaPayloadLocationMismatch`]
+	/// * [`Error::PayloadLocationMismatch`]
 	/// * [`Error::UnsupportedOperationForSchema`]
 	///
 	fn check_schema_for_write(
@@ -630,21 +746,21 @@ impl<T: Config> Pallet<T> {
 		expected_payload_location: PayloadLocation,
 		is_payload_signed: bool,
 		is_deleting: bool,
-	) -> DispatchResult {
+	) -> Result<SchemaInfoResponse, DispatchError> {
 		let schema = Self::check_schema_for_read(schema_id, expected_payload_location)?;
 
 		// Ensure that the schema allows signed payloads.
 		// If so, calling extrinsic must be of signature type.
-		if schema.settings.contains(&SchemaSetting::SignatureRequired) {
+		if schema.settings.contains(&IntentSetting::SignatureRequired) {
 			ensure!(is_payload_signed, Error::<T>::UnsupportedOperationForSchema);
 		}
 
 		// Ensure that the schema does not allow deletion for AppendOnly SchemaSetting.
-		if schema.settings.contains(&SchemaSetting::AppendOnly) {
+		if schema.settings.contains(&IntentSetting::AppendOnly) {
 			ensure!(!is_deleting, Error::<T>::UnsupportedOperationForSchema);
 		}
 
-		Ok(())
+		Ok(schema)
 	}
 
 	/// Checks that existence of Msa for certain key and if the grant is valid when the caller Msa
@@ -657,7 +773,7 @@ impl<T: Config> Pallet<T> {
 	fn check_msa_and_grants(
 		key: T::AccountId,
 		state_owner_msa_id: MessageSourceId,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 	) -> Result<MessageSourceId, DispatchError> {
 		let caller_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&key)
 			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
@@ -665,10 +781,10 @@ impl<T: Config> Pallet<T> {
 		// if caller and owner are the same no delegation is needed
 		if caller_msa_id != state_owner_msa_id {
 			let current_block = frame_system::Pallet::<T>::block_number();
-			T::SchemaGrantValidator::ensure_valid_schema_grant(
+			T::SchemaGrantValidator::ensure_valid_grant(
 				ProviderId(caller_msa_id),
 				DelegatorId(state_owner_msa_id),
-				schema_id,
+				intent_id,
 				current_block,
 			)
 			.map_err(|_| Error::<T>::UnauthorizedDelegate)?;
@@ -677,7 +793,14 @@ impl<T: Config> Pallet<T> {
 		Ok(caller_msa_id)
 	}
 
-	/// Updates an itemized storage by applying provided actions and deposit events
+	/// Updates an itemized storage by applying provided actions and deposit events.
+	/// All items must
+	///
+	/// # Errors
+	/// * [`Error::StalePageState`] - Page content hash does not match on-chain hash.
+	/// * [`Error::CorruptedState`] - Unable to read the existing page data.
+	/// * [`Error::InvalidItemAction`] - Supplied action item is invalid.
+	///
 	///
 	/// # Events
 	/// * [`Event::ItemizedPageUpdated`]
@@ -685,29 +808,29 @@ impl<T: Config> Pallet<T> {
 	///
 	fn update_itemized(
 		state_owner_msa_id: MessageSourceId,
+		intent_id: IntentId,
 		schema_id: SchemaId,
 		target_hash: PageHash,
 		actions: BoundedVec<ItemAction<T::MaxItemizedBlobSizeBytes>, T::MaxItemizedActionsCount>,
 	) -> DispatchResult {
-		let key: ItemizedKey = (schema_id,);
+		let key: ItemizedKey = (intent_id,);
 		let existing_page =
-			Self::get_itemized_page_for(state_owner_msa_id, schema_id)?.unwrap_or_default();
+			Self::get_itemized_page_for(state_owner_msa_id, intent_id)?.unwrap_or_default();
 
 		let prev_content_hash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
 		let mut updated_page =
-			ItemizedOperations::<T>::apply_item_actions(&existing_page, &actions[..]).map_err(
-				|e| match e {
+			ItemizedOperations::<T>::apply_item_actions(&existing_page, schema_id, &actions[..])
+				.map_err(|e| match e {
 					PageError::ErrorParsing(err) => {
 						log::warn!(
-							"failed parsing Itemized msa={state_owner_msa_id:?} schema_id={schema_id:?} {err:?}",
+							"failed parsing Itemized msa={state_owner_msa_id:?} intent_id={intent_id:?} {err:?}",
 						);
 						Error::<T>::CorruptedState
 					},
 					_ => Error::<T>::InvalidItemAction,
-				},
-			)?;
+				})?;
 		updated_page.nonce = existing_page.nonce.wrapping_add(1);
 
 		match updated_page.is_empty() {
@@ -720,7 +843,7 @@ impl<T: Config> Pallet<T> {
 				);
 				Self::deposit_event(Event::ItemizedPageDeleted {
 					msa_id: state_owner_msa_id,
-					schema_id,
+					intent_id,
 					prev_content_hash,
 				});
 			},
@@ -734,7 +857,7 @@ impl<T: Config> Pallet<T> {
 				);
 				Self::deposit_event(Event::ItemizedPageUpdated {
 					msa_id: state_owner_msa_id,
-					schema_id,
+					intent_id,
 					curr_content_hash: updated_page.get_hash(),
 					prev_content_hash,
 				});
@@ -750,19 +873,22 @@ impl<T: Config> Pallet<T> {
 	///
 	fn update_paginated(
 		state_owner_msa_id: MessageSourceId,
+		intent_id: IntentId,
 		schema_id: SchemaId,
 		page_id: PageId,
 		target_hash: PageHash,
 		mut new_page: PaginatedPage<T>,
 	) -> DispatchResult {
-		let keys: PaginatedKey = (schema_id, page_id);
+		let keys: PaginatedKey = (intent_id, page_id);
 		let existing_page: PaginatedPage<T> =
-			Self::get_paginated_page_for(state_owner_msa_id, schema_id, page_id)?
+			Self::get_paginated_page_for(state_owner_msa_id, intent_id, page_id)?
 				.unwrap_or_default();
 
 		let prev_content_hash: PageHash = existing_page.get_hash();
 		ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
 
+		new_page.page_version = PageVersion::V2;
+		new_page.schema_id = Some(schema_id);
 		new_page.nonce = existing_page.nonce.wrapping_add(1);
 
 		StatefulChildTree::<T::KeyHasher>::write(
@@ -774,7 +900,7 @@ impl<T: Config> Pallet<T> {
 		);
 		Self::deposit_event(Event::PaginatedPageUpdated {
 			msa_id: state_owner_msa_id,
-			schema_id,
+			intent_id,
 			page_id,
 			curr_content_hash: new_page.get_hash(),
 			prev_content_hash,
@@ -789,13 +915,13 @@ impl<T: Config> Pallet<T> {
 	///
 	fn delete_paginated(
 		state_owner_msa_id: MessageSourceId,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 		page_id: PageId,
 		target_hash: PageHash,
 	) -> DispatchResult {
-		let keys: PaginatedKey = (schema_id, page_id);
+		let keys: PaginatedKey = (intent_id, page_id);
 		if let Some(existing_page) =
-			Self::get_paginated_page_for(state_owner_msa_id, schema_id, page_id)?
+			Self::get_paginated_page_for(state_owner_msa_id, intent_id, page_id)?
 		{
 			let prev_content_hash: PageHash = existing_page.get_hash();
 			ensure!(target_hash == prev_content_hash, Error::<T>::StalePageState);
@@ -807,7 +933,7 @@ impl<T: Config> Pallet<T> {
 			);
 			Self::deposit_event(Event::PaginatedPageDeleted {
 				msa_id: state_owner_msa_id,
-				schema_id,
+				intent_id,
 				page_id,
 				prev_content_hash,
 			});
@@ -819,31 +945,179 @@ impl<T: Config> Pallet<T> {
 	/// Gets a paginated storage for desired parameters
 	pub fn get_paginated_page_for(
 		msa_id: MessageSourceId,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 		page_id: PageId,
 	) -> Result<Option<PaginatedPage<T>>, DispatchError> {
-		let keys: PaginatedKey = (schema_id, page_id);
-		Ok(StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
+		let keys: PaginatedKey = (intent_id, page_id);
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
 			PAGINATED_STORAGE_PREFIX,
 			&keys,
 		)
-		.map_err(|_| Error::<T>::CorruptedState)?)
+		.map_err(|_| Error::<T>::CorruptedState)?;
+
+		// Note: PageVersion::V1 is unsupported because no pages were ever written with that tag;
+		// hence it indicates some kind of corrupted state. In future, the pallet should be able
+		// to support reading pages with multiple versions.
+		if let Some(Page { page_version, .. }) = &page {
+			if *page_version != PageVersion::V2 {
+				return Err(Error::<T>::UnsupportedPageVersion.into());
+			}
+		};
+		Ok(page)
 	}
 
 	/// Gets an itemized storage for desired parameters
 	pub fn get_itemized_page_for(
 		msa_id: MessageSourceId,
-		schema_id: SchemaId,
+		intent_id: IntentId,
 	) -> Result<Option<ItemizedPage<T>>, DispatchError> {
-		let keys: ItemizedKey = (schema_id,);
-		Ok(StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
+		let keys: ItemizedKey = (intent_id,);
+		let page = StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,
 			ITEMIZED_STORAGE_PREFIX,
 			&keys,
 		)
-		.map_err(|_| Error::<T>::CorruptedState)?)
+		.map_err(|_| Error::<T>::CorruptedState)?;
+
+		// Note: PageVersion::V1 is unsupported because no pages were ever written with that tag;
+		// hence it indicates some kind of corrupted state. In future, the pallet should be able
+		// to support reading pages with multiple versions.
+		if let Some(Page { page_version, .. }) = &page {
+			if *page_version != PageVersion::V2 {
+				return Err(Error::<T>::UnsupportedPageVersion.into());
+			}
+		};
+		Ok(page)
+	}
+
+	/// Prevent extrinsics in this pallet from being executed while a migration is in progress.
+	pub fn should_extrinsics_be_run() -> bool {
+		Self::on_chain_storage_version() == STATEFUL_STORAGE_VERSION
+	}
+}
+
+/// The TransactionExtension trait is implemented on BlockDuringMigration to prevent extrinsics
+/// in this pallet from being executed while a migration is in progress
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct BlockDuringMigration<T: Config + Send + Sync>(PhantomData<T>);
+
+impl<T: Config + Send + Sync> BlockDuringMigration<T> {
+	/// Create new `TransactionExtension`
+	pub fn new() -> Self {
+		Self(PhantomData)
+	}
+
+	/// Prevent an extrinsic from being executed while a migraiton is in progress.
+	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
+	///
+	/// # Errors
+	/// * [`ValidityError::InvalidStorageVersion`] - the on-chain storage version does not match the in-code storage version
+	///
+	pub fn block_extrinsics_during_migration() -> TransactionValidity {
+		const TAG_PREFIX: &str = "StatefulStorageExtrinsicPostV2Migration";
+		ensure!(
+			Pallet::<T>::should_extrinsics_be_run(),
+			InvalidTransaction::Custom(ValidityError::InvalidStorageVersion as u8)
+		);
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
+	}
+}
+
+/// Errors related to the validity of the BlockDuringMigration signed extension.
+pub enum ValidityError {
+	/// On-chain storage version
+	InvalidStorageVersion,
+}
+
+impl<T: Config + Send + Sync> core::fmt::Debug for BlockDuringMigration<T> {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+		write!(f, "BlockDuringMigration<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
+		Ok(())
+	}
+}
+
+/// The info passed between the `validate` and `prepare` steps for the `BlockDuringMigration` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+/// The info passed between the `prepare` and `post-dispatch` steps for the `BlockDuringMigration` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+impl<T: Config + Send + Sync> TransactionExtension<T::RuntimeCall> for BlockDuringMigration<T>
+where
+	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
+{
+	const IDENTIFIER: &'static str = "BlockDuringMigration";
+	type Implicit = ();
+	type Val = Val;
+	type Pre = Pre;
+
+	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		T::DbWeight::get().reads(1)
+	}
+
+	fn validate(
+		&self,
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		let weight = self.weight(call);
+		let Some(_who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(weight), origin));
+		};
+		let validity = Self::block_extrinsics_during_migration();
+		validity.map(|v| (v, Val::Valid, origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T as frame_system::Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		match val {
+			Val::Valid => Ok(Pre::Valid),
+			Val::Refund(w) => Ok(Pre::Refund(w)),
+		}
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &sp_runtime::DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::Valid => Ok(Weight::zero()),
+			Pre::Refund(w) => Ok(w),
+		}
 	}
 }

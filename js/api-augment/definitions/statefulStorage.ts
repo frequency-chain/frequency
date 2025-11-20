@@ -8,8 +8,8 @@ export default {
           type: 'MessageSourceId',
         },
         {
-          name: 'schema_id',
-          type: 'SchemaId',
+          name: 'intent_id',
+          type: 'IntentId',
         },
       ],
       type: 'Vec<PaginatedStorageResponse>',
@@ -22,8 +22,8 @@ export default {
           type: 'MessageSourceId',
         },
         {
-          name: 'schema_id',
-          type: 'SchemaId',
+          name: 'intent_id',
+          type: 'IntentId',
         },
       ],
       type: 'ItemizedStoragePageResponse',
@@ -35,11 +35,13 @@ export default {
     PageNonce: 'u16',
     ItemizedStorageResponse: {
       index: 'u16',
+      schema_id: 'SchemaId',
       payload: 'Vec<u8>',
     },
     PaginatedStorageResponse: {
       page_id: 'PageId',
       msa_id: 'MessageSourceId',
+      intent_id: 'IntentId',
       schema_id: 'SchemaId',
       content_hash: 'PageHash',
       nonce: 'PageNonce',
@@ -47,7 +49,7 @@ export default {
     },
     ItemizedStoragePageResponse: {
       msa_id: 'MessageSourceId',
-      schema_id: 'SchemaId',
+      intent_id: 'IntentId',
       content_hash: 'PageHash',
       nonce: 'PageNonce',
       items: 'Vec<ItemizedStorageResponse>',

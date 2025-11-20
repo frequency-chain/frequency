@@ -84,7 +84,7 @@ export default {
       msa_id: 'MessageSourceId',
     },
     SchemaGrantResponse: {
-      schema_id: 'SchemaId',
+      schema_id: 'IntentId',
       revoked_at: 'BlockNumber',
     },
     DelegationResponse: {

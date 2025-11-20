@@ -26,6 +26,7 @@ export default tseslint.config(
       '@typescript-eslint/no-extraneous-class': 'off',
       semi: ['error', 'always'],
       'mocha/no-setup-in-describe': 'off',
+      'mocha/consistent-spacing-between-blocks': 'off',
       'no-use-before-define': 'off',
       'no-unused-vars': 'off',
       'no-var': 'error',
