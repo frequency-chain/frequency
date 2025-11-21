@@ -443,7 +443,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -490,7 +490,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -519,7 +519,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -548,7 +548,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1236,7 +1236,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1282,7 +1282,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1328,7 +1328,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1374,7 +1374,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
