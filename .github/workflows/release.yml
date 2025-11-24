@@ -150,7 +150,7 @@ jobs:
           git status -s
           git diff
       - name: Commit Updated Weights
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
+        uses: stefanzweifel/git-auto-commit-action@28e16e81777b558cc906c8750092100bbb34c5e3
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
@@ -200,7 +200,7 @@ jobs:
           git diff
       - name: Commit Updated Version
         id: commit-updated-version
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
+        uses: stefanzweifel/git-auto-commit-action@28e16e81777b558cc906c8750092100bbb34c5e3
         with:
           commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
       - name: Update Release Version Tag
@@ -950,7 +950,7 @@ jobs:
           message: Latest full release
       - name: Dispatch Auto-signer Workflow
         if: env.TEST_RUN != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
           script: |
@@ -1071,7 +1071,7 @@ jobs:
 
       - name: Update DockerHub Description
         if: env.TEST_RUN != 'true'
-        uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
@@ -1196,7 +1196,7 @@ jobs:
 
       - name: Update DockerHub Description
         if: env.TEST_RUN != 'true'
-        uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
