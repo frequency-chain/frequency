@@ -74,13 +74,13 @@ jobs:
         run: mkdir -p target/release
 
       - name: Download Benchmark Binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: benchmark-binary
           path: target/release
 
       - name: Download WASM Build Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: wasm-artifacts
           path: target/release/wbuild
