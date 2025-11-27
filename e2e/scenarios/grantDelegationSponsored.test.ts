@@ -9,6 +9,8 @@ import {
   createMsaAndProvider,
   generateDelegationPayload,
   signPayloadSr25519,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
@@ -21,7 +23,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
   let noMsaKeys: KeyringPair;
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
-  let schemaId: u16;
+  let intentId: u16;
   let providerId: u64;
   let otherProviderId: u64;
   let otherMsaId: u64;
@@ -37,22 +39,12 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
       1n * DOLLARS
     );
 
-    const schema = {
-      type: 'record',
-      name: 'Post',
-      fields: [
-        { name: 'title', type: { name: 'Title', type: 'string' } },
-        { name: 'content', type: { name: 'Content', type: 'string' } },
-        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
-        { name: 'objectId', type: 'DSNPId' },
-      ],
-    };
-
-    let msaCreatedEvent1, msaCreatedEvent2;
-    [{ target: msaCreatedEvent1 }, { target: msaCreatedEvent2 }, schemaId] = await Promise.all([
+    let _msaCreatedEvent1: any, msaCreatedEvent2: any;
+    // eslint-disable-next-line prefer-const
+    [{ target: _msaCreatedEvent1 }, { target: msaCreatedEvent2 }, { intentId }] = await Promise.all([
       ExtrinsicHelper.createMsa(keys).signAndSend(),
       ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend(),
-      ExtrinsicHelper.getOrCreateSchemaV3(fundingSource, schema, 'AvroBinary', 'OnChain', [], 'test.grantDelegation'),
+      getOrCreateDelegationSchema(fundingSource),
     ]);
 
     otherMsaId = msaCreatedEvent2!.data.msaId;
@@ -66,7 +58,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
 
     defaultPayload = {
       authorizedMsaId: providerId,
-      schemaIds: [schemaId],
+      intentIds: [intentId],
     };
     // Make sure we are finalized before all the tests
     await ExtrinsicHelper.waitForFinalization();
@@ -86,7 +78,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
   });
 
   it('should fail to create delegated account if payload signature cannot be verified (InvalidSignature)', async function () {
-    const payload = await generateDelegationPayload({ ...defaultPayload, schemaIds: [] });
+    const payload = await generateDelegationPayload({ ...defaultPayload, intentIds: [] });
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
     op = ExtrinsicHelper.createSponsoredAccountWithDelegation(

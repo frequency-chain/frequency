@@ -47,7 +47,7 @@ pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pa
 }
 
 #[allow(clippy::unwrap_used)]
-pub fn load_genesis_schemas() -> Vec<crate::pallet_schemas::GenesisSchema> {
+pub fn load_genesis_schemas() -> crate::pallet_schemas::GenesisSchemasPalletConfig {
 	serde_json::from_slice(include_bytes!("../../../../resources/genesis-schemas.json")).unwrap()
 }
 
@@ -61,7 +61,7 @@ pub fn build_genesis(
 	session_keys: Vec<(AccountId, AccountId, SessionKeys)>,
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
-	schemas: Vec<crate::pallet_schemas::GenesisSchema>,
+	schemas_pallet_config: crate::pallet_schemas::GenesisSchemasPalletConfig,
 	id: ParaId,
 ) -> serde_json::Value {
 	let genesis = RuntimeGenesisConfig {
@@ -84,10 +84,7 @@ pub fn build_genesis(
 			// Assign network admin rights.
 			key: sudo_key,
 		},
-		schemas: crate::pallet_schemas::GenesisConfig {
-			initial_schemas: schemas,
-			..Default::default()
-		},
+		schemas: schemas_pallet_config.into(),
 		time_release: Default::default(),
 		democracy: Default::default(),
 		treasury: Default::default(),

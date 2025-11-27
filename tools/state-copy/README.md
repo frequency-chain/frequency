@@ -8,8 +8,7 @@ To maintain alignment with Mainnet, when a new schema is deployed on Mainnet, Te
 
 1. In the Frequency codebase: `cd tools/state-copy`
 2. `npm i`
-3. Edit `schemas.mjs`
-  - Use the Testnet `DEST_URL`: `const DEST_URL = "wss://0.rpc.testnet.amplica.io";`
-  - Update the`const SUDO_URI = "//Alice";` to be the SUDO key for Testnet
+3. Set the following environment variables (or run with the `env` command):
+    - `DEST_URL=wss://0.rpc.testnet.amplica.io`
+    - `SUDO_URI=<the SUDO key for Testnet>`
 4. `npm run schemas`
-5. Remove the changes

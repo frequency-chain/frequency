@@ -10,6 +10,8 @@ import {
   generateDelegationPayload,
   generateValidProviderPayloadWithName,
   signPayload,
+  getOrCreateIntentAndSchema,
+  getOrCreateDelegationSchema,
 } from '../scaffolding/helpers';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
@@ -24,7 +26,9 @@ describe('Delegation Scenario Tests Ethereum', function () {
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
   let schemaId: u16;
+  let intentId: u16;
   let schemaId2: SchemaId;
+  let intentId2: u16;
   let providerId: u64;
   let otherProviderId: u64;
   let msaId: u64;
@@ -65,41 +69,19 @@ describe('Delegation Scenario Tests Ethereum', function () {
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;
 
-    const schema = {
-      type: 'record',
-      name: 'Post',
-      fields: [
-        { name: 'title', type: { name: 'Title', type: 'string' } },
-        { name: 'content', type: { name: 'Content', type: 'string' } },
-        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
-        { name: 'objectId', type: 'DSNPId' },
-      ],
-    };
-
-    schemaId = await ExtrinsicHelper.getOrCreateSchemaV3(
+    ({ intentId, schemaId } = await getOrCreateDelegationSchema(keys));
+    ({ intentId: intentId2, schemaId: schemaId2 } = await getOrCreateDelegationSchema(
       keys,
-      schema,
-      'AvroBinary',
-      'OnChain',
-      [],
-      'test.grantDelegation'
-    );
-
-    schemaId2 = await ExtrinsicHelper.getOrCreateSchemaV3(
-      keys,
-      schema,
-      'AvroBinary',
-      'OnChain',
-      [],
+      undefined,
       'test.grantDelegationSecond'
-    );
+    ));
   });
 
   describe('delegation grants for a Ethereum key', function () {
     it('should fail to grant delegation if payload not signed by delegator (AddProviderSignatureVerificationFailed)', async function () {
       const payload = await generateDelegationPayload({
         authorizedMsaId: providerId,
-        schemaIds: [schemaId],
+        intentIds: [intentId],
       });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -117,7 +99,7 @@ describe('Delegation Scenario Tests Ethereum', function () {
     it('should fail to grant delegation if ID in payload does not match origin (UnauthorizedDelegator)', async function () {
       const payload = await generateDelegationPayload({
         authorizedMsaId: otherMsaId,
-        schemaIds: [schemaId],
+        intentIds: [intentId],
       });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -133,7 +115,7 @@ describe('Delegation Scenario Tests Ethereum', function () {
     it('should grant a delegation to a provider', async function () {
       const payload = await generateDelegationPayload({
         authorizedMsaId: providerId,
-        schemaIds: [schemaId],
+        intentIds: [intentId],
       });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
@@ -159,7 +141,7 @@ describe('Delegation Scenario Tests Ethereum', function () {
       sponsorKeys = await createAndFundKeypair(fundingSource, 50_000_000n, undefined, undefined, 'ethereum');
       defaultPayload = {
         authorizedMsaId: providerId,
-        schemaIds: [schemaId],
+        intentIds: [intentId],
       };
     });
 

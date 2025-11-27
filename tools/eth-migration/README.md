@@ -35,5 +35,5 @@ To serve this html you can follow the following steps:
 ## How to setup Metamask for testing
 1. Install Metamask extension in your browser.
 2. Follow the instructions in this [link](https://contracts.polkadot.io/work-with-a-local-node/#clone-the-polkadot-sdk-repository) to setup the pre-funded test account.
-3. Make sure the Kitchensink Node and the Eth RPC Proxy are running.
+3. Follow the instructions [here](https://docs.polkadot.com/develop/smart-contracts/local-development-node/) to make sure the Kitchensink Node and the Eth RPC Proxy are running.
 4. Open http://localhost:3000/metamask.html in the browser where Metamask is installed.

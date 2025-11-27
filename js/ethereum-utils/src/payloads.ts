@@ -66,7 +66,6 @@ export interface AddItemizedAction {
   // uint16 type index related to Delete item
   index: 0;
 }
-
 export interface DeleteItemizedAction {
   // action item type
   actionType: 'Delete';
@@ -135,8 +134,8 @@ export interface AddProvider {
   type: 'AddProvider';
   // uint64 type MessageSourceId
   authorizedMsaId: string;
-  // uint16[] type schema ids
-  schemaIds: number[];
+  // uint16[] type intent ids
+  intentIds: number[];
   // uint32 type payload expiration block number
   expiration: number;
 }

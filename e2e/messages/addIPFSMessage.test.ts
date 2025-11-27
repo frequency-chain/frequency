@@ -5,7 +5,13 @@ import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import assert from 'assert';
-import { assertEvent, assertHasMessage, createAndFundKeypair, getOrCreateDummySchema } from '../scaffolding/helpers';
+import {
+  assertEvent,
+  assertHasMessage,
+  createAndFundKeypair,
+  getOrCreateDummySchema,
+  getOrCreateIntentAndSchema,
+} from '../scaffolding/helpers';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u16 } from '@polkadot/types';
 import { ipfsCid } from './ipfs';
@@ -15,9 +21,11 @@ let fundingSource: KeyringPair;
 const ipfs_payload_data = 'This is a test of Frequency.';
 const ipfs_payload_len = ipfs_payload_data.length + 1;
 
-describe('Add Offchain Message', function () {
+describe('Messages', function () {
   let keys: KeyringPair;
+  let intentId: u16;
   let schemaId: u16;
+  let dummyIntentId: u16;
   let dummySchemaId: u16;
 
   let ipfs_cid_64: string;
@@ -36,17 +44,15 @@ describe('Add Offchain Message', function () {
 
     [
       // Create a schema for IPFS
-      schemaId,
+      { intentId, schemaId },
       // Create a dummy on-chain schema
-      dummySchemaId,
+      { intentId: dummyIntentId, schemaId: dummySchemaId },
     ] = await Promise.all([
-      ExtrinsicHelper.getOrCreateSchemaV3(
+      getOrCreateIntentAndSchema(
         fundingSource,
-        PARQUET_BROADCAST,
-        'Parquet',
-        'IPFS',
-        [],
-        'test.addIPFSMessage'
+        'test.addIPFSMessage',
+        { payloadLocation: 'IPFS', settings: [] },
+        { model: PARQUET_BROADCAST, modelType: 'Parquet' }
       ),
       getOrCreateDummySchema(fundingSource),
       // Create a new MSA
@@ -57,78 +63,80 @@ describe('Add Offchain Message', function () {
     await ExtrinsicHelper.waitForFinalization();
   });
 
-  it('should fail if insufficient funds', async function () {
-    await assert.rejects(
-      ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend('current'),
-      {
-        name: 'RpcError',
-        message: /Inability to pay some fees/,
-      }
-    );
-  });
+  describe('Add Offchain Message', function () {
+    it('should fail if insufficient funds', async function () {
+      await assert.rejects(
+        ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend('current'),
+        {
+          name: 'RpcError',
+          message: /Inability to pay some fees/,
+        }
+      );
+    });
 
-  it('should fail if MSA is not valid (InvalidMessageSourceAccount)', async function () {
-    const accountWithNoMsa = await createAndFundKeypair(fundingSource);
-    await assert.rejects(
-      ExtrinsicHelper.addIPFSMessage(accountWithNoMsa, schemaId, ipfs_cid_64, ipfs_payload_len).fundAndSend(
-        fundingSource
-      ),
-      {
-        name: 'InvalidMessageSourceAccount',
+    it('should fail if MSA is not valid (InvalidMessageSourceAccount)', async function () {
+      const accountWithNoMsa = await createAndFundKeypair(fundingSource);
+      await assert.rejects(
+        ExtrinsicHelper.addIPFSMessage(accountWithNoMsa, schemaId, ipfs_cid_64, ipfs_payload_len).fundAndSend(
+          fundingSource
+        ),
+        {
+          name: 'InvalidMessageSourceAccount',
+          section: 'messages',
+        }
+      );
+    });
+
+    it('should fail if schema does not exist (InvalidSchemaId)', async function () {
+      // Pick an arbitrarily high schemaId, such that it won't exist on the test chain.
+      // If we ever create more than 999 schemas in a test suite/single Frequency instance, this test will fail.
+      const f = ExtrinsicHelper.addIPFSMessage(keys, 999, ipfs_cid_64, ipfs_payload_len);
+      await assert.rejects(f.fundAndSend(fundingSource), {
+        name: 'InvalidSchemaId',
         section: 'messages',
+      });
+    });
+
+    it('should fail if schema payload location is not IPFS (InvalidPayloadLocation)', async function () {
+      const op = ExtrinsicHelper.addIPFSMessage(keys, dummySchemaId, ipfs_cid_64, ipfs_payload_len);
+      await assert.rejects(op.fundAndSend(fundingSource), { name: 'InvalidPayloadLocation' });
+    });
+
+    it('should fail if CID cannot be decoded (InvalidCid)', async function () {
+      const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, 'foo', ipfs_payload_len);
+      await assert.rejects(f.fundAndSend(fundingSource), { name: 'InvalidCid' });
+    });
+
+    it('should fail if CID is CIDv0 (UnsupportedCidVersion)', async function () {
+      const cid = await ipfsCid(ipfs_payload_data, './e2e_test.txt');
+      const cidV0 = CID.createV0(cid.multihash as any).toString();
+      const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, cidV0, ipfs_payload_len);
+      await assert.rejects(f.fundAndSend(fundingSource), { name: 'UnsupportedCidVersion' });
+    });
+
+    it('should successfully add an IPFS message', async function () {
+      const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
+      const { target: event, eventMap } = await f.fundAndSend(fundingSource);
+
+      // messages.MessagesInBlock in block might not be on this transaction if there are others
+      assertEvent(eventMap, 'system.ExtrinsicSuccess');
+
+      if (event) {
+        assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
       }
-    );
-  });
-
-  it('should fail if schema does not exist (InvalidSchemaId)', async function () {
-    // Pick an arbitrarily high schemaId, such that it won't exist on the test chain.
-    // If we ever create more than 999 schemas in a test suite/single Frequency instance, this test will fail.
-    const f = ExtrinsicHelper.addIPFSMessage(keys, 999, ipfs_cid_64, ipfs_payload_len);
-    await assert.rejects(f.fundAndSend(fundingSource), {
-      name: 'InvalidSchemaId',
-      section: 'messages',
     });
-  });
 
-  it('should fail if schema payload location is not IPFS (InvalidPayloadLocation)', async function () {
-    const op = ExtrinsicHelper.addIPFSMessage(keys, dummySchemaId, ipfs_cid_64, ipfs_payload_len);
-    await assert.rejects(op.fundAndSend(fundingSource), { name: 'InvalidPayloadLocation' });
-  });
-
-  it('should fail if CID cannot be decoded (InvalidCid)', async function () {
-    const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, 'foo', ipfs_payload_len);
-    await assert.rejects(f.fundAndSend(fundingSource), { name: 'InvalidCid' });
-  });
-
-  it('should fail if CID is CIDv0 (UnsupportedCidVersion)', async function () {
-    const cid = await ipfsCid(ipfs_payload_data, './e2e_test.txt');
-    const cidV0 = CID.createV0(cid.multihash as any).toString();
-    const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, cidV0, ipfs_payload_len);
-    await assert.rejects(f.fundAndSend(fundingSource), { name: 'UnsupportedCidVersion' });
-  });
-
-  it('should successfully add an IPFS message', async function () {
-    const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
-    const { target: event, eventMap } = await f.fundAndSend(fundingSource);
-
-    // messages.MessagesInBlock in block might not be on this transaction if there are others
-    assertEvent(eventMap, 'system.ExtrinsicSuccess');
-
-    if (event) {
-      assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
-    }
-  });
-
-  it('should successfully retrieve added message and returned CID should have Base32 encoding', async function () {
-    const f = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(schemaId, {
-      from_block: starting_block,
-      from_index: 0,
-      to_block: starting_block + 999,
-      page_size: 999,
-    });
-    assertHasMessage(f, (x) => {
-      const cid = x.cid.isSome && Buffer.from(x.cid.unwrap()).toString();
-      return cid === ipfs_cid_32;
+    it('should successfully retrieve added message and returned CID should have Base32 encoding', async function () {
+      const f = await ExtrinsicHelper.apiPromise.rpc.messages.getByIntentId(intentId, {
+        from_block: starting_block,
+        from_index: 0,
+        to_block: starting_block + 999,
+        page_size: 999,
+      });
+      assertHasMessage(f, (x) => {
+        const cid = x.cid.isSome && Buffer.from(x.cid.unwrap()).toString();
+        return cid === ipfs_cid_32;
+      });
     });
   });
 
@@ -144,7 +152,7 @@ describe('Add Offchain Message', function () {
         assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
       }
 
-      const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
+      const get = await ExtrinsicHelper.apiPromise.rpc.messages.getByIntentId(dummyIntentId, {
         from_block: starting_block,
         from_index: 0,
         to_block: starting_block + 999,

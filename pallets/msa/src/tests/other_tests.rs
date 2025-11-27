@@ -13,7 +13,7 @@ use sp_runtime::{traits::Zero, MultiSignature};
 
 use crate::{
 	tests::mock::*,
-	types::{AddProvider, PermittedDelegationSchemas},
+	types::{AddProvider, PermittedDelegationIntents},
 	AddKeyData, ArithmeticError, AuthorizedKeyData, Config, DelegatorAndProviderToDelegation,
 	Error, Event, ProviderToRegistryEntryV2, PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
@@ -21,11 +21,11 @@ use common_primitives::signatures::AccountAddressMapper;
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
-		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
+		Delegation, DelegationGrant, DelegationResponse, DelegatorId, GrantValidator,
+		MessageSourceId, ProviderId, ProviderRegistryEntry, H160,
 	},
 	node::{BlockNumber, EIP712Encode},
-	schema::{SchemaId, SchemaValidator},
+	schema::IntentId,
 	signatures::{EthereumAddressMapper, UnifiedSignature, UnifiedSigner},
 	utils::wrap_binary_data,
 };
@@ -99,7 +99,7 @@ pub fn add_provider_to_msa_is_success() {
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair, provider_msa);
 
-		set_schema_count::<Test>(10);
+		set_schema_count(10);
 
 		assert_ok!(Msa::grant_delegation(
 			RuntimeOrigin::signed(provider_account.into()),
@@ -113,7 +113,7 @@ pub fn add_provider_to_msa_is_success() {
 
 		assert_eq!(
 			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
-			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
+			Some(Delegation { revoked_at: 0, permissions: Default::default() })
 		);
 
 		System::assert_last_event(
@@ -238,7 +238,7 @@ pub fn revoke_provider_is_successful() {
 
 		assert_eq!(
 			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).unwrap(),
-			Delegation { revoked_at: 1, schema_permissions: Default::default() },
+			Delegation { revoked_at: 1, permissions: Default::default() },
 		);
 	});
 }
@@ -397,58 +397,54 @@ fn create_provider_duplicate() {
 	})
 }
 
-pub fn set_schema_count<T: Config>(n: u16) {
-	<T>::SchemaValidator::set_schema_count(n);
-}
-
 #[test]
 pub fn valid_schema_grant() {
 	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
-		let schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+		let intent_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
 
 		System::set_block_number(System::block_number() + 1);
 
-		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 2u16, 1u32));
+		assert_ok!(Msa::ensure_valid_grant(provider, delegator, 2u16, 1u32));
 	})
 }
 
 #[test]
-pub fn error_invalid_schema_id() {
+pub fn error_invalid_intent_id() {
 	struct TestCase<T> {
-		schema: Vec<u16>,
+		intent: Vec<IntentId>,
 		expected: T,
 	}
 	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(12);
+		set_intent_count(12);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
 		let test_cases: [TestCase<Error<Test>>; 3] = [
-			TestCase { schema: vec![15, 16], expected: Error::<Test>::InvalidSchemaId },
-			TestCase { schema: vec![16, 17], expected: Error::<Test>::InvalidSchemaId },
-			TestCase { schema: vec![18], expected: Error::<Test>::InvalidSchemaId },
+			TestCase { intent: vec![15, 16], expected: Error::<Test>::InvalidIntentId },
+			TestCase { intent: vec![16, 17], expected: Error::<Test>::InvalidIntentId },
+			TestCase { intent: vec![18], expected: Error::<Test>::InvalidIntentId },
 		];
 		for tc in test_cases {
-			assert_noop!(Msa::add_provider(provider, delegator, tc.schema), tc.expected);
+			assert_noop!(Msa::add_provider(provider, delegator, tc.intent), tc.expected);
 		}
 	})
 }
 
 #[test]
-pub fn error_exceeding_max_schema_under_minimum_schema_grants() {
+pub fn error_exceeding_max_intent_under_minimum_intent_grants() {
 	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(16);
+		set_intent_count(16);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
 		assert_noop!(
 			Msa::add_provider(provider, delegator, (1..32_u16).collect::<Vec<_>>()),
-			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
+			Error::<Test>::ExceedsMaxGrantsPerDelegation
 		);
 	})
 }
@@ -459,7 +455,7 @@ pub fn error_not_delegated_rpc() {
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
 		assert_err!(
-			Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)),
+			Msa::get_granted_intents_by_msa_id(delegator, Some(provider)),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -472,8 +468,8 @@ pub fn error_schema_not_granted_rpc() {
 		let delegator = DelegatorId(2);
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 		assert_err!(
-			Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)),
-			Error::<Test>::SchemaNotGranted
+			Msa::get_granted_intents_by_msa_id(delegator, Some(provider)),
+			Error::<Test>::PermissionNotGranted
 		);
 	})
 }
@@ -481,22 +477,22 @@ pub fn error_schema_not_granted_rpc() {
 #[test]
 pub fn schema_granted_success_rpc() {
 	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
-		let schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
-		let expected_schemas_granted = vec![
-			SchemaGrant::new(1, BlockNumber::zero()),
-			SchemaGrant::new(2, BlockNumber::zero()),
+		let intent_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
+		let intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
+		let expected_intents_granted = vec![
+			DelegationGrant::new(1, BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero()),
 		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
-			permissions: expected_schemas_granted,
+			permissions: expected_intents_granted,
 		}];
-		let output_schemas = schemas_granted.unwrap();
+		let output_schemas = intents_granted.unwrap();
 		assert_eq!(output_schemas, expected_delegations);
 	})
 }
@@ -504,67 +500,67 @@ pub fn schema_granted_success_rpc() {
 #[test]
 pub fn schema_granted_success_multiple_providers_rpc() {
 	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(4);
+		set_intent_count(4);
 
 		let provider_1 = ProviderId(1);
 		let provider_2 = ProviderId(2);
 		let delegator = DelegatorId(2);
-		let schema_grants_1 = vec![1, 2];
-		let schema_grants_2 = vec![3, 4];
-		assert_ok!(Msa::add_provider(provider_1, delegator, schema_grants_1));
-		assert_ok!(Msa::add_provider(provider_2, delegator, schema_grants_2));
-		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, None);
-		let expected_schemas_granted_1 = vec![
-			SchemaGrant::new(1, BlockNumber::zero()),
-			SchemaGrant::new(2, BlockNumber::zero()),
+		let intent_grants_1 = vec![1, 2];
+		let intent_grants_2 = vec![3, 4];
+		assert_ok!(Msa::add_provider(provider_1, delegator, intent_grants_1));
+		assert_ok!(Msa::add_provider(provider_2, delegator, intent_grants_2));
+		let intents_granted = Msa::get_granted_intents_by_msa_id(delegator, None);
+		let expected_intents_granted_1 = vec![
+			DelegationGrant::new(1, BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero()),
 		];
-		let expected_schemas_granted_2 = vec![
-			SchemaGrant::new(3, BlockNumber::zero()),
-			SchemaGrant::new(4, BlockNumber::zero()),
+		let expected_intents_granted_2 = vec![
+			DelegationGrant::new(3, BlockNumber::zero()),
+			DelegationGrant::new(4, BlockNumber::zero()),
 		];
 		let expected_delegation_1 =
-			DelegationResponse { provider_id: provider_1, permissions: expected_schemas_granted_1 };
+			DelegationResponse { provider_id: provider_1, permissions: expected_intents_granted_1 };
 		let expected_delegation_2 =
-			DelegationResponse { provider_id: provider_2, permissions: expected_schemas_granted_2 };
-		let output_schemas = schemas_granted.unwrap();
-		assert_eq!(output_schemas, vec![expected_delegation_1, expected_delegation_2]);
+			DelegationResponse { provider_id: provider_2, permissions: expected_intents_granted_2 };
+		let output_intents = intents_granted.unwrap();
+		assert_eq!(output_intents, vec![expected_delegation_1, expected_delegation_2]);
 	})
 }
 
 #[test]
 pub fn schema_revoked_rpc() {
 	new_test_ext().execute_with(|| {
-		set_schema_count::<Test>(2);
+		set_intent_count(2);
 
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
-		let mut schema_grants = vec![1, 2];
-		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-		let mut schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
-		let mut expected_schemas_granted = vec![
-			SchemaGrant::new(1, BlockNumber::zero()),
-			SchemaGrant::new(2, BlockNumber::zero()),
+		let mut intent_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
+		let mut intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
+		let mut expected_intents_granted = vec![
+			DelegationGrant::new(1, BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero()),
 		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
-			permissions: expected_schemas_granted,
+			permissions: expected_intents_granted,
 		}];
-		let mut output_schemas = schemas_granted.unwrap();
-		assert_eq!(output_schemas, expected_delegations);
+		let mut output_intents = intents_granted.unwrap();
+		assert_eq!(output_intents, expected_delegations);
 
 		// Now revoke a schema and check that it is reported correctly by the RPC
 		run_to_block(5);
-		schema_grants = vec![1];
-		assert_ok!(Msa::upsert_schema_permissions(provider, delegator, schema_grants));
-		schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
-		expected_schemas_granted =
-			vec![SchemaGrant::new(1, BlockNumber::zero()), SchemaGrant::new(2, 5)];
+		intent_grants = vec![1];
+		assert_ok!(Msa::upsert_intent_permissions(provider, delegator, intent_grants));
+		intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
+		expected_intents_granted =
+			vec![DelegationGrant::new(1, BlockNumber::zero()), DelegationGrant::new(2, 5)];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
-			permissions: expected_schemas_granted,
+			permissions: expected_intents_granted,
 		}];
-		output_schemas = schemas_granted.unwrap();
-		assert_eq!(output_schemas, expected_delegations);
+		output_intents = intents_granted.unwrap();
+		assert_eq!(output_intents, expected_delegations);
 	})
 }
 
@@ -608,28 +604,28 @@ pub fn add_provider_expired() {
 }
 
 #[test]
-pub fn ensure_all_schema_ids_are_valid_errors() {
+pub fn ensure_all_intent_ids_are_valid_errors() {
 	new_test_ext().execute_with(|| {
-		let schema_ids = vec![1];
+		let intent_ids = vec![1];
 		assert_noop!(
-			Msa::ensure_all_schema_ids_are_valid(&schema_ids),
-			Error::<Test>::InvalidSchemaId
+			Msa::ensure_all_intent_ids_are_valid(&intent_ids),
+			Error::<Test>::InvalidIntentId
 		);
 
-		let schema_ids = (1..32).collect::<Vec<_>>();
+		let intent_ids = (1..32).collect::<Vec<_>>();
 		assert_noop!(
-			Msa::ensure_all_schema_ids_are_valid(&schema_ids),
-			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
+			Msa::ensure_all_intent_ids_are_valid(&intent_ids),
+			Error::<Test>::ExceedsMaxGrantsPerDelegation
 		);
 	})
 }
 #[test]
-pub fn ensure_all_schema_ids_are_valid_success() {
+pub fn ensure_all_intent_ids_are_valid_success() {
 	new_test_ext().execute_with(|| {
-		let schema_ids = vec![1];
-		set_schema_count::<Test>(1);
+		let intent_ids = vec![1];
+		set_intent_count(1);
 
-		assert_ok!(Msa::ensure_all_schema_ids_are_valid(&schema_ids));
+		assert_ok!(Msa::ensure_all_intent_ids_are_valid(&intent_ids));
 	});
 }
 
@@ -648,16 +644,16 @@ pub fn is_registered_provider_is_true() {
 fn delegation_default_trait_impl() {
 	new_test_ext().execute_with(|| {
 		let delegation: Delegation<
-			SchemaId,
+			IntentId,
 			BlockNumberFor<Test>,
-			<Test as Config>::MaxSchemaGrantsPerDelegation,
+			<Test as Config>::MaxGrantsPerDelegation,
 		> = Default::default();
 
 		let expected = Delegation {
-			schema_permissions: BoundedBTreeMap::<
-				SchemaId,
+			permissions: BoundedBTreeMap::<
+				IntentId,
 				BlockNumberFor<Test>,
-				<Test as Config>::MaxSchemaGrantsPerDelegation,
+				<Test as Config>::MaxGrantsPerDelegation,
 			>::default(),
 			revoked_at: Default::default(),
 		};
@@ -676,9 +672,9 @@ fn try_mutate_delegation_success() {
 			delegator,
 			provider,
 			|delegation, _is_new_provider| -> Result<(), &'static str> {
-				let schema_id = 1;
+				let intent_id = 1u16;
 				let _a =
-					PermittedDelegationSchemas::<Test>::try_insert_schema(delegation, schema_id);
+					PermittedDelegationIntents::<Test>::try_insert_intent(delegation, intent_id);
 
 				Ok(())
 			},
@@ -858,13 +854,14 @@ fn ethereum_eip712_signatures_for_add_provider_should_work() {
 	new_test_ext().execute_with(|| {
 		let payload = AddProvider {
 			authorized_msa_id: 12876327,
-			schema_ids: vec![2,4,5,6,7,8],
+			intent_ids: vec![2, 4, 5, 6, 7, 8],
 			expiration: 100,
 		};
 		let encoded_payload = payload.encode_eip_712(420420420u32);
 
 		// following signature is generated via Metamask using the same input to check compatibility
-		let signature_raw = from_hex("0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c").expect("Should convert");
+		let signature_raw = from_hex("0x92202831663df7215cdef647038860c548380792c47359e441cd93e02c304e61008c4c2468d9465b2443421959d040cea443475e90842eaefcf734e37aa9fc2f1c").expect("Should convert");
+
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
 		));

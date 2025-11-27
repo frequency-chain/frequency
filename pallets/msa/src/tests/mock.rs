@@ -1,11 +1,11 @@
 use crate::{
-	self as pallet_msa, types::RecoveryHash, AddKeyData, AddProvider, AuthorizedKeyData,
+	self as pallet_msa, types::RecoveryHash, AddKeyData, AddProvider, AuthorizedKeyData, Config,
 	RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
 	msa::{MessageSourceId, ProviderRegistryEntry},
 	node::BlockNumber,
-	schema::SchemaId,
+	schema::IntentId,
 	utils::wrap_binary_data,
 };
 use common_runtime::constants::*;
@@ -35,11 +35,10 @@ use alloc::sync::Arc;
 
 pub use pallet_msa::Call as MsaCall;
 
-#[cfg(feature = "runtime-benchmarks")]
-use pallet_collective::ProposalCount;
-
 use crate::types::PayloadTypeDiscriminator;
 use common_primitives::node::AccountId;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_collective::ProposalCount;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -145,7 +144,7 @@ impl pallet_schemas::Config for Test {
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<10>;
 	type SchemaModelMaxBytesBoundedVecLimit = SchemaModelMaxBytesBoundedVecLimit;
-	type MaxSchemaRegistrations = ConstU16<10>;
+	type MaxIntentsPerIntentGroup = ConstU32<10>;
 	type MaxSchemaSettingsPerSchema = ConstU32<1>;
 	// The proposal type
 	type Proposal = RuntimeCall;
@@ -190,7 +189,7 @@ parameter_types! {
 	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
-pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
+pub type MaxIntentGrantsPerDelegation = ConstU32<30>;
 /// The maximum size of a provider name (in bytes)
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct MsaMaxProviderNameSize;
@@ -234,7 +233,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = ConvertInto;
 	type MaxPublicKeysPerMsa = MaxPublicKeysPerMsa;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxGrantsPerDelegation = MaxIntentGrantsPerDelegation;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
 	type MaxLogoCidSize = MsaMaxLogoCidSize;
@@ -260,6 +259,14 @@ impl pallet_msa::Config for Test {
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
 	>;
 	type Currency = pallet_balances::Pallet<Self>;
+}
+
+pub fn set_schema_count(n: u16) {
+	<Test as Config>::SchemaValidator::set_schema_count(n);
+}
+
+pub fn set_intent_count(n: u16) {
+	<Test as Config>::SchemaValidator::set_intent_count(n);
 }
 
 pub fn set_max_signature_stored(max: u32) {
@@ -332,19 +339,19 @@ pub fn create_and_sign_add_provider_payload(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
 ) -> (MultiSignature, AddProvider) {
-	create_and_sign_add_provider_payload_with_schemas(delegator_pair, provider_msa, None, 10)
+	create_and_sign_add_provider_payload_with_intents(delegator_pair, provider_msa, None, 10)
 }
 
-/// Creates and signs an `AddProvider` struct using the provided delegator keypair, provider MSA and schema ids
+/// Creates and signs an `AddProvider` struct using the provided delegator keypair, provider MSA and Intent ids
 /// # Returns
 /// (MultiSignature, AddProvider) - Returns a tuple with the signature and the AddProvider struct
-pub fn create_and_sign_add_provider_payload_with_schemas(
+pub fn create_and_sign_add_provider_payload_with_intents(
 	delegator_pair: sr25519::Pair,
 	provider_msa: MessageSourceId,
-	schema_ids: Option<Vec<SchemaId>>,
+	intent_ids: Option<Vec<IntentId>>,
 	expiration: BlockNumber,
 ) -> (MultiSignature, AddProvider) {
-	let add_provider_payload = AddProvider::new(provider_msa, schema_ids, expiration);
+	let add_provider_payload = AddProvider::new(provider_msa, intent_ids, expiration);
 	let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
 	let signature: MultiSignature = delegator_pair.sign(&encode_add_provider_data).into();
 	(signature, add_provider_payload)
