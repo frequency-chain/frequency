@@ -19,7 +19,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Run Check Migrations Action
         uses: ./.github/workflows/common/try-runtime-migrations
