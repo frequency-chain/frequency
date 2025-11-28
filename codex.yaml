@@ -1,1 +1,1 @@
-image: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
+image: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.9

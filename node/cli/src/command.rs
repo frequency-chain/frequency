@@ -303,7 +303,7 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		runner.async_run(|$config| {
-				let $components = new_partial(&$config, false, None)?;
+				let $components = new_partial(&$config, false)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
@@ -371,7 +371,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisHead(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				let partials = new_partial(&config, false, None)?;
+				let partials = new_partial(&config, false)?;
 
 				cmd.run(partials.client)
 			})
@@ -400,7 +400,7 @@ pub fn run() -> Result<()> {
 							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials = new_partial(&config, false, None)?;
+					let partials = new_partial(&config, false)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
@@ -413,14 +413,14 @@ pub fn run() -> Result<()> {
 					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let partials = new_partial(&config, false, None)?;
+					let partials = new_partial(&config, false)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
 					let shared_cache = partials.backend.expose_shared_trie_cache();
 					cmd.run(config, partials.client.clone(), db, storage, shared_cache)
 				}),
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
-					let partials = new_partial(&config, false, None)?;
+					let partials = new_partial(&config, false)?;
 					let ext_builder = RemarkBuilder::new(partials.client.clone());
 					let should_record_proof = false;
 
