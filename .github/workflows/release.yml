@@ -450,7 +450,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
-        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+        run: npm install --ignore-scripts # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
@@ -497,7 +497,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/ethereum-utils
       - name: Build
         run: npm run build
@@ -526,7 +526,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/schemas
       - name: Build
         run: npm run build
@@ -555,7 +555,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/recovery-sdk
       - name: Build
         run: npm run build

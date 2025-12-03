@@ -148,7 +148,7 @@ else
     do
       echo "Building JS package for ${package}..."
       pushd js/${package}
-      npm i
+      npm i --ignore-scripts
       npm run --if-present fetch:local # Only for api-augment
       npm run --silent build
       popd
@@ -159,8 +159,8 @@ cd e2e
 echo "Installing local JS packages..."
 declare -a pre=( ${JS_PACKAGES[@]/#/..\/js\/} )
 packages=${pre[@]/%/\/dist}
-npm i ${packages}
-npm install
+npm i ${packages} --ignore-scripts
+npm install --ignore-scripts
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"

@@ -24,7 +24,7 @@ then
     cargo run --features frequency-local,frequency-bridging -- export-metadata --tmp --chain=frequency-paseo-local ./js/api-augment/metadata.json
     # cd into js dir
     cd "js/api-augment"
-    npm install # in case things have changed
+    npm install --ignore-scripts # in case things have changed
     npm run build
 else
     echo -e "${SUCCESS}"
@@ -38,7 +38,7 @@ else
 
     # cd into js dir
     cd "js/api-augment"
-    npm install # in case things have changed
+    npm install --ignore-scripts # in case things have changed
     npm run fetch:local
     npm run build
 fi
@@ -49,7 +49,7 @@ npm pack
 
 # build ethereum-utils
 cd "../../ethereum-utils"
-npm install
+npm install --ignore-scripts
 npm run build
 
 # Generate ethereum-utils packed tgz
@@ -58,7 +58,7 @@ npm pack
 
 # build recovery-sdk
 cd "../../recovery-sdk"
-npm install
+npm install --ignore-scripts
 npm run build
 
 # Generate recovery-sdk packed tgz

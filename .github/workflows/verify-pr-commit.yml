@@ -449,7 +449,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install Latest Versions
-        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+        run: npm install --ignore-scripts # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
       - name: Lint
         run: npm run lint
@@ -505,7 +505,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install Latest Versions
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/ethereum-utils
       - name: Lint
         run: npm run lint
@@ -543,7 +543,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install Latest Versions
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/schemas
       - name: Lint
         run: npm run lint
@@ -581,7 +581,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install Latest Versions
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/recovery-sdk
       - name: Lint
         run: npm run lint
@@ -902,10 +902,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built api-augment and ethereum-utils and recovery-sdk
-        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz ../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz ../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz  --ignore-scripts
         working-directory: e2e
       - name: Install NPM Modules
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: e2e
       - name: Lint
         run: npm run lint

@@ -325,7 +325,7 @@ register-frequency-paseo-local)
   echo "reserving and registering parachain with relay via first available slot..."
 
   cd scripts/js/onboard
-  npm i && npm run register "ws://0.0.0.0:9946" "//Alice"
+  npm i --ignore-scripts && npm run register "ws://0.0.0.0:9946" "//Alice"
   ;;
 
 onboard-frequency-paseo-local)
@@ -349,7 +349,7 @@ onboard-frequency-paseo-local)
   echo "WASM File md5: $(md5 "${wasm_location}")"
   wasm_hex=$(echo -n "0x"`xxd -ps -c 0 "${wasm_location}"`)
   echo "WASM Hex md5: $(echo -n "${wasm_hex}" | md5)"
-  npm i && echo -n "${wasm_hex}" | npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}"
+  npm i --ignore-scripts && echo -n "${wasm_hex}" | npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}"
   ;;
 
 # Useful in combination with make specs-frequency-paseo-local-*
@@ -364,14 +364,14 @@ onboard-res-local)
   echo "WASM File md5: $(md5 "${wasm_location}")"
   wasm_hex=$(echo -n "0x"`xxd -ps -c 0 "${wasm_location}"`)
   echo "WASM Hex md5: $(echo -n "${wasm_hex}" | md5)"
-  npm i && echo -n "${wasm_hex}" | npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}"
+  npm i --ignore-scripts && echo -n "${wasm_hex}" | npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}"
   ;;
 
 offboard-frequency-paseo-local)
   echo "cleaning up parachain for id '$para_id'..."
 
   cd scripts/js/onboard
-  npm i && npm run cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
+  npm i --ignore-scripts && npm run cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
   ;;
 
 upgrade-frequency-paseo-local)

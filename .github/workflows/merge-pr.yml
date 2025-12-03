@@ -34,7 +34,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/api-augment
       - name: Build
         run: npm run build
@@ -70,7 +70,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/ethereum-utils
       - name: Build
         run: npm run build
@@ -106,7 +106,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/schemas
       - name: Build
         run: npm run build
@@ -142,7 +142,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/recovery-sdk
       - name: Build
         run: npm run build
