@@ -14,4 +14,4 @@ wasm_location=$3
 
 cd scripts/js/onboard
 
-npm i && npm run upgrade-enact $ws_provider $sudo_secret $wasm_location
+npm i --ignore-scripts && npm run upgrade-enact $ws_provider $sudo_secret $wasm_location
