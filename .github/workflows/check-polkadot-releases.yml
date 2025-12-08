@@ -20,7 +20,7 @@ jobs:
       - name: Timestamp
         run: date
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.TRACKING_GIT_BRANCH}}
           # While you can write to a branch without it, it will not trigger the workflow
