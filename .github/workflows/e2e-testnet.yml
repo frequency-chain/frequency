@@ -68,6 +68,9 @@ jobs:
       - name: Install Built js packages
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }} --ignore-scripts
         working-directory: e2e
+      - name: Run Required Install Scripts
+        run: node ../scripts/js/run-install-script-overrides.js
+        working-directory: e2e
       - name: Fund e2e Tests
         working-directory: e2e
         env:

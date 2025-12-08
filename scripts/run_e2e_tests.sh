@@ -161,6 +161,7 @@ declare -a pre=( ${JS_PACKAGES[@]/#/..\/js\/} )
 packages=${pre[@]/%/\/dist}
 npm i ${packages} --ignore-scripts
 npm install --ignore-scripts
+node ../scripts/js/run-install-script-overrides.js
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
