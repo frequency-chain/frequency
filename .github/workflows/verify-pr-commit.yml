@@ -908,7 +908,7 @@ jobs:
         run: npm ci --ignore-scripts
         working-directory: e2e
       - name: Run Required Install Scripts
-        run: ../scripts/js/run-install-script-overrides.js
+        run: node ../scripts/js/run-install-script-overrides.js
         working-directory: e2e
       - name: Lint
         run: npm run lint
