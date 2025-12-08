@@ -360,7 +360,7 @@ fn upload_logo_fails_mismatch_logo_data() {
 fn create_application_and_upload_logo() {
 	new_test_ext().execute_with(|| {
 		let (_, key_pair) = create_provider_with_name("LogoProvider");
-		let logo_data = include_bytes!("../../../../e2e/msa/frequency.png");
+		let logo_data = include_bytes!("../../../../e2e/sudo/frequency.png");
 		let cid = common_primitives::cid::compute_cid_v1(logo_data).expect("Failed to compute CID");
 		let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
 		let input_bounded_cid = BoundedVec::try_from(encoded.as_bytes().to_vec()).unwrap();
@@ -397,7 +397,7 @@ fn create_application_and_upload_logo() {
 fn compute_cid_v1_test() {
 	new_test_ext().execute_with(|| {
 		// read frequency.png from assets
-		let logo_data = include_bytes!("../../../../e2e/msa/frequency.png");
+		let logo_data = include_bytes!("../../../../e2e/sudo/frequency.png");
 		let cid = common_primitives::cid::compute_cid_v1(logo_data).expect("Failed to compute CID");
 		let encoded = multibase::encode(multibase::Base::Base58Btc, cid);
 		assert_eq!(encoded, "zb2rhojSkWwLpTH7Sc9UFA3gFySTS8tx1vVu9SXhHTBcMabfF");
