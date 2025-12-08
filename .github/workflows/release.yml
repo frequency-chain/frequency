@@ -91,7 +91,7 @@ jobs:
           ./scripts/run_benchmarks.sh -b
 
       - name: Upload Binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: benchmark-binary
           path: |
@@ -100,7 +100,7 @@ jobs:
           retention-days: 3
 
       - name: Upload WASM Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: wasm-artifacts
           path: target/release/wbuild
@@ -124,13 +124,13 @@ jobs:
         run: mkdir -p target/release
 
       - name: Download Benchmark Binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: benchmark-binary
           path: target/release
 
       - name: Download WASM Build Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: wasm-artifacts
           path: target/release/wbuild
@@ -293,7 +293,7 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: |
@@ -389,7 +389,7 @@ jobs:
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-wasm-${{matrix.network}}-${{github.run_id}}
           path: ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
@@ -443,18 +443,18 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
-        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+        run: npm install --ignore-scripts # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-${{env.NETWORK}}-amd64-${{github.run_id}}
           path: .
@@ -474,7 +474,7 @@ jobs:
         run: npm run build
         working-directory: js/api-augment
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -490,20 +490,20 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/ethereum-utils
       - name: Build
         run: npm run build
         working-directory: js/ethereum-utils
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: js-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
@@ -519,20 +519,20 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/schemas
       - name: Build
         run: npm run build
         working-directory: js/schemas
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: js-schemas-${{github.run_id}}
           path: js/schemas/dist
@@ -548,20 +548,20 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/recovery-sdk
       - name: Build
         run: npm run build
         working-directory: js/recovery-sdk
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: js-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist
@@ -596,7 +596,7 @@ jobs:
           fetch-depth: 0
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: .
@@ -659,7 +659,7 @@ jobs:
           out-file-path: ${{env.REF_DOWNLOAD_DIR}}
       - name: Download Test Binary
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-local-amd64-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
@@ -743,7 +743,7 @@ jobs:
         run: |
           cat ${{env.OUTPUT_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-metadata-${{github.run_id}}
           path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
@@ -815,7 +815,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@c9dc8369bccbc41e0ac887f8fd674f5925d315f7
+        uses: mikepenz/release-changelog-builder-action@439f79b5b5428107c7688c1d2b0e8bacc9b8792c
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -865,14 +865,14 @@ jobs:
         run: echo "version=$(rustc --version | cut -f 2 -d " ")" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-*-${{github.run_id}}
           path: /tmp
           merge-multiple: true
       - name: Download api-augment artifacts
         id: download-js
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: js-api-augment-${{github.run_id}}
           path: /tmp/polkadot-api-types-json
@@ -912,7 +912,7 @@ jobs:
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe
         with:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
@@ -924,7 +924,7 @@ jobs:
             /tmp/polkadot-api-types-json/json/types.json
       - name: Publish Full Release on GitHub
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe
         with:
           body_path: tools/ci/release-notes/release-notes.md
           tag_name: ${{env.NEW_RELEASE_TAG}}
@@ -999,14 +999,14 @@ jobs:
       # Download binaries for each architecture
       - name: Download amd64 Binary
         id: download-amd64
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
           path: ./binaries-arm64
@@ -1116,14 +1116,14 @@ jobs:
       # Download binaries for each architecture
       - name: Download amd64 Binary
         id: download-amd64
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
           path: ./binaries-arm64
@@ -1236,7 +1236,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1244,7 +1244,7 @@ jobs:
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -1282,7 +1282,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1290,7 +1290,7 @@ jobs:
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: js-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
@@ -1328,7 +1328,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1336,7 +1336,7 @@ jobs:
           cache-dependency-path: js/schemas/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: js-schemas-${{github.run_id}}
           path: js/schemas/dist
@@ -1374,7 +1374,7 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -1382,7 +1382,7 @@ jobs:
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: js-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist

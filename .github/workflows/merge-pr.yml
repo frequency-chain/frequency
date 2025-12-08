@@ -27,14 +27,14 @@ jobs:
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-local -- export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/api-augment
       - name: Build
         run: npm run build
@@ -63,14 +63,14 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/ethereum-utils
       - name: Build
         run: npm run build
@@ -99,14 +99,14 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/schemas
       - name: Build
         run: npm run build
@@ -135,14 +135,14 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: js/recovery-sdk
       - name: Build
         run: npm run build

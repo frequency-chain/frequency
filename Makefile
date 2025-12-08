@@ -559,5 +559,5 @@ version-reset:
 .PHONY: genesis-schemas
 genesis-schemas: js
 	cd tools/genesis-data && \
-	npm i && \
+	npm i --ignore-scripts && \
 	npm run --silent schemas > ../../resources/genesis-schemas.json

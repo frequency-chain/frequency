@@ -60,13 +60,13 @@ jobs:
           echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "RECOVERY_SDK_VERSION=$(echo ${{ env.RECOVERY_SDK_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built js packages
-        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }}
+        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }} --ignore-scripts
         working-directory: e2e
       - name: Fund e2e Tests
         working-directory: e2e
@@ -105,13 +105,13 @@ jobs:
           echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "RECOVERY_SDK_VERSION=$(echo ${{ env.RECOVERY_SDK_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built js packages
-        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }}
+        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }} --ignore-scripts
         working-directory: e2e
       - name: E2E Test - ${{ matrix.test-file }}
         working-directory: e2e

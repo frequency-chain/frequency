@@ -225,7 +225,7 @@ jobs:
         working-directory: target/${{matrix.build-profile}}
         run: cp ${{env.BUILT_BIN_FILENAME}} ${{env.FINAL_BIN_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{matrix.branch_alias}}-${{github.run_id}}
           path: target/${{matrix.build-profile}}/${{env.FINAL_BIN_FILENAME}}*
@@ -443,20 +443,20 @@ jobs:
         run: |
           echo "BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install Latest Versions
-        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+        run: npm install --ignore-scripts # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
       - name: Lint
         run: npm run lint
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -484,7 +484,7 @@ jobs:
         run: npm pack
         working-directory: js/api-augment/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
@@ -499,13 +499,13 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v5
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install Latest Versions
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/ethereum-utils
       - name: Lint
         run: npm run lint
@@ -523,7 +523,7 @@ jobs:
         run: npm pack
         working-directory: js/ethereum-utils/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
@@ -537,13 +537,13 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v5
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install Latest Versions
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/schemas
       - name: Lint
         run: npm run lint
@@ -561,7 +561,7 @@ jobs:
         run: npm pack
         working-directory: js/schemas/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-schemas-${{github.run_id}}
           path: js/schemas/dist/frequency-chain-schemas-0.0.0.tgz
@@ -575,13 +575,13 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v5
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install Latest Versions
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: js/recovery-sdk
       - name: Lint
         run: npm run lint
@@ -599,7 +599,7 @@ jobs:
         run: npm pack
         working-directory: js/recovery-sdk/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifacts-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz
@@ -615,7 +615,7 @@ jobs:
 
       - name: Download amd64 Binaries
         id: download-amd64-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-binary-mainnet-amd64-pr-${{github.run_id}}
           path: ./binaries-amd64
@@ -623,7 +623,7 @@ jobs:
       # For PR verification, just use the mainnet arm64 build
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-binary-mainnet-arm64-pr-${{github.run_id}}
           path: ./binaries-arm64
@@ -733,7 +733,7 @@ jobs:
           echo "TEST_BIN_FILENAME=frequency.mainnet.${{matrix.arch}}.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
           path: ${{matrix.bin-dir}}
@@ -769,7 +769,7 @@ jobs:
           echo "REF_BIN_FILENAME=frequency.local.amd64.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-local-*-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -850,7 +850,7 @@ jobs:
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -860,17 +860,17 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Download ethereum-utils tarball
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
       - name: Download recovery-sdk tarball
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: artifacts-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist
@@ -896,16 +896,16 @@ jobs:
             --tmp \
             &
       - name: Set up NodeJs
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built api-augment and ethereum-utils and recovery-sdk
-        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz ../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz ../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz  --ignore-scripts
         working-directory: e2e
       - name: Install NPM Modules
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: e2e
       - name: Lint
         run: npm run lint
@@ -938,7 +938,7 @@ jobs:
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.amd64.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: artifacts-binary-*-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
