@@ -284,7 +284,7 @@ mod benchmarks {
 
 	#[benchmark]
 	fn create_sponsored_account_with_delegation(
-		s: Linear<0, { T::MaxSchemaGrantsPerDelegation::get() }>,
+		s: Linear<0, { T::MaxGrantsPerDelegation::get() }>,
 	) -> Result<(), BenchmarkError> {
 		prep_signature_registry::<T>();
 
@@ -303,9 +303,9 @@ mod benchmarks {
 			entry
 		));
 
-		let schemas: Vec<SchemaId> = (0..s as u16).collect();
-		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-		let (payload, signature, key) = create_payload_and_signature::<T>(schemas, 1u64);
+		let intents: Vec<IntentId> = (0..s as u16).collect();
+		T::SchemaValidator::set_intent_count(intents.len().try_into().unwrap());
+		let (payload, signature, key) = create_payload_and_signature::<T>(intents, 1u64);
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller), key.clone(), signature, payload);
@@ -422,14 +422,14 @@ mod benchmarks {
 
 	#[benchmark]
 	fn grant_delegation(
-		s: Linear<0, { T::MaxSchemaGrantsPerDelegation::get() }>,
+		s: Linear<0, { T::MaxGrantsPerDelegation::get() }>,
 	) -> Result<(), BenchmarkError> {
 		prep_signature_registry::<T>();
 
 		let provider_caller: T::AccountId = whitelisted_caller();
 
-		let schemas: Vec<SchemaId> = (0..s as u16).collect();
-		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
+		let intents: Vec<IntentId> = (0..s as u16).collect();
+		T::SchemaValidator::set_intent_count(intents.len().try_into().unwrap());
 
 		let (provider_msa_id, _) = Msa::<T>::create_account(provider_caller.clone()).unwrap();
 		let entry = ProviderRegistryEntry::default();
@@ -441,7 +441,7 @@ mod benchmarks {
 		));
 
 		let (payload, signature, delegator_key) =
-			create_payload_and_signature::<T>(schemas, provider_msa_id);
+			create_payload_and_signature::<T>(intents, provider_msa_id);
 		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_key.clone()).unwrap();
 
 		#[extrinsic_call]

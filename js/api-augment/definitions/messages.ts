@@ -1,11 +1,11 @@
 export default {
   rpc: {
-    getBySchemaId: {
-      description: 'Get messages by schemaId paginated',
+    getByIntentId: {
+      description: 'Get messages by IntentId paginated',
       params: [
         {
-          name: 'schema_id',
-          type: 'SchemaId',
+          name: 'intent_id',
+          type: 'IntentId',
         },
         {
           name: 'pagination',
@@ -23,6 +23,7 @@ export default {
       page_size: 'u32',
     },
     MessageResponse: {
+      schema_id: 'SchemaId',
       payload: 'Option<Vec<u8>>', //  Serialized data in a user-defined schema format
       cid: 'Option<Vec<u8>>', // The content address for an IPFS payload
       provider_msa_id: 'MessageSourceId', //  Message source account id of the Provider

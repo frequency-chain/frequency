@@ -24,13 +24,14 @@ describe('Capacity RPC', function () {
   let capacityProviderKeys: KeyringPair;
   let capacityProvider: u64;
   let schemaId: u16;
+  let intentId: u16;
   let defaultPayload: AddProviderPayload;
 
   // Because this is testing non-executing code, we can do this beforeAll instead of beforeEach
   before(async function () {
     fundingSource = await getFundingSource(import.meta.url);
     // Create schemas for testing with Grant Delegation to test pay_with_capacity
-    schemaId = await getOrCreateGraphChangeSchema(fundingSource);
+    ({ intentId, schemaId } = await getOrCreateGraphChangeSchema(fundingSource));
     assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
     capacityProviderKeys = createKeys('CapacityProviderKeys');
     capacityProvider = await createMsaAndProvider(
@@ -42,7 +43,7 @@ describe('Capacity RPC', function () {
     await stakeToProvider(fundingSource, capacityProviderKeys, capacityProvider, STAKED_AMOUNT);
     defaultPayload = {
       authorizedMsaId: capacityProvider,
-      schemaIds: [schemaId],
+      intentIds: [schemaId],
     };
   });
 

@@ -9,9 +9,9 @@ use sp_runtime::{
 	DispatchError, MultiSignature, RuntimeDebug,
 };
 extern crate alloc;
+pub use crate::schema::{IntentId, SchemaId};
 use alloc::vec::Vec;
-
-pub use crate::schema::SchemaId;
+use serde::{ser::SerializeStruct, Serializer};
 
 /// ApplicationIndex type
 pub type ApplicationIndex = u16;
@@ -79,26 +79,45 @@ impl From<DelegatorId> for MessageSourceId {
 /// RPC response for getting delegated providers with their permissions
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
-pub struct DelegationResponse<SchemaId, BlockNumber> {
+pub struct DelegationResponse<DelegationIdType, BlockNumber> {
 	/// SchemaId of schema for which permission is/was granted
 	pub provider_id: ProviderId,
 	/// The list of schema permissions grants
-	pub permissions: Vec<SchemaGrant<SchemaId, BlockNumber>>,
+	pub permissions: Vec<DelegationGrant<DelegationIdType, BlockNumber>>,
 }
 
 /// RPC response for getting schema permission grants
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "std", derive(Deserialize))]
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
-pub struct SchemaGrant<SchemaId, BlockNumber> {
-	/// SchemaId of schema for which permission is/was granted
-	pub schema_id: SchemaId,
+pub struct DelegationGrant<DelegationIdType, BlockNumber> {
+	/// ID of the delegated entity for which permission is/was granted
+	pub granted_id: DelegationIdType,
 	/// Block number the permission was/will be revoked (0 = not revoked)
 	pub revoked_at: BlockNumber,
 }
 
-impl<SchemaId, BlockNumber> PartialEq for DelegationResponse<SchemaId, BlockNumber>
+// Custom serialization implementation to allow for a slow roll-out of renaming
+// the `schema_id` field to `granted_id`; preserves compatibility for older clients
+// while allowing the new field name to also exist for client to update to.
+#[cfg(feature = "std")]
+impl<DelegationIdType: Serialize, BlockNumber: Serialize> Serialize
+	for DelegationGrant<DelegationIdType, BlockNumber>
+{
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
+		let mut s = serializer.serialize_struct("DelegationGrant", 3)?;
+		s.serialize_field("schema_id", &self.granted_id)?;
+		s.serialize_field("granted_id", &self.granted_id)?;
+		s.serialize_field("revoked_at", &self.revoked_at)?;
+		s.end()
+	}
+}
+
+impl<DelegationIdType, BlockNumber> PartialEq for DelegationResponse<DelegationIdType, BlockNumber>
 where
-	SchemaId: PartialEq,
+	DelegationIdType: PartialEq,
 	BlockNumber: PartialEq,
 {
 	fn eq(&self, other: &Self) -> bool {
@@ -106,64 +125,61 @@ where
 	}
 }
 
-impl<SchemaId, BlockNumber> SchemaGrant<SchemaId, BlockNumber> {
+impl<DelegationIdType, BlockNumber> DelegationGrant<DelegationIdType, BlockNumber> {
 	/// Create a new SchemaGrant struct
-	pub fn new(schema_id: SchemaId, revoked_at: BlockNumber) -> Self {
-		SchemaGrant { schema_id, revoked_at }
+	pub fn new(granted_id: DelegationIdType, revoked_at: BlockNumber) -> Self {
+		DelegationGrant { granted_id, revoked_at }
 	}
 }
 
-impl<SchemaId, BlockNumber> PartialEq for SchemaGrant<SchemaId, BlockNumber>
+impl<DelegatedIdType, BlockNumber> PartialEq for DelegationGrant<DelegatedIdType, BlockNumber>
 where
-	SchemaId: PartialEq,
+	DelegatedIdType: PartialEq,
 	BlockNumber: PartialEq,
 {
 	fn eq(&self, other: &Self) -> bool {
-		self.schema_id == other.schema_id && self.revoked_at == other.revoked_at
+		self.granted_id == other.granted_id && self.revoked_at == other.revoked_at
 	}
 }
 
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
-#[scale_info(skip_type_params(MaxSchemaGrantsPerDelegation))]
-pub struct Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
+#[scale_info(skip_type_params(MaxGrantsPerDelegation))]
+pub struct Delegation<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation>
 where
-	MaxSchemaGrantsPerDelegation: Get<u32>,
+	MaxGrantsPerDelegation: Get<u32>,
 {
 	/// Block number the grant will be revoked.
 	pub revoked_at: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
-	pub schema_permissions: BoundedBTreeMap<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>,
+	pub permissions: BoundedBTreeMap<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation>,
 }
 
 // Cannot derive the PartialEq without a mess of impl PartialEq for MaxSchemaGrantsPerDelegation
-impl<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation> PartialEq
-	for Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
+impl<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation> PartialEq
+	for Delegation<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation>
 where
-	SchemaId: PartialEq,
+	DelegatedIdType: PartialEq,
 	BlockNumber: PartialEq,
-	MaxSchemaGrantsPerDelegation: Get<u32>,
+	MaxGrantsPerDelegation: Get<u32>,
 {
 	fn eq(&self, other: &Self) -> bool {
-		self.revoked_at == other.revoked_at && self.schema_permissions == other.schema_permissions
+		self.revoked_at == other.revoked_at && self.permissions == other.permissions
 	}
 }
 
 impl<
-		SchemaId: Ord + Default,
+		DelegatedIdType: Ord + Default,
 		BlockNumber: Ord + Copy + Zero + AtLeast32BitUnsigned + Default,
-		MaxSchemaGrantsPerDelegation: Get<u32>,
-	> Default for Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
+		MaxGrantsPerDelegation: Get<u32>,
+	> Default for Delegation<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation>
 {
 	/// Provides the default values for Delegation type.
 	fn default() -> Self {
 		Delegation {
 			revoked_at: BlockNumber::default(),
-			schema_permissions: BoundedBTreeMap::<
-				SchemaId,
-				BlockNumber,
-				MaxSchemaGrantsPerDelegation,
-			>::new(),
+			permissions:
+				BoundedBTreeMap::<DelegatedIdType, BlockNumber, MaxGrantsPerDelegation>::new(),
 		}
 	}
 }
@@ -302,6 +318,9 @@ pub trait MsaLookup {
 
 	/// Gets the MSA Id associated with this `AccountId` if any
 	fn get_msa_id(key: &Self::AccountId) -> Option<MessageSourceId>;
+
+	/// Gets the max MSA ID from the pallet
+	fn get_max_msa_id() -> MessageSourceId;
 }
 
 /// A behavior that allows for validating an MSA
@@ -318,26 +337,26 @@ pub trait MsaValidator {
 pub trait ProviderLookup {
 	/// Type for block number.
 	type BlockNumber;
-	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrantsPerDelegation: Get<u32>;
+	/// Type for maximum number of items that can be granted to a provider.
+	type MaxGrantsPerDelegation: Get<u32>;
 	/// Schema Id is the unique identifier for a Schema
-	type SchemaId;
+	type DelegationId;
 
 	/// Gets the relationship information for this delegator, provider pair
 	fn get_delegation_of(
 		delegator: DelegatorId,
 		provider: ProviderId,
-	) -> Option<Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>>;
+	) -> Option<Delegation<Self::DelegationId, Self::BlockNumber, Self::MaxGrantsPerDelegation>>;
 }
 
 /// A behavior that allows for validating a delegator-provider relationship
 pub trait DelegationValidator {
 	/// Type for block number.
 	type BlockNumber;
-	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrantsPerDelegation: Get<u32>;
-	/// Schema Id is the unique identifier for a Schema
-	type SchemaId;
+	/// Type for maximum number of items that can be granted to a provider.
+	type MaxGrantsPerDelegation: Get<u32>;
+	/// The unique identifier for a delegated item
+	type DelegationIdType;
 
 	/// Validates that the delegator and provider have a relationship at this point
 	fn ensure_valid_delegation(
@@ -345,18 +364,18 @@ pub trait DelegationValidator {
 		delegator: DelegatorId,
 		block_number: Option<Self::BlockNumber>,
 	) -> Result<
-		Delegation<Self::SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
+		Delegation<Self::DelegationIdType, Self::BlockNumber, Self::MaxGrantsPerDelegation>,
 		DispatchError,
 	>;
 }
 
 /// A behavior that allows for validating a schema grant
-pub trait SchemaGrantValidator<BlockNumber> {
-	/// Validates if the provider is allowed to use the particular schema id currently
-	fn ensure_valid_schema_grant(
+pub trait GrantValidator<DelegationIdType, BlockNumber> {
+	/// Validates if the provider is allowed to use the particular delegated item id currently
+	fn ensure_valid_grant(
 		provider_id: ProviderId,
 		delegator_id: DelegatorId,
-		schema_id: SchemaId,
+		id_to_check: DelegationIdType,
 		block_number: BlockNumber,
 	) -> DispatchResult;
 }

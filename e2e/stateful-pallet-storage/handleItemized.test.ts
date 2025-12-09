@@ -10,18 +10,22 @@ import {
   getOrCreateAvroChatMessageItemizedSchema,
   assertExtrinsicSucceededAndFeesPaid,
   createAndFundKeypair,
+  getOrCreateIntentAndSchema,
+  assertExtrinsicSuccess,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
-import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
+import { AVRO_CHAT_MESSAGE } from './fixtures/itemizedSchemaType';
+import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
 let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Itemized', function () {
+  let intentId_deletable: IntentId;
   let schemaId_deletable: SchemaId;
+  let intentId_unsupported: IntentId;
   let schemaId_unsupported: SchemaId;
   let delegatorKeys: KeyringPair;
   let msa_id: MessageSourceId;
@@ -36,19 +40,17 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
       [providerKeys, providerId],
       // Delegator Keys
       delegatorKeys,
-      schemaId_deletable,
-      schemaId_unsupported,
+      { intentId: intentId_deletable, schemaId: schemaId_deletable },
+      { intentId: intentId_unsupported, schemaId: schemaId_unsupported },
     ] = await Promise.all([
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
       createAndFundKeypair(fundingSource, 2n * DOLLARS),
       getOrCreateAvroChatMessageItemizedSchema(fundingSource),
-      ExtrinsicHelper.getOrCreateSchemaV3(
+      getOrCreateIntentAndSchema(
         fundingSource,
-        AVRO_CHAT_MESSAGE,
-        'AvroBinary',
-        'OnChain',
-        [],
-        'test.handleItemizedUnsupported'
+        'test.handleItemizedUnsupported',
+        { payloadLocation: 'OnChain', settings: [] },
+        { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
       ),
     ]);
     assert.notEqual(providerId, undefined, 'setup should populate providerId');
@@ -62,7 +64,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
     ] = await Promise.all([
       createDelegatorAndDelegation(
         fundingSource,
-        schemaId_deletable,
+        intentId_deletable,
         providerId,
         providerKeys,
         'sr25519',
@@ -89,7 +91,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         Add: payload_2,
       };
 
-      const target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
+      const target_hash = await getCurrentItemizedHash(msa_id, intentId_deletable);
 
       const add_actions = [add_action, update_action];
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
@@ -101,7 +103,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assertExtrinsicSucceededAndFeesPaid(chainEvents);
+      await assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -143,7 +145,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         0
       );
       await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
-        name: 'SchemaPayloadLocationMismatch',
+        name: 'PayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });
@@ -196,15 +198,13 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
 
   describe('Itemized Storage Remove Action Tests', function () {
     it('✅ should be able to call applyItemizedAction and apply remove actions', async function () {
-      let target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
+      const target_hash = await getCurrentItemizedHash(msa_id, intentId_deletable);
 
       // Delete action
       const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1);
       const remove_action_1 = {
         Delete: idx_1,
       };
-
-      target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
 
       const remove_actions = [remove_action_1];
       const itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(
@@ -216,11 +216,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
       );
       const { target: pageUpdateEvent2, eventMap: chainEvents2 } =
         await itemized_remove_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
+      assertExtrinsicSuccess(chainEvents2);
       assert.notEqual(chainEvents2['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
       assert.notEqual(pageUpdateEvent2, undefined, 'should have returned a event');
     });
@@ -259,7 +255,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         0
       );
       await assert.rejects(itemized_remove_result_1.fundAndSend(fundingSource), {
-        name: 'SchemaPayloadLocationMismatch',
+        name: 'PayloadLocationMismatch',
         section: 'statefulStorage',
       });
     });
@@ -297,7 +293,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
 
   describe('Itemized Storage RPC Tests', function () {
     it('✅ should be able to call getItemizedStorage and get data for itemized schema', async function () {
-      const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId_deletable);
+      const result = await ExtrinsicHelper.getItemizedStorage(msa_id, intentId_deletable);
       assert.notEqual(result.hash, undefined, 'should have returned a hash');
       assert.notEqual(result.size, undefined, 'should have returned a itemized responses');
     });

@@ -5,6 +5,7 @@ use crate::{
 	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
+	msa::IntentId,
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -98,11 +99,13 @@ impl Convert<u64, AccountId> for TestAccountId {
 }
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
+	fn are_all_intent_ids_valid(_intent_ids: &[IntentId]) -> bool {
 		true
 	}
 
 	fn set_schema_count(_n: SchemaId) {}
+
+	fn set_intent_count(_n: IntentId) {}
 }
 pub struct CouncilProposalProvider;
 
@@ -133,7 +136,7 @@ impl pallet_msa::Config for Test {
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = TestAccountId;
 	type MaxPublicKeysPerMsa = ConstU8<255>;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
 	type MaxLogoCidSize = MsaMaxLogoCidSize;

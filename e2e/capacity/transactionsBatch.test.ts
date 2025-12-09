@@ -43,7 +43,7 @@ describe('Capacity Transactions Batch', function () {
       );
       defaultPayload = {
         authorizedMsaId: capacityProvider,
-        schemaIds: [schemaId],
+        intentIds: [schemaId],
       };
     });
 

@@ -10,16 +10,19 @@ import {
   getCurrentItemizedHash,
   assertExtrinsicSucceededAndFeesPaid,
   createAndFundKeypair,
+  MultiSignatureType,
+  getOrCreateIntentAndSchema,
 } from '../scaffolding/helpers';
 import type { KeyringPair } from '@polkadot/keyring/types';
-import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, ItemizedSignaturePayloadV2 } from '../scaffolding/extrinsicHelpers';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
-import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
+import { IntentId, MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
 let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Signature Required Itemized', function () {
+  let itemizedIntentId: IntentId;
   let itemizedSchemaId: SchemaId;
   let msa_id: MessageSourceId;
   let undelegatedProviderId: MessageSourceId;
@@ -27,8 +30,6 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
   let delegatedProviderId: MessageSourceId;
   let delegatedProviderKeys: KeyringPair;
   let delegatorKeys: KeyringPair;
-
-  let itemizedActionsSignedPayload;
 
   before(async function () {
     fundingSource = await getFundingSource(import.meta.url);
@@ -41,18 +42,16 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
       // Fund the Delegator Keys
       delegatorKeys,
       // Create a schema for Itemized PayloadLocation
-      itemizedSchemaId,
+      { intentId: itemizedIntentId, schemaId: itemizedSchemaId },
     ] = await Promise.all([
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
       createAndFundKeypair(fundingSource, 2n * DOLLARS),
-      ExtrinsicHelper.getOrCreateSchemaV3(
+      getOrCreateIntentAndSchema(
         fundingSource,
-        AVRO_CHAT_MESSAGE,
-        'AvroBinary',
-        'Itemized',
-        ['AppendOnly', 'SignatureRequired'],
-        'test.ItemizedSignatureRequired'
+        'test.ItemizedSignatureRequired',
+        { payloadLocation: 'Itemized', settings: ['AppendOnly', 'SignatureRequired'] },
+        { model: AVRO_CHAT_MESSAGE, modelType: 'AvroBinary' }
       ),
     ]);
     assert.notEqual(undelegatedProviderId, undefined, 'setup should populate undelegatedProviderId');
@@ -63,7 +62,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
     // Create a MSA for the delegator
     [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
       fundingSource,
-      [itemizedSchemaId],
+      [itemizedIntentId],
       delegatedProviderId,
       delegatedProviderKeys,
       'sr25519',
@@ -71,16 +70,6 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
     );
     assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
-
-    itemizedActionsSignedPayload = await generateItemizedActionsSignedPayloadV2(
-      generateItemizedActions([
-        { action: 'Add', value: 'Hello, world from Frequency' },
-        { action: 'Add', value: 'Hello, world again from Frequency' },
-      ]),
-      itemizedSchemaId,
-      delegatorKeys,
-      msa_id
-    );
   });
 
   it('provider should be able to call applyItemizedActionWithSignatureV2 and apply actions', async function () {
@@ -89,6 +78,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
         { action: 'Add', value: 'Hello, world from Frequency' },
         { action: 'Add', value: 'Hello, world again from Frequency' },
       ]),
+      itemizedIntentId,
       itemizedSchemaId,
       delegatorKeys,
       msa_id
@@ -115,6 +105,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
         { action: 'Add', value: 'Hello, world from Frequency' },
         { action: 'Add', value: 'Hello, world again from Frequency' },
       ]),
+      itemizedIntentId,
       itemizedSchemaId,
       delegatorKeys,
       msa_id
@@ -141,7 +132,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
       { action: 'Add', value: 'Hello, world again from Frequency' },
     ]);
 
-    const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+    const target_hash = await getCurrentItemizedHash(msa_id, itemizedIntentId);
 
     const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
       undelegatedProviderKeys,
@@ -168,7 +159,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
       { action: 'Add', value: 'Hello, world again from Frequency' },
     ]);
 
-    const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+    const target_hash = await getCurrentItemizedHash(msa_id, itemizedIntentId);
 
     const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
       delegatorKeys,
@@ -178,7 +169,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
       target_hash
     );
     const { target: pageUpdateEvent1, eventMap: chainEvents } = await itemized_add_result_1.fundAndSend(fundingSource);
-    assertExtrinsicSucceededAndFeesPaid(chainEvents);
+    await assertExtrinsicSucceededAndFeesPaid(chainEvents);
     assert.notEqual(
       pageUpdateEvent1,
       undefined,

@@ -1,16 +1,19 @@
+#![allow(deprecated)]
 use crate::{
-	stateful_child_tree::StatefulChildTree,
+	stateful_child_tree::{MultipartKey, StatefulChildTree},
 	test_common::{constants::*, test_utility::*},
 	tests::mock::*,
 	types::*,
 	Config, Error,
 };
 use common_primitives::{
+	msa::MessageSourceId,
 	node::EIP712Encode,
 	signatures::{UnifiedSignature, UnifiedSigner},
+	stateful_storage::PageId,
 	utils::wrap_binary_data,
 };
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_err, assert_ok, storage::child, BoundedVec};
 use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
@@ -43,10 +46,11 @@ fn signature_v2_replay_on_existing_page_errors() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
-		let keys = (schema_id, page_id);
-		let page_a: PaginatedPage<Test> = generate_page(Some(1), Some(1));
-		let page_b: PaginatedPage<Test> = generate_page(Some(2), Some(2));
+		let keys = (intent_id, page_id);
+		let page_a: PaginatedPage<Test> = generate_page(None, Some(1), Some(1));
+		let page_b: PaginatedPage<Test> = generate_page(None, Some(2), Some(2));
 		let payload_a_to_b = PaginatedUpsertSignaturePayloadV2 {
 			expiration: 10,
 			schema_id,
@@ -117,9 +121,10 @@ fn signature_v2_replay_on_deleted_page_check() {
 		let (msa_id, pair) = get_signature_account();
 		let delegator_key = pair.public();
 		let schema_id = PAGINATED_SCHEMA;
+		let intent_id = PAGINATED_INTENT;
 		let page_id = 1;
-		let keys = (schema_id, page_id);
-		let page_a: PaginatedPage<Test> = generate_page(Some(1), Some(1));
+		let keys = (intent_id, page_id);
+		let page_a: PaginatedPage<Test> = generate_page(Some(schema_id), Some(1), Some(1));
 		let payload_null_to_a = PaginatedUpsertSignaturePayloadV2 {
 			expiration: 10,
 			schema_id,
@@ -264,4 +269,158 @@ fn ethereum_eip712_signatures_for_itemized_signature_should_work() {
 		let unified_signer = UnifiedSigner::from(public_key);
 		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
 	});
+}
+
+#[test]
+fn read_of_page_with_unsupported_version_should_fail() {
+	new_test_ext().execute_with(|| {
+		let msa_id: MessageSourceId = 1;
+		let payload = b"Hello from Frequency".to_vec();
+		let intent_id = PAGINATED_INTENT;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id: PageId = 1;
+		let key = (intent_id, page_id);
+
+		// Build a valid page
+		let bounded =
+			BoundedVec::<u8, <Test as Config>::MaxPaginatedPageSizeBytes>::try_from(payload)
+				.expect("Should convert");
+		let mut page = PaginatedPage::<Test>::try_from(bounded).expect("Should convert");
+		page.page_version = PageVersion::V1;
+		page.schema_id = Some(schema_id);
+		let bytes = page.encode();
+
+		let child_trie_info = &<StatefulChildTree>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+		);
+		child::put_raw(
+			child_trie_info,
+			&<PaginatedKey as MultipartKey<<Test as Config>::KeyHasher>>::hash(&key),
+			&bytes,
+		);
+
+		// Reading the page back should error
+		assert_err!(
+			StatefulStoragePallet::get_paginated_page_for(msa_id, intent_id, page_id),
+			Error::<Test>::UnsupportedPageVersion
+		);
+	})
+}
+
+#[test]
+fn read_of_page_with_extra_data_should_fail() {
+	new_test_ext().execute_with(|| {
+		let msa_id: MessageSourceId = 1;
+		let payload = b"Hello from Frequency".to_vec();
+		let intent_id = PAGINATED_INTENT;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id: PageId = 1;
+		let key = (intent_id, page_id);
+
+		// Build a valid page
+		let bounded =
+			BoundedVec::<u8, <Test as Config>::MaxPaginatedPageSizeBytes>::try_from(payload)
+				.expect("Should convert");
+		let mut page = PaginatedPage::<Test>::try_from(bounded).expect("Should convert");
+		page.schema_id = Some(schema_id);
+		let mut bytes = page.encode();
+
+		// Append some garbage bytes to the end of the page & write it
+		bytes.append(&mut b"Some garbage data".to_vec());
+		let child_trie_info = &<StatefulChildTree>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+		);
+		child::put_raw(
+			child_trie_info,
+			&<PaginatedKey as MultipartKey<<Test as Config>::KeyHasher>>::hash(&key),
+			&bytes,
+		);
+
+		// Reading the page back should error
+		assert_err!(
+			StatefulStoragePallet::get_paginated_page_for(msa_id, intent_id, page_id),
+			Error::<Test>::CorruptedState
+		);
+	})
+}
+
+#[test]
+fn read_of_page_with_too_short_data_should_fail() {
+	new_test_ext().execute_with(|| {
+		let msa_id: MessageSourceId = 1;
+		let payload = b"Hello from Frequency".to_vec();
+		let intent_id = PAGINATED_INTENT;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id: PageId = 1;
+		let key: PaginatedKey = (intent_id, page_id);
+
+		// Build a valid page
+		let bounded =
+			BoundedVec::<u8, <Test as Config>::MaxPaginatedPageSizeBytes>::try_from(payload)
+				.expect("Should convert");
+		let mut page = PaginatedPage::<Test>::try_from(bounded).expect("Should convert");
+		page.schema_id = Some(schema_id);
+		let mut bytes = page.encode();
+
+		// Trim some bytes from the end of the page
+		bytes.pop();
+		let child_trie_info = &<StatefulChildTree>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+		);
+		child::put_raw(
+			child_trie_info,
+			&<PaginatedKey as MultipartKey<<Test as Config>::KeyHasher>>::hash(&key),
+			&bytes,
+		);
+
+		// Reading the page back should error
+		assert_err!(
+			StatefulStoragePallet::get_paginated_page_for(msa_id, intent_id, page_id),
+			Error::<Test>::CorruptedState
+		);
+	})
+}
+
+#[test]
+fn read_of_properly_formatted_page_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let msa_id: MessageSourceId = 1;
+		let payload = b"Hello from Frequency".to_vec();
+		let intent_id = PAGINATED_INTENT;
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id: PageId = 1;
+		let key: PaginatedKey = (intent_id, page_id);
+
+		// Build a valid page
+		let bounded =
+			BoundedVec::<u8, <Test as Config>::MaxPaginatedPageSizeBytes>::try_from(payload)
+				.expect("Should convert");
+		let mut page = PaginatedPage::<Test>::from(bounded);
+		page.schema_id = Some(schema_id);
+
+		let child_trie_info = &<StatefulChildTree>::get_child_tree_for_storage(
+			msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+		);
+		child::put_raw(
+			child_trie_info,
+			&<PaginatedKey as MultipartKey<<Test as Config>::KeyHasher>>::hash(&key),
+			&page.encode(),
+		);
+
+		// Reading the page back should succeed
+		assert_ok!(<StatefulChildTree>::try_read::<_, PaginatedPage::<Test>>(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&key
+		));
+	})
 }

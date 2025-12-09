@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Create Release Branch?
@@ -81,7 +81,7 @@ jobs:
       contents: read
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{github.event.inputs.branch}}
 
@@ -116,7 +116,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -162,7 +162,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -243,7 +243,7 @@ jobs:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set Env Vars
@@ -337,7 +337,7 @@ jobs:
     runs-on: ubicloud-standard-8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Install Rust Toolchain
@@ -402,7 +402,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
@@ -439,7 +439,7 @@ jobs:
           echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -486,7 +486,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -515,7 +515,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -544,7 +544,7 @@ jobs:
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.8
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -590,7 +590,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -642,7 +642,7 @@ jobs:
         run: |
           echo "OUTPUT_FILENAME=metadata-compare.txt" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -788,7 +788,7 @@ jobs:
       contents: write
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -986,7 +986,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
 
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -1103,7 +1103,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
 
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
 
@@ -1227,7 +1227,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1273,7 +1273,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1319,7 +1319,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -1365,7 +1365,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
