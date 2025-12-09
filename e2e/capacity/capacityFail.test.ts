@@ -30,6 +30,7 @@ describe('Capacity Transaction Failures', function () {
       let delegatorKeys: KeyringPair;
       let delegatorProviderId: u64;
       let schemaId: u16;
+      let intentId: u16;
 
       before(async function () {
         fundingSource = await getFundingSource(import.meta.url);
@@ -41,6 +42,7 @@ describe('Capacity Transaction Failures', function () {
         delegatorKeys = createKeys('OtherProviderKeys');
         delegatorProviderId = await createMsaAndProvider(fundingSource, delegatorKeys, 'Delegator', FUNDS_AMOUNT);
         schemaId = new u16(ExtrinsicHelper.api.registry, 0);
+        intentId = new u16(ExtrinsicHelper.api.registry, 0);
       });
 
       describe('but has an MSA account that has not been registered as a Provider', function () {
@@ -57,7 +59,7 @@ describe('Capacity Transaction Failures', function () {
           // it should error with InvalidTransaction::Payment, which is a 1010 error, Inability to pay some fees.
           const payload = await generateDelegationPayload({
             authorizedMsaId: delegatorProviderId,
-            schemaIds: [schemaId],
+            intentIds: [intentId],
           });
           const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(
@@ -80,7 +82,7 @@ describe('Capacity Transaction Failures', function () {
 
           const payload = await generateDelegationPayload({
             authorizedMsaId: delegatorProviderId,
-            schemaIds: [schemaId],
+            intentIds: [intentId],
           });
           const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(
@@ -100,11 +102,12 @@ describe('Capacity Transaction Failures', function () {
 
     describe('when caller has a Capacity account', function () {
       let schemaId: u16;
+      let intentId: u16;
       const amountStaked = 3n * DOLLARS;
 
       before(async function () {
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
-        schemaId = await getOrCreateGraphChangeSchema(fundingSource);
+        ({ intentId, schemaId } = await getOrCreateGraphChangeSchema(fundingSource));
         assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
       });
 
@@ -176,7 +179,7 @@ describe('Capacity Transaction Failures', function () {
 
         const payload = await generateDelegationPayload({
           authorizedMsaId: noCapacityProvider,
-          schemaIds: [schemaId],
+          intentIds: [intentId],
         });
         const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
         const grantDelegationOp = ExtrinsicHelper.createSponsoredAccountWithDelegation(
@@ -217,7 +220,7 @@ describe('Capacity Transaction Failures', function () {
 
         const payload = await generateDelegationPayload({
           authorizedMsaId: capacityProvider,
-          schemaIds: [schemaId],
+          intentIds: [intentId],
         });
         const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
         const grantDelegationOp = ExtrinsicHelper.createSponsoredAccountWithDelegation(

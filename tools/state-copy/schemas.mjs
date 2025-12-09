@@ -5,18 +5,20 @@
 import { copy } from "./copy.mjs";
 
 // Set up sudo account (assumes //Alice has sudo access)
-const SUDO_URI = "//Alice";
+const SUDO_URI = process.env.SUDO_URI || "//Alice";
 
 // Testnet
 // const DEST_URL = "wss://0.rpc.testnet.amplica.io";
 // const SOURCE_URL = "wss://0.rpc.testnet.amplica.io";
 
 // Localhost
-const DEST_URL = "ws://localhost:9944";
+// const DEST_URL = "ws://localhost:9944";
+
+const DEST_URL = process.env.DEST_URL || "ws://localhost:9944";
 
 // Mainnet
-const SOURCE_URL = "wss://1.rpc.frequency.xyz";
-const STORAGE_KEY = "0xeec6f3c13d26ae2507c99b6751e19e76";
+const SOURCE_URL = process.env.SOURCE_URL || "wss://1.rpc.frequency.xyz";
+const STORAGE_KEY = process.env.STORAGE_KEY || "0xeec6f3c13d26ae2507c99b6751e19e76";
 const FILTER_OUT = [
   "0xeec6f3c13d26ae2507c99b6751e19e76d5d9c370c6c8aee1116ee09d6811b0d5", // governanceSchemaModelMaxBytes
   "0xeec6f3c13d26ae2507c99b6751e19e764e7b9012096b41c4eb3aaf947f6ea429", // palletVersion

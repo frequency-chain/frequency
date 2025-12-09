@@ -96,17 +96,20 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		AccountId20Response, ApplicationIndex, DelegationResponse, DelegationValidator,
-		DelegatorId, MessageSourceId, ProviderApplicationContext, ProviderId, SchemaGrant,
-		SchemaGrantValidator, H160,
+		AccountId20Response, ApplicationIndex, DelegationGrant, DelegationResponse,
+		DelegationValidator, DelegatorId, GrantValidator, MessageSourceId,
+		ProviderApplicationContext, ProviderId, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
 		UtilityProvider,
 	},
 	rpc::RpcEvent,
-	schema::{PayloadLocation, SchemaId, SchemaResponse, SchemaVersionResponse},
-	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
+	schema::{PayloadLocation, SchemaId, SchemaVersionResponse},
+	stateful_storage::{
+		ItemizedStoragePageResponse, ItemizedStoragePageResponseV2, PaginatedStorageResponse,
+		PaginatedStorageResponseV2,
+	},
 };
 
 pub use common_runtime::{
@@ -143,7 +146,6 @@ use frame_system::{
 };
 
 use alloc::{boxed::Box, vec, vec::Vec};
-
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::Perbill;
 
@@ -160,7 +162,11 @@ pub use pallet_time_release::types::{ScheduleName, SchedulerProviderTrait};
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
-use common_primitives::capacity::UnclaimedRewardInfo;
+use common_primitives::{
+	capacity::UnclaimedRewardInfo,
+	messages::{BlockPaginationRequest, BlockPaginationResponse, MessageResponseV2},
+	schema::*,
+};
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
@@ -252,33 +258,42 @@ pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
-		#[cfg(not(feature = "frequency"))]
-		{
-			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
-				_ => true,
-			}
-		}
-		#[cfg(feature = "frequency")]
-		{
-			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
-				// Create provider, create application, and create schema are not allowed in mainnet for now. See propose functions.
-				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
-				#[cfg(feature = "frequency-bridging")]
-				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
-				// Everything else is allowed on Mainnet
-				_ => true,
-			}
+		match call {
+			RuntimeCall::Utility(pallet_utility_call) =>
+				Self::is_utility_call_allowed(pallet_utility_call),
+
+			// Block stateful-storage extrinsics if V1->V2 migration is not complete
+			// May be removed once the migration has been completed on mainnet
+			RuntimeCall::StatefulStorage(..) =>
+				pallet_stateful_storage::Pallet::<Runtime>::should_extrinsics_be_run(),
+
+			#[cfg(feature = "frequency")]
+			call if Self::is_filtered_on_mainnet(call) => false,
+
+			#[cfg(all(feature = "frequency-bridging", feature = "frequency"))]
+			RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
+
+			// Everything else is allowed
+			_ => true,
 		}
 	}
 }
 
 impl BaseCallFilter {
+	#[cfg(feature = "frequency")]
+	// Filter out calls that are Governance actions on Mainnet
+	fn is_filtered_on_mainnet(call: &RuntimeCall) -> bool {
+		matches!(
+			call,
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+				RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
+				RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. })
+		)
+	}
+
 	#[cfg(all(feature = "frequency", feature = "frequency-bridging"))]
 	fn is_xcm_call_allowed(call: &pallet_xcm::Call<Runtime>) -> bool {
 		!matches!(
@@ -312,10 +327,14 @@ impl BaseCallFilter {
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
-			// Block `create_provider`, `create_application` and `create_schema` calls from utility batch
+			#[cfg(feature = "frequency")]
+			// Block calls from utility (or Capacity) batch that are Governance actions on Mainnet
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
 			RuntimeCall::Msa(pallet_msa::Call::create_application { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v4 { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_intent { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_intent_group { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::update_intent_group { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -448,6 +467,7 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 		pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		pallet_stateful_storage::BlockDuringMigration<Runtime>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),
@@ -477,7 +497,11 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		SetSafeXcmVersion<Runtime>,
+		pallet_schemas::migration::MigrateV4ToV5<Runtime>,
+	),
 >;
 
 #[cfg(not(feature = "frequency-bridging"))]
@@ -487,7 +511,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	(MigratePalletsCurrentStorage<Runtime>, pallet_schemas::migration::MigrateV4ToV5<Runtime>),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -644,7 +668,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 183,
+	spec_version: 184,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -658,7 +682,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 183,
+	spec_version: 184,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -781,7 +805,7 @@ impl frame_system::Config for Runtime {
 	///  A new way of configuring migrations that run in a single block.
 	type SingleBlockMigrations = ();
 	/// The migrator that is used to run Multi-Block-Migrations.
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = MultiBlockMigrations;
 	/// A callback that executes in *every block* directly before all inherents were applied.
 	type PreInherents = ();
 	/// A callback that executes in *every block* directly after all inherents were applied.
@@ -799,7 +823,7 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrants;
+	type MaxGrantsPerDelegation = MaxSchemaGrants;
 	// The maximum provider name size (in bytes)
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
@@ -877,10 +901,10 @@ impl pallet_capacity::Config for Runtime {
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
+	// The maximum number of intents that can belong to a single IntentGroup
+	type MaxIntentsPerIntentGroup = IntentGroupMaxIntents;
 	// The minimum size (in bytes) for a schema model
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
-	// The maximum number of schemas that can be registered
-	type MaxSchemaRegistrations = SchemasMaxRegistrations;
 	// The maximum length of a schema model (in bytes)
 	type SchemaModelMaxBytesBoundedVecLimit = SchemasMaxBytesBoundedVecLimit;
 	// The proposal type
@@ -1296,28 +1320,29 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
 		use pallet_frequency_tx_payment::capacity_stable_weights::WeightInfo;
 		match call {
-			RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
-				capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
-			),
-			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
-			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
-			&RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
-				capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
-			),
-			&RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
-				capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
-			),
-			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
-			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
-            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
-			RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
-			_ => None,
-		}
+            RuntimeCall::Msa(MsaCall::add_public_key_to_msa { .. }) => Some(
+                capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
+            ),
+            RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.intent_ids.len() as u32)),
+            RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.intent_ids.len() as u32)),
+            &RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
+                capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
+            ),
+            &RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
+                capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
+            ),
+            RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
+            RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+            RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
+            RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
+            _ => None,
+        }
 	}
 
 	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
@@ -1537,6 +1562,7 @@ impl pallet_messages::Config for Runtime {
 	type SchemaProvider = Schemas;
 	// The maximum message payload in bytes
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+	type MigrateEmitEvery = MessagesMigrateEmitEvery;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
@@ -1576,6 +1602,7 @@ impl pallet_stateful_storage::Config for Runtime {
 	type MsaBenchmarkHelper = Msa;
 	#[cfg(feature = "runtime-benchmarks")]
 	type SchemaBenchmarkHelper = Schemas;
+	type MigrateEmitEvery = StatefulMigrateEmitEvery;
 }
 
 impl pallet_handles::Config for Runtime {
@@ -1647,6 +1674,46 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub MbmServiceWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_migrations::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		pallet_stateful_storage::migration::v2::MigratePaginatedV1ToV2<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::MigrateItemizedV1ToV2<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_stateful_storage::migration::v2::FinalizeV2Migration<
+			Runtime,
+			pallet_stateful_storage::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_messages::migration::MigrateV2ToV3<
+			Runtime,
+			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+		pallet_messages::migration::FinalizeV3Migration<
+			Runtime,
+			pallet_messages::weights::SubstrateWeight<Runtime>,
+		>,
+	);
+	// Benchmarks need mocked migrations to guarantee that they succeed.
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type CursorMaxLen = ConstU32<65_536>;
+	type IdentifierMaxLen = ConstU32<256>;
+	type MigrationStatusHandler = ();
+	type FailedMigrationHandler = frame_support::migrations::FreezeChainOnFailedMigration;
+	type MaxServiceWeight = MbmServiceWeight;
+	type WeightInfo = pallet_migrations::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -1700,6 +1767,9 @@ construct_runtime!(
 		// Substrate weights
 		WeightReclaim: cumulus_pallet_weight_reclaim::{Pallet, Storage} = 50,
 
+		// Multi-block migrations
+		MultiBlockMigrations: pallet_migrations::{Pallet, Event<T>} = 51,
+
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
@@ -1750,6 +1820,7 @@ mod benches {
 		[pallet_transaction_payment, TransactionPayment]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_message_queue, MessageQueue]
+		[pallet_migrations, MultiBlockMigrations]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1976,24 +2047,56 @@ sp_api::impl_runtime_apis! {
 	}
 
 	// Frequency runtime APIs
+	#[api_version(2)]
 	impl pallet_messages_runtime_api::MessagesRuntimeApi<Block> for Runtime {
 		fn get_messages_by_schema_and_block(schema_id: SchemaId, schema_payload_location: PayloadLocation, block_number: BlockNumber,) ->
 			Vec<MessageResponse> {
-			Messages::get_messages_by_schema_and_block(schema_id, schema_payload_location, block_number)
+			match Schemas::get_schema_by_id(schema_id) {
+				Some(SchemaResponseV2 { intent_id, .. }) => Messages::get_messages_by_intent_and_block(
+					intent_id,
+					schema_payload_location,
+					block_number,
+				).into_iter().map(|r| r.into()).collect(),
+				_ => vec![],
+			}
+		}
+
+		fn get_messages_by_intent_id(intent_id: IntentId, pagination: BlockPaginationRequest) -> BlockPaginationResponse<MessageResponseV2> {
+			Messages::get_messages_by_intent_id(intent_id, pagination)
 		}
 
 		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			Schemas::get_schema_by_id(schema_id)
+			Schemas::get_schema_by_id(schema_id).map(|r| r.into())
 		}
 	}
 
+	#[api_version(3)]
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+			Schemas::get_schema_by_id(schema_id).map(|v2| v2.into())
+		}
+
+		fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 			Schemas::get_schema_by_id(schema_id)
 		}
 
 		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
 			Schemas::get_schema_versions(schema_name)
+		}
+
+		fn get_registered_entities_by_name(name: Vec<u8>) -> Option<Vec<NameLookupResponse>> {
+			Schemas::get_intent_or_group_ids_by_name(name)
+		}
+
+		fn get_intent_by_id(intent_id: IntentId, include_schemas: bool) -> Option<IntentResponse> {
+			match include_schemas {
+				true => Schemas::get_intent_by_id_with_schemas(intent_id),
+				false => Schemas::get_intent_by_id(intent_id),
+			}
+		}
+
+		fn get_intent_group_by_id(group_id: IntentGroupId) -> Option<IntentGroupResponse> {
+			Schemas::get_intent_group_by_id(group_id)
 		}
 	}
 
@@ -2005,15 +2108,19 @@ sp_api::impl_runtime_apis! {
 
 	#[api_version(4)]
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
-		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
-			match schema_id {
-				Some(sid) => Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number).is_ok(),
+		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, intent_id: Option<IntentId>) -> bool {
+			match intent_id {
+				Some(intent_id) => Msa::ensure_valid_grant(provider, delegator, intent_id, block_number).is_ok(),
 				None => Msa::ensure_valid_delegation(provider, delegator, Some(block_number)).is_ok(),
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>> {
-			match Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)) {
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
+			Self::get_granted_intents_by_msa_id(delegator, provider)
+		}
+
+		fn get_granted_intents_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
+			match Msa::get_granted_intents_by_msa_id(delegator, Some(provider)) {
 				Ok(res) => match res.into_iter().next() {
 					Some(delegation) => Some(delegation.permissions),
 					None => None,
@@ -2023,7 +2130,7 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
-			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
+			Msa::get_granted_intents_by_msa_id(delegator, None).unwrap_or_default()
 		}
 
 		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
@@ -2041,13 +2148,22 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(2)]
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
 		fn get_paginated_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<Vec<PaginatedStorageResponse>, DispatchError> {
-			StatefulStorage::get_paginated_storage(msa_id, schema_id)
+			StatefulStorage::get_paginated_storage_v1(msa_id, schema_id)
 		}
 
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
-			StatefulStorage::get_itemized_storage(msa_id, schema_id)
+			StatefulStorage::get_itemized_storage_v1(msa_id, schema_id)
+		}
+
+		fn get_paginated_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<Vec<PaginatedStorageResponseV2>, DispatchError> {
+			StatefulStorage::get_paginated_storage(msa_id, intent_id)
+		}
+
+		fn get_itemized_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<ItemizedStoragePageResponseV2, DispatchError> {
+			StatefulStorage::get_itemized_storage(msa_id, intent_id)
 		}
 	}
 

@@ -13,6 +13,7 @@ edition = "2021"
 jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
 # Frequency crates
 pallet-messages-runtime-api = { default-features = false, path = "../runtime-api" }
+pallet-schemas-runtime-api = { default-features = false, path = "../../../schemas/src/runtime-api" }
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate crates
@@ -32,6 +33,7 @@ std = [
   "sp-runtime/std",
   'frame-support/std',
   "pallet-messages-runtime-api/std",
+  "pallet-schemas-runtime-api/std",
   'common-primitives/std',
   "common-helpers/std",
 ]

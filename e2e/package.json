@@ -44,7 +44,7 @@
     "eslint-plugin-mocha": "11.2.0",
     "glob": "11.0.3",
     "globals": "16.4.0",
-    "mocha": "11.7.4",
+    "mocha": "11.7.5",
     "prettier": "3.6.2",
     "sinon": "21.0.0",
     "tsx": "4.20.6",

@@ -137,6 +137,10 @@ parameter_types! {
 	/// The maximum length of a schema model (in bytes)
 	pub const SchemasMaxBytesBoundedVecLimit :u32 = 65_500;
 }
+/// The maximum number of Intent registrations
+pub type IntentsMaxRegistrations = ConstU16<65_000>;
+/// The maximum number of Intents that can belong to a single IntentGroup
+pub type IntentGroupMaxIntents = ConstU32<10>;
 /// The maximum number of schema registrations
 pub type SchemasMaxRegistrations = ConstU16<65_000>;
 /// The minimum schema model size (in bytes)
@@ -308,7 +312,6 @@ pub type CollatorKickThreshold =
 // Needs parameter_types! for the PalletId and impls below
 parameter_types! {
 	pub const NeverDepositIntoId: PalletId = PalletId(*b"NeverDep");
-	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3; // 3K
 }
 // -end- Collator Selection Pallet ---
 
@@ -327,6 +330,12 @@ parameter_types! {
 // -end- Proxy Pallet ---
 
 // --- Messages Pallet ---
+parameter_types! {
+	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3; // 3K
+}
+/// How often to emit a tracking event when migrating messages in the `messages` pallet
+pub type MessagesMigrateEmitEvery = ConstU32<10_000>; // 10K
+
 impl Clone for MessagesMaxPayloadSizeBytes {
 	fn clone(&self) -> Self {
 		MessagesMaxPayloadSizeBytes {}
@@ -368,8 +377,8 @@ parameter_types! {
 	/// The maximum size of a single item in an itemized storage model (in bytes)
 	pub const MaxItemizedBlobSizeBytes: u32 = 1024;
 	/// The maximum size of a page (in bytes) for an Itemized storage model ~ (10KiB)
-	/// extra 2 bytes is for ItemHeader which enables us to simulate max PoV in benchmarks
-	pub const MaxItemizedPageSizeBytes: u32 = 10 * (1024 + 2);
+	/// extra 5 bytes is for ItemHeader, which enables us to simulate max PoV in benchmarks
+	pub const MaxItemizedPageSizeBytes: u32 = 10 * (1024 + 5);
 	/// The maximum size of a page (in bytes) for a Paginated storage model (1KiB)
 	pub const MaxPaginatedPageSizeBytes: u32 = 1 * 1024;
 }
@@ -379,6 +388,8 @@ pub type MaxPaginatedPageId = ConstU16<32>;
 pub type MaxItemizedActionsCount = ConstU32<5>;
 /// The number of blocks for Stateful mortality is 48 hours
 pub type StatefulMortalityWindowSize = ConstU32<{ 2 * DAYS }>;
+/// How often to emit a tracking event when migrating pages in the `stateful-storage` pallet
+pub type StatefulMigrateEmitEvery = ConstU32<10_000>;
 // -end- Stateful Storage Pallet
 
 impl Default for MaxItemizedPageSizeBytes {

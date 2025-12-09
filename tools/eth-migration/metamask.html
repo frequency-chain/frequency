@@ -106,6 +106,75 @@
 				alert("Signature: " + signature)
 			});
 
+			document.getElementById('itemized_request_v3')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"ItemizedSignaturePayloadV3": [
+							{
+								"name": "intentId",
+								"type": "uint16"
+							},
+							{
+								"name": "targetHash",
+								"type": "uint32"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+							{
+								"name": "actions",
+								"type": "ItemActionV2[]"
+							},
+						],
+						"ItemActionV2": [
+							{ "name": 'actionType', "type": 'string' },
+							{ "name": 'schemaId', "type": 'uint16' },
+							{ "name": 'data', "type": 'bytes' },
+							{ "name": 'index', "type": 'uint16' }
+						]
+					},
+					"primaryType": "ItemizedSignaturePayloadV3",
+					"domain": karma_request_domain,
+					"message": {
+						"intentId": 10,
+						"targetHash": 1982672367,
+						"expiration": 100,
+						"actions": [
+							{
+								"actionType": "Add",
+								"schemaId": 10,
+								"data": '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026',
+								"index": 0
+							},
+							{
+								"actionType": 'Delete',
+								"schemaId": 0,
+								"data": '0x',
+								"index": 2
+							}
+						]
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
 			document.getElementById('paginated_upsert_request')?.addEventListener("click", async function () {
 				const signature_request = {
 					"types": {
@@ -188,6 +257,56 @@
 					"domain": karma_request_domain,
 					"message": {
 						"schemaId": 10,
+						"pageId": 5,
+						"targetHash": 1982672367,
+						"expiration": 100,
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('paginated_delete_request_v3')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"PaginatedDeleteSignaturePayloadV3": [
+							{
+								"name": "intentId",
+								"type": "uint16"
+							},
+							{
+								"name": "pageId",
+								"type": "uint16"
+							},
+							{
+								"name": "targetHash",
+								"type": "uint32"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+						],
+					},
+					"primaryType": "PaginatedDeleteSignaturePayloadV3",
+					"domain": karma_request_domain,
+					"message": {
+						"intentId": 10,
 						"pageId": 5,
 						"targetHash": 1982672367,
 						"expiration": 100,
@@ -426,7 +545,7 @@
 								"type": "uint64"
 							},
 							{
-								"name": "schemaIds",
+								"name": "intentIds",
 								"type": "uint16[]"
 							},
 							{
@@ -439,7 +558,7 @@
 					"domain": karma_request_domain,
 					"message": {
 						"authorizedMsaId": 12876327,
-						"schemaIds": [2,4,5,6,7,8],
+						"intentIds": [2,4,5,6,7,8],
 						"expiration": 100,
 					}
 				}
@@ -532,9 +651,13 @@
 	</script>
 </head>
 <body>
-<button id="itemized_request">Itemized Sign</button>
+<button id="itemized_request">Itemized Sign V2</button>
+<button id="itemized_request_v3">Itemized Sign V3</button>
+<br/>
 <button id="paginated_upsert_request">Paginated Upsert Sign</button>
-<button id="paginated_delete_request">Paginated Delete Sign</button>
+<br/>
+<button id="paginated_delete_request">Paginated Delete Sign V2</button>
+<button id="paginated_delete_request_v3">Paginated Delete Sign V3</button>
 <br><br>
 <button id="passkey_request">Passkey Sign</button>
 <br><br>

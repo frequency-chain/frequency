@@ -2,6 +2,13 @@
 
 set -e
 
+# As of polkadot-sdk stable2506, log output to a color-enabled terminal
+# causes garbage ANSI terminal sequences to appear in the log; none of the "usual"
+# methods of disabling color in a terminal affect it. `NO_COLOR` is a pseudo-standard
+# for some terminal apps to determine whether to enable color output.
+# Run this script with `env NO_COLOR=1` (or any non-empty value) to disable color log output.
+LOG_COLOR=${NO_COLOR:+--disable-log-color}
+
 cmd=$1
 chain_spec="${RAW_PARACHAIN_CHAIN_SPEC:-./res/genesis/local/paseo-local-frequency-2000-raw.json}"
 # The runtime we want to use
@@ -66,6 +73,7 @@ start-paseo-collator-alice)
   "${Frequency_BINARY_PATH:-./target/release/frequency}" key generate-node-key --base-path=$parachain_dir_alice/data
 
   NODE_PARACHAIN_RPC_PORT=9943 ./scripts/run_collator.sh \
+    ${LOG_COLOR} \
     --chain="frequency-paseo-local" --alice \
     --base-path=$parachain_dir_alice/data \
     --state-pruning archive \
@@ -96,6 +104,7 @@ start-paseo-collator-bob)
   "${Frequency_BINARY_PATH:-./target/release/frequency}" key generate-node-key --base-path=$parachain_dir_bob/data
 
   NODE_PARACHAIN_RPC_PORT=9944 ./scripts/run_collator.sh \
+    ${LOG_COLOR} \
     --chain="frequency-paseo-local" --bob \
     --base-path=$parachain_dir_bob/data \
     --discover-local \
@@ -127,6 +136,7 @@ start-frequency-instant)
 
   ./target/debug/frequency \
     --dev \
+    ${LOG_COLOR} \
     --state-pruning archive \
     -lbasic-authorship=debug \
     -ltxpool=debug \
@@ -158,6 +168,7 @@ start-frequency-instant-bridging)
   fi
 
   ./target/debug/frequency \
+    ${LOG_COLOR} \
     --dev \
     --state-pruning archive \
     -lbasic-authorship=debug \
@@ -189,6 +200,7 @@ start-bridging-westend-local)
   fi
 
   ./target/debug/frequency \
+    ${LOG_COLOR} \
     --state-pruning archive \
     -lbasic-authorship=debug \
     -ltxpool=debug \
@@ -245,6 +257,7 @@ start-frequency-interval)
   fi
 
   ./target/debug/frequency \
+    ${LOG_COLOR} \
     --dev \
     --state-pruning archive \
     -lbasic-authorship=debug \
@@ -283,6 +296,7 @@ start-frequency-manual)
   echo "---------------------------------------"
 
   ./target/debug/frequency \
+    ${LOG_COLOR} \
     --dev \
     -lruntime=debug \
     --sealing=manual \
@@ -307,6 +321,7 @@ start-frequency-container)
   frequency_rpc_port="${Frequency_RPC_PORT:-$frequency_default_rpc_port}"
 
   ./scripts/run_collator.sh \
+    ${LOG_COLOR} \
     --chain="frequency-paseo-local" \
     --state-pruning archive \
     --alice \
@@ -379,12 +394,14 @@ upgrade-frequency-paseo-local)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
-  # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
+  # Need to build using `--release` to generate a compact, compressed WASM, else it will be too big for the upgrade
+  # to succeed
   cargo build \
+    --release \
     --package frequency-runtime \
     --features frequency-local
 
-  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
@@ -397,12 +414,14 @@ upgrade-frequency-no-relay)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
-  # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
+  # Need to build using `--release` to generate a compact, compressed WASM, else it will be too big for the upgrade
+  # to succeed
   cargo build \
+    --release \
     --package frequency-runtime \
     --features frequency-no-relay
 
-  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-dev-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 

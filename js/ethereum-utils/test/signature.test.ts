@@ -43,7 +43,7 @@ describe('Signature related tests', function () {
         type: 'AddProvider',
         authorizedMsaId: '27',
         expiration: 90,
-        schemaIds: [18, 52, 86],
+        intentIds: [18, 52, 86],
       };
 
       assert.deepEqual(payload1, expected);
@@ -218,7 +218,7 @@ describe('Signature related tests', function () {
 
       const expected: EcdsaSignature = {
         Ecdsa:
-          '0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c' as HexString,
+          '0x92202831663df7215cdef647038860c548380792c47359e441cd93e02c304e61008c4c2468d9465b2443421959d040cea443475e90842eaefcf734e37aa9fc2f1c' as HexString,
       };
 
       assert.deepEqual(signature, expected);
