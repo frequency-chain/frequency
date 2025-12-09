@@ -1,6 +1,6 @@
 #[cfg(feature = "std")]
 use crate::utils;
-use crate::{msa::MessageSourceId, node::BlockNumber};
+use crate::{msa::MessageSourceId, node::BlockNumber, schema::SchemaId};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -11,7 +11,7 @@ use alloc::{vec, vec::Vec};
 #[cfg(feature = "std")]
 use utils::*;
 
-/// A type for responding with an single Message in an RPC-call dependent on schema model
+/// A type for responding with a single Message in an RPC-call dependent on schema model
 /// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
 /// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -20,7 +20,7 @@ pub struct MessageResponse {
 	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
 	/// indicating that the original source MSA is acting as its own provider. An id differing from that
 	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
-	/// its behalf .
+	/// its behalf.
 	pub provider_msa_id: MessageSourceId,
 	/// Index in block to get total order.
 	pub index: u16,
@@ -45,6 +45,58 @@ pub struct MessageResponse {
 	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
 	pub payload_length: Option<u32>,
 }
+
+/// A type for responding with a single Message in an RPC-call dependent on schema model
+/// IPFS, Parquet: { index, block_number, provider_msa_id, cid, payload_length }
+/// Avro, OnChain: { index, block_number, provider_msa_id, msa_id, payload }
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct MessageResponseV2 {
+	/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+	/// indicating that the original source MSA is acting as its own provider. An id differing from that
+	/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+	/// its behalf.
+	pub provider_msa_id: MessageSourceId,
+	/// Index in block to get total order.
+	pub index: u16,
+	/// Block-number for which the message was stored.
+	pub block_number: BlockNumber,
+	///  Message source account id (the original source).
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub msa_id: Option<MessageSourceId>,
+	/// Serialized data in a the schemas.
+	#[cfg_attr(
+		feature = "std",
+		serde(with = "as_hex_option", skip_serializing_if = "Option::is_none", default)
+	)]
+	pub payload: Option<Vec<u8>>,
+	/// The content address for an IPFS payload in Base32. Will always be CIDv1.
+	#[cfg_attr(
+		feature = "std",
+		serde(with = "as_string_option", skip_serializing_if = "Option::is_none", default)
+	)]
+	pub cid: Option<Vec<u8>>,
+	///  Offchain payload length (IPFS).
+	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none", default))]
+	pub payload_length: Option<u32>,
+	/// The SchemaId of the schema that defines the payload format
+	pub schema_id: SchemaId,
+}
+
+impl Into<MessageResponse> for MessageResponseV2 {
+	fn into(self) -> MessageResponse {
+		MessageResponse {
+			provider_msa_id: self.provider_msa_id,
+			index: self.index,
+			block_number: self.block_number,
+			msa_id: self.msa_id,
+			payload: self.payload,
+			cid: self.cid,
+			payload_length: self.payload_length,
+		}
+	}
+}
+
 /// A type for requesting paginated messages.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -93,7 +145,7 @@ pub struct BlockPaginationResponse<T> {
 }
 
 impl<T> BlockPaginationResponse<T> {
-	/// Generates a new empty Pagination request
+	/// Generates a new empty Pagination response
 	pub const fn new() -> BlockPaginationResponse<T> {
 		BlockPaginationResponse {
 			content: vec![],

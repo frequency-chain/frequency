@@ -3,27 +3,31 @@ use parity_scale_codec::Decode;
 
 use crate::test_common::{
 	constants,
-	constants::{BENCHMARK_SIGNATURE_ACCOUNT_SEED, SIGNATURE_MSA_ID},
+	constants::{BENCHMARK_SIGNATURE_ACCOUNT_SEED, PAGINATED_INTENT, SIGNATURE_MSA_ID},
 };
 use common_primitives::{
 	msa::{
-		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
-		ProviderId, ProviderLookup, SchemaGrantValidator,
+		Delegation, DelegationValidator, DelegatorId, GrantValidator, MessageSourceId, MsaLookup,
+		MsaValidator, ProviderId, ProviderLookup,
 	},
 	node::AccountId,
 	schema::{
-		ModelType, PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaResponse,
-		SchemaSetting,
+		IntentId, IntentResponse, IntentSetting, ModelType, PayloadLocation, SchemaId,
+		SchemaInfoResponse, SchemaProvider, SchemaResponseV2, SchemaStatus,
 	},
 };
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 use frame_support::{
+	derive_impl,
 	dispatch::DispatchResult,
+	migrations::MultiStepMigrator,
+	pallet_prelude::Weight,
 	parameter_types,
 	traits::{ConstU16, ConstU32},
 	Twox128,
 };
 use frame_system as system;
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::{crypto::AccountId32, sr25519, ByteArray, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
@@ -33,8 +37,10 @@ use sp_runtime::{
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
+pub const INVALID_INTENT_ID: IntentId = IntentId::MAX;
 pub const INVALID_MSA_ID: MessageSourceId = 100_000_000;
 pub const TEST_ACCOUNT_SEED: [u8; 32] = [0; 32];
+pub const MAX_MSA_ID: MessageSourceId = 10;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -42,6 +48,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		StatefulStoragePallet: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>},
+		Migrator: pallet_migrations,
 	}
 );
 
@@ -71,11 +78,28 @@ impl system::Config for Test {
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type SingleBlockMigrations = ();
-	type MultiBlockMigrator = ();
+	type MultiBlockMigrator = Migrator;
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
 	type ExtensionsWeightInfo = ();
+}
+
+frame_support::parameter_types! {
+	pub storage MigratorServiceWeight: Weight = Weight::from_parts(100, 100); // do not use in prod
+}
+
+#[derive_impl(pallet_migrations::config_preludes::TestDefaultConfig)]
+impl pallet_migrations::Config for Test {
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type Migrations = (
+		crate::migration::v2::MigratePaginatedV1ToV2<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v2::MigrateItemizedV1ToV2<Test, crate::SubstrateWeight<Test>>,
+		crate::migration::v2::FinalizeV2Migration<Test, crate::SubstrateWeight<Test>>,
+	);
+	#[cfg(feature = "runtime-benchmarks")]
+	type Migrations = pallet_migrations::mock_helpers::MockedMigrations;
+	type MaxServiceWeight = MigratorServiceWeight;
 }
 
 pub type MaxItemizedActionsCount = ConstU32<6>;
@@ -84,7 +108,8 @@ pub type StatefulMortalityWindowSize = ConstU32<10>;
 
 // Needs parameter_types! for the impls below
 parameter_types! {
-	pub const MaxItemizedPageSizeBytes: u32 = 1024;
+	// num pages * (page data size + page header size)
+	pub const MaxItemizedPageSizeBytes: u32 = 1 * (1024 + 5);
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
 	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxPaginatedPageId: u16 = 32;
@@ -112,16 +137,20 @@ impl MsaLookup for MsaInfoHandler {
 		if *key == test_public(INVALID_MSA_ID) ||
 			*key == get_invalid_msa_signature_account().public().into()
 		{
-			return None
+			return None;
 		}
 
 		if *key == get_signature_benchmarks_public_account().into() ||
 			*key == get_signature_account().1.public().into()
 		{
-			return Some(constants::SIGNATURE_MSA_ID)
+			return Some(constants::SIGNATURE_MSA_ID);
 		}
 
 		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
+	}
+
+	fn get_max_msa_id() -> MessageSourceId {
+		MAX_MSA_ID
 	}
 }
 
@@ -132,13 +161,13 @@ impl MsaValidator for MsaInfoHandler {
 		if *key == test_public(INVALID_MSA_ID) ||
 			*key == get_invalid_msa_signature_account().public().into()
 		{
-			return Err(DispatchError::Other("some error"))
+			return Err(DispatchError::Other("some error"));
 		}
 
 		if *key == get_signature_benchmarks_public_account().into() ||
 			*key == get_signature_account().1.public().into()
 		{
-			return Ok(constants::SIGNATURE_MSA_ID)
+			return Ok(constants::SIGNATURE_MSA_ID);
 		}
 
 		Ok(MessageSourceId::decode(&mut key.as_slice()).unwrap())
@@ -147,119 +176,151 @@ impl MsaValidator for MsaInfoHandler {
 
 impl ProviderLookup for DelegationInfoHandler {
 	type BlockNumber = u32;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type DelegationId = SchemaId;
 
 	fn get_delegation_of(
 		_delegator: DelegatorId,
 		provider: ProviderId,
 	) -> Option<Delegation<SchemaId, Self::BlockNumber, MaxSchemaGrantsPerDelegation>> {
 		if provider == ProviderId(2000) {
-			return None
+			return None;
 		};
-		Some(Delegation { revoked_at: 100, schema_permissions: Default::default() })
+		Some(Delegation { revoked_at: 100, permissions: Default::default() })
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {
 	type BlockNumber = u32;
-	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type SchemaId = SchemaId;
+	type MaxGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
+	type DelegationIdType = SchemaId;
 
 	fn ensure_valid_delegation(
 		provider: ProviderId,
 		_delegator: DelegatorId,
 		_block_number: Option<Self::BlockNumber>,
-	) -> Result<
-		Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>,
-		DispatchError,
-	> {
+	) -> Result<Delegation<SchemaId, Self::BlockNumber, Self::MaxGrantsPerDelegation>, DispatchError>
+	{
 		if provider == ProviderId(2000) {
-			return Err(DispatchError::Other("some delegation error"))
+			return Err(DispatchError::Other("some delegation error"));
 		};
 
-		Ok(Delegation { schema_permissions: Default::default(), revoked_at: Default::default() })
+		Ok(Delegation { permissions: Default::default(), revoked_at: Default::default() })
 	}
 }
-impl<BlockNumber> SchemaGrantValidator<BlockNumber> for SchemaGrantValidationHandler {
-	fn ensure_valid_schema_grant(
+impl GrantValidator<IntentId, BlockNumberFor<Test>> for SchemaGrantValidationHandler {
+	fn ensure_valid_grant(
 		provider: ProviderId,
 		delegator: DelegatorId,
-		schema_id: SchemaId,
-		_block_number: BlockNumber,
+		intent_id: IntentId,
+		_block_number: BlockNumberFor<Test>,
 	) -> DispatchResult {
-		if schema_id == constants::UNDELEGATED_PAGINATED_SCHEMA ||
-			schema_id == constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA ||
-			schema_id == constants::UNDELEGATED_ITEMIZED_SCHEMA
+		if intent_id == constants::UNDELEGATED_PAGINATED_INTENT ||
+			intent_id == constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_INTENT ||
+			intent_id == constants::UNDELEGATED_ITEMIZED_INTENT
 		{
-			return Err(DispatchError::Other("no schema grant or delegation"))
+			return Err(DispatchError::Other("no intent grant or delegation"));
 		}
 
 		match DelegationInfoHandler::get_delegation_of(delegator, provider) {
 			Some(_) => Ok(()),
-			None => Err(DispatchError::Other("no schema grant or delegation")),
+			None => Err(DispatchError::Other("no intent grant or delegation")),
 		}
 	}
 }
 
 pub struct SchemaHandler;
+
+fn generate_schema_response(
+	schema_id: SchemaId,
+	intent_id: IntentId,
+	payload_location: PayloadLocation,
+	settings: Vec<IntentSetting>,
+) -> Option<SchemaResponseV2> {
+	Some(SchemaResponseV2 {
+		schema_id,
+		intent_id,
+		model: r#"schema"#.to_string().as_bytes().to_vec(),
+		model_type: ModelType::AvroBinary,
+		payload_location,
+		settings,
+		status: SchemaStatus::Active,
+	})
+}
+
+fn generate_intent_response(
+	intent_id: IntentId,
+	payload_location: PayloadLocation,
+	settings: Vec<IntentSetting>,
+) -> Option<IntentResponse> {
+	Some(IntentResponse { intent_id, payload_location, settings, schema_ids: None })
+}
+
 impl SchemaProvider<u16> for SchemaHandler {
 	// For testing/benchmarking. Zero value returns None, Odd for Itemized, Even for Paginated
-	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
+	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponseV2> {
 		match schema_id {
-			constants::ITEMIZED_SCHEMA | constants::UNDELEGATED_ITEMIZED_SCHEMA =>
-				Some(SchemaResponse {
-					schema_id,
-					model: r#"schema"#.to_string().as_bytes().to_vec(),
-					model_type: ModelType::AvroBinary,
-					payload_location: PayloadLocation::Itemized,
-					settings: Vec::new(),
-				}),
-			constants::ITEMIZED_APPEND_ONLY_SCHEMA |
-			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
+			constants::ITEMIZED_SCHEMA => generate_schema_response(
 				schema_id,
-				model: r#"schema"#.to_string().as_bytes().to_vec(),
-				model_type: ModelType::AvroBinary,
-				payload_location: PayloadLocation::Itemized,
-				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
-			}),
-			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => Some(SchemaResponse {
+				constants::ITEMIZED_INTENT,
+				PayloadLocation::Itemized,
+				Vec::new(),
+			),
+			constants::UNDELEGATED_ITEMIZED_SCHEMA => generate_schema_response(
 				schema_id,
-				model: r#"schema"#.to_string().as_bytes().to_vec(),
-				model_type: ModelType::AvroBinary,
-				payload_location: PayloadLocation::Itemized,
-				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
-			}),
-			constants::PAGINATED_SCHEMA | constants::UNDELEGATED_PAGINATED_SCHEMA =>
-				Some(SchemaResponse {
-					schema_id,
-					model: r#"schema"#.to_string().as_bytes().to_vec(),
-					model_type: ModelType::AvroBinary,
-					payload_location: PayloadLocation::Paginated,
-					settings: Vec::new(),
-				}),
-			constants::PAGINATED_SIGNED_SCHEMA => Some(SchemaResponse {
+				constants::UNDELEGATED_ITEMIZED_INTENT,
+				PayloadLocation::Itemized,
+				Vec::new(),
+			),
+			constants::ITEMIZED_APPEND_ONLY_SCHEMA => generate_schema_response(
 				schema_id,
-				model: r#"schema"#.to_string().as_bytes().to_vec(),
-				model_type: ModelType::AvroBinary,
-				payload_location: PayloadLocation::Paginated,
-				settings: Vec::try_from(vec![SchemaSetting::SignatureRequired]).unwrap(),
-			}),
-			constants::PAGINATED_APPEND_ONLY_SCHEMA => Some(SchemaResponse {
+				constants::ITEMIZED_APPEND_ONLY_INTENT,
+				PayloadLocation::Itemized,
+				vec![IntentSetting::AppendOnly],
+			),
+			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA => generate_schema_response(
 				schema_id,
-				model: r#"schema"#.to_string().as_bytes().to_vec(),
-				model_type: ModelType::AvroBinary,
-				payload_location: PayloadLocation::Paginated,
-				settings: Vec::try_from(vec![SchemaSetting::AppendOnly]).unwrap(),
-			}),
+				constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_INTENT,
+				PayloadLocation::Itemized,
+				vec![IntentSetting::AppendOnly],
+			),
+			constants::ITEMIZED_SIGNATURE_REQUIRED_SCHEMA => generate_schema_response(
+				schema_id,
+				constants::ITEMIZED_SIGNATURE_REQUIRED_INTENT,
+				PayloadLocation::Itemized,
+				vec![IntentSetting::SignatureRequired],
+			),
+			constants::PAGINATED_SCHEMA => generate_schema_response(
+				schema_id,
+				PAGINATED_INTENT,
+				PayloadLocation::Paginated,
+				Vec::new(),
+			),
+			constants::UNDELEGATED_PAGINATED_SCHEMA => generate_schema_response(
+				schema_id,
+				constants::UNDELEGATED_PAGINATED_INTENT,
+				PayloadLocation::Paginated,
+				Vec::new(),
+			),
+			constants::PAGINATED_SIGNED_SCHEMA => generate_schema_response(
+				schema_id,
+				constants::PAGINATED_SIGNED_INTENT,
+				PayloadLocation::Paginated,
+				vec![IntentSetting::SignatureRequired],
+			),
+			constants::PAGINATED_APPEND_ONLY_SCHEMA => generate_schema_response(
+				schema_id,
+				constants::PAGINATED_APPEND_ONLY_INTENT,
+				PayloadLocation::Paginated,
+				vec![IntentSetting::AppendOnly],
+			),
 			INVALID_SCHEMA_ID => None,
 
-			_ => Some(SchemaResponse {
+			_ => generate_schema_response(
 				schema_id,
-				model: r#"schema"#.to_string().as_bytes().to_vec(),
-				model_type: ModelType::AvroBinary,
-				payload_location: PayloadLocation::OnChain,
-				settings: Vec::from(vec![SchemaSetting::AppendOnly]),
-			}),
+				schema_id as IntentId,
+				PayloadLocation::OnChain,
+				vec![IntentSetting::AppendOnly],
+			),
 		}
 	}
 
@@ -267,11 +328,58 @@ impl SchemaProvider<u16> for SchemaHandler {
 		Self::get_schema_by_id(schema_id).and_then(|schema| {
 			Some(SchemaInfoResponse {
 				schema_id: schema.schema_id,
+				intent_id: schema.intent_id,
 				settings: schema.settings,
 				model_type: schema.model_type,
 				payload_location: schema.payload_location,
+				status: SchemaStatus::Active,
 			})
 		})
+	}
+
+	fn get_intent_by_id(intent_id: IntentId) -> Option<IntentResponse> {
+		match intent_id {
+			constants::ITEMIZED_INTENT =>
+				generate_intent_response(intent_id, PayloadLocation::Itemized, Vec::new()),
+			constants::UNDELEGATED_ITEMIZED_INTENT =>
+				generate_intent_response(intent_id, PayloadLocation::Itemized, Vec::new()),
+			constants::ITEMIZED_APPEND_ONLY_INTENT => generate_intent_response(
+				intent_id,
+				PayloadLocation::Itemized,
+				vec![IntentSetting::AppendOnly],
+			),
+			constants::UNDELEGATED_ITEMIZED_APPEND_ONLY_INTENT => generate_intent_response(
+				intent_id,
+				PayloadLocation::Itemized,
+				vec![IntentSetting::AppendOnly],
+			),
+			constants::ITEMIZED_SIGNATURE_REQUIRED_INTENT => generate_intent_response(
+				intent_id,
+				PayloadLocation::Itemized,
+				vec![IntentSetting::SignatureRequired],
+			),
+			constants::PAGINATED_INTENT =>
+				generate_intent_response(intent_id, PayloadLocation::Paginated, Vec::new()),
+			constants::UNDELEGATED_PAGINATED_INTENT =>
+				generate_intent_response(intent_id, PayloadLocation::Paginated, Vec::new()),
+			constants::PAGINATED_SIGNED_INTENT => generate_intent_response(
+				intent_id,
+				PayloadLocation::Paginated,
+				vec![IntentSetting::SignatureRequired],
+			),
+			constants::PAGINATED_APPEND_ONLY_INTENT => generate_intent_response(
+				intent_id,
+				PayloadLocation::Paginated,
+				vec![IntentSetting::AppendOnly],
+			),
+			INVALID_INTENT_ID => None,
+
+			_ => generate_intent_response(
+				intent_id,
+				PayloadLocation::OnChain,
+				vec![IntentSetting::AppendOnly],
+			),
+		}
 	}
 }
 
@@ -368,6 +476,7 @@ impl pallet_stateful_storage::Config for Test {
 	type ConvertIntoAccountId32 = ConvertInto;
 	/// The number of blocks per virtual bucket
 	type MortalityWindowSize = StatefulMortalityWindowSize;
+	type MigrateEmitEvery = ConstU32<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -408,4 +517,15 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
+}
+
+#[allow(dead_code)]
+pub fn run_to_block_with_migrations(n: u32) {
+	System::run_to_block_with::<AllPalletsWithSystem>(
+		n,
+		frame_system::RunToBlockHooks::default().after_initialize(|_| {
+			// Done by Executive:
+			<Test as frame_system::Config>::MultiBlockMigrator::step();
+		}),
+	);
 }

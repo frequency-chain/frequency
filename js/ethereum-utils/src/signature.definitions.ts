@@ -44,7 +44,7 @@ export const ADD_PROVIDER_DEFINITION = {
       type: 'uint64',
     },
     {
-      name: 'schemaIds',
+      name: 'intentIds',
       type: 'uint16[]',
     },
     {

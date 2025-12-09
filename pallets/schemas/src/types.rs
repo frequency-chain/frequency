@@ -1,7 +1,8 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
 use common_primitives::schema::{
-	ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion,
+	IntentGroupId, IntentId, IntentSetting, IntentSettings, MappedEntityIdentifier, ModelType,
+	NameLookupResponse, PayloadLocation, SchemaId, SchemaStatus, SchemaVersion,
 	SchemaVersionResponse,
 };
 use core::fmt::Debug;
@@ -14,69 +15,148 @@ use alloc::{string::String, vec, vec::Vec};
 use frame_support::traits::Len;
 
 /// Current storage version of the schemas pallet.
-pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
+pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
 
-/// The maximum size of schema name including all parts
+/// The maximum size of a fully qualified name, including all parts and separators
 pub const SCHEMA_NAME_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
-/// A schema name following following structure NAMESPACE.DESCRIPTOR
+/// A fully qualified name has the following structure PROTOCOL.DESCRIPTOR
 pub type SchemaNamePayload = BoundedVec<u8, ConstU32<SCHEMA_NAME_BYTES_MAX>>;
 /// schema namespace type
-pub type SchemaNamespace = BoundedVec<u8, ConstU32<NAMESPACE_MAX>>;
+pub type SchemaProtocolName = BoundedVec<u8, ConstU32<PROTOCOL_NAME_MAX>>;
 /// schema descriptor type
 pub type SchemaDescriptor = BoundedVec<u8, ConstU32<DESCRIPTOR_MAX>>;
 /// The minimum size of a namespace in schema
-pub const NAMESPACE_MIN: u32 = 3;
+pub const PROTOCOL_NAME_MIN: u32 = 3;
 /// The maximum size of a namespace in schema
-pub const NAMESPACE_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (DESCRIPTOR_MIN + 1);
+pub const PROTOCOL_NAME_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (DESCRIPTOR_MIN + 1);
 /// The minimum size of a schema descriptor
 pub const DESCRIPTOR_MIN: u32 = 1;
 /// The maximum size of a schema descriptor
-pub const DESCRIPTOR_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (NAMESPACE_MIN + 1);
+pub const DESCRIPTOR_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (PROTOCOL_NAME_MIN + 1);
+/// Maximum number of intents allowed per delegation group
+pub const MAX_INTENTS_PER_DELEGATION_GROUP: u32 = 10;
 /// separator character
 pub const SEPARATOR_CHAR: char = '.';
 /// maximum number of versions for a certain schema name
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 
+/// Type alias for SchemaPayload
+#[allow(type_alias_bounds)]
+pub type SchemaPayload<T: Config> =
+	BoundedVec<u8, <T as Config>::SchemaModelMaxBytesBoundedVecLimit>;
+
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Genesis Schemas need a way to load up and this is it!
 pub struct GenesisSchema {
+	/// The SchemaId
+	pub schema_id: SchemaId,
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
-	/// The payload location
-	pub payload_location: PayloadLocation,
 	/// The Payload Model
 	pub model: String,
-	/// Schema Full Name: {Namespace}.{Descriptor}
+	/// The status of the schema
+	pub status: SchemaStatus,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Genesis Intents need a way to load up and this is it!
+pub struct GenesisIntent {
+	/// The IntentId
+	pub intent_id: IntentId,
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// Schema Full Name: {Protocol}.{Descriptor}
 	pub name: String,
 	/// Settings
-	pub settings: Vec<SchemaSetting>,
+	pub settings: Vec<IntentSetting>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Genesis IntentGroups need a way to load up and this is it!
+pub struct GenesisIntentGroup {
+	/// The IntentGroupId
+	pub intent_group_id: IntentGroupId,
+	/// The name: {Protocol}.{Descriptor}
+	pub name: String,
+	/// The list of Intents in the group
+	pub intent_ids: Vec<IntentId>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Overall Genesis config loading structure for the entire pallet
+pub struct GenesisSchemasPalletConfig {
+	/// Maximum schema identifier at genesis
+	pub schema_identifier_max: Option<SchemaId>,
+	/// Maximum Intent identifier at genesis
+	pub intent_identifier_max: Option<IntentId>,
+	/// Maximum IntentGroup identifier at genesis
+	pub intent_group_identifier_max: Option<IntentGroupId>,
+	/// Maximum schema size in bytes at genesis
+	pub max_schema_model_size: Option<u32>,
+	/// The list of Schemas
+	pub schemas: Option<Vec<GenesisSchema>>,
+	/// The list of Intents
+	pub intents: Option<Vec<GenesisIntent>>,
+	/// The list of IntentGroups
+	pub intent_groups: Option<Vec<GenesisIntentGroup>>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-/// A structure defining a Schema information (excluding the payload)
-pub struct SchemaInfo {
-	/// The type of model (AvroBinary, Parquet, etc.)
-	pub model_type: ModelType,
+#[scale_info(skip_type_params(T))]
+/// A structure defining an IntentGroup
+pub struct IntentGroup<T: Config> {
+	/// The list of Intents in the DelegationGroup
+	pub intent_ids: BoundedVec<IntentId, T::MaxIntentsPerIntentGroup>,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+/// A structure defining Intent information
+pub struct IntentInfo {
 	/// The payload location
 	pub payload_location: PayloadLocation,
 	/// additional control settings for the schema
-	pub settings: SchemaSettings,
-	/// Defines if a schema has a name or not
-	pub has_name: bool,
+	pub settings: IntentSettings,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-/// A structure defining name of a schema
+/// A structure defining Schema information (excluding the payload)
+pub struct SchemaInfo {
+	/// The IntentId of the Intent that this Schema implements
+	pub intent_id: IntentId,
+	/// The type of model (AvroBinary, Parquet, etc.)
+	pub model_type: ModelType,
+	/// The payload location (inherited from the Intent)
+	pub payload_location: PayloadLocation,
+	/// additional control settings (inherited from the Intent)
+	pub settings: IntentSettings,
+	/// The status of the Schema
+	pub status: SchemaStatus,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+/// A structure defining name of a registered entity in this pallet.
+/// Names consist of a `protocol` (namespace) and a `descriptor`. Currently, names may be registered
+/// for `Intent`s and `IntentGroup`s. See [name-resolution](https://github.com/frequency-chain/frequency/blob/main/designdocs/schemas_protocols_intents.md#9-name-resolution) for more info.
+/// (Note, the type name `SchemaName` is a relic from the previous implementation of this pallet;
+/// Schemas themselves can no longer be directly associated with names.)
 pub struct SchemaName {
-	/// namespace or domain of the schema
-	pub namespace: SchemaNamespace,
-	/// name or descriptor of this schema
+	/// Protocol portion of the name
+	pub namespace: SchemaProtocolName,
+	/// Descriptor portion of the name
 	pub descriptor: SchemaDescriptor,
 }
 
+/// A structure defining a fully qualified name of an entity
+// TODO: type alias for now, until we finish converting the Schemas and deprecate the old methods
+pub type FullyQualifiedName = SchemaName;
+
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Default)]
-/// A structure defining name of a schema
+/// A structure defining a vector of [`SchemaId`](common_primitives::schema::SchemaId)s representing monotonically increasing versions
+/// of a `Schema`.
+// TODO: Remove once Runtime APIs returning this structure have been removed
 pub struct SchemaVersionId {
 	/// the index of each item + 1 is considered as their version.
 	/// Ex: the schemaId located in `ids[2]` is for version number 3
@@ -85,9 +165,21 @@ pub struct SchemaVersionId {
 
 impl SchemaName {
 	/// parses and verifies the request and returns the SchemaName type if successful
+	///
+	/// Note: passing `require_descriptor: false` is intended for RPC methods that search the
+	/// name registry by protocol. Operations that validate name creation should always pass
+	/// `require_descriptor: true`.
+	///
+	/// # Errors
+	/// * [`Error::InvalidSchemaNameEncoding`] - The name has an invalid encoding.
+	/// * [`Error::InvalidSchemaNameCharacters`] - The name contains invalid characters.
+	/// * [`Error::InvalidSchemaNameStructure`] - The name has an invalid structure (i.e., not `protocol.descriptor`).
+	/// * [`Error::InvalidSchemaNameLength`] - The name exceeds the allowed overall name length.
+	/// * [`Error::InvalidSchemaNamespaceLength`] - The protocol portion of the name exceeds the max allowed length.
+	/// * [`Error::InvalidSchemaDescriptorLength`] - The descriptor portion of the name exceeds the max allowed length.
 	pub fn try_parse<T: Config>(
 		payload: SchemaNamePayload,
-		is_strict: bool,
+		require_descriptor: bool,
 	) -> Result<SchemaName, DispatchError> {
 		// check if all ascii
 		let mut str = String::from_utf8(payload.into_inner())
@@ -97,28 +189,41 @@ impl SchemaName {
 		// to canonical form
 		str = String::from(str.to_lowercase().trim());
 
-		// check if alphabetic or - or separator character
+		// only allow the following:
+		// - alphanumeric characters
+		// - '-' (hyphen)
+		// - SEPARATOR_CHAR (period)
 		ensure!(
-			str.chars().all(|c| c.is_ascii_alphabetic() || c == '-' || c == SEPARATOR_CHAR),
+			str.chars()
+				.all(|c| c.is_ascii_alphanumeric() || c == '-' || c == SEPARATOR_CHAR),
 			Error::<T>::InvalidSchemaNameCharacters
 		);
 
 		// split to namespace and descriptor
 		let chunks: Vec<_> = str.split(SEPARATOR_CHAR).collect();
 		ensure!(
-			chunks.len() == 2 || (chunks.len() == 1 && !is_strict),
+			chunks.len() == 2 || (chunks.len() == 1 && !require_descriptor),
 			Error::<T>::InvalidSchemaNameStructure
 		);
 
 		// check namespace
 		let namespace = BoundedVec::try_from(chunks[0].as_bytes().to_vec())
 			.map_err(|_| Error::<T>::InvalidSchemaNamespaceLength)?;
-		ensure!(NAMESPACE_MIN <= namespace.len() as u32, Error::<T>::InvalidSchemaNamespaceLength);
-		// should not start or end with -
 		ensure!(
-			!(namespace.starts_with(b"-") || namespace.ends_with(b"-")),
-			Error::<T>::InvalidSchemaNameStructure
+			PROTOCOL_NAME_MIN <= namespace.len() as u32,
+			Error::<T>::InvalidSchemaNamespaceLength
 		);
+
+		// check that it starts with an alphabetic character.
+		// this ensures:
+		// - does not start with '-'
+		// - does not start with a number
+		// - does not start with a SEPARATOR_CHAR
+		// (This also handles the case where the value is all numeric, because it would also
+		// start with a decimal digit.)
+		ensure!(namespace[0].is_ascii_alphabetic(), Error::<T>::InvalidSchemaNameStructure);
+		// should not end with -
+		ensure!(!namespace.ends_with(b"-"), Error::<T>::InvalidSchemaNameStructure);
 
 		// check descriptor
 		let descriptor = match chunks.len() == 2 {
@@ -129,11 +234,19 @@ impl SchemaName {
 					DESCRIPTOR_MIN <= descriptor.len() as u32,
 					Error::<T>::InvalidSchemaDescriptorLength
 				);
-				// should not start or end with -
+				// check that it starts with an alphabetic character.
+				// this ensures:
+				// - does not start with '-'
+				// - does not start with a number
+				// - does not start with a SEPARATOR_CHAR
+				// (This also handles the case where the value is all numeric, because it would also
+				// start with a decimal digit.)
 				ensure!(
-					!(descriptor.starts_with(b"-") || descriptor.ends_with(b"-")),
+					descriptor[0].is_ascii_alphabetic(),
 					Error::<T>::InvalidSchemaNameStructure
 				);
+				// should end with -
+				ensure!(!descriptor.ends_with(b"-"), Error::<T>::InvalidSchemaNameStructure);
 				descriptor
 			},
 			false => BoundedVec::default(),
@@ -186,5 +299,30 @@ impl SchemaVersionId {
 				schema_version: (index + 1) as SchemaVersion,
 			})
 			.collect()
+	}
+}
+
+/// trait to create a response from a name and entity identifier
+pub trait ConvertToResponse<I, R> {
+	/// method to convert to response
+	fn convert_to_response(&self, name: &I) -> R;
+}
+
+impl ConvertToResponse<Vec<u8>, Vec<SchemaVersionResponse>> for Vec<SchemaId> {
+	fn convert_to_response(&self, schema_name: &Vec<u8>) -> Vec<SchemaVersionResponse> {
+		self.iter()
+			.enumerate()
+			.map(|(index, id)| SchemaVersionResponse {
+				schema_name: schema_name.clone(),
+				schema_id: *id,
+				schema_version: (index + 1) as SchemaVersion,
+			})
+			.collect()
+	}
+}
+
+impl ConvertToResponse<SchemaName, NameLookupResponse> for MappedEntityIdentifier {
+	fn convert_to_response(&self, name: &SchemaName) -> NameLookupResponse {
+		NameLookupResponse { name: name.get_combined_name(), entity_id: *self }
 	}
 }

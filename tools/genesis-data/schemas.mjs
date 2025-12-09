@@ -2,7 +2,7 @@
 
 import { getSchemas } from "./getSchema.mjs";
 
-const SOURCE_URL = "wss://1.rpc.frequency.xyz";
+const SOURCE_URL = process.env.SOURCE_URL || "wss://1.rpc.frequency.xyz";
 
 async function main() {
   try {
