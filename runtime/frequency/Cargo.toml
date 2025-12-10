@@ -115,6 +115,7 @@ pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
+no-host-functions = ["pallet-msa/no-host-functions"]
 std = [
   "common-primitives/std",
   "cumulus-pallet-aura-ext/std",

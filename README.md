@@ -12,37 +12,38 @@
 [![Issues][issues-shield]][issues-url]
 [![Codecov][codecov-shield]][codecov-url]
 
-Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain for data distribution protocols such as [DSNP](https://www.dsnp.org).
+Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain for data distribution protocols such
+as [DSNP](https://www.dsnp.org).
 
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
 - [Prerequisites](#prerequisites)
-  - [Hardware](#hardware)
+    - [Hardware](#hardware)
 - [Build](#build)
-  - [Local Desktop](#local-desktop)
-    - [asdf Support](#asdf-support)
-  - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
-    - [Ubuntu](#ubuntu)
+    - [Local Desktop](#local-desktop)
+        - [asdf Support](#asdf-support)
+    - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
+        - [Ubuntu](#ubuntu)
 - [Run](#run)
-  - [1. Collator Node without a Relay Chain](#1-collator-node-without-a-relay-chain)
-    - [Manual Sealing](#manual-sealing)
-    - [Instant Sealing](#instant-sealing)
-    - [Interval Sealing](#interval-sealing)
-  - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
-    - [Mixed Terminal/Docker](#mixed-terminaldocker)
-      - [Stop and Clean Environment](#stop-and-clean-environment)
-    - [All in Docker Container](#all-in-docker-container)
-  - [Run Tests](#run-tests)
-    - [E2E Tests](#e2e-tests)
-  - [Run Benchmarks](#run-benchmarks)
-  - [Run with offchain features](#run-with-offchain-features)
+    - [1. Collator Node without a Relay Chain](#1-collator-node-without-a-relay-chain)
+        - [Manual Sealing](#manual-sealing)
+        - [Instant Sealing](#instant-sealing)
+        - [Interval Sealing](#interval-sealing)
+    - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
+        - [Mixed Terminal/Docker](#mixed-terminaldocker)
+            - [Stop and Clean Environment](#stop-and-clean-environment)
+        - [All in Docker Container](#all-in-docker-container)
+    - [Run Tests](#run-tests)
+        - [E2E Tests](#e2e-tests)
+    - [Run Benchmarks](#run-benchmarks)
+    - [Run with offchain features](#run-with-offchain-features)
 - [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
 - [Runtime](#runtime)
-  - [Verify Runtime](#verify-runtime)
-  - [Local Runtime Upgrade](#local-runtime-upgrade)
-    - [Local Relay Chain](#local-relay-chain)
-    - [Standalone Chain (No Relay)](#standalone-chain-no-relay)
+    - [Verify Runtime](#verify-runtime)
+    - [Local Runtime Upgrade](#local-runtime-upgrade)
+        - [Local Relay Chain](#local-relay-chain)
+        - [Standalone Chain (No Relay)](#standalone-chain-no-relay)
 - [Contributing](#contributing)
 - [Security Issue Reporting](#security-issue-reporting)
 - [Additional Resources](#additional-resources)
@@ -55,11 +56,13 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 
 ---
 
-- For Mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) engine also installs docker compose environment, so no need to install it separately.
+- For Mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) engine also installs docker compose
+  environment, so no need to install it separately.
 
 ## Hardware
 
-Benchmarks are run on an AWS `m6id.2xlarge` and recommend collators have generally the same [reference hardware specified by Parity for Validators](https://docs.polkadot.com/infrastructure/running-a-validator/requirements/#minimum-hardware-requirements).
+Benchmarks are run on an AWS `m6id.2xlarge` and recommend collators have generally the
+same [reference hardware specified by Parity for Validators](https://docs.polkadot.com/infrastructure/running-a-validator/requirements/#minimum-hardware-requirements).
 
 Non-Collator nodes may have less power, but low memory configurations may lead to out of memory errors.
 
@@ -69,8 +72,10 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
 
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
 2. Check out this repository
-3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically install the correct toolchain when you run any cargo command.
-4. Running `make check` will run cargo checks for all Frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
+3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically
+   install the correct toolchain when you run any cargo command.
+4. Running `make check` will run cargo checks for all Frequency features. This is the recommended way to check your code
+   before committing. Alternatively, you can run following for specific features:
 
    ```sh
    make check-no-relay
@@ -91,7 +96,8 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
    make build
    ```
 
-   Above will build Frequency with all features. Alternatively you may run following command to build with specific features:
+   Above will build Frequency with all features. Alternatively you may run following command to build with specific
+   features:
 
    ```sh
    make build-no-relay
@@ -102,13 +108,32 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
 
    To build local, paseo (testnet) or mainnet features respectively.
 
-At this point you should have `./target/debug` directory generated locally with compiled project files. (or `./target/release` for `make build-*-release`)
+   At this point you should have `./target/debug` directory generated locally with compiled project files. (or
+   `./target/release` for `make build-*-release`)
+
+
+6. Build [Wasm](https://webassembly.org) only
+
+   To build only the `Wasm` runtime, use the following commands:
+   ```sh
+   make build-runtime-local
+   make build-runtime-westend-testnet
+   make build-runtime-bridging-testnet
+   make build-runtime-paseo-testnet
+   make build-runtime-mainnet
+   ```
+   Any of the above commands can optionally include `FEATURES=no-host-functions` to build a runtime that can be used to
+   build blocks in a [Chopsticks](https://github.com/AcalaNetwork/chopsticks) environment, as in:
+   ```sh
+   make FEATURES=no-host-functions build-runtime-paseo-testnet
+   ```
 
 ### asdf Support
 
 Frequency optionally supports [asdf](https://asdf-vm.com) for managing dependencies of the following tools:
 Install the required plugins for [asdf](https://asdf-vm.com):
-Please note that if you use rustup, asdf may conflict and cause issues. It is recommended to use one or the other, but not both for rust.
+Please note that if you use rustup, asdf may conflict and cause issues. It is recommended to use one or the other, but
+not both for rust.
 
 ```sh
 asdf plugin-add rust
@@ -126,7 +151,9 @@ NOTE: asdf does not support clang and it needs to be installed separately.
 
 ## Remote Instance such as AWS EC2
 
-For remote instances running Linux, if you want to check out and build such as on an [AWS EC2](https://aws.amazon.com/ec2) instance, the process is slightly different to what is in the [Substrate documentation](https://docs.substrate.io/main-docs/install/linux/).
+For remote instances running Linux, if you want to check out and build such as on
+an [AWS EC2](https://aws.amazon.com/ec2) instance, the process is slightly different to what is in
+the [Substrate documentation](https://docs.substrate.io/main-docs/install/linux/).
 
 ### Ubuntu
 
@@ -139,7 +166,8 @@ sudo apt install —-assume-yes build-essential
 sudo apt install --assume-yes clang curl libssl-dev cmake
 ```
 
-2. Follow [official instructions to install Rust](https://www.rust-lang.org/tools/install), but select `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
+2. Follow [official instructions to install Rust](https://www.rust-lang.org/tools/install), but select
+   `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
 3. Follow steps 6-10 at [Substrate: Linux development](https://docs.substrate.io/main-docs/install/linux/)
 4. Proceed with checking out and building Frequency as above.
 
@@ -147,10 +175,11 @@ sudo apt install --assume-yes clang curl libssl-dev cmake
 
 There are 2 options to run the chain locally:
 
-_Note, Running Frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
+_Note, Running Frequency via following options does not require binary to be built or chain specs to be generated
+separately, and is programmed within the scripts for simplicity._
 
-1.  Collator Node without a relay chain (in manual/instant/interval sealing mode)
-2.  Collator Node with a local relay chain
+1. Collator Node without a relay chain (in manual/instant/interval sealing mode)
+2. Collator Node with a local relay chain
 
 ## 1. Collator Node without a Relay Chain
 
@@ -183,14 +212,16 @@ make start-manual
 
 ### Instant Sealing
 
-Same as Manual Sealing, but will also automatically trigger the formation of a block whenever a transaction is added to the validated transaction pool.
+Same as Manual Sealing, but will also automatically trigger the formation of a block whenever a transaction is added to
+the validated transaction pool.
 Great for most testing.
 
 ```sh
 make start
 ```
 
-Also available as a Docker image: [`frequencychain/standalone-node`](https://hub.docker.com/r/frequencychain/standalone-node)
+Also available as a Docker image: [
+`frequencychain/standalone-node`](https://hub.docker.com/r/frequencychain/standalone-node)
 
 ```sh
 docker run --rm -p 9944:9944 frequencychain/standalone-node
@@ -199,12 +230,13 @@ docker run --rm -p 9944:9944 frequencychain/standalone-node
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
 | **Node**                |     **Ports**     | **Explorer URL**                                                                          |
-| ----------------------- | :---------------: | ----------------------------------------------------------------------------------------- |
+|-------------------------|:-----------------:|-------------------------------------------------------------------------------------------|
 | Frequency Collator Node | ws and rpc:`9944` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
 ### Interval Sealing
 
-This sealing mode will automatically trigger the formation of a block at a specified interval (default is every 12 seconds.)
+This sealing mode will automatically trigger the formation of a block at a specified interval (default is every 12
+seconds.)
 
 ```sh
 make start-interval
@@ -216,7 +248,8 @@ make start-interval
 
 ### Mixed Terminal/Docker
 
-This option runs two collator nodes as local host processes and two relay chain validator nodes, each in its own docker container.
+This option runs two collator nodes as local host processes and two relay chain validator nodes, each in its own docker
+container.
 
 1. Start relay chain validator nodes.
 
@@ -224,7 +257,8 @@ This option runs two collator nodes as local host processes and two relay chain 
    make start-paseo-relay
    ```
 
-   ALERT: You likely need to manually set the scheduling lookahead. `sudo(configuration.setSchedulingLookahead(3))` and wait for it to apply.
+   ALERT: You likely need to manually set the scheduling lookahead. `sudo(configuration.setSchedulingLookahead(3))` and
+   wait for it to apply.
 
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was
    previously registered on a running relay chain and no new registration is required,
@@ -243,7 +277,7 @@ This option runs two collator nodes as local host processes and two relay chain 
    make start-paseo-collator-bob
    ```
 
-1.  Generate genesis/wasm and onboard Frequency to the relay chain.
+1. Generate genesis/wasm and onboard Frequency to the relay chain.
    ```sh
    make onboard
    ```
@@ -272,13 +306,15 @@ Stop:
 ```sh
 make stop-frequency-docker
 ```
+
 or:
+
 ```sh
 make stop-frequency-docker-prune # to remove associated Docked volumes
 ```
 
 | **Node**             | **Ports**                       | **Explorer URL**                                                                          |
-| -------------------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
+|----------------------|---------------------------------|-------------------------------------------------------------------------------------------|
 | Frequency Relay Node | ws and rpc: `9944`, p2p:`30333` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 | Alice Relay Node     | ws and rpc: `9946`, p2p:`30335` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
 | Bob Relay Node       | ws and rpc: `9947`, p2p:`30336` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
@@ -317,14 +353,17 @@ make start-frequency-with-offchain
   the wasm target for rust. You can do this with `rustup target add wasm32v1-none`
 
 - Alternatively, run `make format-lint` to run both at the same time.
-- Run `make lint-audit` to audit `Cargo.lock` files with `cargo-deny` for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
+- Run `make lint-audit` to audit `Cargo.lock` files with `cargo-deny` for crates with security vulnerabilities reported
+  to
+  the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
 # Runtime
 
 ## Verify Runtime
 
 1. Check out the commit at which the runtime was built.
-2. Use [srtool](https://github.com/paritytech/srtool) and [srtool-cli](https://github.com/chevdor/srtool-cli) to verify the runtime:
+2. Use [srtool](https://github.com/paritytech/srtool) and [srtool-cli](https://github.com/chevdor/srtool-cli) to verify
+   the runtime:
    ```sh
    SRTOOL_TAG="1.88.0" srtool build \
            --build-opts="'--features on-chain-release-build,no-metadata-docs,frequency'" \
@@ -357,7 +396,8 @@ Please check out [the information here](./CONTRIBUTING.md).
 
 # Security Issue Reporting
 
-Do you know of an on-chain vulnerability (or possible one) that can lead to economic loss, privacy loss, or instability of the network?
+Do you know of an on-chain vulnerability (or possible one) that can lead to economic loss, privacy loss, or instability
+of the network?
 Please report it by following the steps mentioned in [here](./SECURITY.md).
 
 # Additional Resources
@@ -383,10 +423,17 @@ lsof -i -P | grep -i "listen" | grep frequency
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
 [issues-shield]: https://img.shields.io/github/issues/frequency-chain/frequency.svg?style=for-the-badge
+
 [issues-url]: https://github.com/frequency-chain/frequency/issues
+
 [codecov-shield]: https://img.shields.io/codecov/c/github/frequency-chain/frequency?style=for-the-badge
+
 [codecov-url]: https://app.codecov.io/gh/frequency-chain/frequency
+
 [release-shield]: https://img.shields.io/github/v/release/frequency-chain/frequency?style=for-the-badge
+
 [release-url]: https://github.com/frequency-chain/frequency/releases
+
 [docker-shield]: https://img.shields.io/docker/v/frequencychain/parachain-node-mainnet/latest?color=1c90ed&label=Docker&style=for-the-badge
+
 [docker-url]: https://hub.docker.com/u/frequencychain
