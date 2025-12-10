@@ -12,9 +12,6 @@ permissions:
   contents: read
   packages: read
 
-env:
-  NODE_VERSION: 22.x
-
 jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
@@ -26,11 +23,9 @@ jobs:
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-local -- export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
@@ -62,11 +57,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
@@ -98,11 +91,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install
@@ -134,11 +125,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install

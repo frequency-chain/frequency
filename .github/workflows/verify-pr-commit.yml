@@ -18,7 +18,6 @@ env:
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
-  NODE_VERSION: 22.x
 
 jobs:
   changes:
@@ -442,11 +441,9 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install Latest Versions
         run: npm install --ignore-scripts # DO NOT use `npm ci` as we want the latest polkadot/api possible
@@ -478,7 +475,7 @@ jobs:
         run: npm test
         working-directory: js/api-augment
       - name: Build & Publish Dry Run
-        run: npm publish --dry-run
+        run: npm publish --dry-run --tag ci-validation
         working-directory: js/api-augment/dist
       - name: Generate npm tarball
         run: npm pack
@@ -498,11 +495,9 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v6
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install Latest Versions
         run: npm install --ignore-scripts
@@ -517,7 +512,7 @@ jobs:
         run: npm run build
         working-directory: js/ethereum-utils
       - name: Build & Publish Dry Run
-        run: npm publish --dry-run
+        run: npm publish --dry-run --tag ci-validation
         working-directory: js/ethereum-utils/dist
       - name: Generate npm tarball
         run: npm pack
@@ -536,11 +531,9 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v6
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install Latest Versions
         run: npm install --ignore-scripts
@@ -555,7 +548,7 @@ jobs:
         run: npm run build
         working-directory: js/schemas
       - name: Publish Dry Run
-        run: npm publish --dry-run
+        run: npm publish --dry-run --tag ci-validation
         working-directory: js/schemas/dist
       - name: Generate npm tarball
         run: npm pack
@@ -574,11 +567,9 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v6
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install Latest Versions
         run: npm install --ignore-scripts
@@ -593,7 +584,7 @@ jobs:
         run: npm run build
         working-directory: js/recovery-sdk
       - name: Publish Dry Run
-        run: npm publish --dry-run
+        run: npm publish --dry-run --tag ci-validation
         working-directory: js/recovery-sdk/dist
       - name: Generate npm tarball
         run: npm pack
@@ -895,11 +886,9 @@ jobs:
             --rpc-methods=Unsafe \
             --tmp \
             &
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built api-augment and ethereum-utils and recovery-sdk
         run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz ../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz  --ignore-scripts
