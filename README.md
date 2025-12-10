@@ -125,7 +125,7 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
    Any of the above commands can optionally include `FEATURES=no-host-functions` to build a runtime that can be used to
    build blocks in a [Chopsticks](https://github.com/AcalaNetwork/chopsticks) environment, as in:
    ```sh
-   make FEATURES=no-host-functions build-runtime-paseo-testnet
+   make FEATURES=no-custom-host-functions build-runtime-paseo-testnet
    ```
 
 ### asdf Support

@@ -54,7 +54,7 @@ type FullBackend = TFullBackend<Block>;
 
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
-#[cfg(not(any(feature = "runtime-benchmarks", feature = "no-host-functions")))]
+#[cfg(not(any(feature = "runtime-benchmarks", feature = "no-custom-host-functions")))]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 	common_primitives::offchain::custom::HostFunctions,
@@ -67,7 +67,7 @@ type HostFunctions = (
 	common_primitives::offchain::custom::HostFunctions,
 );
 
-#[cfg(feature = "no-host-functions")]
+#[cfg(feature = "no-custom-host-functions")]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 );

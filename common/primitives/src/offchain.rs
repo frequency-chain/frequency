@@ -22,7 +22,7 @@ sp_externalities::decl_extension! {
 }
 
 /// runtime new customized
-#[cfg(not(feature = "no-host-functions"))]
+#[cfg(not(feature = "no-custom-host-functions"))]
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
 	/// legacy function, do not use

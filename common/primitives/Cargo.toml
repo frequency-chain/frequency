@@ -51,7 +51,7 @@ std = [
   'libsecp256k1/std',
 ]
 test = []
-no-host-functions = []
+no-custom-host-functions = []
 
 [lints]
 workspace = true

@@ -83,9 +83,9 @@ pub use types::{
 pub use weights::*;
 
 /// Offchain storage for MSA pallet
-#[cfg(not(feature = "no-host-functions"))]
+#[cfg(not(feature = "no-custom-host-functions"))]
 pub mod offchain_storage;
-#[cfg(not(feature = "no-host-functions"))]
+#[cfg(not(feature = "no-custom-host-functions"))]
 pub use offchain_storage::*;
 use crate::types::{LogoCid, PayloadTypeDiscriminator, RecoveryHash};
 
@@ -610,7 +610,7 @@ pub mod pallet {
 			T::DbWeight::get().reads_writes(1u64, 1u64).saturating_add(migration_weight)
 		}
 
-		#[cfg(not(feature = "no-host-functions"))]
+		#[cfg(not(feature = "no-custom-host-functions"))]
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			log::info!("Running offchain workers! {block_number:?}");
 			do_offchain_worker::<T>(block_number)
@@ -636,7 +636,7 @@ pub mod pallet {
 			let (new_msa_id, new_public_key) = Self::create_account(public_key)?;
 
 			let event = Event::MsaCreated { msa_id: new_msa_id, key: new_public_key };
-			#[cfg(not(feature = "no-host-functions"))]
+			#[cfg(not(feature = "no-custom-host-functions"))]
 			offchain_index_event::<T>(Some(&event), new_msa_id);
 			Self::deposit_event(event);
 			Ok(())
@@ -703,7 +703,7 @@ pub mod pallet {
 			)?;
 			let event =
 				Event::MsaCreated { msa_id: new_delegator_msa_id, key: new_delegator_public_key };
-			#[cfg(not(feature = "no-host-functions"))]
+			#[cfg(not(feature = "no-custom-host-functions"))]
 			offchain_index_event::<T>(Some(&event), new_delegator_msa_id);
 			Self::deposit_event(event);
 			Self::deposit_event(Event::DelegationGranted {
@@ -891,7 +891,7 @@ pub mod pallet {
 
 			let event =
 				Event::PublicKeyAdded { msa_id, key: add_key_payload.new_public_key.clone() };
-			#[cfg(not(feature = "no-host-functions"))]
+			#[cfg(not(feature = "no-custom-host-functions"))]
 			offchain_index_event::<T>(Some(&event), msa_id);
 			Self::deposit_event(event);
 
@@ -926,7 +926,7 @@ pub mod pallet {
 
 					// Deposit the event
 					let event = Event::PublicKeyDeleted { key: public_key_to_delete };
-					#[cfg(not(feature = "no-host-functions"))]
+					#[cfg(not(feature = "no-custom-host-functions"))]
 					offchain_index_event::<T>(Some(&event), who_msa_id);
 					Self::deposit_event(event);
 				},
@@ -1011,7 +1011,7 @@ pub mod pallet {
 				Some(msa_id) => {
 					Self::delete_key_for_msa(msa_id, &who)?;
 					let event = Event::PublicKeyDeleted { key: who };
-					#[cfg(not(feature = "no-host-functions"))]
+					#[cfg(not(feature = "no-custom-host-functions"))]
 					offchain_index_event::<T>(Some(&event), msa_id);
 					Self::deposit_event(event);
 					Self::deposit_event(Event::MsaRetired { msa_id });
@@ -1077,7 +1077,7 @@ pub mod pallet {
 		}
 
 		/// A generic endpoint to replay any offchain related event to fix any potential issues
-		#[cfg(not(feature = "no-host-functions"))]
+		#[cfg(not(feature = "no-custom-host-functions"))]
 		#[pallet::call_index(13)]
 		#[pallet::weight(T::WeightInfo::reindex_offchain())]
 		pub fn reindex_offchain(
@@ -1325,7 +1325,7 @@ pub mod pallet {
 				msa_id: add_key_payload.msa_id,
 				key: add_key_payload.new_public_key.clone(),
 			};
-			#[cfg(not(feature = "no-host-functions"))]
+			#[cfg(not(feature = "no-custom-host-functions"))]
 			offchain_index_event::<T>(Some(&event), add_key_payload.msa_id);
 			Self::deposit_event(event);
 

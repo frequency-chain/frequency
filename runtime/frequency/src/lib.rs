@@ -2165,10 +2165,6 @@ sp_api::impl_runtime_apis! {
 		fn get_itemized_storage_v2(msa_id: MessageSourceId, intent_id: IntentId) -> Result<ItemizedStoragePageResponseV2, DispatchError> {
 			StatefulStorage::get_itemized_storage(msa_id, intent_id)
 		}
-
-		fn prefetch_child_trie_storage(starting_msa_id: MessageSourceId) -> Result<(), ()> {
-			StatefulStorage::prefetch_all_child_tries(starting_msa_id)
-		}
 	}
 
 	#[api_version(3)]

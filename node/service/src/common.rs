@@ -58,9 +58,9 @@ pub fn start_offchain_workers(
 		transaction_pool,
 		network_provider,
 		enable_http_requests: true,
-		#[cfg(not(feature = "no-host-functions"))]
+		#[cfg(not(feature = "no-custom-host-functions"))]
 		custom_extensions: move |_hash| vec![Box::new(OcwCustomExt(rpc_address.clone())) as Box<_>],
-		#[cfg(feature = "no-host-functions")]
+		#[cfg(feature = "no-custom-host-functions")]
 		custom_extensions: |_| vec![],
 	})
 	.expect("Could not create Offchain Worker");
