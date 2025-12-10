@@ -21,7 +21,6 @@ env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
   ETHEREUM_UTILS_FROM_UI: ${{github.event.inputs.ethereum-utils-version}}
   RECOVERY_SDK_FROM_UI: ${{github.event.inputs.recovery-sdk-version}}
-  NODE_VERSION: 22.x
 
 # Set default permissions as restrictive
 permissions:
@@ -59,11 +58,9 @@ jobs:
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "RECOVERY_SDK_VERSION=$(echo ${{ env.RECOVERY_SDK_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built js packages
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }} --ignore-scripts
@@ -107,11 +104,9 @@ jobs:
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
           echo "RECOVERY_SDK_VERSION=$(echo ${{ env.RECOVERY_SDK_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           cache-dependency-path: e2e/package.json
       - name: Install Built js packages
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }} --ignore-scripts
