@@ -68,9 +68,7 @@ type HostFunctions = (
 );
 
 #[cfg(feature = "no-custom-host-functions")]
-type HostFunctions = (
-	cumulus_client_service::ParachainHostFunctions,
-);
+type HostFunctions = (cumulus_client_service::ParachainHostFunctions,);
 
 use crate::common::start_offchain_workers;
 pub use frequency_runtime;
