@@ -124,13 +124,13 @@ jobs:
         run: mkdir -p target/release
 
       - name: Download Benchmark Binary
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: benchmark-binary
           path: target/release
 
       - name: Download WASM Build Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: wasm-artifacts
           path: target/release/wbuild
@@ -452,7 +452,7 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-${{env.NETWORK}}-amd64-${{github.run_id}}
           path: .
@@ -588,7 +588,7 @@ jobs:
           fetch-depth: 0
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: .
@@ -651,7 +651,7 @@ jobs:
           out-file-path: ${{env.REF_DOWNLOAD_DIR}}
       - name: Download Test Binary
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-local-amd64-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
@@ -857,14 +857,14 @@ jobs:
         run: echo "version=$(rustc --version | cut -f 2 -d " ")" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         id: download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-*-${{github.run_id}}
           path: /tmp
           merge-multiple: true
       - name: Download api-augment artifacts
         id: download-js
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: js-api-augment-${{github.run_id}}
           path: /tmp/polkadot-api-types-json
@@ -991,14 +991,14 @@ jobs:
       # Download binaries for each architecture
       - name: Download amd64 Binary
         id: download-amd64
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
           path: ./binaries-arm64
@@ -1108,14 +1108,14 @@ jobs:
       # Download binaries for each architecture
       - name: Download amd64 Binary
         id: download-amd64
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
           path: ./binaries-arm64
@@ -1234,7 +1234,7 @@ jobs:
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -1278,7 +1278,7 @@ jobs:
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: js-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
@@ -1322,7 +1322,7 @@ jobs:
           cache-dependency-path: js/schemas/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: js-schemas-${{github.run_id}}
           path: js/schemas/dist
@@ -1366,7 +1366,7 @@ jobs:
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: js-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist
