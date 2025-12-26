@@ -115,6 +115,7 @@ frequency-lint-check = [
   "frequency-westend",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "polkadot-service/try-runtime"]
+no-custom-host-functions = ["frequency-runtime/no-custom-host-functions"]
 
 [lints]
 workspace = true
