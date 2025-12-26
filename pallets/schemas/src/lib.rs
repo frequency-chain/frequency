@@ -1024,17 +1024,19 @@ pub mod pallet {
 			})
 		}
 
-		/// Retrieve an Intent by its ID
+		/// Retrieve an Intent by its ID, with a list of implementing SchemaIDs in sorted order
 		/// NOTE: This must not be called on-chain due to inability to determine weight
 		pub fn get_intent_by_id_with_schemas(intent_id: IntentId) -> Option<IntentResponse> {
 			let response = Self::get_intent_by_id(intent_id);
 			response.map(|mut intent| {
-				intent.schema_ids = Some(
-					SchemaInfos::<T>::iter()
-						.filter(|(_, info)| info.intent_id == intent_id)
-						.map(|(id, _)| id)
-						.collect::<Vec<SchemaId>>(),
-				);
+				let mut schema_ids = SchemaInfos::<T>::iter()
+					.filter(|(_, info)| {
+						info.intent_id == intent_id && info.status != SchemaStatus::Unsupported
+					})
+					.map(|(id, _)| id)
+					.collect::<Vec<SchemaId>>();
+				schema_ids.sort();
+				intent.schema_ids = Some(schema_ids);
 				intent
 			})
 		}

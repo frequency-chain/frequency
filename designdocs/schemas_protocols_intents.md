@@ -1,4 +1,4 @@
-# 📘 Design Discussion: Schema, Protocols, and Intent-Based Delegation in Frequency
+# 📘 Schema, Protocols, and Intent-Based Delegation in Frequency
 
 ## 1. **Background and Motivation** <a id="section_1"></a>
 
