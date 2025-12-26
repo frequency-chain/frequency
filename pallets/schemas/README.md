@@ -166,14 +166,14 @@ details.
 
 ### Runtime API
 
-| Name                                                  | Description                                                    | Call                          | API Version Added | Runtime Added |
-|-------------------------------------------------------|----------------------------------------------------------------|-------------------------------|-------------------|---------------|
-| Get Schema by Id _(deprecated)_                       | Retrieves the schema for the given Schema Id                   | `getBySchemaId`               | 1                 | 1             |
-| Get Schema by Id (version 2)                          | Retrieves the schema for the given SchemaId                    | `getSchemaById`               | 3                 | ?             |
-| Get Schema Versions by Name (_deprecated_)            | Retrieves the ordered list of Schema Ids for the given name(s) | `getSchemaVersionsByName`     | 2                 | 66            |
-| Get registered entities (Intent, IntentGroup) by Name | Retrieves the entities belonging to the given name(s)          | `getRegisteredEntitiesByName` | 3                 | ?             |
-| Get Intent by Id                                      | Retrieves the Intent for the given IntentId                    | `getIntentById`               | 3                 | ?             |
-| Get IntentGroup by Id                                 | Retrieves the IntentGroup for the given IntentGroupId          | `getIntentGroupById`          | 3                 | ?             |
+| Name                                                  | Description                                                                                             | Call                          | API Version Added | Runtime Added |
+|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------|-------------------|---------------|
+| Get Schema by Id _(deprecated)_                       | Retrieves the schema for the given Schema Id                                                            | `getBySchemaId`               | 1                 | 1             |
+| Get Schema by Id (version 2)                          | Retrieves the schema for the given SchemaId                                                             | `getSchemaById`               | 3                 | ?             |
+| Get Schema Versions by Name (_deprecated_)            | Retrieves the ordered list of Schema Ids for the given name(s)                                          | `getSchemaVersionsByName`     | 2                 | 66            |
+| Get registered entities (Intent, IntentGroup) by Name | Retrieves the entities belonging to the given name(s)                                                   | `getRegisteredEntitiesByName` | 3                 | ?             |
+| Get Intent by Id                                      | Retrieves the Intent for the given IntentId, optionally with the list of supported implementing Schemas | `getIntentById`               | 3                 | ?             |
+| Get IntentGroup by Id                                 | Retrieves the IntentGroup for the given IntentGroupId                                                   | `getIntentGroupById`          | 3                 | ?             |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html) for
 more details.
