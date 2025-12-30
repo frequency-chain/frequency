@@ -1,7 +1,7 @@
 use super::mock::*;
 use crate::{
 	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
-	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
+	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaInfo, SchemaName, SchemaNamePayload,
 	SchemaProtocolName, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
 };
 use common_primitives::{
@@ -960,4 +960,90 @@ fn genesis_config_build_genesis_schemas() {
 		let res = SchemasPallet::get_schema_by_id(1);
 		assert!(res.is_some());
 	});
+}
+
+#[test]
+fn get_intent_with_schemas_should_return_sorted_schemas() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+		SchemasPallet::set_schema_count(16000);
+
+		let name = "protocol.descriptor";
+		let intent_name: SchemaNamePayload =
+			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+		let (intent_id, _) = SchemasPallet::create_intent_for(
+			intent_name,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+		)
+		.expect("should have created an intent");
+
+		let model = create_bounded_schema_vec(r#"{"Name": "Bond", "Code": "007"}"#);
+
+		const MAX_SCHEMAS: u16 = 100;
+		for _ in 0..MAX_SCHEMAS {
+			SchemasPallet::create_schema_for(intent_id, model.clone(), ModelType::AvroBinary)
+				.expect("should create schema");
+		}
+
+		let response = SchemasPallet::get_intent_by_id_with_schemas(intent_id)
+			.expect("should get intent by id");
+		let mut last_schema_id: SchemaId = 0;
+		let schema_ids = response.schema_ids.expect("should return schema ids");
+		assert_eq!(schema_ids.len(), MAX_SCHEMAS as usize, "should get all schema ids");
+		schema_ids.into_iter().for_each(|schema_id| {
+			assert!(schema_id > last_schema_id, "Schema IDs should be sorted");
+			last_schema_id = schema_id;
+		})
+	})
+}
+
+#[test]
+fn get_intent_with_schemas_should_not_return_unsupported_schemas() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+
+		let name = "protocol.descriptor";
+		let intent_name: SchemaNamePayload =
+			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+		let (intent_id, _) = SchemasPallet::create_intent_for(
+			intent_name,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+		)
+		.expect("should have created an intent");
+
+		let model = create_bounded_schema_vec(r#"{"Name": "Bond", "Code": "007"}"#);
+
+		const MAX_SCHEMAS: usize = 100;
+		for _ in 0..MAX_SCHEMAS {
+			SchemasPallet::create_schema_for(intent_id, model.clone(), ModelType::AvroBinary)
+				.expect("should create schema");
+		}
+
+		// Set one of the schemas to Unsupported
+		// TODO: rework once the pallet supports updating schema status
+		let unsupported_schema_id: SchemaId = 1;
+		let mut schema_repsonse = SchemasPallet::get_schema_by_id(unsupported_schema_id)
+			.expect("should get schema by id");
+		schema_repsonse.status = SchemaStatus::Unsupported;
+		let info = SchemaInfo {
+			intent_id,
+			model_type: ModelType::AvroBinary,
+			payload_location: PayloadLocation::OnChain,
+			settings: Default::default(),
+			status: SchemaStatus::Unsupported,
+		};
+		SchemasPallet::store_schema_info_and_payload(unsupported_schema_id, info, model)
+			.expect("should store schema");
+
+		let response = SchemasPallet::get_intent_by_id_with_schemas(intent_id)
+			.expect("should get intent by id");
+		let schema_ids = response.schema_ids.expect("should return schema ids");
+		assert_eq!(schema_ids.len(), MAX_SCHEMAS - 1, "should get all SUPPORTED schema ids");
+		assert!(
+			!schema_ids.contains(&unsupported_schema_id),
+			"Returned schemas should not contain unsupported schemas"
+		);
+	})
 }

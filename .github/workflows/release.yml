@@ -18,6 +18,7 @@ on:
         required: true
 
 permissions:
+  id-token: write  # Required for OIDC
   contents: write
   statuses: write
 
@@ -27,7 +28,6 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  NODE_VERSION: 22.x
 
 jobs:
   validate-release-version:
@@ -442,11 +442,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install
@@ -489,11 +487,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
@@ -518,11 +514,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install
@@ -547,11 +541,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install
@@ -1235,11 +1227,9 @@ jobs:
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Download Dist Dir
@@ -1281,11 +1271,9 @@ jobs:
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Download Dist Dir
@@ -1327,11 +1315,9 @@ jobs:
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Download Dist Dir
@@ -1373,11 +1359,9 @@ jobs:
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v6
+      - name: Setup Node and npm
+        uses: ./.github/workflows/common/setup-node-and-npm
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Download Dist Dir
