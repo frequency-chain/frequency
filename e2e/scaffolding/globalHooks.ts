@@ -103,6 +103,8 @@ async function seedTestIntentsAndSchemas() {
   ));
   nonce += noncesUsed;
   ({ noncesUsed } = await getOrCreateDelegationSchema(keys, nonce, 'test.grantDelegation'));
+  nonce += noncesUsed;
+  ({ noncesUsed } = await getOrCreateDelegationSchema(keys, nonce, 'test.grantDelegationSecond'));
 
   // Make sure we are finalized so that we don't get intent and schema creation race conditions
   await ExtrinsicHelper.waitForFinalization();
