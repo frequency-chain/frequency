@@ -2782,7 +2782,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Add event to offchain index
-	fn add_event_to_offchain_index(event: Option<&Event::<T>>, msa_id: MessageSourceId) {
+	fn add_event_to_offchain_index(event: Option<&Event<T>>, msa_id: MessageSourceId) {
 		#[cfg(not(feature = "no-custom-host-functions"))]
 		offchain_index_event::<T>(event, msa_id);
 	}
