@@ -22,9 +22,10 @@ sp_externalities::decl_extension! {
 }
 
 /// runtime new customized
+#[cfg(not(feature = "no-custom-host-functions"))]
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
-	/// legacy function do not use
+	/// legacy function, do not use
 	fn get_val(&mut self) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
 		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
 	}
