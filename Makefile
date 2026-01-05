@@ -446,11 +446,13 @@ check-onfinality-api-key:
 	fi
 
 space := $(subst ,, )
+comma := ,
 
 try-runtime-%: PALLET_FLAGS=$(if $(strip $(PALLETS)),$(PALLETS:%=-p %) $(MINIMAL_PALLETS:%=-p %),)
 try-runtime-%: PREFIX_FLAGS=$(if $(strip $(PREFIXES)),$(PREFIXES:%=--prefix %),)
 try-runtime-%: SNAPSHOT_PALLETS=$(if $(strip $(PALLETS)),$(subst  $(space),-,$(strip $(PALLETS))),all-pallets)
 try-runtime-%: CHILD_TREE_FLAGS=$(if $(filter true,$(CHILD_TREES)), --child-tree --prefix $(DEFAULT_CHILD_TREE_PREFIX),)
+try-runtime-%: FEATURES=try-runtime
 try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: URI := $(PASEO_URI)
 try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: CHAIN := testnet-paseo
 try-runtime-%-westend-testnet: URI := $(WESTEND_URI)
@@ -462,11 +464,11 @@ try-runtime-%-local: CHAIN := local
 try-runtime-%-local: WASM_PATH=./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm
 
 
-build-runtime-paseo-testnet: FEATURES := frequency-testnet
-build-runtime-bridging-testnet: FEATURES := frequency-testnet,frequency-bridging
-build-runtime-mainnet: FEATURES := frequency
-build-runtime-westend-testnet: FEATURES := frequency-westend,frequency-bridging
-build-runtime-local: FEATURES := frequency-no-relay
+build-runtime-paseo-testnet: override FEATURES += frequency-testnet
+build-runtime-bridging-testnet: override FEATURES += frequency-testnet frequency-bridging
+build-runtime-mainnet: override FEATURES += frequency
+build-runtime-westend-testnet: override FEATURES += frequency-westend frequency-bridging
+build-runtime-local: override FEATURES += frequency-no-relay
 build-runtime-local: TRY_RUNTIME_BUILD_TYPE := dev
 
 .PHONY: build-runtime-paseo-testnet build-runtime-westend-testnet build-runtime-mainnet build-runtime-local
@@ -474,7 +476,7 @@ build-runtime-local \
 build-runtime-paseo-testnet \
 build-runtime-westend-testnet \
 build-runtime-mainnet:
-	cargo build --package frequency-runtime --profile ${TRY_RUNTIME_BUILD_TYPE} --features $(FEATURES),try-runtime --locked
+	cargo build --package frequency-runtime --profile ${TRY_RUNTIME_BUILD_TYPE} --features $(subst $(space),$(comma),$(FEATURES)) --locked
 
 #
 # The 'try-runtime' targets can optionally be constrained to fetch state for only specific pallets. This is useful to

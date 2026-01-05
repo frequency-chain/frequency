@@ -267,6 +267,10 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			RuntimeCall::StatefulStorage(..) =>
 				pallet_stateful_storage::Pallet::<Runtime>::should_extrinsics_be_run(),
 
+			// Block reindex_offchain if we've disabled custom host functions
+			#[cfg(feature = "no-custom-host-functions")]
+			RuntimeCall::Msa(pallet_msa::Call::reindex_offchain { .. }) => false,
+
 			#[cfg(feature = "frequency")]
 			call if Self::is_filtered_on_mainnet(call) => false,
 
@@ -668,7 +672,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 185,
+	spec_version: 186,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -682,7 +686,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 185,
+	spec_version: 186,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
