@@ -453,7 +453,7 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -606,7 +606,7 @@ jobs:
 
       - name: Download amd64 Binaries
         id: download-amd64-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-binary-mainnet-amd64-pr-${{github.run_id}}
           path: ./binaries-amd64
@@ -614,7 +614,7 @@ jobs:
       # For PR verification, just use the mainnet arm64 build
       - name: Download arm64 Binary
         id: download-arm64
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-binary-mainnet-arm64-pr-${{github.run_id}}
           path: ./binaries-arm64
@@ -724,7 +724,7 @@ jobs:
           echo "TEST_BIN_FILENAME=frequency.mainnet.${{matrix.arch}}.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
           path: ${{matrix.bin-dir}}
@@ -760,7 +760,7 @@ jobs:
           echo "REF_BIN_FILENAME=frequency.local.amd64.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-local-*-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -841,7 +841,7 @@ jobs:
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
@@ -851,17 +851,17 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Download ethereum-utils tarball
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
       - name: Download recovery-sdk tarball
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: artifacts-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist
@@ -930,7 +930,7 @@ jobs:
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.amd64.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: artifacts-binary-*-${{github.run_id}}
           path: ${{env.BIN_DIR_DEBUG}}
