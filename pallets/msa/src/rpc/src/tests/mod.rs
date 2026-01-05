@@ -38,9 +38,9 @@ sp_api::mock_impl_runtime_apis! {
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>>{
 			match (delegator, provider) {
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]),
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]),
-				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), DelegationGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A, BlockNumber::zero(), BlockNumber::zero())]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero(), BlockNumber::zero())]),
+				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![DelegationGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero(), BlockNumber::zero()), DelegationGrant::new(SCHEMA_FOR_B, BlockNumber::zero(), BlockNumber::zero())]),
 				_ => None,
 			}
 		}
