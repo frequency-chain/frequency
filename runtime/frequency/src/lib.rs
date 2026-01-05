@@ -267,6 +267,10 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 			RuntimeCall::StatefulStorage(..) =>
 				pallet_stateful_storage::Pallet::<Runtime>::should_extrinsics_be_run(),
 
+			// Block reindex_offchain if we've disabled custom host functions
+			#[cfg(feature = "no-custom-host-functions")]
+			RuntimeCall::Msa(pallet_msa::Call::reindex_offchain { .. }) => false,
+
 			#[cfg(feature = "frequency")]
 			call if Self::is_filtered_on_mainnet(call) => false,
 
