@@ -35,7 +35,7 @@ jobs:
           ./scripts/run_benchmarks.sh -b
 
       - name: Upload Binary
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-binary
           path: |
@@ -44,7 +44,7 @@ jobs:
           retention-days: 3
 
       - name: Upload WASM Build Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wasm-artifacts
           path: target/release/wbuild
