@@ -145,7 +145,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
       revokedAtBlock = await getBlockNumber();
     });
 
-    it('revoked delegation should be reflected in all previously-granted schema permissions', async function () {
+    it('revoked delegation should be reflected in all previously-granted permissions', async function () {
       // Make a block first to make sure the state has rolled to the next block
       const currentBlock = await getBlockNumber();
       await ExtrinsicHelper.runToBlock(currentBlock + 1);
