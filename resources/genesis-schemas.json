@@ -173,6 +173,7 @@
       "intent_id": 21,
       "model_type": "AvroBinary",
       "payload_location": "Itemized",
+      "status": "Active",
       "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.ics\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}"
     },
     {
@@ -180,6 +181,7 @@
       "intent_id": 22,
       "model_type": "AvroBinary",
       "payload_location": "Itemized",
+      "status": "Active",
       "model": "{\"type\":\"record\",\"name\":\"ContextGroupACL\",\"namespace\":\"org.ics\",\"fields\":[{\"name\":\"prid\",\"type\":\"fixed\",\"size\":8,\"doc\":\"Pseudonymous Relationship Identifier\"},{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier used for PRID and encryption\"},{\"name\":\"nonce\",\"type\":\"fixed\",\"size\":12,\"doc\":\"Nonce used in encryptedProviderMsaId encryption (12 bytes)\"},{\"name\":\"encryptedProviderId\",\"type\":\"bytes\",\"maxLength\":10,\"doc\":\"Encrypted provider Msa id\"}]}"
     },
     {
@@ -187,6 +189,7 @@
       "intent_id": 23,
       "model_type": "AvroBinary",
       "payload_location": "Paginated",
+      "status": "Active",
       "model": "{\"type\":\"record\",\"name\":\"ContextGroupMetadata\",\"namespace\":\"org.ics\",\"fields\":[{\"name\":\"prid\",\"type\":\"fixed\",\"size\":8,\"doc\":\"Pseudonymous Relationship Identifier\"},{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier used for PRID\"},{\"name\":\"locationUri\",\"type\":\"string\",\"maxLength\":800,\"doc\":\"URI pointing to the location of stored Context Group\"},{\"name\":\"contentHash\",\"type\":[\"null\",\"string\"],\"default\":null,\"maxLength\":128,\"doc\":\"Optional multihash of the content in base58 encoding\"}]}"
     }
   ],

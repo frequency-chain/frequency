@@ -154,31 +154,6 @@ impl pallet_msa::Config for Test {
 	type Currency = pallet_balances::Pallet<Self>;
 }
 
-// not used yet
-pub struct TestRewardsProvider {}
-
-impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
-	type Balance = BalanceOf<Test>;
-
-	// To reflect new economic model behavior of having a constant RewardPool amount.
-	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		10_000u64
-	}
-
-	// use the pallet version of the era calculation.
-	fn era_staking_reward(
-		amount_staked: Self::Balance,
-		total_staked: Self::Balance,
-		reward_pool_size: Self::Balance,
-	) -> Self::Balance {
-		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
-	}
-
-	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
-		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
-	}
-}
-
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);

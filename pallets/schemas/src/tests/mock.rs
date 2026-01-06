@@ -69,21 +69,6 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 
 pub type MaxIntentsPerIntentGroup = ConstU32<10>;
 
-pub struct WeightToFee;
-
-impl WeightToFeePolynomial for WeightToFee {
-	type Balance = u64;
-
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			coeff_frac: Perbill::zero(),
-			coeff_integer: 1,
-			negative: false,
-		}]
-	}
-}
-
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
