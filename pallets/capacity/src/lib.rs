@@ -191,14 +191,14 @@ pub mod pallet {
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
 	/// - Keys: AccountId
-	/// - Value: [`StakingDetails`](types::StakingDetails)
+	/// - Value: [`StakingDetails`]
 	#[pallet::storage]
 	pub type StakingAccountLedger<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, StakingDetails<T>>;
 
 	/// Storage to record how many tokens were targeted to an MSA.
 	/// - Keys: AccountId, MSA Id
-	/// - Value: [`StakingTargetDetails`](types::StakingTargetDetails)
+	/// - Value: [`StakingTargetDetails`]
 	#[pallet::storage]
 	pub type StakingTargetLedger<T: Config> = StorageDoubleMap<
 		_,
@@ -211,7 +211,7 @@ pub mod pallet {
 
 	/// Storage for target Capacity usage.
 	/// - Keys: MSA Id
-	/// - Value: [`CapacityDetails`](types::CapacityDetails)
+	/// - Value: [`CapacityDetails`]
 	#[pallet::storage]
 	pub type CapacityLedger<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::EpochNumber>>;

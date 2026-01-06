@@ -415,7 +415,7 @@ jobs:
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
           runtime_dir: ${{ matrix.runtime-dir }}
-          tag: "1.88.0"
+          tag: "1.90.0"
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |

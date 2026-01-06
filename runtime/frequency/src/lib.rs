@@ -874,7 +874,7 @@ parameter_types! {
 	pub const RewardPoolChunkLength: u32 = 5;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
-const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
+const_assert!(ProviderBoostHistoryLimit::get().is_multiple_of(RewardPoolChunkLength::get()));
 
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

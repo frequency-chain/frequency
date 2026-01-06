@@ -197,7 +197,7 @@ pub mod pallet {
 
 	/// Storage type for mapping the relationship between a Delegator and its Provider.
 	/// - Keys: Delegator MSA, Provider MSA
-	/// - Value: [`Delegation`](common_primitives::msa::Delegation)
+	/// - Value: [`Delegation`]
 	#[pallet::storage]
 	pub type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		_,
@@ -218,7 +218,7 @@ pub mod pallet {
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
-	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
+	/// - Value: [`ProviderRegistryEntry`]
 	#[deprecated(
 		note = "Use ProviderToRegistryEntryV2 instead, this will removed from frequency version 1.17.6"
 	)]
@@ -233,7 +233,7 @@ pub mod pallet {
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
-	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
+	/// - Value: [`ProviderRegistryEntry`]
 	#[pallet::storage]
 	pub type ProviderToRegistryEntryV2<T: Config> = StorageMap<
 		_,

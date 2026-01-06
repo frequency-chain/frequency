@@ -54,7 +54,7 @@ pub trait ItemizedOperations<T: Config> {
 	) -> Result<ItemizedPage<T>, PageError>;
 
 	/// Parses all the items inside an ItemPage
-	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError>;
+	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage<'_>, PageError>;
 }
 /// Defines the actions that can be applied to an Itemized storage
 #[derive(
@@ -582,7 +582,7 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 
 	/// Parses all the items inside an ItemPage
 	/// This has O(n) complexity when n is the number of all the bytes in that itemized storage
-	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError> {
+	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage<'_>, PageError> {
 		let mut count = 0u16;
 		let mut items = BTreeMap::new();
 		let mut page_slice = &self.data[..];

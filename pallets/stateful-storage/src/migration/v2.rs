@@ -63,7 +63,7 @@ pub fn process_paginated_page<T: Config, N: Get<u32>>(
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
 	let Some(k) = next_key(child, &cur.last_key).unwrap_or(None) else {
-		if cur.id % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+		if cur.id.is_multiple_of(<u64>::from(T::MigrateEmitEvery::get())) {
 			Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
 				last_trie: (cur.id, PayloadLocation::Paginated),
 				total_page_count: cur.cumulative_pages,
@@ -92,7 +92,7 @@ pub fn process_paginated_page<T: Config, N: Get<u32>>(
 	cur.last_key = k;
 	cur.cumulative_pages += 1;
 
-	if cur.cumulative_pages % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+	if cur.cumulative_pages.is_multiple_of(<u64>::from(T::MigrateEmitEvery::get())) {
 		Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
 			last_trie: (cur.id, PayloadLocation::Paginated),
 			total_page_count: cur.cumulative_pages,
@@ -107,7 +107,7 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 	cur: &mut ChildCursor<N>,
 ) -> Result<bool, SteppedMigrationError> {
 	let Some(k) = next_key(child, &cur.last_key).unwrap_or(None) else {
-		if cur.id % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+		if cur.id.is_multiple_of(<u64>::from(T::MigrateEmitEvery::get())) {
 			Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
 				last_trie: (cur.id, PayloadLocation::Paginated),
 				total_page_count: cur.cumulative_pages,
@@ -156,7 +156,7 @@ pub fn process_itemized_page<T: Config, N: Get<u32>>(
 	cur.last_key = k;
 	cur.cumulative_pages += 1;
 
-	if cur.cumulative_pages % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+	if cur.cumulative_pages.is_multiple_of(<u64>::from(T::MigrateEmitEvery::get())) {
 		Pallet::<T>::deposit_event(Event::<T>::StatefulPagesMigrated {
 			last_trie: (cur.id, PayloadLocation::Itemized),
 			total_page_count: cur.cumulative_pages,

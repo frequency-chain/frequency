@@ -56,7 +56,7 @@ pub(crate) fn migrate_single_record<T: Config>(
 		false
 	};
 
-	if !messages_remain || cursor.3 % <u64>::from(T::MigrateEmitEvery::get()) == 0 {
+	if !messages_remain || cursor.3.is_multiple_of(<u64>::from(T::MigrateEmitEvery::get())) {
 		Pallet::<T>::deposit_event(Event::<T>::MessagesMigrated {
 			from_version: 2,
 			to_version: 3,
@@ -67,7 +67,7 @@ pub(crate) fn migrate_single_record<T: Config>(
 	messages_remain
 }
 
-/// Migrates the items of the [`v2::MessagesV2`] map to [`crate::MessagesV3`]
+/// Migrates the items of the `MessagesV2` map to `MessagesV3`
 ///
 /// The `step` function will be called once per block. It is very important that this function
 /// *never* panics and never uses more weight than it got in its meter. The migrations should also
@@ -143,7 +143,7 @@ impl<T: Config, W: weights::WeightInfo> SteppedMigration for MigrateV2ToV3<T, W>
 	}
 }
 
-/// Finalize the migration of [`v2::MessagesV2`] map to [`crate::MessagesV3`]
+/// Finalize the migration of `MessagesV2` map to `MessagesV3`
 /// by updating the pallet storage version.
 pub struct FinalizeV3Migration<T: Config, W: weights::WeightInfo>(PhantomData<(T, W)>);
 impl<T: Config, W: weights::WeightInfo> SteppedMigration for FinalizeV3Migration<T, W> {

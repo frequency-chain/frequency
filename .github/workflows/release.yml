@@ -372,7 +372,7 @@ jobs:
           profile: ${{matrix.build-profile}}
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
-          tag: "1.88.0"
+          tag: "1.90.0"
           runtime_dir: ${{ matrix.runtime-dir }}
       - name: Rename WASM file
         run: |

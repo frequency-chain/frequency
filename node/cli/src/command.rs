@@ -162,18 +162,16 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyPaseo == spec.identify() {
 				#[cfg(feature = "frequency-testnet")]
 				{
-					return Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(
-						path_buf,
-					)?));
+					Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(path_buf)?))
 				}
 				#[cfg(not(feature = "frequency-testnet"))]
 				return Err("Frequency Paseo runtime is not available.".into());
 			} else if ChainIdentity::FrequencyLocal == spec.identify() {
 				#[cfg(feature = "frequency-local")]
 				{
-					return Ok(Box::new(
-						chain_spec::frequency_paseo_local::ChainSpec::from_json_file(path_buf)?,
-					));
+					Ok(Box::new(chain_spec::frequency_paseo_local::ChainSpec::from_json_file(
+						path_buf,
+					)?))
 				}
 				#[cfg(not(feature = "frequency-local"))]
 				return Err("Frequency Local runtime is not available.".into());
@@ -189,23 +187,23 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyDev == spec.identify() {
 				#[cfg(feature = "frequency-no-relay")]
 				{
-					return Ok(Box::new(
-						chain_spec::frequency_paseo_local::ChainSpec::from_json_file(path_buf)?,
-					));
+					Ok(Box::new(chain_spec::frequency_paseo_local::ChainSpec::from_json_file(
+						path_buf,
+					)?))
 				}
 				#[cfg(not(feature = "frequency-no-relay"))]
 				return Err("Frequency Dev (no relay) runtime is not available.".into());
 			} else if ChainIdentity::FrequencyWestend == spec.identify() {
 				#[cfg(feature = "frequency-westend")]
 				{
-					return Ok(Box::new(chain_spec::frequency_westend::ChainSpec::from_json_file(
+					Ok(Box::new(chain_spec::frequency_westend::ChainSpec::from_json_file(
 						path_buf,
-					)?));
+					)?))
 				}
 				#[cfg(not(feature = "frequency-westend"))]
 				return Err("Frequency Westend runtime is not available.".into());
 			} else {
-				return Err("Unknown chain spec.".into());
+				Err("Unknown chain spec.".into())
 			}
 		},
 	}
