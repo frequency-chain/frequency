@@ -2,7 +2,7 @@ use crate as pallet_capacity;
 
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
+	RewardPoolHistoryChunk,
 };
 use common_primitives::{
 	msa::IntentId,
@@ -10,7 +10,6 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 use common_runtime::{constants::*, weights};
-use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{

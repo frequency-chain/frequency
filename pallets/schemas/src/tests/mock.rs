@@ -2,7 +2,7 @@ use frame_support::{
 	assert_ok,
 	dispatch::RawOrigin,
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
-	weights::{Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
+	weights::Weight,
 	BoundedVec,
 };
 use frame_system::EnsureRoot;
@@ -11,11 +11,10 @@ use parity_scale_codec::MaxEncodedLen;
 use common_primitives::node::AccountId;
 use common_runtime::constants::DAYS;
 use pallet_collective::{self, Members};
-use smallvec::smallvec;
 use sp_core::{parameter_types, Encode, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32, BuildStorage, DispatchError, Perbill,
+	AccountId32, BuildStorage, DispatchError,
 };
 
 use crate as pallet_schemas;
