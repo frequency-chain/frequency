@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Uploads schemas to chain",
   "scripts": {
-    "deploy:mainnet": "node index.mjs MAINNET && exit 1",
+    "deploy:mainnet:intent": "node index.mjs MAINNET INTENT && exit 1",
+    "deploy:mainnet:schema": "node index.mjs MAINNET SCHEMA && exit 1",
     "deploy:paseo": "node index.mjs PASEO && exit 1",
     "deploy:local": "node index.mjs LOCAL && exit 1"
   },

@@ -1,5 +1,4 @@
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
-import fs from "fs";
 
 const MAINNET_SOURCE_URL = "wss://1.rpc.frequency.xyz";
 const PASEO_SOURCE_URL = "wss://0.rpc.testnet.amplica.io";
@@ -7,6 +6,8 @@ const LOCAL_SOURCE_URL = "ws://127.0.0.1:9944";
 const MAINNET = "MAINNET";
 const PASEO = "PASEO";
 const LOCAL = "LOCAL";
+const INTENT = "INTENT";
+const SCHEMA = "SCHEMA";
 const DOMAN = "ics";
 const INTENTS = [
 	{
@@ -149,25 +150,31 @@ const getSignerAccountKeys = () => {
 	return keyring.addFromUri(DEPLOY_SCHEMA_ACCOUNT_URI, {}, "sr25519");
 };
 
-// async function getSchemas(domain, api) {
-//   const nameToIds = await api.rpc.schemas.getVersions(domain);
-
-//   const names = [];
-
-//   for (const v of JSON.parse(JSON.stringify(nameToIds))) {
-//     names.push(v.schema_name);
-//   }
-
-//   return names;
-// }
-
-function readSchema(filename) {
-	const content = fs.readFileSync(filename, "utf8");
-	const jsonData = JSON.parse(content);
-	return jsonData;
+function getIntentId(api, intent) {
+	// Propose to create
+	const promise = new Promise((resolve, reject) => {
+		api.call.schemasRuntimeApi.getRegisteredEntitiesByName(intent.name)
+			.then(response => { 
+				if (response.isSome && response.unwrap().length > 0) {
+					const registeredEntities = response.unwrap().toArray();
+					const last = registeredEntities[registeredEntities.length - 1];
+					const id = last.entityId;
+					resolve(id.value);
+				} else { 
+					const err = `No intent for ${intent.name}`;
+					console.error(`ERROR: ${err}`);
+					reject(err);
+				}
+			})
+			.catch(error => {
+				console.error(`ERROR: ${error}`);
+		        reject(error);
+		    });
+	});
+	return promise;
 }
 
-async function deploy(chainType) {
+async function deploy(chainType, operationType) {
 	const selectedUrl =
 		chainType === MAINNET
 			? MAINNET_SOURCE_URL
@@ -183,61 +190,65 @@ async function deploy(chainType) {
 		throwOnConnect: true,
 		...RPC_AUGMENTS,
 	});
-	// const existingNames = await getSchemas(DOMAN, api);
-	// console.log(existingNames);
-
-	// upload schemas that don't exist on chain
+	
 	const signerAccountKeys = getSignerAccountKeys();
 	// Retrieve the current account nonce so we can increment it when submitting transactions
-	const baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
+	let baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
 
-	const promises = [];
+	const intentPromises = [];
 	for (const idx in INTENTS) {
 		const intent = INTENTS[idx];
 		const nonce = baseNonce + Number(idx);
 		if (chainType === MAINNET) {
 			// create proposal
+			if (operationType === INTENT) {
+			 	intentPromises[idx] = getIntentProposalTransaction(api, signerAccountKeys, nonce, intent);
+			} else { 
+				intentPromises[idx] = getIntentId(api, intent);
+			}
 		} else {
 			// create directly via sudo
-			promises[idx] = getIntentSudoTransaction(api, signerAccountKeys, nonce, intent);
-		}
+			intentPromises[idx] = getIntentSudoTransaction(api, signerAccountKeys, nonce, intent);
+		 }
 	}
-	// for (const idx in SCHEMAS) {
-	//   const schema = SCHEMAS[idx];
-	//   const schemaFullName = `${DOMAN}.${schema.nameWithoutDomain}`;
-	//   if (existingNames.indexOf(schemaFullName) !== -1) {
-	//     console.log(
-	//       `schema ${schemaFullName} already exists! Skip adding to the chain!`,
-	//     );
-	//     continue;
-	//   }
+	const intentResults = await Promise.all(intentPromises);
+	const idMap = new Map(intentResults.map((id, index) => [INTENTS[index].name, parseInt(`${id}`)]));
+	console.log(idMap);
+	baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
+	
+	const schemaPromises = [];
+	for (const idx in SCHEMAS) {
+	  const schema = SCHEMAS[idx];
+	  const intentId = idMap.get(schema.intent_name);
+	  console.log(`intentId ${intentId}`);
+	  const nonce = baseNonce + Number(idx);
 
-	//   const nonce = baseNonce + Number(idx);
-	//   const json = JSON.stringify(schema.model);
-	//   // Remove whitespace in the JSON
-	//   const json_no_ws = JSON.stringify(JSON.parse(json));
-
-	//   if (chainType === MAINNET) {
-	//     // create proposal
-	//     promises[idx] = getProposalTransaction(
-	//       api,
-	//       signerAccountKeys,
-	//       nonce,
-	//       schema,
-	//       json_no_ws,
-	//     );
-	//   } else {
-	//     // create directly via sudo
-	//     promises[idx] = getSudoTransaction(
-	//       api,
-	//       signerAccountKeys,
-	//       nonce,
-	//       schema,
-	//       json_no_ws,
-	//     );
-	//   }
-	// }
-	await Promise.all(promises);
+	  if (chainType === MAINNET) {
+	    // create proposal
+		if (operationType === SCHEMA) {
+			schemaPromises[idx] = getSchemaProposalTransaction(
+				api,
+				signerAccountKeys,
+				nonce,
+				schema,
+				intentId,
+			);
+		}
+	  } else {
+	    // create directly via sudo
+	    schemaPromises[idx] = getSchemaSudoTransaction(
+	      api,
+	      signerAccountKeys,
+	      nonce,
+	      schema,
+		  intentId,
+	    );
+	  }
+	}
+    const schemaResults = await Promise.all(schemaPromises);
+	for (const r of schemaResults) { 
+		console.log(`schemaId = ${r}`);
+	}
 }
 
 // Given a list of events, a section and a method,
@@ -247,16 +258,14 @@ const eventWithSectionAndMethod = (events, section, method) => {
 	return evt?.event;
 };
 
-function getSchemaProposalTransaction(api, signerAccountKeys, nonce, schemaDeploy, json_no_ws) {
+function getIntentProposalTransaction(api, signerAccountKeys, nonce, intentDeploy) {
 	// Propose to create
 	const promise = new Promise((resolve, reject) => {
 		api.tx.schemas
-			.proposeToCreateSchemaV2(
-				json_no_ws,
-				schemaDeploy.model_type,
-				schemaDeploy.payload_location,
-				schemaDeploy.settings,
-				`${DOMAN}.${schemaDeploy.nameWithoutDomain}`,
+			.proposeToCreateIntent(
+				intentDeploy.payload_location,
+				intentDeploy.settings,
+				intentDeploy.name,
 			)
 			.signAndSend(signerAccountKeys, { nonce }, ({ status, events, dispatchError }) => {
 				if (dispatchError) {
@@ -270,7 +279,45 @@ function getSchemaProposalTransaction(api, signerAccountKeys, nonce, schemaDeplo
 						const hash = evt?.data[2].toHex();
 						console.log(
 							"SUCCESS: " +
-								`${DOMAN}.${schemaDeploy.nameWithoutDomain}` +
+								`${intentDeploy.name}` +
+								" intent proposed with id of " +
+								id +
+								" and hash of " +
+								hash,
+						);
+						resolve((id, hash));
+					} else {
+						const err = "Proposed event not found";
+						console.error(`ERROR: ${err}`);
+						reject(err);
+					}
+				}
+			});
+	});
+	return promise;
+}
+
+function getSchemaProposalTransaction(api, signerAccountKeys, nonce, schemaDeploy, intentId) {
+	// Propose to create
+	const promise = new Promise((resolve, reject) => {
+		api.tx.schemas
+			.proposeToCreateSchemaV3(
+				intentId,
+				schemaDeploy.model_type,
+			)
+			.signAndSend(signerAccountKeys, { nonce }, ({ status, events, dispatchError }) => {
+				if (dispatchError) {
+					console.error("ERROR: ", dispatchError.toHuman());
+					console.log("Might already have a proposal with the same hash?");
+					reject(dispatchError.toHuman());
+				} else if (status.isInBlock || status.isFinalized) {
+					const evt = eventWithSectionAndMethod(events, "council", "Proposed");
+					if (evt) {
+						const id = evt?.data[1];
+						const hash = evt?.data[2].toHex();
+						console.log(
+							"SUCCESS: " +
+								`${schemaDeploy.intent_name}` +
 								" schema proposed with id of " +
 								id +
 								" and hash of " +
@@ -288,34 +335,26 @@ function getSchemaProposalTransaction(api, signerAccountKeys, nonce, schemaDeplo
 	return promise;
 }
 
-function getSchemaSudoTransaction(api, signerAccountKeys, nonce, schemaDeploy, json_no_ws) {
+function getSchemaSudoTransaction(api, signerAccountKeys, nonce, schemaDeploy, intent_id) {
 	// Create directly via sudo
-	const tx = api.tx.schemas.createSchemaViaGovernanceV2(
+	const tx = api.tx.schemas.createSchemaViaGovernanceV3(
 		signerAccountKeys.address,
-		json_no_ws,
+		intent_id,
+		schemaDeploy.model,
 		schemaDeploy.model_type,
-		schemaDeploy.payload_location,
-		schemaDeploy.settings,
-		`${DOMAN}.${schemaDeploy.nameWithoutDomain}`,
 	);
 	const promise = new Promise((resolve, reject) => {
 		api.tx.sudo
 			.sudo(tx)
 			.signAndSend(signerAccountKeys, { nonce }, ({ status, events, dispatchError }) => {
 				if (dispatchError) {
-					console.error("ERROR: ", dispatchError.toHuman());
+					console.error("Dispatch ERROR: ", dispatchError.toHuman());
 					reject(dispatchError.toHuman());
 				} else if (status.isInBlock || status.isFinalized) {
 					const evt = eventWithSectionAndMethod(events, "schemas", "SchemaCreated");
 					if (evt) {
 						const id = evt?.data[1];
-						console.log(
-							"SUCCESS: " +
-								`${DOMAN}.${schemaDeploy.nameWithoutDomain}` +
-								" schema created with id of " +
-								id,
-						);
-						resolve((id, null));
+						resolve(id);
 					} else {
 						const err = "SchemaCreated event not found";
 						console.error(`ERROR: ${err}`);
@@ -349,7 +388,7 @@ function getIntentSudoTransaction(api, signerAccountKeys, nonce, intentDeploy) {
 						console.log(
 							"SUCCESS: " + intentDeploy.name + " intent created with id of " + id,
 						);
-						resolve((id, null));
+						resolve(id);
 					} else {
 						const err = "SchemaCreated event not found";
 						console.error(`ERROR: ${err}`);
@@ -363,7 +402,7 @@ function getIntentSudoTransaction(api, signerAccountKeys, nonce, intentDeploy) {
 
 async function main() {
 	try {
-		console.log("Uploading Intents");
+		console.log("Uploading Intents & schemas");
 		const args = process.argv.slice(2);
 		if (args.length == 0) {
 			console.log(`Chain type should be provided: ${MAINNET} or ${PASEO} or ${LOCAL}`);
@@ -374,8 +413,20 @@ async function main() {
 			console.log(`Please specify the chain type: ${MAINNET} or ${PASEO} or ${LOCAL}`);
 			process.exit(1);
 		}
-
-		await deploy(chainType);
+		let operationType = "ALL";
+		if (chainType === MAINNET) { 
+			if (args.length < 2) { 
+				console.log(`For Mainnet you must specify the operation type: ${INTENT} or ${SCHEMA}`);
+				process.exit(1);
+			}
+			operationType = args[1].toUpperCase().trim();
+			if (operationType !== INTENT && operationType !== SCHEMA) {
+				console.log(`For Mainnet you must specify the operation type: ${INTENT} or ${SCHEMA}`);
+				process.exit(1);
+			}
+		}
+		
+		await deploy(chainType, operationType);
 		process.exit(0);
 	} catch (error) {
 		console.error("Error:", error);

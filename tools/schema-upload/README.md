@@ -13,7 +13,8 @@
 you can run one of the following commands based on the targeted chain.
 
 ```sh
-npm run deploy:mainnet
+npm run deploy:mainnet:intent
+npm run deploy:mainnet:schema
 ```
 or
 
