@@ -47,7 +47,7 @@ sp_api::decl_runtime_apis! {
 		/// Get the list of Intent permission grants (if any) that exist in any delegation between the delegator and provider.
 		/// The returned list contains both Intent id and the block number at which permission was revoked (0 if currently not revoked).
 		#[api_version(4)]
-		fn get_granted_intents_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>>;
+		fn get_delegation_for_msa_and_provider(delegator: DelegatorId, provider: ProviderId) -> Option<DelegationResponse<IntentId, BlockNumber>>;
 
 		/// Get the list of all delegated providers with Intent permission grants (if any) that exist in any delegation between the delegator and provider.
 		/// The returned list contains both Intent id and the block number at which permission was revoked (0 if currently not revoked).
