@@ -8,7 +8,6 @@ const PASEO = "PASEO";
 const LOCAL = "LOCAL";
 const INTENT = "INTENT";
 const SCHEMA = "SCHEMA";
-const DOMAN = "ics";
 const INTENTS = [
 	{
 		payload_location: "Itemized",
@@ -212,7 +211,10 @@ async function deploy(chainType, operationType) {
 		 }
 	}
 	const intentResults = await Promise.all(intentPromises);
-	const idMap = new Map(intentResults.map((id, index) => [INTENTS[index].name, parseInt(`${id}`)]));
+	const idMap = new Map(intentResults.map((result, index) => {
+		const id = Array.isArray(result) ? `${result[0]}` : `${result}`;
+		return [INTENTS[index].name, parseInt(id, 10)];
+	}));
 	console.log(idMap);
 	baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
 	
@@ -220,6 +222,9 @@ async function deploy(chainType, operationType) {
 	for (const idx in SCHEMAS) {
 	  const schema = SCHEMAS[idx];
 	  const intentId = idMap.get(schema.intent_name);
+	  if (intentId === undefined) {
+	    throw new Error(`Intent ID not found for schema with intent_name: ${schema.intent_name}`);
+	  }
 	  console.log(`intentId ${intentId}`);
 	  const nonce = baseNonce + Number(idx);
 
@@ -235,14 +240,14 @@ async function deploy(chainType, operationType) {
 			);
 		}
 	  } else {
-	    // create directly via sudo
-	    schemaPromises[idx] = getSchemaSudoTransaction(
-	      api,
-	      signerAccountKeys,
-	      nonce,
-	      schema,
-		  intentId,
-	    );
+	     // create directly via sudo
+	     schemaPromises[idx] = getSchemaSudoTransaction(
+	       api,
+	       signerAccountKeys,
+	       nonce,
+	       schema,
+		   intentId,
+	     );
 	  }
 	}
     const schemaResults = await Promise.all(schemaPromises);
@@ -285,7 +290,7 @@ function getIntentProposalTransaction(api, signerAccountKeys, nonce, intentDeplo
 								" and hash of " +
 								hash,
 						);
-						resolve((id, hash));
+						resolve([id, hash]);
 					} else {
 						const err = "Proposed event not found";
 						console.error(`ERROR: ${err}`);
@@ -303,6 +308,7 @@ function getSchemaProposalTransaction(api, signerAccountKeys, nonce, schemaDeplo
 		api.tx.schemas
 			.proposeToCreateSchemaV3(
 				intentId,
+				schemaDeploy.model,
 				schemaDeploy.model_type,
 			)
 			.signAndSend(signerAccountKeys, { nonce }, ({ status, events, dispatchError }) => {
@@ -323,7 +329,7 @@ function getSchemaProposalTransaction(api, signerAccountKeys, nonce, schemaDeplo
 								" and hash of " +
 								hash,
 						);
-						resolve((id, hash));
+						resolve([id, hash]);
 					} else {
 						const err = "Proposed event not found";
 						console.error(`ERROR: ${err}`);
@@ -390,7 +396,7 @@ function getIntentSudoTransaction(api, signerAccountKeys, nonce, intentDeploy) {
 						);
 						resolve(id);
 					} else {
-						const err = "SchemaCreated event not found";
+						const err = "IntentCreated event not found";
 						console.error(`ERROR: ${err}`);
 						reject(err);
 					}
