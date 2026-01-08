@@ -173,7 +173,6 @@ describe('Delegation Scenario Tests', function () {
     );
     assert.equal(response.isSome, true, 'response should be valid');
     const delegation = response.unwrap();
-    console.log('Delegation is: ', delegation.toJSON());
     assert.equal(delegation.revokedAt.toNumber(), 0, 'delegation should not be revoked');
     const intentIds = delegation.permissions
       .filter((grant) => grant.revokedAt.toBigInt() === 0n)
