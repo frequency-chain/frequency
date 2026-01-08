@@ -672,7 +672,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 186,
+	spec_version: 187,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -686,7 +686,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 186,
+	spec_version: 187,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -2120,17 +2120,13 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
-			Self::get_granted_intents_by_msa_id(delegator, provider)
+			Self::get_delegation_for_msa_and_provider(delegator, provider).map(|delegation| delegation.permissions)
 		}
 
-		fn get_granted_intents_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<DelegationGrant<IntentId, BlockNumber>>> {
-			match Msa::get_granted_intents_by_msa_id(delegator, Some(provider)) {
-				Ok(res) => match res.into_iter().next() {
-					Some(delegation) => Some(delegation.permissions),
-					None => None,
-				},
-				_ => None,
-			}
+		fn get_delegation_for_msa_and_provider(delegator: DelegatorId, provider: ProviderId) -> Option<DelegationResponse<IntentId, BlockNumber>> {
+			Msa::get_granted_intents_by_msa_id(delegator, Some(provider))
+			.ok()
+			.and_then(|responses| responses.first().cloned())
 		}
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {

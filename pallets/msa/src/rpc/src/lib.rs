@@ -48,7 +48,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 	/// Given a single provider, test a list of potential delegators
 	/// At a given block number
 	#[deprecated(
-		since = "1.17.6",
+		since = "2.0.0",
 		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
 	)]
 	#[method(name = "msa_checkDelegations")]
@@ -62,7 +62,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 
 	/// Retrieve the list of currently granted schemas given a delegator and provider pair
 	#[deprecated(
-		since = "1.17.6",
+		since = "2.0.0",
 		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
 	)]
 	#[method(name = "msa_grantedSchemaIdsByMsaId")]
@@ -74,7 +74,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 
 	/// Retrieve the list of all delegations for a MsaId
 	#[deprecated(
-		since = "1.17.6",
+		since = "2.0.0",
 		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
 	)]
 	#[method(name = "msa_getAllGrantedDelegationsByMsaId")]
@@ -85,7 +85,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 
 	/// Retrieve the list of keys for msa id
 	#[deprecated(
-		since = "1.17.6",
+		since = "2.0.0",
 		note = "All custom RPCs are deprecated. Use the state_call RPC instead."
 	)]
 	#[method(name = "msa_getKeysByMsaId")]

@@ -49,8 +49,8 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_messages/pall
 
 | Name       | Description                                                                                                                                           | Query        | Runtime Added |
 |------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|---------------|
-| MessagesV3 | Suggested: Use custom runtime API instead of querying this storage directly.<br/>Storage for the messages by Block Number, IntentId, and MessageIndex | `messagesV3` | ?             |
-| MessagesV2 | Removed in Runtime ??                                                                                                                                 | `messagesV2` | 61            |
+| MessagesV3 | Suggested: Use custom runtime API instead of querying this storage directly.<br/>Storage for the messages by Block Number, IntentId, and MessageIndex | `messagesV3` | 184           |
+| MessagesV2 | Removed in Runtime 184                                                                                                                                | `messagesV2` | 61            |
 | Messages   | Removed in Runtime 60                                                                                                                                 | `messages`   | 1-60          |
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_messages/pallet/storage_types/index.html) for additional state queries and details.
@@ -59,9 +59,9 @@ See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_messages/
 
 Note: May be restricted based on node settings and configuration.
 
-| Name                                     | Description                                                                                                                                                                              | Call                                                                                                                                               | Node Version |
-|------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| Get Messages by Schema Id _(deprecated)_ | Fetch paginated messages for a specific Schema Id in the given block range for a given Schema Id<br/>Deprecated in `v1.17.?`. Use custom Runtime API `get_messages_by_intent_id` instead | [`getBySchemaId`](https://frequency-chain.github.io/frequency/pallet_messages_rpc/trait.MessagesApiServer.html#tymethod.get_messages_by_schema_id) | v1.0.0+      |
+| Name                                     | Description                                                                                                                                                                             | Call                                                                                                                                               | Node Version |
+|------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| Get Messages by Schema Id _(deprecated)_ | Fetch paginated messages for a specific Schema Id in the given block range for a given Schema Id<br/>Deprecated in `v2.0.0`. Use custom Runtime API `get_messages_by_intent_id` instead | [`getBySchemaId`](https://frequency-chain.github.io/frequency/pallet_messages_rpc/trait.MessagesApiServer.html#tymethod.get_messages_by_schema_id) | v1.0.0+      |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_messages_rpc/trait.MessagesApiServer.html) for more details.
 
@@ -71,7 +71,7 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_messages_rpc/
 |-------------------------------------------------|---------------------------------------------------------------------------|-------------------------------|-------------------|---------------|
 | Get Schema by Id _(deprecated)_                 | Retrieves the schema for the given Schema Id                              | `getBySchemaId`               | 1                 | 1             |
 | Get Messages by Schema and Block _(deprecated)_ | Retrieve the messages for a particular schema and block number            | `getMessagesBySchemaAndBlock` | 1                 | 1             |
-| Get Messages by Intent and Block                | Retrieve the messages for a particular intent and block range (paginated) | `getMessagesByIntentId`       | 2                 | ?             |
+| Get Messages by Intent and Block                | Retrieve the messages for a particular intent and block range (paginated) | `getMessagesByIntentId`       | 2                 | 184           |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_messages_runtime_api/trait.MessagesRuntimeApi.html) for
 more details.

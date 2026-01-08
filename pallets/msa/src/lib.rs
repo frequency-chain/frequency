@@ -1933,7 +1933,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Revokes a list of schema permissions from a delegation relationship.
+	/// Revokes a list of Intent permissions from a delegation relationship.
 	pub fn revoke_permissions_for_intents(
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,
@@ -2361,21 +2361,28 @@ impl<T: Config> Pallet<T> {
 			}
 
 			let mut intent_list = Vec::new();
-			for (intent_id, revoked_at) in intent_permissions {
-				if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
-					(revoked_at > provider_info.revoked_at ||
-						revoked_at == BlockNumberFor::<T>::zero())
-				{
-					intent_list.push(DelegationGrant {
-						granted_id: intent_id,
-						revoked_at: provider_info.revoked_at,
-					});
-				} else {
-					intent_list.push(DelegationGrant { granted_id: intent_id, revoked_at });
-				}
+			for (granted_id, revoked_at) in intent_permissions {
+				// Determine the effective revocation as:
+				// - zero if both provider & permission revoked_at block are zero
+				// - the non-zero of the two if one of them is zero
+				// - the lesser of the two if both are non-zero
+				let effective_revoked_at = match (provider_info.revoked_at, revoked_at) {
+					(provider_revoked_at, _) if provider_revoked_at.is_zero() => revoked_at,
+					(_, revoked_at) if revoked_at.is_zero() => provider_info.revoked_at,
+					_ => core::cmp::min(revoked_at, provider_info.revoked_at),
+				};
+				intent_list.push(DelegationGrant {
+					granted_id,
+					explicit_revoked_at: revoked_at,
+					revoked_at: effective_revoked_at,
+				});
 			}
 
-			result.push(DelegationResponse { provider_id, permissions: intent_list });
+			result.push(DelegationResponse {
+				provider_id,
+				permissions: intent_list,
+				revoked_at: provider_info.revoked_at,
+			});
 		}
 
 		Ok(result)
