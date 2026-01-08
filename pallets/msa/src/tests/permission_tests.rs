@@ -392,8 +392,24 @@ pub fn ensure_delegation_revocation_reflects_in_intent_permissions() {
 		// Create delegation relationship.
 		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
 
-		// Move forward to block 6.
-		System::set_block_number(System::block_number() + 5);
+		// Move forward some blocks
+		let intent_revoke_block_number = System::block_number() + 5;
+		System::set_block_number(intent_revoke_block_number);
+		assert_ok!(Msa::revoke_permissions_for_intents(delegator, provider, vec![1]));
+
+		let grants_result = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
+		assert!(grants_result.is_ok());
+		let grants_option = grants_result.unwrap();
+		assert!(grants_option.len() == 1);
+		let grants = grants_option.into_iter().next().unwrap();
+		assert!(grants.permissions[0].explicit_revoked_at == intent_revoke_block_number);
+		assert!(grants.permissions[1].explicit_revoked_at == 0);
+		assert!(grants.permissions[0].revoked_at == intent_revoke_block_number);
+		assert!(grants.permissions[1].revoked_at == 0);
+
+		// Move forward some more blocks
+		let delegation_revoke_block_number = System::block_number() + 5;
+		System::set_block_number(delegation_revoke_block_number);
 
 		// Revoke delegation relationship at block 6.
 		assert_ok!(Msa::revoke_provider(provider, delegator));
@@ -403,7 +419,9 @@ pub fn ensure_delegation_revocation_reflects_in_intent_permissions() {
 		let grants_option = grants_result.unwrap();
 		assert!(grants_option.len() == 1);
 		let grants = grants_option.into_iter().next().unwrap();
-		assert!(grants.permissions[0].revoked_at == 6);
-		assert!(grants.permissions[1].revoked_at == 6);
+		assert!(grants.permissions[0].explicit_revoked_at == intent_revoke_block_number);
+		assert!(grants.permissions[1].explicit_revoked_at == 0);
+		assert!(grants.permissions[0].revoked_at == intent_revoke_block_number);
+		assert!(grants.permissions[1].revoked_at == delegation_revoke_block_number);
 	});
 }

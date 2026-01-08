@@ -80,10 +80,12 @@ impl From<DelegatorId> for MessageSourceId {
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
 pub struct DelegationResponse<DelegationIdType, BlockNumber> {
-	/// SchemaId of schema for which permission is/was granted
+	/// Provider ID for which permission is/was granted
 	pub provider_id: ProviderId,
-	/// The list of schema permissions grants
+	/// The list of permissions grants
 	pub permissions: Vec<DelegationGrant<DelegationIdType, BlockNumber>>,
+	/// Block number at which permission for ALL grants was revoked
+	pub revoked_at: BlockNumber,
 }
 
 /// RPC response for getting schema permission grants
@@ -92,8 +94,10 @@ pub struct DelegationResponse<DelegationIdType, BlockNumber> {
 pub struct DelegationGrant<DelegationIdType, BlockNumber> {
 	/// ID of the delegated entity for which permission is/was granted
 	pub granted_id: DelegationIdType,
-	/// Block number the permission was/will be revoked (0 = not revoked)
+	/// Block number when the permission was/will be EFFECTIVELY revoked, taking into consideration the overall provider delegation revocation.
 	pub revoked_at: BlockNumber,
+	/// Block number the permission was/will be explicitly revoked (i.e., not implicitly revoked by a top-level revocation) (0 = not revoked)
+	pub explicit_revoked_at: BlockNumber,
 }
 
 // Custom serialization implementation to allow for a slow roll-out of renaming
@@ -111,6 +115,7 @@ impl<DelegationIdType: Serialize, BlockNumber: Serialize> Serialize
 		s.serialize_field("schema_id", &self.granted_id)?;
 		s.serialize_field("granted_id", &self.granted_id)?;
 		s.serialize_field("revoked_at", &self.revoked_at)?;
+		s.serialize_field("explicit_revoked_at", &self.explicit_revoked_at)?;
 		s.end()
 	}
 }
@@ -126,9 +131,13 @@ where
 }
 
 impl<DelegationIdType, BlockNumber> DelegationGrant<DelegationIdType, BlockNumber> {
-	/// Create a new SchemaGrant struct
-	pub fn new(granted_id: DelegationIdType, revoked_at: BlockNumber) -> Self {
-		DelegationGrant { granted_id, revoked_at }
+	/// Create a new DelegationGrant struct
+	pub fn new(
+		granted_id: DelegationIdType,
+		revoked_at: BlockNumber,
+		explicit_revoked_at: BlockNumber,
+	) -> Self {
+		DelegationGrant { granted_id, revoked_at, explicit_revoked_at }
 	}
 }
 
@@ -138,7 +147,9 @@ where
 	BlockNumber: PartialEq,
 {
 	fn eq(&self, other: &Self) -> bool {
-		self.granted_id == other.granted_id && self.revoked_at == other.revoked_at
+		self.granted_id == other.granted_id &&
+			self.revoked_at == other.revoked_at &&
+			self.explicit_revoked_at == other.explicit_revoked_at
 	}
 }
 

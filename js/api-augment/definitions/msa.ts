@@ -86,10 +86,17 @@ export default {
     SchemaGrantResponse: {
       schema_id: 'IntentId',
       revoked_at: 'BlockNumber',
+      explicit_revoked_at: 'BlockNumber',
+    },
+    DelegationGrant: {
+      granted_id: 'IntentId',
+      revoked_at: 'BlockNumber',
+      explicit_revoked_at: 'BlockNumber',
     },
     DelegationResponse: {
       provider_id: 'ProviderId',
-      permissions: 'Vec<SchemaGrantResponse>',
+      permissions: 'Vec<DelegationGrant>',
+      revoked_at: 'BlockNumber',
     },
     // Runtime types
     // Not sure why these have to be noted here, but they do

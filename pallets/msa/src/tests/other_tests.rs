@@ -485,12 +485,13 @@ pub fn schema_granted_success_rpc() {
 		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
 		let intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
 		let expected_intents_granted = vec![
-			DelegationGrant::new(1, BlockNumber::zero()),
-			DelegationGrant::new(2, BlockNumber::zero()),
+			DelegationGrant::new(1, BlockNumber::zero(), BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero(), BlockNumber::zero()),
 		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
 			permissions: expected_intents_granted,
+			revoked_at: BlockNumber::zero(),
 		}];
 		let output_schemas = intents_granted.unwrap();
 		assert_eq!(output_schemas, expected_delegations);
@@ -511,17 +512,23 @@ pub fn schema_granted_success_multiple_providers_rpc() {
 		assert_ok!(Msa::add_provider(provider_2, delegator, intent_grants_2));
 		let intents_granted = Msa::get_granted_intents_by_msa_id(delegator, None);
 		let expected_intents_granted_1 = vec![
-			DelegationGrant::new(1, BlockNumber::zero()),
-			DelegationGrant::new(2, BlockNumber::zero()),
+			DelegationGrant::new(1, BlockNumber::zero(), BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero(), BlockNumber::zero()),
 		];
 		let expected_intents_granted_2 = vec![
-			DelegationGrant::new(3, BlockNumber::zero()),
-			DelegationGrant::new(4, BlockNumber::zero()),
+			DelegationGrant::new(3, BlockNumber::zero(), BlockNumber::zero()),
+			DelegationGrant::new(4, BlockNumber::zero(), BlockNumber::zero()),
 		];
-		let expected_delegation_1 =
-			DelegationResponse { provider_id: provider_1, permissions: expected_intents_granted_1 };
-		let expected_delegation_2 =
-			DelegationResponse { provider_id: provider_2, permissions: expected_intents_granted_2 };
+		let expected_delegation_1 = DelegationResponse {
+			provider_id: provider_1,
+			permissions: expected_intents_granted_1,
+			revoked_at: BlockNumber::zero(),
+		};
+		let expected_delegation_2 = DelegationResponse {
+			provider_id: provider_2,
+			permissions: expected_intents_granted_2,
+			revoked_at: BlockNumber::zero(),
+		};
 		let output_intents = intents_granted.unwrap();
 		assert_eq!(output_intents, vec![expected_delegation_1, expected_delegation_2]);
 	})
@@ -538,12 +545,13 @@ pub fn schema_revoked_rpc() {
 		assert_ok!(Msa::add_provider(provider, delegator, intent_grants));
 		let mut intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
 		let mut expected_intents_granted = vec![
-			DelegationGrant::new(1, BlockNumber::zero()),
-			DelegationGrant::new(2, BlockNumber::zero()),
+			DelegationGrant::new(1, BlockNumber::zero(), BlockNumber::zero()),
+			DelegationGrant::new(2, BlockNumber::zero(), BlockNumber::zero()),
 		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
 			permissions: expected_intents_granted,
+			revoked_at: BlockNumber::zero(),
 		}];
 		let mut output_intents = intents_granted.unwrap();
 		assert_eq!(output_intents, expected_delegations);
@@ -553,11 +561,14 @@ pub fn schema_revoked_rpc() {
 		intent_grants = vec![1];
 		assert_ok!(Msa::upsert_intent_permissions(provider, delegator, intent_grants));
 		intents_granted = Msa::get_granted_intents_by_msa_id(delegator, Some(provider));
-		expected_intents_granted =
-			vec![DelegationGrant::new(1, BlockNumber::zero()), DelegationGrant::new(2, 5)];
+		expected_intents_granted = vec![
+			DelegationGrant::new(1, BlockNumber::zero(), BlockNumber::zero()),
+			DelegationGrant::new(2, 5, 5),
+		];
 		let expected_delegations = vec![DelegationResponse {
 			provider_id: provider,
 			permissions: expected_intents_granted,
+			revoked_at: BlockNumber::zero(),
 		}];
 		output_intents = intents_granted.unwrap();
 		assert_eq!(output_intents, expected_delegations);
