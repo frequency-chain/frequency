@@ -672,7 +672,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 187,
+	spec_version: 188,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -686,7 +686,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 187,
+	spec_version: 188,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -874,7 +874,7 @@ parameter_types! {
 	pub const RewardPoolChunkLength: u32 = 5;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
-const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
+const_assert!(ProviderBoostHistoryLimit::get().is_multiple_of(RewardPoolChunkLength::get()));
 
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

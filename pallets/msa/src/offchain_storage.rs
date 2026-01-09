@@ -159,7 +159,7 @@ fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> L
 
 				// extend the initial index lock
 				counter += 1;
-				if counter % 1000 == 0 {
+				if counter.is_multiple_of(1000) {
 					log::info!("Added {counter} more keys!");
 					if guard.extend_lock().is_err() {
 						log::warn!("lock is expired in block {block_number:?}");

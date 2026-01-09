@@ -1,0 +1,16 @@
+{
+  "name": "schema-upload",
+  "version": "1.0.0",
+  "description": "Uploads schemas to chain",
+  "scripts": {
+    "deploy:mainnet:intent": "node index.mjs MAINNET INTENT && exit 1",
+    "deploy:mainnet:schema": "node index.mjs MAINNET SCHEMA && exit 1",
+    "deploy:paseo": "node index.mjs PASEO && exit 1",
+    "deploy:local": "node index.mjs LOCAL && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@polkadot/api": "16.5.1"
+  }
+}

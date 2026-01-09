@@ -2,7 +2,7 @@ use crate as pallet_capacity;
 
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
+	RewardPoolHistoryChunk,
 };
 use common_primitives::{
 	msa::IntentId,
@@ -10,7 +10,6 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 use common_runtime::{constants::*, weights};
-use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
@@ -152,31 +151,6 @@ impl pallet_msa::Config for Test {
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
 	type Currency = pallet_balances::Pallet<Self>;
-}
-
-// not used yet
-pub struct TestRewardsProvider {}
-
-impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
-	type Balance = BalanceOf<Test>;
-
-	// To reflect new economic model behavior of having a constant RewardPool amount.
-	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		10_000u64
-	}
-
-	// use the pallet version of the era calculation.
-	fn era_staking_reward(
-		amount_staked: Self::Balance,
-		total_staked: Self::Balance,
-		reward_pool_size: Self::Balance,
-	) -> Self::Balance {
-		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
-	}
-
-	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
-		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
-	}
 }
 
 // Needs parameter_types! for the Perbill
