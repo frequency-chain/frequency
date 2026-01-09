@@ -224,7 +224,7 @@ jobs:
         working-directory: target/${{matrix.build-profile}}
         run: cp ${{env.BUILT_BIN_FILENAME}} ${{env.FINAL_BIN_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{matrix.branch_alias}}-${{github.run_id}}
           path: target/${{matrix.build-profile}}/${{env.FINAL_BIN_FILENAME}}*
@@ -481,7 +481,7 @@ jobs:
         run: npm pack
         working-directory: js/api-augment/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
@@ -518,7 +518,7 @@ jobs:
         run: npm pack
         working-directory: js/ethereum-utils/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
@@ -554,7 +554,7 @@ jobs:
         run: npm pack
         working-directory: js/schemas/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-schemas-${{github.run_id}}
           path: js/schemas/dist/frequency-chain-schemas-0.0.0.tgz
@@ -590,7 +590,7 @@ jobs:
         run: npm pack
         working-directory: js/recovery-sdk/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz

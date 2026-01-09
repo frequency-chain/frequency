@@ -91,7 +91,7 @@ jobs:
           ./scripts/run_benchmarks.sh -b
 
       - name: Upload Binary
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-binary
           path: |
@@ -100,7 +100,7 @@ jobs:
           retention-days: 3
 
       - name: Upload WASM Build Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wasm-artifacts
           path: target/release/wbuild
@@ -293,7 +293,7 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: |
@@ -389,7 +389,7 @@ jobs:
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-wasm-${{matrix.network}}-${{github.run_id}}
           path: ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
@@ -472,7 +472,7 @@ jobs:
         run: npm run build
         working-directory: js/api-augment
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -499,7 +499,7 @@ jobs:
         run: npm run build
         working-directory: js/ethereum-utils
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: js-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
@@ -526,7 +526,7 @@ jobs:
         run: npm run build
         working-directory: js/schemas
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: js-schemas-${{github.run_id}}
           path: js/schemas/dist
@@ -553,7 +553,7 @@ jobs:
         run: npm run build
         working-directory: js/recovery-sdk
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: js-recovery-sdk-${{github.run_id}}
           path: js/recovery-sdk/dist
@@ -735,7 +735,7 @@ jobs:
         run: |
           cat ${{env.OUTPUT_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-metadata-${{github.run_id}}
           path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
