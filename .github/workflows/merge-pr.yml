@@ -9,6 +9,7 @@ on:
       - main
 # Set default permissions as restrictive
 permissions:
+  id-token: write  # Required for OIDC
   contents: read
   packages: read
 
