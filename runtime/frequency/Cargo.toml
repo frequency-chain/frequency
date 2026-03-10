@@ -280,7 +280,7 @@ try-runtime = [
   "cumulus-pallet-xcmp-queue/try-runtime"
 ]
 frequency = ["common-runtime/frequency", "pallet-msa/frequency"]
-frequency-testnet = ["common-runtime/frequency-testnet", "pallet-msa/frequency-testnet"]
+frequency-testnet = ["common-runtime/frequency-testnet", "pallet-msa/frequency-testnet", "frequency-bridging"]
 frequency-westend = ["common-runtime/frequency-westend"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
