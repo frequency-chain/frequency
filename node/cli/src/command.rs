@@ -178,9 +178,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyWestendLocal == spec.identify() {
 				#[cfg(feature = "frequency-bridging")]
 				{
-					return Ok(Box::new(
-						chain_spec::frequency_westend_local::ChainSpec::from_json_file(path_buf)?,
-					));
+					Ok(Box::new(chain_spec::frequency_westend_local::ChainSpec::from_json_file(
+						path_buf,
+					)?))
 				}
 				#[cfg(not(feature = "frequency-bridging"))]
 				return Err("Frequency Westend Local runtime is not available.".into());

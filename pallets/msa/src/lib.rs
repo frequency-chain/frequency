@@ -83,10 +83,8 @@ pub use types::{
 pub use weights::*;
 
 /// Offchain storage for MSA pallet
-#[cfg(not(feature = "no-custom-host-functions"))]
 pub mod offchain_storage;
 use crate::types::{LogoCid, PayloadTypeDiscriminator, RecoveryHash};
-#[cfg(not(feature = "no-custom-host-functions"))]
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]

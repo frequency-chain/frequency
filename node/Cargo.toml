@@ -35,6 +35,7 @@ frequency-local = [
 ]
 frequency-testnet = [
   "frequency-cli/frequency-testnet",
+  "frequency-bridging",
 ]
 frequency-westend = [
   "frequency-cli/frequency-westend",
