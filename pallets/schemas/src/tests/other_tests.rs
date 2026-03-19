@@ -535,24 +535,31 @@ fn create_schema_v4_happy_path() {
 				*payload_location,
 				BoundedVec::default(),
 			)
-				.expect("should have created an intent");
+			.expect("should have created an intent");
 
 			// act
 			assert_ok!(SchemasPallet::create_schema_v4(
-			RuntimeOrigin::signed(sender.clone()),
-			intent_id,
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
-			ModelType::AvroBinary,
-		));
+				RuntimeOrigin::signed(sender.clone()),
+				intent_id,
+				create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
+				ModelType::AvroBinary,
+			));
 			let res = SchemasPallet::get_schema_by_id(expected_schema_id);
 
 			// assert
 			System::assert_last_event(
-				AnnouncementEvent::SchemaCreated { key: sender.clone(), schema_id: expected_schema_id }.into(),
+				AnnouncementEvent::SchemaCreated {
+					key: sender.clone(),
+					schema_id: expected_schema_id,
+				}
+				.into(),
 			);
 			assert!(res.as_ref().is_some());
 			let res = res.unwrap();
-			assert_eq!(res.payload_location, *payload_location, "Schema payload location should match Intent");
+			assert_eq!(
+				res.payload_location, *payload_location,
+				"Schema payload location should match Intent"
+			);
 		})
 	})
 }
