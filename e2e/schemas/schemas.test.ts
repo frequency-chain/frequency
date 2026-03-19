@@ -20,7 +20,7 @@ let fundingSource: KeyringPair;
 describe('#schemas pallet tests', function () {
   let keys: KeyringPair;
   let accountWithNoFunds: KeyringPair;
-  const createdIntents: { intentId: number; intentName: string; schemaIds: number[] }[] = [];
+  const createdIntents: { intentId: number; intentName: string; payloadLocation: string; schemaIds: number[] }[] = [];
   const createdIntentGroups: { intentGroupId: number; intentIds: number[]; intentGroupName: string }[] = [];
 
   before(async function () {
@@ -29,10 +29,16 @@ describe('#schemas pallet tests', function () {
     accountWithNoFunds = createKeys();
 
     const intentName = 'e-e.' + generateSchemaPartialName(20);
-    const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], intentName);
+    const payloadLocation = 'OnChain';
+    const f = ExtrinsicHelper.createIntent(keys, payloadLocation, [], intentName);
     const { target: createIntentEvent } = await f.fundAndSend(fundingSource);
     if (createIntentEvent && ExtrinsicHelper.apiPromise.events.schemas.IntentCreated.is(createIntentEvent)) {
-      createdIntents.push({ intentId: createIntentEvent.data.intentId.toNumber(), intentName, schemaIds: [] });
+      createdIntents.push({
+        intentId: createIntentEvent.data.intentId.toNumber(),
+        intentName,
+        payloadLocation,
+        schemaIds: [],
+      });
     }
 
     assert.equal(createdIntents.length, 1);
@@ -61,20 +67,23 @@ describe('#schemas pallet tests', function () {
       });
     });
 
-    it('should successfully create an intent with a name', async function () {
-      const intentName = 'e-e.' + generateSchemaPartialName(20);
-      const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], intentName);
-      const { target: createIntentEvent, eventMap } = await f.fundAndSend(fundingSource);
-      if (createIntentEvent && ExtrinsicHelper.apiPromise.events.schemas.IntentCreated.is(createIntentEvent)) {
-        createdIntents.push({
-          intentId: createIntentEvent.data.intentId.toNumber(),
-          intentName: createIntentEvent.data.intentName.toString(),
-          schemaIds: [],
-        });
-      }
+    ['OnChain', 'OffChain', 'Itemized', 'Paginated', 'IPFS'].forEach((payloadLocation) => {
+      it(`should successfully create an intent with a name and payload location ${payloadLocation}`, async function () {
+        const intentName = 'e-e.' + generateSchemaPartialName(20);
+        const f = ExtrinsicHelper.createIntent(keys, 'OnChain', [], intentName);
+        const { target: createIntentEvent, eventMap } = await f.fundAndSend(fundingSource);
+        if (createIntentEvent && ExtrinsicHelper.apiPromise.events.schemas.IntentCreated.is(createIntentEvent)) {
+          createdIntents.push({
+            intentId: createIntentEvent.data.intentId.toNumber(),
+            intentName: createIntentEvent.data.intentName.toString(),
+            payloadLocation,
+            schemaIds: [],
+          });
+        }
 
-      assertExtrinsicSuccess(eventMap);
-      assert.notEqual(createIntentEvent, undefined);
+        assertExtrinsicSuccess(eventMap);
+        assert.notEqual(createIntentEvent, undefined);
+      });
     });
 
     it('create intent should fail if name is a duplicate', async function () {
@@ -85,6 +94,7 @@ describe('#schemas pallet tests', function () {
         createdIntents.push({
           intentId: createIntentEvent.data.intentId.toNumber(),
           intentName: createIntentEvent.data.intentName.toString(),
+          payloadLocation: 'OnChain',
           schemaIds: [],
         });
       }

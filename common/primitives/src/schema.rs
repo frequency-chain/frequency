@@ -70,6 +70,8 @@ pub enum PayloadLocation {
 	Itemized,
 	/// Paginated payload location for onchain storage in paginated form
 	Paginated,
+	/// Message payload is located off-chain, other than IPFS
+	OffChain,
 }
 
 /// Support for up to 16 user-enabled features on a collection.
