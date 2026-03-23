@@ -518,30 +518,49 @@ fn create_schema_v4_happy_path() {
 		// arrange
 		sudo_set_max_schema_size();
 		let sender: AccountId = test_public(1);
-		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
-			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
-		let (intent_id, _) = SchemasPallet::create_intent_for(
-			intent_name,
+		let payload_locations = [
 			PayloadLocation::OnChain,
-			BoundedVec::default(),
-		)
-		.expect("should have created an intent");
+			PayloadLocation::IPFS,
+			PayloadLocation::Itemized,
+			PayloadLocation::Paginated,
+			PayloadLocation::OffChain,
+		];
+		payload_locations.iter().enumerate().for_each(|(i, payload_location)| {
+			let expected_schema_id: SchemaId = i as SchemaId + 1;
+			let name = "namespace.descriptor".to_owned() + &i.to_string();
+			let intent_name: SchemaNamePayload =
+				BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+			let (intent_id, _) = SchemasPallet::create_intent_for(
+				intent_name,
+				*payload_location,
+				BoundedVec::default(),
+			)
+			.expect("should have created an intent");
 
-		// act
-		assert_ok!(SchemasPallet::create_schema_v4(
-			RuntimeOrigin::signed(sender.clone()),
-			intent_id,
-			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
-			ModelType::AvroBinary,
-		));
-		let res = SchemasPallet::get_schema_by_id(1);
+			// act
+			assert_ok!(SchemasPallet::create_schema_v4(
+				RuntimeOrigin::signed(sender.clone()),
+				intent_id,
+				create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
+				ModelType::AvroBinary,
+			));
+			let res = SchemasPallet::get_schema_by_id(expected_schema_id);
 
-		// assert
-		System::assert_last_event(
-			AnnouncementEvent::SchemaCreated { key: sender, schema_id: 1 }.into(),
-		);
-		assert!(res.as_ref().is_some());
+			// assert
+			System::assert_last_event(
+				AnnouncementEvent::SchemaCreated {
+					key: sender.clone(),
+					schema_id: expected_schema_id,
+				}
+				.into(),
+			);
+			assert!(res.as_ref().is_some());
+			let res = res.unwrap();
+			assert_eq!(
+				res.payload_location, *payload_location,
+				"Schema payload location should match Intent"
+			);
+		})
 	})
 }
 

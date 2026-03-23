@@ -25,30 +25,42 @@ fn create_intent_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let sender: AccountId = test_public(1);
-		let name = "namespace.descriptor";
-		let intent_name: SchemaNamePayload =
-			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
 
-		// act
-		assert_ok!(SchemasPallet::create_intent(
-			RuntimeOrigin::signed(sender.clone()),
-			intent_name.clone(),
+		let payload_locations = [
 			PayloadLocation::OnChain,
-			BoundedVec::default(),
-		));
-		let res = SchemasPallet::get_intent_by_id(1);
-		let parsed_name = intent_name.into_inner();
+			PayloadLocation::IPFS,
+			PayloadLocation::Itemized,
+			PayloadLocation::Paginated,
+			PayloadLocation::OffChain,
+		];
 
-		// assert
-		System::assert_last_event(
-			AnnouncementEvent::IntentCreated {
-				key: sender,
-				intent_id: 1,
-				intent_name: parsed_name,
-			}
-			.into(),
-		);
-		assert!(res.as_ref().is_some());
+		payload_locations.iter().enumerate().for_each(|(index, location)| {
+			let expected_id: IntentId = index as IntentId + 1;
+			let name = "namespace.descriptor".to_owned() + &index.to_string();
+			let intent_name: SchemaNamePayload =
+				BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
+
+			// act
+			assert_ok!(SchemasPallet::create_intent(
+				RuntimeOrigin::signed(sender.clone()),
+				intent_name.clone(),
+				*location,
+				BoundedVec::default(),
+			));
+			let res = SchemasPallet::get_intent_by_id(expected_id);
+			let parsed_name = intent_name.into_inner();
+
+			// assert
+			System::assert_last_event(
+				AnnouncementEvent::IntentCreated {
+					key: sender.clone(),
+					intent_id: expected_id,
+					intent_name: parsed_name,
+				}
+				.into(),
+			);
+			assert!(res.as_ref().is_some());
+		})
 	})
 }
 
@@ -98,9 +110,12 @@ fn create_intent_via_governance_with_append_only_setting_and_non_itemized_should
 		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
 
-		for location in
-			[PayloadLocation::OnChain, PayloadLocation::IPFS, PayloadLocation::Paginated]
-		{
+		for location in [
+			PayloadLocation::OnChain,
+			PayloadLocation::IPFS,
+			PayloadLocation::Paginated,
+			PayloadLocation::OffChain,
+		] {
 			// act and assert
 			assert_noop!(
 				SchemasPallet::create_intent_via_governance(
@@ -127,7 +142,8 @@ fn create_intent_via_governance_with_signature_required_setting_and_wrong_locati
 		let intent_name: SchemaNamePayload =
 			BoundedVec::try_from(name.to_string().into_bytes()).expect("should convert");
 
-		for location in [PayloadLocation::OnChain, PayloadLocation::IPFS] {
+		for location in [PayloadLocation::OnChain, PayloadLocation::IPFS, PayloadLocation::OffChain]
+		{
 			// act and assert
 			assert_noop!(
 				SchemasPallet::create_intent_via_governance(
