@@ -10,7 +10,13 @@
 
 ## Usage
 
-you can run one of the following commands based on the targeted chain.
+The script now expects the input JSON filename as the first argument. By default, use:
+
+```sh
+intents-and-schemas-to-publish.json
+```
+
+You can run one of the following commands based on the targeted chain.
 
 ```sh
 npm run deploy:mainnet:intent
@@ -25,6 +31,15 @@ or
 
 ```sh
 npm run deploy:local
+```
+
+Or run directly:
+
+```sh
+node index.mjs intents-and-schemas-to-publish.json PASEO
+node index.mjs intents-and-schemas-to-publish.json LOCAL
+node index.mjs intents-and-schemas-to-publish.json MAINNET INTENT
+node index.mjs intents-and-schemas-to-publish.json MAINNET SCHEMA
 ```
 
 The following environment variable allows you to change the default Alice sudo account used for deploying:
