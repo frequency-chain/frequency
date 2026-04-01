@@ -1,4 +1,6 @@
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 const MAINNET_SOURCE_URL = "wss://1.rpc.frequency.xyz";
 const PASEO_SOURCE_URL = "wss://0.rpc.testnet.amplica.io";
@@ -8,58 +10,6 @@ const PASEO = "PASEO";
 const LOCAL = "LOCAL";
 const INTENT = "INTENT";
 const SCHEMA = "SCHEMA";
-const INTENTS = [
-	{
-		payload_location: "Itemized",
-		settings: ["AppendOnly", "SignatureRequired"],
-		name: "ics.public-key-key-agreement",
-	},
-	{
-		payload_location: "Itemized",
-		settings: ["SignatureRequired"],
-		name: "ics.context-group-acl",
-	},
-	{
-		payload_location: "Paginated",
-		settings: ["SignatureRequired"],
-		name: "ics.context-group-metadata",
-	},
-	{
-		payload_location: "OnChain",
-		settings: [],
-		name: "ics.context-batch-announcement"
-	}
-];
-const SCHEMAS = [
-	{
-		intent_name: "ics.public-key-key-agreement",
-		model_type: "AvroBinary",
-		payload_location: "Itemized",
-		status: "Active",
-		model: '{"type":"record","name":"PublicKey","namespace":"ics","fields":[{"name":"publicKey","doc":"Multicodec public key","type":"bytes"}]}',
-	},
-	{
-		intent_name: "ics.context-group-acl",
-		model_type: "AvroBinary",
-		payload_location: "Itemized",
-		status: "Active",
-		model: '{"type":"record","name":"ContextGroupACL","namespace":"ics","fields":[{"name":"prid","type":"fixed","size":8,"doc":"Pseudonymous Relationship Identifier"},{"name":"keyId","type":"long","doc":"User-Assigned Key Identifier used for PRID and encryption"},{"name":"nonce","type":"fixed","size":12,"doc":"Nonce used in encryptedProviderMsaId encryption (12 bytes)"},{"name":"encryptedProviderId","type":"bytes","maxLength":10,"doc":"Encrypted provider Msa id"}]}',
-	},
-	{
-		intent_name: "ics.context-group-metadata",
-		model_type: "AvroBinary",
-		payload_location: "Paginated",
-		status: "Active",
-		model: '{"type":"record","name":"ContextGroupMetadata","namespace":"ics","fields":[{"name":"prid","type":"fixed","size":8,"doc":"Pseudonymous Relationship Identifier"},{"name":"keyId","type":"long","doc":"User-Assigned Key Identifier used for PRID"},{"name":"locationUri","type":"string","maxLength":800,"doc":"URI pointing to the location of stored Context Group"},{"name":"contentHash","type":["null","string"],"default":null,"maxLength":128,"doc":"Optional multihash of the content in base58 encoding"}]}',
-	},
-	{
-		intent_name: "ics.context-batch-announcement",
-		model_type: "AvroBinary",
-		payload_location: "OnChain",
-		status: "Active",
-		model: '{"type":"record","name":"ContextBatchAnnouncement","namespace":"ics","fields":[{"name":"batchHash","type":"fixed","size":32,"doc":"SHA-256 hash of the batch file for verification"},{"name":"opsCount","type":"int","doc":"Number of top-level records in the batch file"},{"name":"byteCount","type":"int","doc":"File size of the batch file in bytes"}]}',
-	}
-];
 
 const RPC_AUGMENTS = {
 	rpc: {
@@ -229,7 +179,7 @@ async function hasDuplicateLatestSchema(api, schemaDeploy, intentId) {
 	return latestModelType === schemaDeploy.model_type && normalizedLatestModel === normalizedSchemaModel ? latestSchemaId : false;
 }
 
-async function deploy(chainType, operationType) {
+async function deploy(chainType, operationType, intents, schemas) {
 	const selectedUrl =
 		chainType === MAINNET
 			? MAINNET_SOURCE_URL
@@ -252,8 +202,8 @@ async function deploy(chainType, operationType) {
 
 	const intentPromises = [];
 	let intentNonceOffset = 0;
-	for (const idx in INTENTS) {
-		const intent = INTENTS[idx];
+	for (const idx in intents) {
+		const intent = intents[idx];
 		const nonce = baseNonce + intentNonceOffset;
 		// check if intent already exists
 		const intentId = await getIntentId(api, intent);
@@ -279,15 +229,15 @@ async function deploy(chainType, operationType) {
 	const intentResults = await Promise.all(intentPromises);
 	const idMap = new Map(intentResults.map((result, index) => {
 		const id = Array.isArray(result) ? `${result[0]}` : `${result}`;
-		return [INTENTS[index].name, parseInt(id, 10)];
+		return [intents[index].name, parseInt(id, 10)];
 	}));
 	console.log('Resolved intents: ', idMap);
 	baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
 	
 	const schemaPromises = [];
 	let schemaNonceOffset = 0;
-	for (const idx in SCHEMAS) {
-	  const schema = SCHEMAS[idx];
+	for (const idx in schemas) {
+	  const schema = schemas[idx];
 	  const intentId = await getIntentId(api, { name: schema.intent_name });
 	  if (!intentId) {
 		  throw new Error(`Intent ID not found for schema with intent_name: ${schema.intent_name}`);
@@ -332,8 +282,18 @@ async function deploy(chainType, operationType) {
     const schemaResults = await Promise.all(schemaPromises);
 	console.log('Resolved/created schemas: ', new Map(schemaResults.map((result, index) => {
 		const id = Array.isArray(result) ? `${result[0]}` : `${result}`;
-		return [SCHEMAS[index].intent_name, parseInt(id, 10)];
+		return [schemas[index].intent_name, parseInt(id, 10)];
 	})));
+}
+
+async function loadIntentsAndSchemas(fileName) {
+	const filePath = path.isAbsolute(fileName) ? fileName : path.resolve(process.cwd(), fileName);
+	const fileContents = await readFile(filePath, "utf-8");
+	const parsed = JSON.parse(fileContents);
+	if (!Array.isArray(parsed.intents) || !Array.isArray(parsed.schemas)) {
+		throw new Error(`Invalid format in ${filePath}: expected "intents" and "schemas" arrays`);
+	}
+	return parsed;
 }
 
 // Given a list of events, a section and a method,
@@ -490,29 +450,33 @@ async function main() {
 	try {
 		console.log("Uploading Intents & schemas");
 		const args = process.argv.slice(2);
-		if (args.length == 0) {
-			console.log(`Chain type should be provided: ${MAINNET} or ${PASEO} or ${LOCAL}`);
+		if (args.length < 2) {
+			console.log(
+				`Usage: node index.mjs <intents-and-schemas.json> <${MAINNET}|${PASEO}|${LOCAL}> [${INTENT}|${SCHEMA}]`,
+			);
 			process.exit(1);
 		}
-		const chainType = args[0].toUpperCase().trim();
+		const inputFileName = args[0];
+		const chainType = args[1].toUpperCase().trim();
 		if (chainType !== MAINNET && chainType !== PASEO && chainType !== LOCAL) {
 			console.log(`Please specify the chain type: ${MAINNET} or ${PASEO} or ${LOCAL}`);
 			process.exit(1);
 		}
 		let operationType = "ALL";
 		if (chainType === MAINNET) { 
-			if (args.length < 2) { 
+			if (args.length < 3) { 
 				console.log(`For Mainnet you must specify the operation type: ${INTENT} or ${SCHEMA}`);
 				process.exit(1);
 			}
-			operationType = args[1].toUpperCase().trim();
+			operationType = args[2].toUpperCase().trim();
 			if (operationType !== INTENT && operationType !== SCHEMA) {
 				console.log(`For Mainnet you must specify the operation type: ${INTENT} or ${SCHEMA}`);
 				process.exit(1);
 			}
 		}
-		
-		await deploy(chainType, operationType);
+
+		const { intents, schemas } = await loadIntentsAndSchemas(inputFileName);
+		await deploy(chainType, operationType, intents, schemas);
 		process.exit(0);
 	} catch (error) {
 		console.error("Error:", error);
