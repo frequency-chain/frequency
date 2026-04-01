@@ -191,7 +191,7 @@ pub mod pallet {
 		/// Invalid Signature for payload
 		InvalidSignature,
 
-		/// The submitted proof has expired; the current block is less the expiration block
+		/// The submitted proof has expired; the current block is past the expiration block
 		ProofHasExpired,
 
 		/// The submitted proof expiration block is too far in the future

@@ -24,6 +24,11 @@ const INTENTS = [
 		settings: ["SignatureRequired"],
 		name: "ics.context-group-metadata",
 	},
+	{
+		payload_location: "OnChain",
+		settings: [],
+		name: "ics.context-batch-announcement"
+	}
 ];
 const SCHEMAS = [
 	{
@@ -47,6 +52,13 @@ const SCHEMAS = [
 		status: "Active",
 		model: '{"type":"record","name":"ContextGroupMetadata","namespace":"ics","fields":[{"name":"prid","type":"fixed","size":8,"doc":"Pseudonymous Relationship Identifier"},{"name":"keyId","type":"long","doc":"User-Assigned Key Identifier used for PRID"},{"name":"locationUri","type":"string","maxLength":800,"doc":"URI pointing to the location of stored Context Group"},{"name":"contentHash","type":["null","string"],"default":null,"maxLength":128,"doc":"Optional multihash of the content in base58 encoding"}]}',
 	},
+	{
+		intent_name: "ics.context-batch-announcement",
+		model_type: "AvroBinary",
+		payload_location: "OnChain",
+		status: "Active",
+		model: '{"type":"record","name":"ContextBatchAnnouncement","namespace":"ics","fields":[{"name":"batchHash","type":"fixed","size":32,"doc":"SHA-256 hash of the batch file for verification"},{"name":"opsCount","type":"int","doc":"Number of top-level records in the batch file"},{"name":"byteCount","type":"int","doc":"File size of the batch file in bytes"}]}',
+	}
 ];
 
 const RPC_AUGMENTS = {
@@ -160,9 +172,8 @@ function getIntentId(api, intent) {
 					const id = last.entityId;
 					resolve(id.value);
 				} else { 
-					const err = `No intent for ${intent.name}`;
-					console.error(`ERROR: ${err}`);
-					reject(err);
+					console.log(`No intent exists for "${intent.name}"`);
+					resolve(undefined);
 				}
 			})
 			.catch(error => {
@@ -171,6 +182,51 @@ function getIntentId(api, intent) {
 		    });
 	});
 	return promise;
+}
+
+async function hasDuplicateLatestSchema(api, schemaDeploy, intentId) {
+	const intentResponse = await api.call.schemasRuntimeApi.getIntentById(intentId, true);
+	if (!intentResponse.isSome) {
+		throw new Error(`Intent ${intentId} not found`);
+	}
+
+	const schemaIds = intentResponse.unwrap().schemaIds;
+	if (!schemaIds.isSome || schemaIds.unwrap().length === 0) {
+		return false;
+	}
+
+	const ids = schemaIds.unwrap();
+	const latestSchemaId = ids[ids.length - 1];
+	const latestSchemaResponse = await api.call.schemasRuntimeApi.getSchemaById(latestSchemaId);
+	if (!latestSchemaResponse.isSome) {
+		return false;
+	}
+
+	const latestSchema = latestSchemaResponse.unwrap();
+	const latestModelType = latestSchema.modelType.toString();
+	const latestModel = latestSchema.model.toUtf8();
+	const normalizeJsonString = (jsonString) => {
+		const sortKeysDeep = (value) => {
+			if (Array.isArray(value)) {
+				return value.map(sortKeysDeep);
+			}
+			if (value && typeof value === "object") {
+				return Object.keys(value)
+					.sort()
+					.reduce((acc, key) => {
+						acc[key] = sortKeysDeep(value[key]);
+						return acc;
+					}, {});
+			}
+			return value;
+		};
+
+		return JSON.stringify(sortKeysDeep(JSON.parse(jsonString)));
+	};
+
+	const normalizedLatestModel = normalizeJsonString(latestModel);
+	const normalizedSchemaModel = normalizeJsonString(schemaDeploy.model);
+	return latestModelType === schemaDeploy.model_type && normalizedLatestModel === normalizedSchemaModel ? latestSchemaId : false;
 }
 
 async function deploy(chainType, operationType) {
@@ -195,19 +251,29 @@ async function deploy(chainType, operationType) {
 	let baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
 
 	const intentPromises = [];
+	let intentNonceOffset = 0;
 	for (const idx in INTENTS) {
 		const intent = INTENTS[idx];
-		const nonce = baseNonce + Number(idx);
+		const nonce = baseNonce + intentNonceOffset;
+		// check if intent already exists
+		const intentId = await getIntentId(api, intent);
+		if (intentId) {
+			console.log(`Intent "${intent.name}" already exists with ID ${intentId}`);
+			intentPromises[idx] = Promise.resolve(intentId);
+			continue;
+		}
 		if (chainType === MAINNET) {
 			// create proposal
 			if (operationType === INTENT) {
 			 	intentPromises[idx] = getIntentProposalTransaction(api, signerAccountKeys, nonce, intent);
+				intentNonceOffset += 1;
 			} else { 
 				intentPromises[idx] = getIntentId(api, intent);
 			}
 		} else {
 			// create directly via sudo
 			intentPromises[idx] = getIntentSudoTransaction(api, signerAccountKeys, nonce, intent);
+			intentNonceOffset += 1;
 		 }
 	}
 	const intentResults = await Promise.all(intentPromises);
@@ -215,18 +281,29 @@ async function deploy(chainType, operationType) {
 		const id = Array.isArray(result) ? `${result[0]}` : `${result}`;
 		return [INTENTS[index].name, parseInt(id, 10)];
 	}));
-	console.log(idMap);
+	console.log('Resolved intents: ', idMap);
 	baseNonce = (await api.rpc.system.accountNextIndex(signerAccountKeys.address)).toNumber();
 	
 	const schemaPromises = [];
+	let schemaNonceOffset = 0;
 	for (const idx in SCHEMAS) {
 	  const schema = SCHEMAS[idx];
-	  const intentId = idMap.get(schema.intent_name);
-	  if (intentId === undefined) {
-	    throw new Error(`Intent ID not found for schema with intent_name: ${schema.intent_name}`);
+	  const intentId = await getIntentId(api, { name: schema.intent_name });
+	  if (!intentId) {
+		  throw new Error(`Intent ID not found for schema with intent_name: ${schema.intent_name}`);
 	  }
-	  console.log(`intentId ${intentId}`);
-	  const nonce = baseNonce + Number(idx);
+	  console.log(`Found intentId ${intentId} for "${schema.intent_name}"`);
+
+	  const duplicateSchemaId = await hasDuplicateLatestSchema(api, schema, intentId);
+	  if (duplicateSchemaId) {
+		console.log(
+			`Skipping schema publish for intent ${schema.intent_name}: latest published schema (${duplicateSchemaId}) has the same model and modelType`,
+		);
+		schemaPromises[idx] = Promise.resolve(duplicateSchemaId);
+		continue;
+	  }
+
+	  const nonce = baseNonce + schemaNonceOffset;
 
 	  if (chainType === MAINNET) {
 	    // create proposal
@@ -238,6 +315,7 @@ async function deploy(chainType, operationType) {
 				schema,
 				intentId,
 			);
+			schemaNonceOffset += 1;
 		}
 	  } else {
 	     // create directly via sudo
@@ -248,12 +326,14 @@ async function deploy(chainType, operationType) {
 	       schema,
 		   intentId,
 	     );
+		 schemaNonceOffset += 1;
 	  }
 	}
     const schemaResults = await Promise.all(schemaPromises);
-	for (const r of schemaResults) { 
-		console.log(`schemaId = ${r}`);
-	}
+	console.log('Resolved/created schemas: ', new Map(schemaResults.map((result, index) => {
+		const id = Array.isArray(result) ? `${result[0]}` : `${result}`;
+		return [SCHEMAS[index].intent_name, parseInt(id, 10)];
+	})));
 }
 
 // Given a list of events, a section and a method,
