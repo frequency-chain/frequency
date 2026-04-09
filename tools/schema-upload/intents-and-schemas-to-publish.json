@@ -1,0 +1,61 @@
+{
+  "intents": [
+    {
+      "payload_location": "Itemized",
+      "settings": [
+        "AppendOnly",
+        "SignatureRequired"
+      ],
+      "name": "ics.public-key-key-agreement"
+    },
+    {
+      "payload_location": "Itemized",
+      "settings": [
+        "SignatureRequired"
+      ],
+      "name": "ics.context-group-acl"
+    },
+    {
+      "payload_location": "Paginated",
+      "settings": [
+        "SignatureRequired"
+      ],
+      "name": "ics.context-group-metadata"
+    },
+    {
+      "payload_location": "OnChain",
+      "settings": [],
+      "name": "ics.context-batch-announcement"
+    }
+  ],
+  "schemas": [
+    {
+      "intent_name": "ics.public-key-key-agreement",
+      "model_type": "AvroBinary",
+      "payload_location": "Itemized",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"ics\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}"
+    },
+    {
+      "intent_name": "ics.context-group-acl",
+      "model_type": "AvroBinary",
+      "payload_location": "Itemized",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"ContextGroupACL\",\"namespace\":\"ics\",\"fields\":[{\"name\":\"prid\",\"type\":{\"type\":\"fixed\",\"name\":\"DSNPPrid\",\"size\":8},\"doc\":\"Pseudonymous Relationship Identifier\"},{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier used for PRID and encryption\"},{\"name\":\"nonce\",\"type\":{\"type\":\"fixed\",\"name\":\"ProviderNonce\",\"size\":12},\"doc\":\"Nonce used in encryptedProviderMsaId encryption (12 bytes)\"},{\"name\":\"encryptedProviderId\",\"type\":\"bytes\",\"maxLength\":10,\"doc\":\"Encrypted provider Msa id\"}]}"
+    },
+    {
+      "intent_name": "ics.context-group-metadata",
+      "model_type": "AvroBinary",
+      "payload_location": "Paginated",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"ContextGroupMetadata\",\"namespace\":\"ics\",\"fields\":[{\"name\":\"prid\",\"type\":{\"type\":\"fixed\",\"name\":\"DSNPPrid\",\"size\":8},\"doc\":\"Pseudonymous Relationship Identifier\"},{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier used for PRID\"},{\"name\":\"locationUri\",\"type\":\"string\",\"maxLength\":800,\"doc\":\"URI pointing to the location of stored Context Group\"},{\"name\":\"contentHash\",\"type\":[\"null\",\"string\"],\"default\":null,\"maxLength\":128,\"doc\":\"Optional multihash of the content in base58 encoding\"}]}"
+    },
+    {
+      "intent_name": "ics.context-batch-announcement",
+      "model_type": "AvroBinary",
+      "payload_location": "OnChain",
+      "status": "Active",
+      "model": "{\"type\":\"record\",\"name\":\"ContextBatchAnnouncement\",\"namespace\":\"ics\",\"fields\":[{\"name\":\"batchHash\",\"type\":\"fixed\",\"size\":32,\"doc\":\"SHA-256 hash of the batch file for verification\"},{\"name\":\"opsCount\",\"type\":\"int\",\"doc\":\"Number of top-level records in the batch file\"},{\"name\":\"byteCount\",\"type\":\"int\",\"doc\":\"File size of the batch file in bytes\"}]}"
+    }
+  ]
+}

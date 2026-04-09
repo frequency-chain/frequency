@@ -22,10 +22,32 @@ runs:
   using: "composite"
   steps:
     - name: Set up Node.js
-      # Use whatever version of setup-node you actually want here
       uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.cache }}
+        registry-url: ${{ inputs.registry-url }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    # Temporary work around for a bug in Node 22.22.2
+    - name: Resolve temporary Node.js pin for 22.x
+      id: resolve-node-version
+      shell: bash
+      run: |
+        effective_node_version='${{ inputs.node-version }}'
+        if [[ '${{ inputs.node-version }}' == '22.x' ]]; then
+          resolved_node_version="$(node --version | sed 's/^v//')"
+          if [[ "$resolved_node_version" == '22.22.2' ]]; then
+            effective_node_version='22.22.1'
+          fi
+        fi
+        echo "effective-node-version=$effective_node_version" >> "$GITHUB_OUTPUT"
+
+    - name: Reconfigure Node.js to 22.22.1
+      if: ${{ steps.resolve-node-version.outputs.effective-node-version != inputs.node-version }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ steps.resolve-node-version.outputs.effective-node-version }}
         cache: ${{ inputs.cache }}
         registry-url: ${{ inputs.registry-url }}
         cache-dependency-path: ${{ inputs.cache-dependency-path }}
