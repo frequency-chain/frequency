@@ -240,9 +240,9 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v6
       - name: Set Up Cargo Deny
-        run: |
-          cargo install --force --locked cargo-deny@0.18.9
-          cargo generate-lockfile
+        # Use the committed Cargo.lock. `cargo generate-lockfile` fails because
+        # polkadot-sdk's cid@0.9 depends on core2@0.4.0, which is yanked on crates.io.
+        run: cargo install --force --locked cargo-deny@0.18.9
       - name: Run Cargo Deny
         run: cargo deny check --hide-inclusion-graph -c deny.toml
 

@@ -78,7 +78,7 @@ try-runtime = [
   "sp-runtime/try-runtime"
 ]
 on-chain-release-build = ["sp-api/disable-logging"]
-frequency = ["frequency-service/frequency"]
+frequency = ["frequency-service/frequency", "frequency-bridging"]
 frequency-no-relay = ["frequency-service/frequency-no-relay"]
 frequency-local = ["frequency-service/frequency-local"]
 frequency-testnet = ["frequency-service/frequency-testnet", "frequency-bridging"]

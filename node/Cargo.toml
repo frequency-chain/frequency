@@ -26,7 +26,7 @@ std = []
 frequency-bridging = []
 default = []
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
-frequency = ["frequency-cli/frequency"]
+frequency = ["frequency-cli/frequency", "frequency-bridging"]
 frequency-no-relay = [
   "frequency-cli/frequency-no-relay",
 ]

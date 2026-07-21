@@ -118,11 +118,11 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
    ```sh
    make build-runtime-local
    make build-runtime-westend-testnet
-   make build-runtime-bridging-testnet
    make build-runtime-paseo-testnet
    make build-runtime-mainnet
    ```
-   Any of the above commands can optionally include `FEATURES=no-host-functions` to build a runtime that can be used to
+   Mainnet and paseo testnet runtimes include `frequency-bridging`. Westend still requires the explicit bridging feature via `build-runtime-westend-testnet`.
+   Any of the above commands can optionally include `FEATURES=no-custom-host-functions` to build a runtime that can be used to
    build blocks in a [Chopsticks](https://github.com/AcalaNetwork/chopsticks) environment, as in:
    ```sh
    make FEATURES=no-custom-host-functions build-runtime-paseo-testnet

@@ -102,7 +102,7 @@ runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
   "polkadot-service/runtime-benchmarks",
 ]
-frequency = ["frequency-runtime"]
+frequency = ["frequency-runtime", "frequency-bridging"]
 frequency-no-relay = ["frequency-runtime"]
 frequency-local = ["frequency-runtime"]
 frequency-testnet = ["frequency-runtime", "frequency-bridging"]
