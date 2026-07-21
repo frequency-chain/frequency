@@ -8,7 +8,7 @@ all: build
 clean:
 	cargo clean
 
-.PHONY: start start-bridging start-bridging-westend start-bridging-westend-local start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
+.PHONY: start start-bridging-westend start-bridging-westend-local start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
 start:
 	./scripts/init.sh start-frequency-instant
 
@@ -17,7 +17,6 @@ start-bridging-westend-local:
 
 start-bridging-westend:
 	./scripts/init.sh start-bridging-westend
-	# TODO: Add testnet support
 
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
@@ -280,9 +279,9 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check-all check check-no-relay check-local check-testnet check-mainnet check-bridging-all check-bridging-mainnet check-bridging-testnet check-bridging-westend check-bridging-local
-# Add a target to run all checks to check that all existing features work with the addition of 'frequency-bridging'
-# which is an add-on feature and not mutually exclusive with the other features.
+.PHONY: check-all check check-no-relay check-local check-testnet check-mainnet check-bridging-all check-bridging-westend check-bridging-local
+# frequency (mainnet) and frequency-testnet (paseo) both enable frequency-bridging via Cargo features.
+# Bridging remains opt-in for westend and local.
 check-all: check check-no-relay check-local check-testnet check-mainnet check-bridging-all
 
 check:
@@ -300,13 +299,8 @@ check-testnet:
 check-mainnet:
 	SKIP_WASM_BUILD=1 cargo check --features frequency
 
-check-bridging-all: check-bridging-westend check-bridging-local check-bridging-testnet check-bridging-mainnet
-
-check-bridging-mainnet:
-	SKIP_WASM_BUILD=1 cargo check --features frequency,frequency-bridging
-
-check-bridging-testnet:
-	SKIP_WASM_BUILD=1 cargo check --features frequency-testnet,frequency-bridging
+# Opt-in bridging checks for networks that do not enable bridging by default.
+check-bridging-all: check-bridging-westend check-bridging-local
 
 check-bridging-westend:
 	SKIP_WASM_BUILD=1 cargo check --features frequency-westend,frequency-bridging
@@ -319,9 +313,11 @@ check-bridging-local:
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-westend build-mainnet build-testnet-release build-westend-release build-mainnet-release build-bridging-mainnet build-bridging-westend build-bridging-westend-local build-all
+.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-westend build-mainnet build-testnet-release build-westend-release build-mainnet-release build-bridging-westend build-bridging-local build-all
 
-build-all: build build-benchmarks build-no-relay build-local build-testnet build-westend build-mainnet build-testnet-release build-westend-release build-mainnet-release build-bridging-mainnet build-bridging-westend build-bridging-westend-local
+# Mainnet and paseo testnet include bridging via their Cargo features.
+# Westend and local still need an explicit frequency-bridging build.
+build-all: build build-benchmarks build-no-relay build-local build-testnet build-westend build-mainnet build-testnet-release build-westend-release build-mainnet-release build-bridging-westend build-bridging-local
 
 build:
 	cargo build --features frequency-no-relay
@@ -342,10 +338,7 @@ build-westend:
 	cargo build --features frequency-westend
 
 build-mainnet:
-	cargo build --features frequency,frequency-bridging,try-runtime
-
-# build-mainnet:
-# 	cargo build --features frequency,frequency-bridging,no-custom-host-functions,try-runtime
+	cargo build --features frequency
 
 build-testnet-release:
 	cargo build --locked --features frequency-testnet --release
@@ -354,21 +347,16 @@ build-westend-release:
 	cargo build --locked --features frequency-westend --release
 
 build-mainnet-release:
-	cargo build --locked --features  frequency --release
+	cargo build --locked --features frequency --release
 
-build-bridging-testnet:
-	cargo build --features frequency-testnet,frequency-bridging
-
-build-bridging-mainnet:
-	cargo build --features frequency,frequency-bridging
-
+# Opt-in bridging builds for networks that do not enable bridging by default.
 build-bridging-westend:
 	cargo build --features frequency-westend,frequency-bridging --release
 
 build-bridging-local:
 	cargo build --features frequency-local,frequency-bridging --release
 
-.PHONY: test test-bridging e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
+.PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
@@ -456,8 +444,8 @@ try-runtime-%: PREFIX_FLAGS=$(if $(strip $(PREFIXES)),$(PREFIXES:%=--prefix %),)
 try-runtime-%: SNAPSHOT_PALLETS=$(if $(strip $(PALLETS)),$(subst  $(space),-,$(strip $(PALLETS))),all-pallets)
 try-runtime-%: CHILD_TREE_FLAGS=$(if $(filter true,$(CHILD_TREES)), --child-tree --prefix $(DEFAULT_CHILD_TREE_PREFIX),)
 try-runtime-%: FEATURES=try-runtime
-try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: URI := $(PASEO_URI)
-try-runtime-%-paseo-testnet try-runtime-%-bridging-testnet: CHAIN := testnet-paseo
+try-runtime-%-paseo-testnet: URI := $(PASEO_URI)
+try-runtime-%-paseo-testnet: CHAIN := testnet-paseo
 try-runtime-%-westend-testnet: URI := $(WESTEND_URI)
 try-runtime-%-westend-testnet: CHAIN := testnet-westend
 try-runtime-%-mainnet: URI := $(MAINNET_URI)
@@ -466,10 +454,9 @@ try-runtime-%-local: URI := $(LOCAL_URI)
 try-runtime-%-local: CHAIN := local
 try-runtime-%-local: WASM_PATH=./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm
 
-
+# Mainnet and paseo include frequency-bridging via their Cargo features.
 build-runtime-paseo-testnet: override FEATURES += frequency-testnet
-build-runtime-bridging-testnet: override FEATURES += frequency-testnet frequency-bridging
-build-runtime-mainnet: override FEATURES += frequency frequency-bridging
+build-runtime-mainnet: override FEATURES += frequency
 build-runtime-westend-testnet: override FEATURES += frequency-westend frequency-bridging
 build-runtime-local: override FEATURES += frequency-no-relay
 build-runtime-local: TRY_RUNTIME_BUILD_TYPE := dev
@@ -505,9 +492,9 @@ try-runtime-use-snapshot-paseo-testnet \
 try-runtime-use-snapshot-mainnet: try-runtime-use-snapshot-%: check-try-runtime-installed build-runtime-%
 	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --mbm-max-blocks=10000 --disable-spec-version-check snap --path $(CHAIN)-$(SNAPSHOT_PALLETS).state
 
-.PHONY: try-runtime-check-migrations-paseo-testnet try-runtime-check-migrations-bridging-testnet try-runtime-check-migrations-westend-testnet
+.PHONY: try-runtime-check-migrations-paseo-testnet try-runtime-check-migrations-mainnet try-runtime-check-migrations-westend-testnet
 try-runtime-check-migrations-paseo-testnet \
-try-runtime-check-migrations-bridging-testnet \
+try-runtime-check-migrations-mainnet \
 try-runtime-check-migrations-westend-testnet: try-runtime-check-migrations-%: check-try-runtime-installed check-onfinality-api-key build-runtime-%
 	try-runtime --runtime $(WASM_PATH) on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check live --uri $(URI) $(PREFIX_FLAGS) $(PALLET_FLAGS) $(CHILD_TREE_FLAGS)
 
