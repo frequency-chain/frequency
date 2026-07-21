@@ -102,6 +102,9 @@ async function seedTestIntentsAndSchemas() {
     nonce
   ));
   nonce += noncesUsed;
+  // Default name used by getOrCreateDelegationSchema() must be seeded for parallel mocha runs
+  ({ noncesUsed } = await getOrCreateDelegationSchema(keys, nonce, 'test.delegation'));
+  nonce += noncesUsed;
   ({ noncesUsed } = await getOrCreateDelegationSchema(keys, nonce, 'test.grantDelegation'));
   nonce += noncesUsed;
   ({ noncesUsed } = await getOrCreateDelegationSchema(keys, nonce, 'test.grantDelegationSecond'));
