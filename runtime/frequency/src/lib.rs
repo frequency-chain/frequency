@@ -494,6 +494,30 @@ pub type AssetBalance = Balance;
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
+/// Migrations to apply on runtime upgrade.
+pub type Migrations = (
+	MigratePalletsCurrentStorage<Runtime>,
+	pallet_session::migrations::v1::MigrateV0ToV1<
+		Runtime,
+		pallet_session::migrations::v1::InitOffenceSeverity<Runtime>,
+	>,
+	cumulus_pallet_aura_ext::migration::MigrateV0ToV1<Runtime>,
+	pallet_schemas::migration::MigrateV4ToV5<Runtime>,
+);
+
+/// Migrations to apply on runtime upgrade (bridging-enabled).
+#[cfg(feature = "frequency-bridging")]
+pub type BridgingMigrations = (
+	MigratePalletsCurrentStorage<Runtime>,
+	SetSafeXcmVersion<Runtime>,
+	pallet_session::migrations::v1::MigrateV0ToV1<
+		Runtime,
+		pallet_session::migrations::v1::InitOffenceSeverity<Runtime>,
+	>,
+	cumulus_pallet_aura_ext::migration::MigrateV0ToV1<Runtime>,
+	pallet_schemas::migration::MigrateV4ToV5<Runtime>,
+);
+
 /// Executive: handles dispatch to the various modules.
 #[cfg(feature = "frequency-bridging")]
 pub type Executive = frame_executive::Executive<
@@ -502,11 +526,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(
-		MigratePalletsCurrentStorage<Runtime>,
-		SetSafeXcmVersion<Runtime>,
-		pallet_schemas::migration::MigrateV4ToV5<Runtime>,
-	),
+	BridgingMigrations,
 >;
 
 #[cfg(not(feature = "frequency-bridging"))]
@@ -516,7 +536,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, pallet_schemas::migration::MigrateV4ToV5<Runtime>),
+	Migrations,
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -673,7 +693,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 191,
+	spec_version: 192,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -687,7 +707,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 191,
+	spec_version: 192,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

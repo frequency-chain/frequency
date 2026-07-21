@@ -342,7 +342,10 @@ build-westend:
 	cargo build --features frequency-westend
 
 build-mainnet:
-	cargo build --features frequency
+	cargo build --features frequency,frequency-bridging,try-runtime
+
+# build-mainnet:
+# 	cargo build --features frequency,frequency-bridging,no-custom-host-functions,try-runtime
 
 build-testnet-release:
 	cargo build --locked --features frequency-testnet --release
@@ -466,7 +469,7 @@ try-runtime-%-local: WASM_PATH=./target/debug/wbuild/frequency-runtime/frequency
 
 build-runtime-paseo-testnet: override FEATURES += frequency-testnet
 build-runtime-bridging-testnet: override FEATURES += frequency-testnet frequency-bridging
-build-runtime-mainnet: override FEATURES += frequency
+build-runtime-mainnet: override FEATURES += frequency frequency-bridging
 build-runtime-westend-testnet: override FEATURES += frequency-westend frequency-bridging
 build-runtime-local: override FEATURES += frequency-no-relay
 build-runtime-local: TRY_RUNTIME_BUILD_TYPE := dev

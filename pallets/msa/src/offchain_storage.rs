@@ -100,6 +100,7 @@ pub enum MsaOffchainReplayEvent<T: Config> {
 }
 
 /// offchain worker main execution function
+#[cfg(not(feature = "no-custom-host-functions"))]
 pub fn do_offchain_worker<T: Config>(block_number: BlockNumberFor<T>) {
 	if let Some(finalized_block_number) = get_finalized_block_number::<T>(block_number) {
 		match offchain_index_initial_state::<T>(finalized_block_number) {
@@ -113,6 +114,7 @@ pub fn do_offchain_worker<T: Config>(block_number: BlockNumberFor<T>) {
 	};
 }
 /// stores the event into offchain DB using offchain indexing
+#[cfg(not(feature = "no-custom-host-functions"))]
 pub fn offchain_index_event<T: Config>(event: Option<&Event<T>>, msa_id: MessageSourceId) {
 	if let Some(event) = IndexedEvent::map(event, msa_id) {
 		let block_number: u32 =
@@ -450,6 +452,7 @@ pub struct FinalizedBlockResponse {
 }
 
 /// fetches finalized block hash from rpc
+#[cfg(not(feature = "no-custom-host-functions"))]
 fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
 	// we are not able to use the custom extension in benchmarks due to feature conflict
 	// Build rpc_address bytes (Vec<u8>) either from benchmarks constant or via custom extension
@@ -518,6 +521,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 }
 
 /// fetch finalized block hash and convert it to block number
+#[cfg(not(feature = "no-custom-host-functions"))]
 fn get_finalized_block_number<T: Config>(
 	current_block: BlockNumberFor<T>,
 ) -> Option<BlockNumberFor<T>> {
