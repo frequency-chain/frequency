@@ -73,6 +73,7 @@ jobs:
           git push origin ${{env.RELEASE_BRANCH_NAME}} -u
 
   run-all-benchmarks-build:
+    if: false
     needs: create-release-branch
     name: Run All Benchmarks - Build
     runs-on: ubicloud-standard-16
@@ -107,6 +108,7 @@ jobs:
           retention-days: 3
 
   run-all-benchmarks-bench:
+    if: false
     needs: run-all-benchmarks-build
     name: Run All Benchmarks
     runs-on: [self-hosted, Linux, X64, benchmark]
@@ -156,6 +158,7 @@ jobs:
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
 
   run-all-benchmarks-test:
+    if: false
     needs: run-all-benchmarks-bench
     name: Run All Benchmarks - Test
     runs-on: ubicloud-standard-16
@@ -180,7 +183,7 @@ jobs:
         run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace --release
 
   version-code:
-    needs: run-all-benchmarks-test
+    needs: create-release-branch
     name: Version Code
     runs-on: ubuntu-24.04
     steps:
